@@ -1,0 +1,33 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run()
+    {
+        $this->call(StateSeeder::class);
+        $this->call(RolSeeder::class);
+        $this->call(ReasonDisqualificationSeeder::class);
+        $this->call(PositionSeeder::class);
+        $this->call(SectorSeeder::class);
+        $this->call(PlaceSeeder::class);
+        $this->call(PlaceSectorSeeder::class);
+        $this->call(TypePremisesSeeder::class);
+        $this->call(RelationshipSeeder::class);
+        $this->call(TypeBenefitSeeder::class);
+        $this->call(UomSeeder::class);
+        $this->call(TypeTransactionSeeder::class);
+        $this->call(AssociationSeeder::class);
+        $this->call(UserSeeder::class);
+        $this->call(PeopleSeeder::class);
+        $this->call(PartnerSeeder::class);
+        $this->call(BeneficiarieSeeder::class);
+        $this->call(ProductSeeder::class);
+        $this->call(TransactionSeeder::class);
+        $this->call(PecosaSeeder::class);
+        $this->call(AwardSeeder::class);
+    }
+}
