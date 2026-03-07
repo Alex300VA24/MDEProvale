@@ -12,53 +12,39 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-2 sm:-my-px sm:ml-10 sm:flex">
+                    <!-- Inicio -->
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+                        {{ __('Inicio') }}
                     </x-nav-link>
 
-                    <!-- Gestion Social Dropdown -->
-                    <div class="relative" x-data="{ socialOpen: false }">
-                        <button @click="socialOpen = !socialOpen" class="inline-flex items-center px-1 pt-1 text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 focus:outline-none focus:text-gray-700 transition duration-150 ease-in-out">
-                            {{ __('Gestión Social') }}
-                            <svg class="ml-1 h-4 w-4" :class="{'rotate-180': socialOpen}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <div x-show="socialOpen"
-                                x-transition:enter="transition ease-out duration-200"
-                                x-transition:enter-start="transform opacity-0 scale-95"
-                                x-transition:enter-end="transform opacity-100 scale-100"
-                                x-transition:leave="transition ease-in duration-75"
-                                x-transition:leave-start="transform opacity-100 scale-100"
-                                x-transition:leave-end="transform opacity-0 scale-95"
-                                @click.away="socialOpen = false"
-                                class="absolute z-50 mt-2 w-56 rounded-md shadow-lg origin-top-left left-0 bg-white border border-gray-200"
-                                style="display: none;">
-                            <div class="py-1">
-                                <a href="{{ route('club-de-madres.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('club-de-madres.*') ? 'bg-gray-100 text-green-600 font-semibold' : '' }}">
-                                    <i class="fas fa-users w-5 text-center mr-2"></i>Club de Madres
-                                </a>
-                                <a href="{{ route('socios.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('socios.*') ? 'bg-gray-100 text-green-600 font-semibold' : '' }}">
-                                    <i class="fas fa-user-friends w-5 text-center mr-2"></i>Socios
-                                </a>
-                                <a href="{{ route('beneficiarios.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('beneficiarios.*') ? 'bg-gray-100 text-green-600 font-semibold' : '' }}">
-                                    <i class="fas fa-hand-holding-heart w-5 text-center mr-2"></i>Beneficiarios
-                                </a>
-                                <a href="{{ route('premios.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 {{ request()->routeIs('premios.*') ? 'bg-gray-100 text-green-600 font-semibold' : '' }}">
-                                    <i class="fas fa-award w-5 text-center mr-2"></i>Premios/Reconocimientos
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <x-nav-link :href="route('productos.index')" :active="request()->routeIs('productos.*')">
-                        {{ __('Productos') }}
+                    <!-- Socios y Beneficiarios -->
+                    <x-nav-link :href="route('socios-beneficiarios.index')" :active="request()->routeIs('socios-beneficiarios.*')">
+                        {{ __('Socios y Beneficiarios') }}
                     </x-nav-link>
+
+                    <!-- Productos y Pecosas -->
+                    <x-nav-link :href="route('productos-pecosas.pecosas.index')" :active="request()->routeIs('productos-pecosas.*')">
+                        {{ __('Productos y Pecosas') }}
+                    </x-nav-link>
+
+                    <!-- Comite y Resolucion -->
+                    <x-nav-link :href="route('club-reconocimientos.index')" :active="request()->routeIs('club-reconocimientos.*')">
+                        {{ __('Comite y Resolucion') }}
+                    </x-nav-link>
+
+                    <!-- Movimientos -->
                     <x-nav-link :href="route('movimientos.index')" :active="request()->routeIs('movimientos.*')">
                         {{ __('Movimientos') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('pecosas.index')" :active="request()->routeIs('pecosas.*')">
-                        {{ __('Pecosas') }}
+
+                    <!-- Mantenimiento -->
+                    <x-nav-link :href="route('mantenimiento.index')" :active="request()->routeIs('mantenimiento.*')">
+                        {{ __('Mantenimiento') }}
+                    </x-nav-link>
+
+                    <!-- Sistema -->
+                    <x-nav-link :href="route('sistema.index')" :active="request()->routeIs('sistema.*')">
+                        {{ __('Sistema') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -104,36 +90,31 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            
-            <div class="pt-2 pb-2">
-                <div class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Gestión Social</div>
-            </div>
-            <x-responsive-nav-link :href="route('club-de-madres.index')" :active="request()->routeIs('club-de-madres.*')">
-                <i class="fas fa-users w-5 text-center mr-2"></i>{{ __('Club de Madres') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('socios.index')" :active="request()->routeIs('socios.*')">
-                <i class="fas fa-user-friends w-5 text-center mr-2"></i>{{ __('Socios') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('beneficiarios.index')" :active="request()->routeIs('beneficiarios.*')">
-                <i class="fas fa-hand-holding-heart w-5 text-center mr-2"></i>{{ __('Beneficiarios') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('premios.index')" :active="request()->routeIs('premios.*')">
-                <i class="fas fa-award w-5 text-center mr-2"></i>{{ __('Premios') }}
+                <i class="fas fa-home w-5 text-center mr-2"></i>{{ __('Inicio') }}
             </x-responsive-nav-link>
 
-            <div class="pt-2 pb-2">
-                <div class="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Almacén</div>
-            </div>
-            <x-responsive-nav-link :href="route('productos.index')" :active="request()->routeIs('productos.*')">
-                {{ __('Productos') }}
+            <x-responsive-nav-link :href="route('socios-beneficiarios.index')" :active="request()->routeIs('socios-beneficiarios.*')">
+                <i class="fas fa-user-friends w-5 text-center mr-2"></i>{{ __('Socios y Beneficiarios') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('productos-pecosas.index')" :active="request()->routeIs('productos-pecosas.*')">
+                <i class="fas fa-box w-5 text-center mr-2"></i>{{ __('Productos y Pecosas') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('club-reconocimientos.index')" :active="request()->routeIs('club-reconocimientos.*')">
+                <i class="fas fa-users w-5 text-center mr-2"></i>{{ __('Comite y Resolucion') }}
+            </x-responsive-nav-link>
+
             <x-responsive-nav-link :href="route('movimientos.index')" :active="request()->routeIs('movimientos.*')">
-                {{ __('Movimientos') }}
+                <i class="fas fa-exchange-alt w-5 text-center mr-2"></i>{{ __('Movimientos') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('pecosas.index')" :active="request()->routeIs('pecosas.*')">
-                {{ __('Pecosas') }}
+
+            <x-responsive-nav-link :href="route('mantenimiento.index')" :active="request()->routeIs('mantenimiento.*')">
+                <i class="fas fa-screwdriver-wrench w-5 text-center mr-2"></i>{{ __('Mantenimiento') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('sistema.index')" :active="request()->routeIs('sistema.*')">
+                <i class="fas fa-gear w-5 text-center mr-2"></i>{{ __('Sistema') }}
             </x-responsive-nav-link>
         </div>
 

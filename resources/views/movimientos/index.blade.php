@@ -9,6 +9,9 @@
             <i class="fas fa-exchange-alt text-leaf"></i> Gestión de Movimientos
         </h3>
         <div class="flex gap-3">
+            <a href="{{ route('movimientos.comprobante-salida') }}" target="_blank" class="btn-secondary flex items-center gap-2">
+                <i class="fas fa-receipt"></i> Comprobante Salida
+            </a>
             <a href="{{ route('movimientos.reportes') }}" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-file-pdf"></i> Reportes
             </a>
@@ -28,9 +31,9 @@
             <select name="type_transaction_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
                 @foreach($types as $type)
-                    <option value="{{ $type->id }}" {{ request('type_transaction_id') == $type->id ? 'selected' : '' }}>
-                        {{ $type->title }}
-                    </option>
+                <option value="{{ $type->id }}" {{ request('type_transaction_id') == $type->id ? 'selected' : '' }}>
+                    {{ $type->title }}
+                </option>
                 @endforeach
             </select>
         </div>
@@ -67,17 +70,17 @@
                     </td>
                     <td class="px-6">
                         @if($transaction->typeTransaction)
-                            @if($transaction->typeTransaction->title == 'Ingreso')
-                                <span class="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">
-                                    <i class="fas fa-arrow-down mr-1"></i>{{ $transaction->typeTransaction->title }}
-                                </span>
-                            @else
-                                <span class="px-2 py-1 rounded-lg bg-clay-light text-clay text-xs font-bold">
-                                    <i class="fas fa-arrow-up mr-1"></i>{{ $transaction->typeTransaction->title }}
-                                </span>
-                            @endif
+                        @if($transaction->typeTransaction->title == 'Ingreso')
+                        <span class="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">
+                            <i class="fas fa-arrow-down mr-1"></i>{{ $transaction->typeTransaction->title }}
+                        </span>
                         @else
-                            -
+                        <span class="px-2 py-1 rounded-lg bg-clay-light text-clay text-xs font-bold">
+                            <i class="fas fa-arrow-up mr-1"></i>{{ $transaction->typeTransaction->title }}
+                        </span>
+                        @endif
+                        @else
+                        -
                         @endif
                     </td>
                     <td class="px-6 text-earth font-mono">{{ $transaction->quantity }}</td>

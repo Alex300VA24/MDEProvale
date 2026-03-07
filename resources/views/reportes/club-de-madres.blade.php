@@ -41,7 +41,7 @@
             <td>{{ $association->partners_count ?? $association->partners->count() }}</td>
             @endif
             @if($tipo == 'reconocimientos')
-            <td>{{ $association->awards->count() }}</td>
+            <td>{{ $association->resolutions->count() }}</td>
             @endif
         </tr>
         @endforeach

@@ -19,7 +19,6 @@ class CreateAssociationsTable extends Migration
             $table->string('name', 100);
             $table->string('address', 150);
             $table->text('observation')->nullable();
-            $table->integer('property_number')->nullable();
             $table->foreignId('state_id')->constrained();
             $table->foreignId('place_sector_id')->constrained();
             $table->foreignId('type_premises_id')->constrained();

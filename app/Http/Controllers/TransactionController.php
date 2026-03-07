@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\Product;
-use App\Models\TypeTransaction;
+use App\Models\State;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
@@ -13,125 +13,151 @@ class TransactionController extends Controller
     {
         $query = Transaction::with(['product', 'typeTransaction']);
 
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->whereHas('product', function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%");
+        if ($request->filled('search')) {
+            $query->whereHas('product', function ($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->search . '%');
             });
         }
 
-        if ($request->has('type_transaction_id') && $request->type_transaction_id != '') {
+        if ($request->filled('type_transaction_id')) {
             $query->where('type_transaction_id', $request->type_transaction_id);
         }
 
-        $transactions = $query->orderBy('id', 'desc')->paginate(10);
-        $types = TypeTransaction::all();
+        $transactions = $query->orderBy('created_at', 'desc')->paginate(15);
+        $types = \App\Models\TypeTransaction::all();
+
         return view('movimientos.index', compact('transactions', 'types'));
     }
 
     public function create()
     {
         $products = Product::all();
-        $types = TypeTransaction::all();
-        return view('movimientos.create', compact('products', 'types'));
+        $types = \App\Models\TypeTransaction::all();
+        $states = State::all();
+        return view('movimientos.create', compact('products', 'types', 'states'));
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'type_transaction_id' => 'required|exists:type_transactions,id',
-            'quantity' => 'required|numeric|min:0',
-            'unit_price' => 'required|numeric|min:0',
-        ]);
-        $validated['total_price'] = $validated['quantity'] * $validated['unit_price'];
-        Transaction::create($validated);
-        return redirect()->route('movimientos.index')->with('success', 'Movimiento creado exitosamente');
+        Transaction::create($request->all());
+        return redirect()->route('movimientos.index')->with('success', 'Movimiento registrado correctamente.');
     }
 
     public function show(Transaction $transaction)
     {
+        $transaction->load(['product', 'typeTransaction']);
         return view('movimientos.show', compact('transaction'));
     }
 
     public function edit(Transaction $transaction)
     {
         $products = Product::all();
-        $types = TypeTransaction::all();
-        return view('movimientos.edit', compact('transaction', 'products', 'types'));
+        $types = \App\Models\TypeTransaction::all();
+        $states = State::all();
+        return view('movimientos.edit', compact('transaction', 'products', 'types', 'states'));
     }
 
     public function update(Request $request, Transaction $transaction)
     {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'type_transaction_id' => 'required|exists:type_transactions,id',
-            'quantity' => 'required|numeric|min:0',
-            'unit_price' => 'required|numeric|min:0',
-        ]);
-        $validated['total_price'] = $validated['quantity'] * $validated['unit_price'];
-        $transaction->update($validated);
-        return redirect()->route('movimientos.index')->with('success', 'Movimiento actualizado exitosamente');
+        $transaction->update($request->all());
+        return redirect()->route('movimientos.index')->with('success', 'Movimiento actualizado correctamente.');
     }
 
     public function destroy(Transaction $transaction)
     {
         $transaction->delete();
-        return redirect()->route('movimientos.index')->with('success', 'Movimiento eliminado exitosamente');
+        return redirect()->route('movimientos.index')->with('success', 'Movimiento eliminado correctamente.');
     }
 
+    /**
+     * Vista de reportes de movimientos
+     */
     public function reportes()
     {
         return view('movimientos.reportes');
     }
 
-    public function generarReporte($tipo, Request $request)
+    /**
+     * Generar reporte de movimientos por tipo
+     */
+    public function generarReporte(Request $request, $tipo)
     {
         $query = Transaction::with(['product', 'typeTransaction']);
+        $titulo = 'Reporte de Movimientos';
 
         switch ($tipo) {
-            case 'general':
-                $transactions = $query->get();
-                $titulo = 'Todos los Movimientos';
-                break;
             case 'ingresos':
-                $transactions = $query->where('type_transaction_id', 1);
-                if ($request->has('fecha_inicio') && $request->has('fecha_fin')) {
-                    $transactions = $transactions->whereBetween('created_at', [$request->fecha_inicio, $request->fecha_fin]);
-                }
-                $transactions = $transactions->get();
-                $titulo = 'Movimientos de Ingreso';
+                $query->whereHas('typeTransaction', function ($q) {
+                    $q->where('title', 'Ingreso');
+                });
+                $titulo = 'Reporte de Ingresos';
                 break;
             case 'salidas':
-                $transactions = $query->where('type_transaction_id', 2);
-                if ($request->has('fecha_inicio') && $request->has('fecha_fin')) {
-                    $transactions = $transactions->whereBetween('created_at', [$request->fecha_inicio, $request->fecha_fin]);
-                }
-                $transactions = $transactions->get();
-                $titulo = 'Movimientos de Salida';
+                $query->whereHas('typeTransaction', function ($q) {
+                    $q->where('title', 'like', '%Salida%');
+                });
+                $titulo = 'Reporte de Salidas';
                 break;
-            case 'producto':
-                $productId = $request->get('product_id');
-                $transactions = $query->where('product_id', $productId)->get();
-                $product = Product::find($productId);
-                $titulo = 'Movimientos del Producto: ' . ($product->title ?? 'N/A');
-                break;
-            case 'estadistico':
-                $transactions = $query->get();
-                $titulo = 'Reporte Estadístico de Movimientos';
-                break;
-            case 'valorizacion':
-                $transactions = $query->get();
-                $titulo = 'Valorización de Movimientos';
-                break;
-            default:
-                $transactions = $query->get();
-                $titulo = 'Reporte de Movimientos';
         }
 
+        $transactions = $query->orderBy('created_at', 'desc')->get();
         $orientacion = $request->get('orientacion', 'portrait');
-        $pdf = \PDF::loadView('reportes.movimientos', compact('transactions', 'titulo', 'tipo'));
+        $pdf = \PDF::loadView('movimientos.reportes.pdf', compact('transactions', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
         return $pdf->download('reporte-movimientos-' . $tipo . '-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Generar Comprobante de Salida para un movimiento
+     */
+    public function generarComprobanteSalida(Request $request)
+    {
+        $transaction_id = $request->get('transaction_id');
+
+        if ($transaction_id) {
+            $transaction = Transaction::with(['product.uom', 'typeTransaction'])->findOrFail($transaction_id);
+
+            $articulos = [
+                [
+                    'numero' => '01',
+                    'cantidad_solicitado' => number_format($transaction->quantity, 2),
+                    'descripcion' => strtoupper($transaction->product->title ?? ''),
+                    'cantidad_despachado' => number_format($transaction->quantity, 2),
+                    'unidad' => strtoupper($transaction->product->uom->title ?? 'KILOS'),
+                    'unitario' => number_format($transaction->unit_price, 2),
+                    'total' => number_format($transaction->total_price, 2),
+                ],
+            ];
+
+            $data = [
+                'zona' => $request->get('zona', ''),
+                'comite' => $request->get('comite', ''),
+                'num_mes' => date('m'),
+                'racion' => '',
+                'numero_orden' => str_pad($transaction->id, 6, '0', STR_PAD_LEFT),
+                'solicitante_nombre' => $request->get('solicitante', ''),
+                'domicilio' => $request->get('domicilio', ''),
+                'fecha' => date('d \d\e F \d\e\l Y'),
+                'articulos' => $articulos,
+                'total_general' => '****' . number_format($transaction->total_price, 2),
+            ];
+        } else {
+            $data = [
+                'zona' => '',
+                'comite' => '',
+                'num_mes' => '',
+                'racion' => '',
+                'numero_orden' => '',
+                'solicitante_nombre' => '',
+                'domicilio' => '',
+                'fecha' => date('d \d\e F \d\e\l Y'),
+                'articulos' => [],
+                'total_general' => '*****0.00',
+            ];
+        }
+
+        $pdf = \PDF::loadView('comprobante_salida', $data);
+        $pdf->setPaper('a4', 'portrait');
+        return $pdf->stream('comprobante-salida-' . date('Y-m-d') . '.pdf');
     }
 }

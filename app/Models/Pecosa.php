@@ -37,4 +37,20 @@ class Pecosa extends Model
     {
         return $this->hasMany(DetailPecosa::class);
     }
+
+    /**
+     * Accessor: mes derivado de delivery_date
+     */
+    public function getMonthAttribute()
+    {
+        return $this->delivery_date ? date('n', strtotime($this->delivery_date)) : null;
+    }
+
+    /**
+     * Accessor: año derivado de delivery_date
+     */
+    public function getYearAttribute()
+    {
+        return $this->delivery_date ? date('Y', strtotime($this->delivery_date)) : null;
+    }
 }

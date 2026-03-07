@@ -128,4 +128,12 @@ class BeneficiarieController extends Controller
         $pdf->setPaper('a4', $orientacion);
         return $pdf->download('reporte-beneficiarios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }
+
+    public function imprimir()
+    {
+        $logoPath = public_path('img/muni2.png');
+        $pdf = \PDF::loadView('ficha_beneficiario', compact('logoPath'));
+        $pdf->setPaper('a4', 'portrait');
+        return $pdf->stream('ficha-beneficiario-' . date('Y-m-d-His') . '.pdf');
+    }
 }

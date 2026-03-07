@@ -13,9 +13,10 @@
         
         body {
             font-family: Arial, sans-serif;
-            font-size: 9pt;
-            line-height: 1.2;
-            padding: 15px;
+            font-size: 8pt;
+            line-height: 1.3;
+            padding: 12px 20px 20px 20px;
+            margin: 0;
         }
         
         .header {
@@ -102,26 +103,26 @@
         
         .section {
             border: 2px solid #000;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             page-break-inside: avoid;
         }
         
         .section-title {
             background-color: #e0e0e0;
-            padding: 4px 8px;
+            padding: 2px 4px;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 7pt;
             border-bottom: 1px solid #000;
         }
         
         .section-content {
-            padding: 5px;
+            padding: 3px 2px;
         }
         
         .form-row {
             display: table;
             width: 100%;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         
         .form-label {
@@ -153,7 +154,7 @@
         }
         
         .checkbox.checked::after {
-            content: "✓";
+            content: "";
             font-size: 10pt;
             font-weight: bold;
         }
@@ -222,8 +223,11 @@
         <tr>
             <td style="width: 80px; text-align: center; padding: 5px;">
                 <div style="width: 70px; height: 70px; border: 1px solid #000; margin: 0 auto;">
-                    <!-- Logo aquí -->
-                    LOGO
+                    @if(isset($logoPath) && file_exists($logoPath))
+                        <img src="{{ $logoPath }}" style="width: 100%; height: 100%; object-fit: contain;">
+                    @else
+                        <div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 10pt; font-weight: bold;">LOGO</div>
+                    @endif
                 </div>
             </td>
             <td style="text-align: center; padding: 10px;">
@@ -238,14 +242,14 @@
             </td>
             <td style="width: 90px; padding: 5px;">
                 <div style="font-weight: bold; font-size: 8pt; text-align: center; margin-bottom: 3px;">PERIODO</div>
-                <table style="border: none;">
+                <table style="border: none; width: 100%;">
                     <tr>
-                        <td style="border: none; font-size: 7pt; padding: 1px;">AÑO</td>
-                        <td style="border: none; font-size: 7pt; padding: 1px;">SEMESTRE</td>
+                        <td style="border: none; font-size: 7pt; padding: 1px; height: 25px; width: 75%;">AÑO</td>
+                        <td style="border: none; font-size: 7pt; padding: 1px; height: 25px; width: 25%;">SEMESTRE</td>
                     </tr>
                     <tr>
-                        <td style="padding: 2px;"></td>
-                        <td style="padding: 2px;"></td>
+                        <td style="padding: 10px;"></td>
+                        <td style="padding: 10px;"></td>
                     </tr>
                 </table>
             </td>
@@ -292,12 +296,12 @@
                     <span class="dni-box"></span><span class="dni-box"></span><span class="dni-box"></span>
                     <span class="dni-box"></span><span class="dni-box"></span>
                 </span>
-                <span class="form-label" style="margin-left: 15px;">✓1.3.1 FECHA DE NACIMIENTO:</span>
+                <span class="form-label" style="margin-left: 15px;">1.3.1 FECHA DE NACIMIENTO:</span>
                 <span style="border: 1px solid #000; display: inline-block; width: 100px; height: 18px; margin-left: 5px;"></span>
             </div>
 
             <div style="margin-bottom: 5px;">
-                <span class="form-label">✓1.4 ESTADO CIVIL:</span>
+                <span class="form-label">1.4 ESTADO CIVIL:</span>
                 <span class="checkbox-group">
                     <span>SOLTERA/O:</span>
                     <span class="checkbox"></span>
@@ -321,7 +325,7 @@
             </div>
 
             <div style="margin-bottom: 5px;">
-                <span class="form-label">✓1.5 GRADO DE INSTRUCCION:</span>
+                <span class="form-label">1.5 GRADO DE INSTRUCCION:</span>
                 <span class="checkbox-group">
                     <span>NINGUNO:</span>
                     <span class="checkbox"></span>
@@ -345,17 +349,17 @@
             </div>
 
             <div style="margin-bottom: 5px;">
-                <span class="form-label">✓1.6 OCUPACION:</span>
-                <span style="border-bottom: 1px solid #000; display: inline-block; width: calc(100% - 120px); margin-left: 5px;"></span>
+                <span class="form-label">1.6 OCUPACION:</span>
+                <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px; margin-left: 5px;"></span>
             </div>
 
             <div style="margin-bottom: 5px;">
-                <span class="form-label">✓1.7 Nº DE HIJOS:</span>
-                <span style="border-bottom: 1px solid #000; display: inline-block; width: calc(100% - 120px); margin-left: 5px;"></span>
+                <span class="form-label">1.7 Nº DE HIJOS:</span>
+                <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px; margin-left: 5px;"></span>
             </div>
 
             <div style="margin-bottom: 5px;">
-                <span class="form-label">✓1.8 ACTUALMENTE SE ENCUENTRA:</span>
+                <span class="form-label">1.8 ACTUALMENTE SE ENCUENTRA:</span>
                 <span style="margin-left: 10px;">GESTANDO (ADJUNTAR CARNET DE GESTACION)</span>
                 <span class="checkbox" style="margin-left: 5px;"></span>
                 <span style="margin-left: 15px;">LACTANDO:</span>
@@ -363,7 +367,7 @@
             </div>
 
             <div>
-                <span class="form-label">✓1.9 OCUPACION DEL CONYUGE:</span>
+                <span class="form-label">1.9 OCUPACION DEL CONYUGE:</span>
                 <span style="border-bottom: 1px solid #000; display: inline-block; width: 200px; margin-left: 5px;"></span>
                 <span class="form-label" style="margin-left: 10px;">GRADO DE INSTRUCCION:</span>
                 <span style="border-bottom: 1px solid #000; display: inline-block; width: 150px; margin-left: 5px;"></span>
@@ -623,23 +627,21 @@
     </div>
 
     <!-- FOOTER - FIRMAS -->
-    <table style="width: 100%; border: 2px solid #000; margin-top: 10px;">
+    <table style="width: 100%; border: 2px solid #000; margin-top: 5px;">
         <tr>
-            <td style="width: 25%; height: 80px; text-align: center; vertical-align: bottom; padding: 5px; font-size: 8pt;">
-                <div style="margin-bottom: 5px;">FECHA:</div>
-                <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto;"></div>
+            <td style="width: 33%; height: 70px; padding: 2px 3px; font-size: 7pt; position: relative; vertical-align: bottom;">
+                <div style="font-size: 6pt; position: absolute; top: 2px; left: 3px;">FECHA:</div>
+                <div style="border-bottom: 1px solid #000; width: 80%; margin: 35px auto 2px auto;"></div>
+                <div style="font-weight: bold; font-size: 6pt; text-align: center;">FIRMA SOCIA</div>
             </td>
-            <td style="width: 25%; text-align: center; vertical-align: bottom; padding: 5px; font-size: 8pt;">
-                <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto 5px auto;"></div>
-                <div style="font-weight: bold;">FIRMA DE LA SOCIA</div>
+            <td style="width: 22%; height: 70px; padding: 2px 3px; font-size: 7pt; text-align: center; vertical-align: bottom;">
+                <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto 2px auto; height: 40px;"></div>
+                <div style="font-weight: bold; font-size: 6pt;">HUELLA</div>
             </td>
-            <td style="width: 25%; text-align: center; vertical-align: bottom; padding: 5px; font-size: 8pt;">
-                <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto 5px auto;"></div>
-                <div style="font-weight: bold;">HUELLA DIGITAL</div>
-            </td>
-            <td style="width: 25%; text-align: center; vertical-align: bottom; padding: 5px; font-size: 8pt;">
-                <div style="border-bottom: 1px solid #000; width: 80%; margin: 0 auto 5px auto;"></div>
-                <div style="font-weight: bold;">NOMBRE, FIRMA Y SELLO DE LA PRESIDENTA DEL CLUB</div>
+            <td style="width: 45%; height: 70px; padding: 2px 3px; font-size: 7pt; text-align: center; vertical-align: bottom; position: relative;">
+                <div style="font-size: 6pt; position: absolute; top: 2px; left: 3px;">FECHA:</div>
+                <div style="border-bottom: 1px solid #000; width: 80%; margin: 35px auto 2px auto;"></div>
+                <div style="font-weight: bold; font-size: 6pt;">NOMBRE, FIRMA Y SELLO DE LA PRESIDENTA</div>
             </td>
         </tr>
     </table>

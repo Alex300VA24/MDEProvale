@@ -162,7 +162,7 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ public_path('img/logo.png') }}" alt="Logo" class="header-logo">
+        <img src="{{ public_path('img/muni2.png') }}" alt="Logo" class="header-logo">
         <h1>PROVALE - MDE</h1>
         <p>Programa del Vaso de Leche</p>
         <p class="subtitle">Municipalidad Distrital de La Esperanza</p>

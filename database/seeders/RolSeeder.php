@@ -16,12 +16,14 @@ class RolSeeder extends Seeder
     {
         DB::table('rols')->insert([
             'title' => 'Administrador',
+            'description' => 'Acceso completo al sistema',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('rols')->insert([
             'title' => 'Usuario',
+            'description' => 'Usuario con acceso básico',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

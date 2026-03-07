@@ -11,10 +11,18 @@ class Rol extends Model
 
     protected $fillable = [
         'title',
+        'description',
     ];
 
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function modules()
+    {
+        return $this->belongsToMany(Module::class, 'module_rol')
+            ->withPivot('can_view', 'can_create', 'can_edit', 'can_delete')
+            ->withTimestamps();
     }
 }

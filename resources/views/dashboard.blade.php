@@ -61,12 +61,13 @@
             <h1 class="text-white font-extrabold text-4xl leading-tight mb-3">Panel de Control<br><span class="text-sun">PROVALE</span></h1>
             <p class="text-white/75 text-base font-medium max-w-md">Gestiona beneficiarios, club de madres y entregas de manera eficiente. Todo en un solo lugar.</p>
             <div class="flex gap-3 mt-6">
-                <a href="{{ route('socios.create') }}" class="px-5 py-2.5 bg-sun text-white font-bold rounded-xl text-sm hover:bg-sun/90 transition-all shadow-lg">
-                    <i class="fas fa-plus mr-2"></i>Nuevo Socio
+                <a href="{{ route('socios-beneficiarios.index') }}" class="px-5 py-2.5 bg-sun text-white font-bold rounded-xl text-sm hover:bg-sun/90 transition-all shadow-lg">
+                    <i class="fas fa-plus mr-2"></i>Ir a Módulos
                 </a>
-                <button class="px-5 py-2.5 bg-white/15 text-white font-bold rounded-xl text-sm hover:bg-white/25 transition-all backdrop-blur-sm border border-white/20">
+                <a href="{{ route('socios-beneficiarios.index') }}" class="px-5 py-2.5 bg-white/15 text-white font-bold rounded-xl text-sm hover:bg-white/25 transition-all backdrop-blur-sm border border-white/20">
                     <i class="fas fa-file-alt mr-2"></i>Ver Reportes
-                </button>
+                </a>
+
             </div>
         </div>
         <div class="float-anim hidden md:flex w-40 h-40 bg-white/15 backdrop-blur-md rounded-full items-center justify-center text-6xl border-2 border-white/20 shadow-2xl flex-shrink-0">
@@ -170,41 +171,29 @@
     <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
         <h3 class="text-charcoal font-bold text-lg mb-5">Acciones Rápidas</h3>
         <div class="grid grid-cols-2 gap-3">
-            <a href="{{ route('socios.create') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-leaf-light hover:bg-leaf/20 transition-all group">
+            <a href="{{ route('socios-beneficiarios.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-leaf-light hover:bg-leaf/20 transition-all group">
                 <div class="w-10 h-10 bg-leaf rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
-                    <i class="fas fa-user-plus"></i>
+                    <i class="fas fa-users"></i>
                 </div>
-                <span class="text-xs font-bold text-leaf text-center leading-tight">Nuevo Socio</span>
+                <span class="text-xs font-bold text-leaf text-center leading-tight">Socios y Beneficiarios</span>
             </a>
-            <a href="{{ route('beneficiarios.create') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-sky-light hover:bg-sky/20 transition-all group">
+            <a href="{{ route('club-reconocimientos.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-sky-light hover:bg-sky/20 transition-all group">
                 <div class="w-10 h-10 bg-[#0284C7] rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
                     <i class="fas fa-user-check"></i>
                 </div>
-                <span class="text-xs font-bold text-[#0284C7] text-center leading-tight">Registrar Beneficiario</span>
+                <span class="text-xs font-bold text-[#0284C7] text-center leading-tight">Club de Madres</span>
             </a>
-            <a href="{{ route('movimientos.create') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-sun-light hover:bg-sun/20 transition-all group">
+            <a href="{{ route('productos-pecosas.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-sun-light hover:bg-sun/20 transition-all group">
                 <div class="w-10 h-10 bg-sun rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
                     <i class="fas fa-truck"></i>
                 </div>
-                <span class="text-xs font-bold text-[#D97706] text-center leading-tight">Registrar Entrega</span>
+                <span class="text-xs font-bold text-[#D97706] text-center leading-tight">Productos y Pecosas</span>
             </a>
-            <a href="{{ route('productos.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-clay-light hover:bg-clay/20 transition-all group">
+            <a href="{{ route('movimientos.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-clay-light hover:bg-clay/20 transition-all group">
                 <div class="w-10 h-10 bg-clay rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
-                    <i class="fas fa-box-open"></i>
+                    <i class="fas fa-exchange-alt"></i>
                 </div>
-                <span class="text-xs font-bold text-clay text-center leading-tight">Gestión Stock</span>
-            </a>
-            <a href="{{ route('premios.create') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-[#F3F0FF] hover:bg-purple-100 transition-all group">
-                <div class="w-10 h-10 bg-[#7C3AED] rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
-                    <i class="fas fa-award"></i>
-                </div>
-                <span class="text-xs font-bold text-[#7C3AED] text-center leading-tight">Reconocimiento</span>
-            </a>
-            <a href="{{ route('pecosas.create') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-[#F0FDF4] hover:bg-green-100 transition-all group">
-                <div class="w-10 h-10 bg-[#16A34A] rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
-                    <i class="fas fa-file-invoice"></i>
-                </div>
-                <span class="text-xs font-bold text-[#16A34A] text-center leading-tight">Nueva Pecosa</span>
+                <span class="text-xs font-bold text-clay text-center leading-tight">Movimientos</span>
             </a>
         </div>
     </div>

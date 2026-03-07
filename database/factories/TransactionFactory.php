@@ -15,7 +15,7 @@ class TransactionFactory extends Factory
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
             'total_price' => $quantity * $unitPrice,
-            'product_id' => $this->faker->numberBetween(1, 30),
+            'product_id' => $this->faker->numberBetween(1, 2),
             'type_transaction_id' => $this->faker->numberBetween(1, 2),
             'created_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
             'updated_at' => $this->faker->dateTimeBetween('-6 months', 'now'),

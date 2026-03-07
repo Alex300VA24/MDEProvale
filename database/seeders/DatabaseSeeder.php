@@ -10,6 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(StateSeeder::class);
         $this->call(RolSeeder::class);
+        $this->call(ModuleSeeder::class);
         $this->call(ReasonDisqualificationSeeder::class);
         $this->call(PositionSeeder::class);
         $this->call(SectorSeeder::class);
@@ -20,14 +21,14 @@ class DatabaseSeeder extends Seeder
         $this->call(TypeBenefitSeeder::class);
         $this->call(UomSeeder::class);
         $this->call(TypeTransactionSeeder::class);
-        $this->call(AssociationSeeder::class);
+        //$this->call(AssociationSeeder::class);
         $this->call(UserSeeder::class);
-        $this->call(PeopleSeeder::class);
-        $this->call(PartnerSeeder::class);
-        $this->call(BeneficiarieSeeder::class);
+        //$this->call(PeopleSeeder::class);
+        //$this->call(PartnerSeeder::class);
+        //$this->call(BeneficiarieSeeder::class);
         $this->call(ProductSeeder::class);
-        $this->call(TransactionSeeder::class);
-        $this->call(PecosaSeeder::class);
-        $this->call(AwardSeeder::class);
+        //$this->call(TransactionSeeder::class);
+        //$this->call(PecosaSeeder::class);
+        //$this->call(ResolutionSeeder::class);
     }
 }

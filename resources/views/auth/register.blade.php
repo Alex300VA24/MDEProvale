@@ -36,7 +36,7 @@
         <!-- Logo y Título -->
         <div class="text-center mb-6">
             <div class="inline-flex items-center justify-center w-16 h-16 bg-leaf rounded-2xl shadow-lg mb-3 overflow-hidden">
-                <img src="{{ asset('img/logo.png') }}" alt="PROVALE" class="w-12 h-12 object-contain">
+                <img src="{{ asset('img/muni2.png') }}" alt="PROVALE" class="w-12 h-12 object-contain">
             </div>
             <h1 class="text-xl font-extrabold text-charcoal">PROVALE</h1>
             <p class="text-earth text-xs">Programa Vaso de Leche - M.D. La Esperanza</p>

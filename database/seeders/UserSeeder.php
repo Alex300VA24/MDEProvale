@@ -44,7 +44,7 @@ values
             'dni' => '74283707',
             'cui' => '1',
             'email' => 'mvegape@example.com',
-            'rol_id' => 1,
+            'rol_id' => 2,
             'state_id' => 1,
             'created_at' => now(),
             'updated_at' => now(),

@@ -11,7 +11,7 @@
     </div>
     <div class="info-row">
         <span class="info-label">Total de registros:</span>
-        <span>{{ $awards->count() }}</span>
+        <span>{{ $resolutions->count() }}</span>
     </div>
 </div>
 
@@ -27,18 +27,18 @@
         </tr>
     </thead>
     <tbody>
-        @foreach($awards as $award)
+        @foreach($resolutions as $resolution)
         <tr>
-            <td>#{{ $award->id }}</td>
-            <td>{{ $award->document }}</td>
-            <td>{{ $award->association->name ?? '-' }}</td>
-            <td>{{ \Carbon\Carbon::parse($award->date_document)->format('d/m/Y') }}</td>
+            <td>#{{ $resolution->id }}</td>
+            <td>{{ $resolution->document }}</td>
+            <td>{{ $resolution->association->name ?? '-' }}</td>
+            <td>{{ \Carbon\Carbon::parse($resolution->date_document)->format('d/m/Y') }}</td>
             <td>
-                {{ \Carbon\Carbon::parse($award->date_start)->format('d/m/Y') }} - 
-                {{ \Carbon\Carbon::parse($award->date_end)->format('d/m/Y') }}
+                {{ \Carbon\Carbon::parse($resolution->date_start)->format('d/m/Y') }} - 
+                {{ \Carbon\Carbon::parse($resolution->date_end)->format('d/m/Y') }}
             </td>
             <td>
-                @if($award->state && $award->state->title == 'Activo')
+                @if($resolution->state && $resolution->state->title == 'Activo')
                     <span class="badge badge-success">Activo</span>
                 @else
                     <span class="badge badge-danger">Inactivo</span>
@@ -49,7 +49,7 @@
     </tbody>
 </table>
 
-@if($awards->isEmpty())
+@if($resolutions->isEmpty())
 <p style="text-align: center; color: #8B7355; padding: 20px;">No se encontraron registros para este reporte.</p>
 @endif
 @endsection

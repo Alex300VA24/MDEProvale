@@ -24,9 +24,9 @@ class State extends Model
         return $this->hasMany(Association::class);
     }
 
-    public function awards()
+    public function resolutions()
     {
-        return $this->hasMany(Award::class);
+        return $this->hasMany(Resolution::class);
     }
 
     public function partners()

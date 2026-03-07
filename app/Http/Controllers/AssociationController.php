@@ -39,7 +39,7 @@ class AssociationController extends Controller
 
     public function show(Association $association)
     {
-        $association->load(['partners', 'awards']);
+        $association->load(['partners', 'resolutions']);
         return view('club-de-madres.show', compact('association'));
     }
 
@@ -89,7 +89,7 @@ class AssociationController extends Controller
                 $titulo = 'Reporte Estadístico de Club de Madres';
                 break;
             case 'reconocimientos':
-                $associations = $query->with('awards')->get();
+                $associations = $query->with('resolutions')->get();
                 $titulo = 'Club de Madres con Reconocimientos';
                 break;
             default:

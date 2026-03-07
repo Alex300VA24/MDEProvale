@@ -18,7 +18,7 @@
                 </div>
                 <h4 class="font-bold text-charcoal mb-2">Organizaciones</h4>
                 <p class="text-sm text-earth mb-4">Gestionar organizaciones y sedes</p>
-                <a href="{{ route('club-de-madres.index') }}" class="btn-primary w-full block text-center">Administrar</a>
+                <a href="{{ route('club-reconocimientos.club.index') }}" class="btn-primary w-full block text-center">Administrar</a>
             </div>
 
             <div class="bg-cream rounded-xl p-6 border-2 border-wheat">

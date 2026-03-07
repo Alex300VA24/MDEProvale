@@ -15,7 +15,7 @@ class CreateDirectivesTable extends Migration
     {
         Schema::create('directives', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('award_id')->constrained();
+            $table->foreignId('resolution_id')->constrained();
             $table->foreignId('partner_id')->constrained();
             $table->foreignId('position_id')->constrained();
             $table->foreignId('state_id')->constrained();

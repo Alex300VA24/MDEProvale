@@ -14,7 +14,11 @@ class Association extends Model
         'name',
         'address',
         'observation',
-        'property_number'
+        'property_number',
+        'state_id',
+        'place_sector_id',
+        'type_premises_id',
+        'resolution_id',
     ];
 
     public function placeSector()
@@ -26,14 +30,15 @@ class Association extends Model
     {
         return $this->belongsTo(TypePremises::class);
     }
+
     public function state()
     {
         return $this->belongsTo(State::class);
     }
 
-    public function awards()
+    public function resolution()
     {
-        return $this->hasMany(Award::class);
+        return $this->belongsTo(Resolution::class);
     }
 
     public function partners()
@@ -46,5 +51,25 @@ class Association extends Model
         return $this->hasMany(Pecosa::class);
     }
 
+    public function directives()
+    {
+        return $this->hasManyThrough(Directive::class, Resolution::class);
+    }
 
+    public function hasPresidenta()
+    {
+        return $this->directives()
+            ->whereHas('position', function ($q) {
+                $q->where('title', 'like', '%PRESIDENTA%');
+            })
+            ->whereHas('state', function ($q) {
+                $q->where('abbreviation', 'ACTI');
+            })
+            ->exists();
+    }
+
+    public function isHabilitado()
+    {
+        return $this->state && $this->state->abbreviation === 'ACTI';
+    }
 }

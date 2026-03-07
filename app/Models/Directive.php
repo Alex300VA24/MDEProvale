@@ -10,15 +10,15 @@ class Directive extends Model
     use HasFactory;
 
     protected $fillable = [
-        'award_id',
+        'resolution_id',
         'partner_id',
         'position_id',
         'state_id',
     ];
 
-    public function award()
+    public function resolution()
     {
-        return $this->belongsTo(Award::class);
+        return $this->belongsTo(Resolution::class);
     }
 
     public function partner()
