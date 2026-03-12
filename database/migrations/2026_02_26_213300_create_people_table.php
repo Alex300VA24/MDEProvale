@@ -23,9 +23,9 @@ class CreatePeopleTable extends Migration
             $table->string('telephone_number', 6)->nullable();
             $table->string('phone_number', 9)->nullable();
             $table->date('birthdate');
-            $table->integer('years_old');
-            $table->integer('months_old');
-            $table->integer('days_old');
+            $table->integer('years_old')->nullable();
+            $table->integer('months_old')->nullable();
+            $table->integer('days_old')->nullable();
             $table->string('address', 200);
             $table->foreignId('place_sector_id')->constrained();
             $table->timestamps();

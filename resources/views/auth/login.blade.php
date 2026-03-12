@@ -122,5 +122,34 @@
         </div>
     </div>
 
+    @if(session('session_expired'))
+    <div id="session-expired-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div class="w-full max-w-sm rounded-2xl border-2 border-clay bg-white p-6 shadow-2xl">
+            <div class="mb-3 flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-clay text-white">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="text-base font-extrabold text-charcoal">Sesión expirada</h3>
+            </div>
+            <p class="text-sm font-medium text-earth">
+                Tu sesión ha expirado por inactividad. Por favor, inicia sesión nuevamente.
+            </p>
+            <button id="session-expired-confirm" class="mt-5 w-full rounded-xl bg-clay py-2.5 font-bold text-white hover:opacity-90">
+                Entendido
+            </button>
+        </div>
+    </div>
+    @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.getElementById('session-expired-confirm');
+            if (button) {
+                button.addEventListener('click', function() {
+                    document.getElementById('session-expired-modal')?.remove();
+                });
+            }
+        });
+    </script>
 </body>
 </html>

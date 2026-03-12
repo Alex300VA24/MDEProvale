@@ -9,8 +9,8 @@
             <i class="fas fa-users text-leaf"></i> Socios y Beneficiarios
         </h3>
         <div class="flex items-center gap-2">
-            <a href="{{ route('socios-beneficiarios.personas.create') }}" class="btn-secondary flex items-center gap-2" title="Crear Persona">
-                <i class="fas fa-user-plus"></i> Crear Persona
+            <a href="{{ route('socios-beneficiarios.personas.index') }}" class="btn-secondary flex items-center gap-2" title="Personas">
+                <i class="fas fa-users"></i> Personas
             </a>
             <a href="{{ route('socios-beneficiarios.beneficiarios.reportes') }}" class="btn-secondary flex items-center gap-2" title="Reportes">
                 <i class="fas fa-file-pdf"></i> Reportes

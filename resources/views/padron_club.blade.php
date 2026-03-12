@@ -14,16 +14,30 @@
         @page {
             size: landscape;
             margin: 8mm;
+            counter-increment: page;
         }
         
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 7pt;
-            line-height: 1.1;
-            padding: 5px;
+        @page :first {
+            counter-reset: page 0;
         }
         
-        .header {
+        tbody {
+            display: table-row-group;
+        }
+        
+        thead {
+            display: table-header-group;
+        }
+        
+        tr {
+            page-break-inside: avoid;
+        }
+        
+        .page-number::before {
+            content: counter(page);
+        }
+        
+        .header-table {
             display: table;
             width: 100%;
             margin-bottom: 8px;
@@ -103,20 +117,20 @@
         }
         
         .row-number {
-            width: 25px;
+            width: 28px;
             text-align: center;
             background-color: #f5f5f5;
             font-weight: bold;
         }
         
         .codigo-col {
-            width: 35px;
+            width: 28px;
             text-align: center;
             font-weight: bold;
         }
         
         .tipo-col {
-            width: 35px;
+            width: 28px;
             text-align: center;
             font-size: 5pt;
         }
@@ -135,7 +149,7 @@
         
         .sector-col {
             text-align: center;
-            width: 80px;
+            width: 70px;
         }
         
         .benef-col {
@@ -147,22 +161,25 @@
         .presidenta-col {
             text-align: left;
             padding-left: 3px;
-            max-width: 140px;
+            max-width: 120px;
         }
         
         .resolucion-col {
-            width: 70px;
+            width: 65px;
             text-align: center;
+            font-size: 5pt;
         }
         
         .fecha-col {
             width: 65px;
             text-align: center;
+            font-size: 5pt;
         }
         
         .local-col {
-            width: 70px;
+            width: 60px;
             text-align: center;
+            font-size: 5pt;
         }
         
         .text-center {
@@ -198,50 +215,51 @@
     </style>
 </head>
 <body>
-    <!-- HEADER -->
-    <table style="width: 100%; margin-bottom: 8px;">
-        <tr>
-            <td style="width: 70px; text-align: center; vertical-align: middle;">
-                <div style="width: 60px; height: 60px; border: 1px solid #000; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 7pt;">
-                    LOGO
-                </div>
-            </td>
-            
-            <td style="text-align: center; padding: 5px; vertical-align: middle;">
-                <div style="font-size: 9pt; font-weight: bold;">MUNICIPALIDAD</div>
-                <div style="font-size: 9pt; font-weight: bold;">DISTRITAL DE LA ESPERANZA</div>
-                <div style="font-size: 8pt; margin: 2px 0;">O.F. Vaso de Leche</div>
-                <div style="font-size: 12pt; font-weight: bold; margin: 5px 0;">
-                    PADRÓN DE CLUB DE MADRES Y/O COMITÉS DEL PROGRAMA VASO DE LECHE
-                </div>
-                <div style="font-size: 10pt; font-weight: bold;">RESOLUCIONES DE RECONOCIMIENTO</div>
-            </td>
-            
-            <td style="width: 120px; text-align: right; vertical-align: top; padding-right: 10px; font-size: 7pt;">
-                <div>PAGINA: {{ $pagina ?? '2' }}</div>
-                <div>FECHA: {{ $fecha ?? date('d/m/Y') }}</div>
-                <div>HORA: {{ $hora ?? date('H:i:s') }}</div>
-            </td>
-        </tr>
-    </table>
-
     <!-- MAIN TABLE -->
     <table class="main-table">
         <thead>
             <tr>
-                <th colspan="2" style="width: 60px;">Código</th>
-                <th rowspan="2" style="width: 180px;">NOMBRE DEL CLUB DE MADRES</th>
-                <th rowspan="2" style="width: 150px;">DIRECCIÓN</th>
-                <th rowspan="2" style="width: 80px;">SECTOR</th>
-                <th rowspan="2" style="width: 35px;">BENEF.</th>
-                <th rowspan="2" style="width: 140px;">PRESIDENTA</th>
-                <th colspan="3" style="background-color: #d8d8d8;">RESOLUCIONES</th>
-                <th colspan="2" style="background-color: #d8d8d8;">VIGENCIA JUNTA DIRECTIVA</th>
-                <th rowspan="2" style="width: 70px;">LOCAL</th>
+                <td colspan="14" style="border: none; padding: 3px;">
+                    <table class="header-table" style="width: 100%;">
+                        <tr>
+                            <td style="text-align: left; vertical-align: middle;">
+                                <img src="{{ public_path('img/muni2.png') }}" style="width: 50px; height: auto; vertical-align: middle; margin-right: 5px;" alt="Logo">
+                                <div style="display: inline-block; vertical-align: middle; text-align: left; width: 80px;">
+                                    <div style="font-size: 6pt; font-weight: bold;">MUNICIPALIDAD DISTRITAL</div>
+                                    <div style="font-size: 6pt; font-weight: bold;">DE LA ESPERANZA</div>
+                                    <div style="font-size: 6pt;">O.F. Vaso de Leche</div>
+                                </div>
+                            </td>
+                            <td style="text-align: center; vertical-align: middle; line-height: 1.2;">
+                                <div style="font-size: 11pt; font-weight: bold; margin: 0;">
+                                    PADRÓN DE CLUB DE MADRES Y/O COMITÉS DEL PROGRAMA VASO DE LECHE
+                                </div>
+                                <div style="font-size: 9pt; font-weight: bold; margin: 0;">RESOLUCIONES DE RECONOCIMIENTO</div>
+                            </td>
+                            <td style="width: 90px; text-align: right; vertical-align: top; font-size: 7pt;">
+                                <div style="font-weight: bold; margin-bottom: 3px;">PÁG: <span class="page-number"></span></div>
+                                <div>FECHA: {{ $fecha ?? date('d/m/Y') }}</div>
+                                <div>HORA: {{ $hora ?? date('H:i:s') }}</div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
             <tr>
-                <th style="width: 30px;">ZONA</th>
-                <th style="width: 30px;">COMITÉ SOCIAL</th>
+                <th colspan="3" style="width: 80px;">Código</th>
+                <th rowspan="2" style="width: 180px;">CLUB DE MADRES</th>
+                <th rowspan="2" style="width: 150px;">DIRECCIÓN</th>
+                <th rowspan="2" style="width: 70px;">SECTOR</th>
+                <th rowspan="2" style="width: 35px;">BENEF.</th>
+                <th rowspan="2" style="width: 120px;">PRESIDENTA</th>
+                <th colspan="3" style="background-color: #d8d8d8;">RESOLUCIONES</th>
+                <th colspan="2" style="background-color: #d8d8d8;">VIGENCIA</th>
+                <th rowspan="2" style="width: 60px;">LOCAL</th>
+            </tr>
+            <tr>
+                <th style="width: 28px;">ZONA</th>
+                <th style="width: 28px;">C.S.</th>
+                <th style="width: 28px;">R.S.</th>
                 <th style="width: 70px;">Nº (Res.)</th>
                 <th style="width: 65px;">Nº (Res. 2)</th>
                 <th style="width: 65px;">Nº (Res. 3)</th>
@@ -256,24 +274,36 @@
             @endphp
             
             @foreach($zonas as $zona)
+                @php
+                    $sectoresList = isset($zona['lista_sectores']) && is_array($zona['lista_sectores']) ? implode(', ', $zona['lista_sectores']) : '';
+                    $todosLosClubes = [];
+                    if (isset($zona['sectores'])) {
+                        foreach ($zona['sectores'] as $sector) {
+                            foreach ($sector['clubes'] as $club) {
+                                $todosLosClubes[] = $club;
+                            }
+                        }
+                    } elseif (isset($zona['clubes'])) {
+                        $todosLosClubes = $zona['clubes'];
+                    }
+                    usort($todosLosClubes, function($a, $b) {
+                        return strcmp($a['codigo'] ?? '', $b['codigo'] ?? '');
+                    });
+                    $numero_zona = 1;
+                @endphp
+                
                 <!-- ZONA HEADER -->
                 <tr>
-                    <td colspan="13" class="section-header">
-                        {{ str_pad($zona['numero'], 2, '0', STR_PAD_LEFT) }}&nbsp;&nbsp;&nbsp;{{ strtoupper($zona['nombre']) }}
+                    <td colspan="14" class="section-header">
+                        {{ str_pad($zona['numero'] ?? 0, 2, '0', STR_PAD_LEFT) }} - {{ $sectoresList }}
                     </td>
                 </tr>
                 
-                @if(isset($zona['supervisor']))
+                @foreach($todosLosClubes as $club)
                     <tr>
-                        <td colspan="13" class="subsection-header">SUPERVISOR/A:</td>
-                    </tr>
-                @endif
-                
-                @foreach($zona['clubes'] as $club)
-                    <tr>
-                        <td class="row-number">{{ $club['numero'] ?? $numero_fila }}</td>
+                        <td class="row-number">{{ $numero_zona }}</td>
                         <td class="codigo-col">{{ $club['codigo'] ?? '' }}</td>
-                        <td class="tipo-col">{{ $club['tipo'] ?? 'CDM' }}</td>
+                        <td class="codigo-col">{{ $club['razon_social'] ?? '' }}</td>
                         <td class="club-name">{{ $club['nombre'] ?? '' }}</td>
                         <td class="direccion-col">{{ $club['direccion'] ?? '' }}</td>
                         <td class="sector-col">{{ $club['sector'] ?? '' }}</td>
@@ -286,20 +316,8 @@
                         <td class="fecha-col">{{ $club['fecha_termino'] ?? '' }}</td>
                         <td class="local-col">{{ $club['local'] ?? '' }}</td>
                     </tr>
-                    @php $numero_fila++; @endphp
+                    @php $numero_zona++; @endphp
                 @endforeach
-                
-                <!-- TOTALES POR ZONA -->
-                <tr class="total-row">
-                    <td colspan="3" style="text-align: right; padding-right: 5px;">Total OSB:</td>
-                    <td class="text-center">{{ $zona['total_osb'] ?? '' }}</td>
-                    <td style="text-align: right; padding-right: 5px;">Total CVL:</td>
-                    <td class="text-center">{{ $zona['total_cvl'] ?? '' }}</td>
-                    <td style="text-align: right; padding-right: 5px;">Total CDM:</td>
-                    <td class="text-center">{{ $zona['total_cdm'] ?? '' }}</td>
-                    <td colspan="2" style="text-align: right; padding-right: 5px;">Total Zona:</td>
-                    <td colspan="4" class="text-center" style="font-weight: bold;">{{ $zona['total_zona'] ?? '' }}</td>
-                </tr>
             @endforeach
             
             <!-- TOTALES GENERALES -->
@@ -317,6 +335,5 @@
             @endif
         </tbody>
     </table>
-
 </body>
 </html>

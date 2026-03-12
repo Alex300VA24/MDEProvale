@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePartnersTable extends Migration
+class CreateResolutionAssociationsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,14 +13,10 @@ class CreatePartnersTable extends Migration
      */
     public function up()
     {
-        Schema::create('partners', function (Blueprint $table) {
+        Schema::create('resolution_associations', function (Blueprint $table) {
             $table->id();
-            $table->date('date_begin')->nullable();
-            $table->date('date_end')->nullable();
-            $table->text('observations')->nullable();
-            $table->foreignId('person_id')->constrained();
+            $table->foreignId('resolution_id')->constrained();
             $table->foreignId('association_id')->constrained();
-            $table->foreignId('state_id')->constrained();
             $table->timestamps();
         });
     }
@@ -32,6 +28,6 @@ class CreatePartnersTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('partners');
+        Schema::dropIfExists('resolution_associations');
     }
 }

@@ -19,6 +19,7 @@ class Association extends Model
         'place_sector_id',
         'type_premises_id',
         'resolution_id',
+        'president',
     ];
 
     public function placeSector()
@@ -39,6 +40,12 @@ class Association extends Model
     public function resolution()
     {
         return $this->belongsTo(Resolution::class);
+    }
+
+    // Backward compatibility for existing code that still uses the plural name.
+    public function resolutions()
+    {
+        return $this->resolution();
     }
 
     public function partners()
@@ -72,4 +79,11 @@ class Association extends Model
     {
         return $this->state && $this->state->abbreviation === 'ACTI';
     }
+
+    // En Asociacion.php
+    public function resolutionsHistory()
+    {
+        return $this->belongsToMany(Resolution::class, 'resolution_associations');
+    }
+
 }

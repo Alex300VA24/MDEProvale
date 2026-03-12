@@ -16,14 +16,17 @@ class CreateResolutionsTable extends Migration
     {
         Schema::create('resolutions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('association_id')->constrained();
             $table->string('document', 100);
             $table->dateTime('date_document')->default(DB::raw('GETDATE()'));
-            $table->date('date_start');
-            $table->date('date_end');
+            $table->date('date_start')->nullable();
+            $table->date('date_end')->nullable();
             $table->foreignId('state_id')->constrained();
             $table->timestamps();
         });
+
+        // añadir la columna varbinary(max)
+        DB::statement('ALTER TABLE resolutions ADD [file] VARBINARY(MAX) NULL');
+
     }
 
     /**

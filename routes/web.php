@@ -23,9 +23,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::middleware('auth')->group(function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
+})->name('dashboard');
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================
 Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->group(function () {
@@ -73,13 +74,12 @@ Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->group(func
     Route::get('/', [ClubReconocimientosController::class, 'index'])->name('index');
 
     // Club de Madres
-    Route::get('club', [ClubReconocimientosController::class, 'indexClub'])->name('club.index');
-    Route::get('club/crear', [ClubReconocimientosController::class, 'createClub'])->name('club.create');
-    Route::post('club', [ClubReconocimientosController::class, 'storeClub'])->name('club.store');
-    Route::get('club/{association}', [ClubReconocimientosController::class, 'showClub'])->name('club.show');
-    Route::get('club/{association}/editar', [ClubReconocimientosController::class, 'editClub'])->name('club.edit');
-    Route::put('club/{association}', [ClubReconocimientosController::class, 'updateClub'])->name('club.update');
-    Route::delete('club/{association}', [ClubReconocimientosController::class, 'destroyClub'])->name('club.destroy');
+    Route::get('club/crear', [ClubReconocimientosController::class, 'createClub'])->name('create');
+    Route::post('club', [ClubReconocimientosController::class, 'storeClub'])->name('store');
+    Route::get('club/{association}', [ClubReconocimientosController::class, 'showClub'])->name('show');
+    Route::get('club/{association}/editar', [ClubReconocimientosController::class, 'editClub'])->name('edit');
+    Route::put('club/{association}', [ClubReconocimientosController::class, 'updateClub'])->name('update');
+    Route::delete('club/{association}', [ClubReconocimientosController::class, 'destroyClub'])->name('destroy');
     Route::get('club-reportes', [ClubReconocimientosController::class, 'reportesClub'])->name('club.reportes');
     Route::get('club-reporte/{tipo}', [ClubReconocimientosController::class, 'generarReporteClub'])->name('club.generar-reporte');
     Route::get('club-padron', [ClubReconocimientosController::class, 'generarPadronClub'])->name('club.padron');
@@ -155,5 +155,6 @@ Route::put('sistema/modulos/{modulo}', [SistemaController::class, 'updateModulo'
 Route::delete('sistema/modulos/{modulo}', [SistemaController::class, 'destroyModulo'])->name('sistema.modulos.destroy');
 
 Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('mantenimiento.index');
+});
 
 require __DIR__ . '/auth.php';

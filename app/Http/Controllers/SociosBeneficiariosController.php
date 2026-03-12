@@ -508,19 +508,22 @@ class SociosBeneficiariosController extends Controller
 
         $association = Association::with(['placeSector.place', 'placeSector.sector'])->findOrFail($associationId);
 
-        // Obtener la presidenta actual del comité
-        $presidenta = null;
-        $directivaPresidenta = Directive::whereHas('resolution', function ($q) use ($associationId) {
-            $q->where('association_id', $associationId);
-        })->whereHas('position', function ($q) {
-            $q->where('title', 'like', '%PRESIDENTA%');
-        })->whereHas('state', function ($q) {
-            $q->where('abbreviation', 'ACTI');
-        })->with('partner.people')->first();
+        // Obtener la presidenta actual del comité - usar campo directo o buscar en directivas
+        $presidenta = $association->president ?? null;
+        
+        if (empty($presidenta)) {
+            $directivaPresidenta = Directive::whereHas('resolution', function ($q) use ($associationId) {
+                $q->where('association_id', $associationId);
+            })->whereHas('position', function ($q) {
+                $q->where('title', 'like', '%PRESIDENTA%');
+            })->whereHas('state', function ($q) {
+                $q->where('abbreviation', 'ACTI');
+            })->with('partner.people')->first();
 
-        if ($directivaPresidenta && $directivaPresidenta->partner && $directivaPresidenta->partner->people) {
-            $p = $directivaPresidenta->partner->people;
-            $presidenta = strtoupper($p->names . ' ' . $p->father_lastname . ' ' . $p->mother_lastname);
+            if ($directivaPresidenta && $directivaPresidenta->partner && $directivaPresidenta->partner->people) {
+                $p = $directivaPresidenta->partner->people;
+                $presidenta = strtoupper($p->names . ' ' . $p->father_lastname . ' ' . $p->mother_lastname);
+            }
         }
 
         // Obtener socios del comité con sus beneficiarios

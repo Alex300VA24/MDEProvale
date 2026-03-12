@@ -21,7 +21,6 @@ class DatabaseSeeder extends Seeder
         $this->call(TypeBenefitSeeder::class);
         $this->call(UomSeeder::class);
         $this->call(TypeTransactionSeeder::class);
-        //$this->call(AssociationSeeder::class);
         $this->call(UserSeeder::class);
         //$this->call(PeopleSeeder::class);
         //$this->call(PartnerSeeder::class);
@@ -29,6 +28,8 @@ class DatabaseSeeder extends Seeder
         $this->call(ProductSeeder::class);
         //$this->call(TransactionSeeder::class);
         //$this->call(PecosaSeeder::class);
-        //$this->call(ResolutionSeeder::class);
+        $this->call(ResolutionSeeder::class);
+        $this->call(AssociationSeeder::class);
+        $this->call(ResolutionAssociationSeeder::class);
     }
 }

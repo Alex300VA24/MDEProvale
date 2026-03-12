@@ -473,7 +473,7 @@
                         </div>
                         <div class="logo-text">
                             <div class="text-white font-bold text-sm leading-none mb-1">{{ Auth::user()->username ?? 'Usuario' }}</div>
-                            <div class="text-white/50 text-[11px]">{{ Auth::user()->rol->title }}</div>
+                            <div class="text-white/50 text-[11px]">{{ Auth::user()->rol->title ?? '' }}</div>
                         </div>
                     </div>
                 </div>
@@ -509,7 +509,7 @@
                         </div>
                         <div class="hidden sm:block">
                             <div class="text-charcoal font-bold text-sm leading-none mb-1">{{ Auth::user()->username ?? 'Usuario' }}</div>
-                            <div class="text-earth text-[11px] font-semibold">{{ Auth::user()->rol->title }}</div>
+                            <div class="text-earth text-[11px] font-semibold">{{ Auth::user()->rol->title ?? '' }}</div>
                         </div>
                     </div>
 
@@ -576,6 +576,49 @@
     </div>
 
     <script>
+        const loginUrl = '{{ route("login") }}';
+        let sessionExpiredHandled = false;
+
+        function handleSessionExpired() {
+            if (sessionExpiredHandled) return;
+            sessionExpiredHandled = true;
+            alert('Tu sesión ha expirado. Serás redirigido al login.');
+            window.location.href = loginUrl;
+        }
+
+        @if(session('session_expired'))
+            document.addEventListener('DOMContentLoaded', handleSessionExpired);
+        @endif
+
+        if (typeof window.fetch === 'function') {
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = async function(...args) {
+                const response = await originalFetch(...args);
+                const isAuthError = response.status === 401 || response.status === 419;
+                const redirectedToLogin = response.redirected && response.url.includes('/login');
+
+                if (isAuthError || redirectedToLogin) {
+                    handleSessionExpired();
+                }
+
+                return response;
+            };
+        }
+
+        if (window.axios && window.axios.interceptors) {
+            window.axios.interceptors.response.use(
+                response => response,
+                error => {
+                    const status = error?.response?.status;
+                    if (status === 401 || status === 419) {
+                        handleSessionExpired();
+                    }
+
+                    return Promise.reject(error);
+                }
+            );
+        }
+
         const sidebar = document.getElementById('sidebar');
         const spacer = document.getElementById('sidebar-spacer');
         const overlay = document.getElementById('mobile-overlay');

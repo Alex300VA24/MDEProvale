@@ -8,7 +8,7 @@
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-file-pdf text-leaf"></i> Reportes de Club de Madres
         </h3>
-        <a href="{{ route('club-reconocimientos.club.index') }}" class="btn-secondary flex items-center gap-2">
+        <a href="{{ route('club-reconocimientos.index') }}" class="btn-secondary flex items-center gap-2">
             <i class="fas fa-arrow-left"></i> Volver
         </a>
     </div>

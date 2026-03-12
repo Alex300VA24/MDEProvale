@@ -14,6 +14,7 @@ class Resolution extends Model
         'date_document',
         'date_start',
         'date_end',
+        'file',
         'state_id',
     ];
 
@@ -31,4 +32,16 @@ class Resolution extends Model
     {
         return $this->hasMany(Association::class);
     }
+
+    public function scopeActivas($query)
+    {
+        return $query->where('date_end', '>=', now());
+    }
+
+    // En Resolucion.php
+    public function associationsHistory()
+    {
+        return $this->belongsToMany(Association::class, 'resolution_associations');
+    }
+
 }
