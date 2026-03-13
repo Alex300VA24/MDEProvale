@@ -25,6 +25,10 @@
                     <p class="text-charcoal font-semibold">{{ $association->code ?? 'Sin código' }}</p>
                 </div>
                 <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">R.S. (Razón Social)</label>
+                    <p class="text-charcoal font-semibold">{{ $association->company_name ?? 'Sin R.S.' }}</p>
+                </div>
+                <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
                     <span class="px-2 py-1 text-xs font-bold rounded-full 
                         @if($association->state && $association->state->abbreviation == 'ACTI') bg-green-100 text-green-800
@@ -86,35 +90,56 @@
         </div>
     </div>
 
-    @if($association->resolution)
     <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
         <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
             <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
-                <i class="fas fa-file-contract text-sun"></i> Resolución de Reconocimiento
+                <i class="fas fa-file-contract text-sun"></i> Resoluciones de Reconocimiento
             </h3>
+            <span class="px-3 py-1 bg-sun-light text-sun-dark font-bold rounded-full">{{ $association->allResolutions->count() ?? 0 }}</span>
         </div>
         <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Documento</label>
-                    <p class="text-charcoal font-semibold">{{ $association->resolution->document }}</p>
+            @if($association->allResolutions && $association->allResolutions->count() > 0)
+                @foreach($association->allResolutions as $index => $resolucion)
+                @php
+                    $isLatest = $index === 0;
+                @endphp
+                <div class="mb-4 p-4 rounded-xl {{ $isLatest ? 'bg-leaf-light border-2 border-leaf' : 'bg-gray-50 border border-gray-200' }}">
+                    <h4 class="font-bold text-sm mb-3 {{ $isLatest ? 'text-leaf' : 'text-earth' }}">
+                        <i class="fas fa-file-invoice mr-1"></i> 
+                        Resolución: {{ $resolucion->document }}
+                        @if($isLatest)
+                        <span class="ml-2 px-2 py-0.5 bg-leaf text-white text-xs rounded-full">MÁS RECIENTE</span>
+                        @endif
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-earth uppercase tracking-wider mb-1">Fecha de Emisión</label>
+                            <p class="text-charcoal font-semibold">{{ \Carbon\Carbon::parse($resolucion->date_document)->format('d/m/Y') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-earth uppercase tracking-wider mb-1">Vigencia Inicio</label>
+                            <p class="text-charcoal font-semibold">{{ \Carbon\Carbon::parse($resolucion->date_start)->format('d/m/Y') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-earth uppercase tracking-wider mb-1">Vigencia Fin</label>
+                            <p class="text-charcoal font-semibold">{{ \Carbon\Carbon::parse($resolucion->date_end)->format('d/m/Y') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-earth uppercase tracking-wider mb-1">Estado</label>
+                            <span class="px-2 py-1 text-xs font-bold rounded-full 
+                                @if(\Carbon\Carbon::parse($resolucion->date_end)->isFuture()) bg-green-100 text-green-800
+                                @else bg-red-100 text-red-800 @endif">
+                                {{ \Carbon\Carbon::parse($resolucion->date_end)->isFuture() ? 'VIGENTE' : 'VENCIDA' }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha de Emisión</label>
-                    <p class="text-charcoal font-semibold">{{ \Carbon\Carbon::parse($association->resolution->date_document)->format('d/m/Y') }}</p>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Vigencia Inicio</label>
-                    <p class="text-charcoal font-semibold">{{ \Carbon\Carbon::parse($association->resolution->date_start)->format('d/m/Y') }}</p>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Vigencia Fin</label>
-                    <p class="text-charcoal font-semibold">{{ \Carbon\Carbon::parse($association->resolution->date_end)->format('d/m/Y') }}</p>
-                </div>
-            </div>
+                @endforeach
+            @else
+                <p class="text-gray-400 text-center py-4">No hay resoluciones asociadas a este comité</p>
+            @endif
         </div>
     </div>
-    @endif
 
     <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
         <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">

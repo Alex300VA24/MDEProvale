@@ -13,6 +13,7 @@ class Association extends Model
         'code',
         'name',
         'address',
+        'company_name',
         'observation',
         'property_number',
         'state_id',

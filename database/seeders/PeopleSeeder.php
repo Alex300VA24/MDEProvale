@@ -8512,7 +8512,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_1);
+        foreach (array_chunk($chunk_1, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_2 = [
             [
@@ -17016,7 +17018,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_2);
+        foreach (array_chunk($chunk_2, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_3 = [
             [
@@ -25520,7 +25524,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_3);
+        foreach (array_chunk($chunk_3, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_4 = [
             [
@@ -34024,7 +34030,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_4);
+        foreach (array_chunk($chunk_4, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_5 = [
             [
@@ -42528,7 +42536,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_5);
+        foreach (array_chunk($chunk_5, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_6 = [
             [
@@ -51032,7 +51042,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_6);
+        foreach (array_chunk($chunk_6, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_7 = [
             [
@@ -59536,7 +59548,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_7);
+        foreach (array_chunk($chunk_7, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_8 = [
             [
@@ -68040,7 +68054,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_8);
+        foreach (array_chunk($chunk_8, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_9 = [
             [
@@ -76544,7 +76560,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_9);
+        foreach (array_chunk($chunk_9, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_10 = [
             [
@@ -85048,7 +85066,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_10);
+        foreach (array_chunk($chunk_10, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_11 = [
             [
@@ -93552,7 +93572,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_11);
+        foreach (array_chunk($chunk_11, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
         $chunk_12 = [
             [
@@ -96123,7 +96145,9 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
         ];
-        DB::table('people')->insert($chunk_12);
+        foreach (array_chunk($chunk_12, 100) as $chunk) {
+            DB::table('people')->insert($chunk);
+        }
 
     }
 }

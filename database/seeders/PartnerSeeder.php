@@ -5011,7 +5011,9 @@ class PartnerSeeder extends Seeder
             'created_at'      => now(),
             'updated_at'      => now(),
         ];
-        DB::table('partners')->insert($chunk_1);
+        foreach (array_chunk($chunk_1, 100) as $chunk) {
+            DB::table('partners')->insert($chunk);
+        }
 
         $chunk_2 = [];
         $chunk_2[] = [
@@ -10014,7 +10016,9 @@ class PartnerSeeder extends Seeder
             'created_at'      => now(),
             'updated_at'      => now(),
         ];
-        DB::table('partners')->insert($chunk_2);
+        foreach (array_chunk($chunk_2, 100) as $chunk) {
+            DB::table('partners')->insert($chunk);
+        }
 
         $chunk_3 = [];
         $chunk_3[] = [
@@ -15017,7 +15021,9 @@ class PartnerSeeder extends Seeder
             'created_at'      => now(),
             'updated_at'      => now(),
         ];
-        DB::table('partners')->insert($chunk_3);
+        foreach (array_chunk($chunk_3, 100) as $chunk) {
+            DB::table('partners')->insert($chunk);
+        }
 
         $chunk_4 = [];
         $chunk_4[] = [
@@ -20020,7 +20026,9 @@ class PartnerSeeder extends Seeder
             'created_at'      => now(),
             'updated_at'      => now(),
         ];
-        DB::table('partners')->insert($chunk_4);
+        foreach (array_chunk($chunk_4, 100) as $chunk) {
+            DB::table('partners')->insert($chunk);
+        }
 
         $chunk_5 = [];
         $chunk_5[] = [
@@ -25023,7 +25031,9 @@ class PartnerSeeder extends Seeder
             'created_at'      => now(),
             'updated_at'      => now(),
         ];
-        DB::table('partners')->insert($chunk_5);
+        foreach (array_chunk($chunk_5, 100) as $chunk) {
+            DB::table('partners')->insert($chunk);
+        }
 
         $chunk_6 = [];
         $chunk_6[] = [
@@ -25966,7 +25976,9 @@ class PartnerSeeder extends Seeder
             'created_at'      => now(),
             'updated_at'      => now(),
         ];
-        DB::table('partners')->insert($chunk_6);
+        foreach (array_chunk($chunk_6, 100) as $chunk) {
+            DB::table('partners')->insert($chunk);
+        }
 
     }
 }

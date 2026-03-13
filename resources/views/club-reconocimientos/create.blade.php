@@ -102,6 +102,10 @@
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Código Interno</label>
                     <input type="text" name="code" value="{{ old('code') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" placeholder="Ej: CM-001">
                 </div>
+                <div class="md:col-span-1">
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">R.S. (Razón Social)</label>
+                    <input type="text" name="company_name" value="{{ old('company_name') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" placeholder="Ej: OSB, CVL, CDM">
+                </div>
                 <div class="md:col-span-2">
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Dirección del Comité</label>
                     <input type="text" name="address" value="{{ old('address') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required placeholder="Ubicación física según resolución">

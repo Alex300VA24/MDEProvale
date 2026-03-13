@@ -19,7 +19,7 @@ class ClubReconocimientosController extends Controller
 
     public function index(Request $request)
     {
-        $query = Association::with(['state', 'resolution', 'partners.people']);
+        $query = Association::with(['state', 'resolution', 'resolutionsHistory', 'partners.people']);
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
@@ -28,6 +28,25 @@ class ClubReconocimientosController extends Controller
         }
 
         $associations = $query->orderBy('id', 'desc')->paginate(10);
+
+        foreach ($associations as $association) {
+            $resolutionsAll = [];
+            if ($association->resolution) {
+                $resolutionsAll[] = $association->resolution;
+            }
+            foreach ($association->resolutionsHistory as $res) {
+                if ($res->id !== $association->resolution_id) {
+                    $resolutionsAll[] = $res;
+                }
+            }
+            
+            usort($resolutionsAll, function ($a, $b) {
+                return strtotime($b->date_start) - strtotime($a->date_start);
+            });
+
+            $association->allResolutions = $resolutionsAll;
+            $association->latestResolution = isset($resolutionsAll[0]) ? $resolutionsAll[0] : null;
+        }
 
         return view('club-reconocimientos.index', compact('associations'));
     }
@@ -73,6 +92,7 @@ class ClubReconocimientosController extends Controller
             $association = Association::create([
                 'name' => $request->name,
                 'code' => $request->code,
+                'company_name' => $request->company_name,
                 'address' => $request->address,
                 'place_sector_id' => $request->place_sector_id,
                 'type_premises_id' => $request->type_premises_id,
@@ -91,7 +111,24 @@ class ClubReconocimientosController extends Controller
 
     public function showClub(Association $association)
     {
-        $association->load(['partners', 'resolution']);
+        $association->load(['partners', 'resolution', 'resolutionsHistory']);
+        
+        $resolutionsAll = [];
+        if ($association->resolution) {
+            $resolutionsAll[] = $association->resolution;
+        }
+        foreach ($association->resolutionsHistory as $res) {
+            if ($res->id !== $association->resolution_id) {
+                $resolutionsAll[] = $res;
+            }
+        }
+        
+        usort($resolutionsAll, function ($a, $b) {
+            return strtotime($b->date_start) - strtotime($a->date_start);
+        });
+
+        $association->allResolutions = $resolutionsAll;
+        
         return view('club-reconocimientos.show', compact('association'));
     }
 
@@ -106,6 +143,7 @@ class ClubReconocimientosController extends Controller
             'name' => 'required|string|max:255',
             'address' => 'nullable|string|max:500',
             'phone' => 'nullable|string|max:20',
+            'company_name' => 'nullable|string|max:10',
         ]);
 
         $association->update($validated);
@@ -360,153 +398,202 @@ class ClubReconocimientosController extends Controller
      * Generar Padrón de Club de Madres con Resoluciones de Reconocimiento
      */
     public function generarPadronClub(Request $request)
-    {
-        $associations = Association::with([
-            'placeSector.place',
-            'placeSector.sector',
-            'resolution',
-            'resolutionsHistory',
-            'partners.beneficiaries',
-            'state',
-            'typePremises',
-        ])->get();
+{
+    $associations = Association::with([
+        'placeSector.place',
+        'placeSector.sector',
+        'resolution',
+        'resolutionsHistory',
+        'partners.beneficiaries',
+        'state',
+        'typePremises',
+    ])->get();
 
-        $zonaGroups = [];
-        foreach ($associations as $association) {
-            $zonaNombre = $association->placeSector && $association->placeSector->place
-                ? $association->placeSector->place->title
-                : 'SIN ZONA';
-            $zonaNumero = $association->placeSector && $association->placeSector->place
-                ? $association->placeSector->place->id
-                : 0;
+    $zonaGroups = [];
+    foreach ($associations as $association) {
+        $zonaNombre = $association->placeSector && $association->placeSector->place
+            ? $association->placeSector->place->title
+            : 'SIN ZONA';
+        $zonaNumero = $association->placeSector && $association->placeSector->place
+            ? $association->placeSector->place->id
+            : 0;
 
-            $sector = $association->placeSector && $association->placeSector->sector
-                ? $association->placeSector->sector->title
-                : 'SIN SECTOR';
+        $sector = $association->placeSector && $association->placeSector->sector
+            ? $association->placeSector->sector->title
+            : 'SIN SECTOR';
 
-            if (!isset($zonaGroups[$zonaNumero])) {
-                $zonaGroups[$zonaNumero] = [
-                    'numero' => $zonaNumero,
-                    'nombre' => $zonaNombre,
-                    'sectores' => [],
-                    'lista_sectores' => [],
-                    'clubes' => [],
-                    'total_osb' => 0,
-                    'total_cvl' => 0,
-                    'total_cdm' => 0,
-                    'total_zona' => 0,
-                ];
+        if (!isset($zonaGroups[$zonaNumero])) {
+            $zonaGroups[$zonaNumero] = [
+                'numero' => $zonaNumero,
+                'nombre' => $zonaNombre,
+                'sectores' => [],
+                'lista_sectores' => [],
+                'clubes' => [],
+                'total_osb' => 0,
+                'total_cvl' => 0,
+                'total_cdm' => 0,
+                'total_zona' => 0,
+                'total_beneficiarios' => 0,
+                'totales_rs' => [],
+            ];
+        }
+
+        if (!in_array($sector, $zonaGroups[$zonaNumero]['lista_sectores'])) {
+            $zonaGroups[$zonaNumero]['lista_sectores'][] = $sector;
+        }
+
+        if (!isset($zonaGroups[$zonaNumero]['sectores'][$sector])) {
+            $zonaGroups[$zonaNumero]['sectores'][$sector] = [
+                'nombre' => $sector,
+                'clubes' => [],
+                'total_sector' => 0,
+            ];
+        }
+
+        $presidenta = $association->president ?? '';
+        
+        if (empty($presidenta)) {
+            $directiva = Directive::whereHas('resolution', function ($q) use ($association) {
+                $q->where('association_id', $association->id);
+            })->whereHas('position', function ($q) {
+                $q->where('title', 'like', '%PRESIDENTA%');
+            })->whereHas('state', function ($q) {
+                $q->where('abbreviation', 'ACTI');
+            })->with('partner.people')->first();
+
+            if ($directiva && $directiva->partner && $directiva->partner->people) {
+                $p = $directiva->partner->people;
+                $presidenta = strtoupper($p->names . ' ' . $p->father_lastname . ' ' . $p->mother_lastname);
             }
+        }
 
-            if (!in_array($sector, $zonaGroups[$zonaNumero]['lista_sectores'])) {
-                $zonaGroups[$zonaNumero]['lista_sectores'][] = $sector;
+        $totalBenef = 0;
+        foreach ($association->partners as $partner) {
+            $totalBenef += $partner->beneficiaries->count();
+        }
+
+        $resolutionsAll = [];
+        if ($association->resolution) {
+            $resolutionsAll[] = $association->resolution;
+        }
+        foreach ($association->resolutionsHistory as $res) {
+            if ($res->id !== $association->resolution_id) {
+                $resolutionsAll[] = $res;
             }
+        }
 
-            if (!isset($zonaGroups[$zonaNumero]['sectores'][$sector])) {
-                $zonaGroups[$zonaNumero]['sectores'][$sector] = [
-                    'nombre' => $sector,
-                    'clubes' => [],
-                    'total_sector' => 0,
-                ];
-            }
+        usort($resolutionsAll, function ($a, $b) {
+            return strtotime($a->date_start) - strtotime($b->date_start);
+        });
 
-            $presidenta = $association->president ?? '';
-            
-            if (empty($presidenta)) {
-                $directiva = Directive::whereHas('resolution', function ($q) use ($association) {
-                    $q->where('association_id', $association->id);
-                })->whereHas('position', function ($q) {
-                    $q->where('title', 'like', '%PRESIDENTA%');
-                })->whereHas('state', function ($q) {
-                    $q->where('abbreviation', 'ACTI');
-                })->with('partner.people')->first();
+        $totalResolutions = count($resolutionsAll);
+        $ultimasResoluciones = [];
+        
+        if ($totalResolutions == 1) {
+            $ultimasResoluciones = [$resolutionsAll[0]];
+        } elseif ($totalResolutions == 2) {
+            $ultimasResoluciones = [$resolutionsAll[0], $resolutionsAll[1]];
+        } else {
+            $ultimasResoluciones = array_slice($resolutionsAll, -3);
+        }
 
-                if ($directiva && $directiva->partner && $directiva->partner->people) {
-                    $p = $directiva->partner->people;
-                    $presidenta = strtoupper($p->names . ' ' . $p->father_lastname . ' ' . $p->mother_lastname);
+        $resolucion_1 = isset($ultimasResoluciones[0]) ? $ultimasResoluciones[0]->document : '';
+        $resolucion_2 = isset($ultimasResoluciones[1]) ? $ultimasResoluciones[1]->document : '';
+        $resolucion_3 = isset($ultimasResoluciones[2]) ? $ultimasResoluciones[2]->document : '';
+
+        $fecha_inicio = '';
+        $fecha_termino = '';
+        if (isset($ultimasResoluciones[count($ultimasResoluciones) - 1])) {
+            $lastRes = $ultimasResoluciones[count($ultimasResoluciones) - 1];
+            $fecha_inicio = date('d/m/Y', strtotime($lastRes->date_start));
+            $fecha_termino = date('d/m/Y', strtotime($lastRes->date_end));
+        }
+
+        $local = $association->typePremises ? $association->typePremises->title : '';
+
+        $club = [
+            'numero' => count($zonaGroups[$zonaNumero]['sectores'][$sector]['clubes']) + 1,
+            'codigo' => $association->code ?? '',
+            'razon_social' => $association->company_name ?? '',
+            'nombre' => strtoupper($association->name),
+            'direccion' => $association->address ?? '',
+            'sector' => $sector,
+            'beneficiarios' => $totalBenef,
+            'presidenta' => $presidenta,
+            'resolucion_1' => $resolucion_1,
+            'resolucion_2' => $resolucion_2,
+            'resolucion_3' => $resolucion_3,
+            'fecha_inicio' => $fecha_inicio,
+            'fecha_termino' => $fecha_termino,
+            'local' => $local,
+        ];
+
+        $zonaGroups[$zonaNumero]['sectores'][$sector]['clubes'][] = $club;
+        $zonaGroups[$zonaNumero]['sectores'][$sector]['total_sector']++;
+        $zonaGroups[$zonaNumero]['total_cdm']++;
+        $zonaGroups[$zonaNumero]['total_zona']++;
+        $zonaGroups[$zonaNumero]['total_beneficiarios'] = ($zonaGroups[$zonaNumero]['total_beneficiarios'] ?? 0) + $totalBenef;
+        
+        $rs = strtoupper(trim($association->company_name ?? ''));
+        if (!isset($zonaGroups[$zonaNumero]['totales_rs'][$rs])) {
+            $zonaGroups[$zonaNumero]['totales_rs'][$rs] = 0;
+        }
+        $zonaGroups[$zonaNumero]['totales_rs'][$rs]++;
+    }
+
+    // Totales generales por R.S.
+    $totalesRS = [
+        'OSB' => 0,
+        'CVL' => 0,
+        'CDM' => 0,
+    ];
+    
+    // Totales generales
+    $totalesGenerales = [
+        'total_osb' => 0,
+        'total_cvl' => 0,
+        'total_cdm' => 0,
+        'total_beneficiarios' => 0,
+        'total_acumulado' => count($associations),
+    ];
+    
+    foreach ($zonaGroups as $zona) {
+        $totalesGenerales['total_cdm'] += $zona['total_cdm'];
+        $totalesGenerales['total_beneficiarios'] += $zona['total_beneficiarios'] ?? 0;
+        
+        if (isset($zona['totales_rs'])) {
+            foreach ($zona['totales_rs'] as $rs => $count) {
+                $rsKey = strtoupper(trim($rs));
+                if ($rsKey === 'OSB') {
+                    $totalesGenerales['total_osb'] += $count;
+                    $totalesRS['OSB'] += $count;
+                } elseif ($rsKey === 'CVL') {
+                    $totalesGenerales['total_cvl'] += $count;
+                    $totalesRS['CVL'] += $count;
+                } elseif ($rsKey === 'CDM') {
+                    $totalesGenerales['total_cdm'] += $count;
+                    $totalesRS['CDM'] += $count;
                 }
             }
-
-            $totalBenef = 0;
-            foreach ($association->partners as $partner) {
-                $totalBenef += $partner->beneficiaries->count();
-            }
-
-            $resolutionsList = [];
-            if ($association->resolution) {
-                $resolutionsList[] = $association->resolution;
-            }
-            foreach ($association->resolutionsHistory as $res) {
-                $resolutionsList[] = $res;
-            }
-            usort($resolutionsList, function ($a, $b) {
-                return strtotime($b->date_start) - strtotime($a->date_start);
-            });
-            $ultimasResoluciones = array_slice($resolutionsList, 0, 3);
-
-            $resolucion_1 = isset($ultimasResoluciones[0]) ? $ultimasResoluciones[0]->document : '';
-            $resolucion_2 = isset($ultimasResoluciones[1]) ? $ultimasResoluciones[1]->document : '';
-            $resolucion_3 = isset($ultimasResoluciones[2]) ? $ultimasResoluciones[2]->document : '';
-
-            $fecha_inicio = '';
-            $fecha_termino = '';
-            if (isset($ultimasResoluciones[0])) {
-                $fecha_inicio = date('d/m/Y', strtotime($ultimasResoluciones[0]->date_start));
-                $fecha_termino = date('d/m/Y', strtotime($ultimasResoluciones[0]->date_end));
-            }
-
-            $local = $association->typePremises ? $association->typePremises->title : '';
-
-            $club = [
-                'numero' => count($zonaGroups[$zonaNumero]['sectores'][$sector]['clubes']) + 1,
-                'codigo' => $association->code ?? '',
-                'razon_social' => '',
-                'nombre' => strtoupper($association->name),
-                'direccion' => $association->address ?? '',
-                'sector' => $sector,
-                'beneficiarios' => $totalBenef,
-                'presidenta' => $presidenta,
-                'resolucion_1' => $resolucion_1,
-                'resolucion_2' => $resolucion_2,
-                'resolucion_3' => $resolucion_3,
-                'fecha_inicio' => $fecha_inicio,
-                'fecha_termino' => $fecha_termino,
-                'local' => $local,
-            ];
-
-            $zonaGroups[$zonaNumero]['sectores'][$sector]['clubes'][] = $club;
-            $zonaGroups[$zonaNumero]['sectores'][$sector]['total_sector']++;
-            $zonaGroups[$zonaNumero]['total_cdm']++;
-            $zonaGroups[$zonaNumero]['total_zona']++;
         }
-
-        // Totales generales
-        $totalesGenerales = [
-            'total_osb' => 0,
-            'total_cvl' => 0,
-            'total_cdm' => 0,
-            'total_acumulado' => count($associations),
-        ];
-        foreach ($zonaGroups as $zona) {
-            $totalesGenerales['total_cdm'] += $zona['total_cdm'];
-        }
-
-        ksort($zonaGroups);
-
-        $data = [
-            'zonas' => array_values($zonaGroups),
-            'totales_generales' => $totalesGenerales,
-            'fecha' => date('d/m/Y'),
-            'hora' => date('H:i:s'),
-        ];
-
-        $pdf = \PDF::loadView('padron_club', $data)->setPaper('a4', 'landscape');
-        
-        $dompdf = $pdf->getDomPDF();
-        $canvas = $dompdf->get_canvas();
-        $font = $dompdf->getFontMetrics()->getFont('Helvetica', 'normal');
-        $canvas->page_text(760, 18, "PÁGINA: {PAGE_NUM} / {PAGE_COUNT}", $font, 10, array(0, 0, 0));
-        
-        return $pdf->stream('padron-club-madres-' . date('Y-m-d') . '.pdf');
     }
+
+    ksort($zonaGroups);
+
+    $data = [
+        'zonas' => array_values($zonaGroups),
+        'totales_generales' => $totalesGenerales,
+        'totales_rs' => $totalesRS,
+        'fecha' => date('d/m/Y'),
+        'hora' => date('H:i:s'),
+    ];
+
+    $pdf = \PDF::loadView('padron_club', $data)->setPaper('a4', 'landscape');
+    
+    $dompdf = $pdf->getDomPDF();
+    $canvas = $dompdf->get_canvas();
+    
+    
+    return $pdf->stream('padron-club-madres-' . date('Y-m-d') . '.pdf');
+}
 }

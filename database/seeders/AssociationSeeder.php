@@ -45,7 +45,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '025',
                 'name'             => 'NUEVA ESPERANZA',
-                'company_name'     => 'COM', 
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz. Z Lt. 11 AA.HH.',
                 'observation'      => 'Centro Poblado: Las Palmeras.',
                 'president'        => 'LEYDI YOVANNE BARRAZA VALERIANO',
@@ -73,7 +73,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '060',
                 'name'             => 'SILOE',
-                'company_name'     => 'COM', 
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.25 Lt.3-A',
                 'observation'      => 'Centro Poblado: Wichanzao III',
                 'president'        => 'SARITA JHUDIT HUACCHA MEDINA',
@@ -101,7 +101,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '130',
                 'name'             => 'CLEMENTINA PERALTA DE ACUÑA',
-                'company_name'     => 'COM', 
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.16 Lt.5',
                 'observation'      => 'Centro Poblado: Los Olivos',
                 'president'        => 'RAMOS EDELMIRA MEDINA RODRIGUEZ',
@@ -115,6 +115,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '125',
                 'name'             => 'CORAZON DE JESÚS N° 08',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.7 Lt.32',
                 'observation'      => 'Centro Poblado: Los Diamantes',
                 'president'        => 'NOEMI GAMBOA PIRGO',
@@ -128,6 +129,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '145',
                 'name'             => 'LOS NIÑOS DE BELEN',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.12 Lt.17',
                 'observation'      => 'Centro Poblado: Los Olivos',
                 'president'        => 'DEICY MARIBEL CHAVEZ MARIN',
@@ -141,6 +143,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '200',
                 'name'             => 'MICAELA BASTIDAS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mac Gregor N° 416 Barrio 5',
                 'observation'      => 'Centro Poblado: Central.',
                 'president'        => 'ROSA BEATRIZ MARREROS DOMINGUEZ',
@@ -154,6 +157,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '275',
                 'name'             => 'BUEN SOCORRO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz M Lt. 25 II Sector',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalen',
                 'president'        => 'GENOBEBA GOMEZ CUSTODIO DE LOPEZ',
@@ -167,6 +171,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '110',
                 'name'             => 'CESAR ACUÑA PERALTA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.4 Lt.3 AA.HH.',
                 'observation'      => 'Centro Poblado: Primavera II.',
                 'president'        => 'ELVA DE LA CRUZ MANAYAY',
@@ -180,6 +185,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '095',
                 'name'             => 'CLEMENTINA ACUÑA DE PERALTA N° 2',
+                'company_name'     => 'OSB', 
                 'address'          => 'Mz.18 Lt.13',
                 'observation'      => 'Centro Poblado: Ramiro Priale.',
                 'president'        => 'MARIA LIDIA ROJAS TIRADO',
@@ -193,6 +199,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '270',
                 'name'             => 'CLEMENTINA PERALTA DE ACUÑA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz. K Lt. 36 II Sector',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén',
                 'president'        => 'OLGA FELICITA GUTIERREZ DE LA CRUZ',
@@ -206,6 +213,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '195',
                 'name'             => 'ESTRELLA DE LA ESPERANZA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Manuel Cedeño N° 474 BARRIO I',
                 'observation'      => 'Centro Poblado: Central',
                 'president'        => 'ROSA MARIA VENEGAS TORIBIO',
@@ -219,6 +227,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '255',
                 'name'             => 'UNIDAS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.29 Lt.02 Barrio 6',
                 'observation'      => 'Centro Poblado: Manuel Seoane',
                 'president'        => 'FIORELLA GIOVANA LLANOS RAMOS',
@@ -232,6 +241,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '220',
                 'name'             => 'RIOS DE AGUA VIVA',
+                'company_name'     => 'OSB', 
                 'address'          => 'José Castelli N° 1413 BARRIO 4',
                 'observation'      => 'Centro Poblado: Central.',
                 'president'        => 'CARMEN MAURA BENAVIDES VILLANUEVA',
@@ -245,6 +255,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '370',
                 'name'             => 'JEHOVA ES MI PASTOR',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.Ñ21 Lt.3',
                 'observation'      => 'Centro Poblado: Virgen del Socorro',
                 'president'        => 'MARIA FLORECELDA RIVEROS ESCOBAR',
@@ -258,6 +269,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '375',
                 'name'             => 'JESUS ME GUIA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.N18 Lt.19',
                 'observation'      => 'Centro Poblado: Virgen del Socorro.',
                 'president'        => 'LOURDES JUDITH VEGA CABRERA',
@@ -271,6 +283,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '070',
                 'name'             => 'SAN PEDRO',
+                'company_name'     => 'OSB', 
                 'address'          => 'Mz.10 Lt 26',
                 'observation'      => 'Centro Poblado: Primavera I',
                 'president'        => 'NERY ROCIO SEGURA VALENCIA',
@@ -284,6 +297,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '380',
                 'name'             => 'TANIA SOLEDAD BACA ROMERO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.M18 Lt.03',
                 'observation'      => 'Centro Poblado: Virgen del Socorro',
                 'president'        => 'ANA CECILIA CAMACHO HOYOS',
@@ -297,6 +311,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '050',
                 'name'             => 'MADRES TRABAJANDO POR EL GRAN CAMBIO',
+                'company_name'     => 'CVL', 
                 'address'          => 'Mz.I Lt.5 AA.HH.',
                 'observation'      => 'Centro Poblado: Clementina Peralta Acuña',
                 'president'        => 'STEFANY TERESA FLORES MENDEZ',
@@ -310,6 +325,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '240',
                 'name'             => 'VIRGEN DE LA PUERTA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Tadeo Monagas N° 1694',
                 'observation'      => 'Centro Poblado: San Martin',
                 'president'        => 'JENNYFER LUCIA LIZA QUEZADA',
@@ -323,6 +339,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '265',
                 'name'             => 'CLEMENTINA PERALTA DE ACUÑA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.I Lt.38 II Sector AA.HH.',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalen',
                 'president'        => 'MARIA MARIBEL CARBAJAL TORRES',
@@ -336,6 +353,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '040',
                 'name'             => 'LAS PALMERAS III',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.F1 Lt.13',
                 'observation'      => 'Centro Poblado: Las Palmeras',
                 'president'        => 'DELSI ELIZABETH PECHE CUSQUIPOMA',
@@ -349,6 +367,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '280',
                 'name'             => 'VIRGEN DE LA PUERTA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Girardot N° 1543 BARRIO 4',
                 'observation'      => 'Centro Poblado: Santa Veronica',
                 'president'        => 'NAYSHA ASHLEY VILLANUEVA MARTINEZ',
@@ -362,6 +381,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '300',
                 'name'             => 'ZOILA DE LA TORRE DE HAYA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Esmeralda N° 350',
                 'observation'      => 'Centro Poblado: Santa Veronica.',
                 'president'        => 'CYNTHIA LIZBETH LLAURE RODRIGUEZ',
@@ -375,6 +395,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '325',
                 'name'             => 'ZOILA DE LA TORRE DE HAYA',
+                'company_name'     => 'CDM', 
                 'address'          => 'San Pedro N° 199-A BARRIO 2',
                 'observation'      => 'Centro Poblado: Jerusalén.',
                 'president'        => 'CARMEN LUZ VICUÑA PINO',
@@ -388,6 +409,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '340',
                 'name'             => 'NTRA.SRA. PERPETUO SOCORRO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz. A-15 Lt.08  III Etapa',
                 'observation'      => 'Centro Poblado: Manuel Arévalo.',
                 'president'        => 'ISIDORA MARIÑAS GARCIA',
@@ -401,6 +423,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '360',
                 'name'             => 'MANUEL ARÉVALO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz. Q Lt.34',
                 'observation'      => 'Centro Poblado: Alan García.',
                 'president'        => 'DIANA ROSA MIGUEL CARUAJULCA',
@@ -414,6 +437,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '365',
                 'name'             => 'RAMIRO PRIALE PRIALE',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.E Lt.02',
                 'observation'      => 'Centro Poblado: Alan García.',
                 'president'        => 'MARIA ANGELICA GUEVARA PAUCAR',
@@ -427,6 +451,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '030',
                 'name'             => 'AMIGOS DE JESUS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.E Lt.3 AA.HH.',
                 'observation'      => 'Centro Poblado: Las Palmeras.',
                 'president'        => 'OLINDA ANTONIA UCEDA BURGOS',
@@ -440,6 +465,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '082',
                 'name'             => 'BODAS DEL CORDERO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz. A Lt. 12',
                 'observation'      => 'Centro Poblado: Ampliación Clementina Peralta de Acuña',
                 'president'        => 'EVA JAQUELINE SAAVEDRA MARTINEZ',
@@ -453,6 +479,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '036',
                 'name'             => 'CORAZÓN DE JESÚS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.A Lt.24',
                 'observation'      => 'Centro Poblado: Ampliación Las Palmeras V.',
                 'president'        => 'CARMEN PETRONILA LOPEZ PAREDES',
@@ -466,6 +493,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '313',
                 'name'             => 'DOMITILA CHUNGARA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Canal de Suez N° 1145',
                 'observation'      => 'Centro Poblado: Jerusalén.',
                 'president'        => 'RUBY NOELIA SANCHEZ GUARNIZ',
@@ -479,6 +507,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '273',
                 'name'             => 'EDITH SONRISAS DE NIÑOS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.D lT.03 IV Etapa',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén.',
                 'president'        => 'MARRIA LUZ ELENA LAYZA MARIN',
@@ -492,6 +521,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '378',
                 'name'             => 'EL ANGEL',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.P17 Lt.2D',
                 'observation'      => 'Centro Poblado: VIrgen del Socorro.',
                 'president'        => 'DAMIANA LOPEZ GUEVARA',
@@ -505,6 +535,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '120',
                 'name'             => 'GLORIA VALDERRAMA GARCIA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.5 Lt.21',
                 'observation'      => 'Centro Poblado: Los Diamantes.',
                 'president'        => 'NAYELI LISBETH CASTILLO MORI',
@@ -518,6 +549,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '250',
                 'name'             => 'HIJAS DE SION',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.A Lt.21 III Sector AA.HH.',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén. ',
                 'president'        => 'DAMARIS AXA PALMER VASQUEZ',
@@ -531,6 +563,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '093',
                 'name'             => 'HILO ROJO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.21 Lt.1',
                 'observation'      => 'Centro Poblado: Ramiro Priale.',
                 'president'        => 'FLOR ESPERANZA PRETEL MOSTACERO',
@@ -544,8 +577,9 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '105',
                 'name'             => 'INDOAMERICA',
+                'company_name'     => 'CDM', 
                 'address'          => 'San Salvador Mz.01 Lt.23-24',
-                'observation'      => 'Centro Poblado: Indoamerica. Beneficiarios: 41, Socias: 30.',
+                'observation'      => 'Centro Poblado: Indoamerica.',
                 'president'        => 'ERLINDA JHANETH SANDOVAL MINCHOLA',
                 'resolution_id'    => 54,
                 'state_id'         => 1,
@@ -557,6 +591,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '320',
                 'name'             => 'JERUSALEN MADRES UNIDAS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Los Cedros N° 678',
                 'observation'      => 'Centro Poblado: Jerusalén.',
                 'president'        => 'SARITA NOEMI DIAZ OBANDO',
@@ -570,6 +605,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '015',
                 'name'             => 'JESUS ES MI SALVACION',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.B Lt.6 Sector  AA.HH.',
                 'observation'      => 'Centro Poblado: Las Palmeras.',
                 'president'        => 'JENNY LISETH ANGULO CHAVEZ',
@@ -583,6 +619,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '140',
                 'name'             => 'JESUS MI SALVADOR',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.10 Lt.18',
                 'observation'      => 'Centro Poblado: El Mirador II.',
                 'president'        => 'YESENIA MARICIELO SALVADOR LORENZO',
@@ -596,6 +633,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '058',
                 'name'             => 'JUANA MALAVER DE GARRIDO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.51 Lt.1-A',
                 'observation'      => 'Centro Poblado: Wichanzao II.',
                 'president'        => 'EMILIA SHITO LOPEZ',
@@ -609,6 +647,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '235',
                 'name'             => 'LA CARIDAD',
+                'company_name'     => 'CDM', 
                 'address'          => 'José Artigas N° 1628',
                 'observation'      => 'Centro Poblado: San Martin.',
                 'president'        => 'HAYDEE EMILIA ESLAVA DE AGUIRRE',
@@ -618,10 +657,12 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // Falta chequear csu company
             ],
             [
                 'code'             => '068',
                 'name'             => 'LA FUERZA DEL PUEBLO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.4 Lt.14 IV Sector',
                 'observation'      => 'Centro Poblado: Wichanzao.',
                 'president'        => 'YENY MARIANELLA QUEZADA CASTILLO DE AMAYA',
@@ -635,6 +676,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '075',
                 'name'             => 'LAS DALIAS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.22 Lt.01 AA.HH.',
                 'observation'      => 'Centro Poblado: Primavera II.',
                 'president'        => 'MERLI ROCIO ZELADA PALACIOS',
@@ -648,6 +690,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '032',
                 'name'             => 'LOS ANGELES DE JESUS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.T Lt.10 AA.HH.',
                 'observation'      => 'Centro Poblado: Ampliación Las Palmeras II.',
                 'president'        => 'YOVANA LISBETH VASQUEZ LOYOLA',
@@ -661,6 +704,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '246',
                 'name'             => 'LOS GERANIOS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.20 Lt.8',
                 'observation'      => 'Centro Poblado: Manuel Seoane.',
                 'president'        => 'ANTONILA BALTAZAR GOMEZ',
@@ -674,6 +718,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '022',
                 'name'             => 'MADRE DE CRISTO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.Q Lt.3 AA.HH.',
                 'observation'      => 'Centro Poblado: Las Palmeras I.',
                 'president'        => 'ALEYDA GISSELA LINARES AQUITUARI',
@@ -683,10 +728,12 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // falta chequear company
             ],
             [
                 'code'             => '111',
                 'name'             => 'MADRE JOSEFINA POTEL',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.08 Lt.06',
                 'observation'      => 'Centro Poblado: Ampliacion nuevo Indoamérica.',
                 'president'        => 'CARLA DAMARIS VILLANUEVA CRUZADO',
@@ -700,6 +747,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '045',
                 'name'             => 'MADRES TRABAJANDO POR AMPLIACION',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.M Lt.04 AA.HH',
                 'observation'      => 'Centro Poblado: Clementina Peralta de Acuña.',
                 'president'        => 'MELISA YENI ZAVALA ASCATE',
@@ -713,6 +761,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '258',
                 'name'             => 'MANOS SOLIDARIAS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.C Lt.08 I Sector AA.HH.',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén.',
                 'president'        => 'LUZ ELENA HERAS TASILLA',
@@ -726,6 +775,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '274',
                 'name'             => 'MARTIN NAMAY',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.G Lt.12 IV Sector',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalen.',
                 'president'        => 'DANICA JULLISA MARTINEZ JARA',
@@ -739,6 +789,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '034',
                 'name'             => 'MUJERES LUCHADORAS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.F Lt.20 Sector I AA.HH.',
                 'observation'      => 'Centro Poblado: Las Palmeras.',
                 'president'        => 'ANALIA DEL CARMEN RIMAYCUNA AGURTO',
@@ -752,6 +803,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '302',
                 'name'             => 'MUJERES LUCHANDO POR UN FUTURO MEJOR',
+                'company_name'     => 'CDM', 
                 'address'          => 'Av. Chancay N° 400',
                 'observation'      => 'Centro Poblado: Santa Verónica.',
                 'president'        => 'ASHLLY OBET JAIME GARCIA',
@@ -765,6 +817,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '295',
                 'name'             => 'NIÑO MANUELITO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Av. Cahuide N° 230',
                 'observation'      => 'Centro Poblado: Santa Verónica.',
                 'president'        => 'ASTRI KAROLINA CASTILLO PAIMA',
@@ -778,6 +831,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '256',
                 'name'             => 'NIÑOS DEL TRIUNFO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.A Lt.25 III Etapa',
                 'observation'      => 'Centro Poblado: Los Laureles',
                 'president'        => 'INDIRA JHOSALIN FERNANDEZ ARTEAGA',
@@ -787,10 +841,12 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // faltan los campos company_name
             ],
             [
                 'code'             => '170',
                 'name'             => 'NUESTRA SEÑORA AUXILIO DE LOS CRISTIANOS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.29 Lt.5',
                 'observation'      => 'Centro Poblado: Fraternidad.',
                 'president'        => 'RUBI ESMELDA ARTEAGA LEON',
@@ -804,6 +860,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '078',
                 'name'             => 'NUEVO EDEN',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.01 Lt.03 Los Cipreces AA.HH.',
                 'observation'      => 'Centro Poblado: Primavera II.',
                 'president'        => 'KATHERINE KARINA GUTIERREZ CHAVEZ',
@@ -817,6 +874,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '253',
                 'name'             => 'NUEVO PARAISO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.A10 Lt.10',
                 'observation'      => 'Centro Poblado: Virgen de la Puerta.',
                 'president'        => 'FIORELA VIRGINIA CARRANZA MALQUI',
@@ -830,6 +888,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '278',
                 'name'             => 'NVO. JERUSALEN LA ALEGRIA DE LOS NIÑOS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.Q Lt.22 IV Sector AA.HH.',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén.',
                 'president'        => 'MONICA GLADIS FLORIAN CRUZ',
@@ -843,6 +902,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '271',
                 'name'             => 'ROSITA DE AMOR',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.H Lt.36 III Etapa',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén.',
                 'president'        => 'ALEXANDRA ANALI ORTIZ TUMBAJULCA',
@@ -856,6 +916,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '350',
                 'name'             => 'SAN JOSE',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.F Lt.40',
                 'observation'      => 'Centro Poblado: Villa Hermosa.',
                 'president'        => 'ROSA GOMEZ ESPINOZA',
@@ -869,6 +930,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '005',
                 'name'             => 'SANTA RITA DE CASIA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.7 LT.12',
                 'observation'      => 'Centro Poblado: Nuevo Horizonte.',
                 'president'        => 'GIOVANNA ELIZABETH PAREDES ESQUIVEL',
@@ -882,6 +944,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '230',
                 'name'             => 'SANTISIMO SACRAMENTO',
+                'company_name'     => 'CDM', 
                 'address'          => 'Blanco Encalada N° 945',
                 'observation'      => 'Centro Poblado: Central. ',
                 'president'        => 'YOBANA ISABEL ROBLES SALAS',
@@ -895,6 +958,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '268',
                 'name'             => 'SEMBRANDO ESPERANZA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.B Lt.15 Sector 3 "B" AA.HH.',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén.',
                 'president'        => 'FLOR ESTELA SEGURA CRUZADO',
@@ -904,10 +968,12 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // chequear el company
             ],
             [
                 'code'             => '019',
                 'name'             => 'SOL Y ARENA DE LAS PALMERITAS',
+                'company_name'     => 'CDM', 
                 'address'          => 'Ampliación I Mz.B Lt.30 calle Los Laureles',
                 'observation'      => 'Centro Poblado: Las Palmeras.',
                 'president'        => 'DINA BISABE RABANAL VILLALOBOS',
@@ -921,6 +987,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '388',
                 'name'             => 'SUPERMAMAS N° 1',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.L13 Lt.2',
                 'observation'      => 'Centro Poblado: Virgen del Socorro.',
                 'president'        => 'LIGNE JESUS BLAS URQUIZA',
@@ -930,10 +997,12 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // chequear el company
             ],
             [
                 'code'             => '385',
                 'name'             => 'TANIA SOLEDAD BACA ROMERO II',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.P13 Lt.12B',
                 'observation'      => 'Centro Poblado: Virgen del Socorro.',
                 'president'        => 'PATRICIA MARISOL CARRANZA LINARES',
@@ -947,6 +1016,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '118',
                 'name'             => 'UNIDAS EN UN SOLO CORAZÓN',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.8 Lt.13 Los Rosales',
                 'observation'      => 'Centro Poblado: Los Rosales.',
                 'president'        => 'YARITZA ARACELY REYES RAMOS',
@@ -960,6 +1030,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '028',
                 'name'             => 'UNIDAS POR LA FAMILIA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.C Lt.08',
                 'observation'      => 'Centro Poblado: Ampliac. Las Palmeras.',
                 'president'        => 'ANGELICA ADRIANA LAYZA LAVADO',
@@ -973,6 +1044,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '305',
                 'name'             => 'VICTOR RAUL',
+                'company_name'     => 'OSB', 
                 'address'          => 'Marco del Pont N° 2065',
                 'observation'      => 'Centro Poblado: Santa Veronica.',
                 'president'        => 'ANDREA ROSARIO ISIQUE VERA',
@@ -986,6 +1058,7 @@ class AssociationSeeder extends Seeder
             [
                 'code'             => '090',
                 'name'             => 'VIRGEN DE GUADALUPE',
+                'company_name'     => 'OSB', 
                 'address'          => 'MZ.2 LT.12',
                 'observation'      => 'Centro Poblado: Ramiro Priale.',
                 'president'        => 'MARIA TEOFILA SALAZAR SANDOVAL',
@@ -995,10 +1068,12 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // chequear el company
             ],
             [
                 'code'             => '059',
                 'name'             => 'VIRGEN DE LA PUERTA',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.25 Lt.5A III Sector',
                 'observation'      => 'Centro Poblado: Nuevo Jerusalén.',
                 'president'        => 'LISETT DEL RUBY RUBIO DIESTRA',
@@ -1008,10 +1083,12 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // chequear el company
             ],
             [
                 'code'             => '037',
                 'name'             => 'WILMER SANCHEZ',
+                'company_name'     => 'CDM', 
                 'address'          => 'Mz.5 Lt.4',
                 'observation'      => 'Centro Poblado: María Elena Moyano',
                 'president'        => 'ANGELICA ALICIA SANCHEZ PAREDES',
@@ -1021,6 +1098,7 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 2,
                 'created_at'       => now(),
                 'updated_at'       => now(),
+                // chequear el company
             ],
         ];
 

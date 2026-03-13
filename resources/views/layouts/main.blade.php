@@ -17,25 +17,25 @@
                         'jakarta': ['"Plus Jakarta Sans"', 'sans-serif']
                     },
                     colors: {
-                        cream: '#FDF8F3',
-                        wheat: '#F5E6D3',
-                        earth: '#8B7355',
-                        charcoal: '#2C2420',
-                        leaf: {
-                            DEFAULT: '#4A7C59',
-                            light: '#E8F5E9',
-                            dark: '#3d6647'
+                        cream: '#F8FAFC',
+                        wheat: '#E2E8F0',
+                        earth: '#64748B',
+                        charcoal: '#1E293B',
+                        primary: {
+                            DEFAULT: '#0F766E',
+                            light: '#14B8A6',
+                            dark: '#0D5D56'
                         },
                         sun: {
-                            DEFAULT: '#F4A261',
-                            light: '#FEF3E2'
+                            DEFAULT: '#F59E0B',
+                            light: '#FEF3C7'
                         },
                         clay: {
-                            DEFAULT: '#E76F51',
-                            light: '#FCE8E4'
+                            DEFAULT: '#DC2626',
+                            light: '#FEE2E2'
                         },
                         sky: {
-                            DEFAULT: '#87CEEB',
+                            DEFAULT: '#0EA5E9',
                             light: '#E0F2FE'
                         },
                     }
@@ -52,8 +52,8 @@
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #FDF8F3;
-            color: #2C2420;
+            background: #F1F5F9;
+            color: #1E293B;
         }
 
         ::-webkit-scrollbar {
@@ -61,11 +61,11 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #F5E6D3;
+            background: #E2E8F0;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #8B7355;
+            background: #64748B;
             border-radius: 3px;
         }
 
@@ -75,7 +75,7 @@
             top: 0;
             height: 100vh;
             width: 80px;
-            background: linear-gradient(180deg, #8B7355 0%, #2C2420 100%);
+            background: linear-gradient(180deg, #0F766E 0%, #0D5D56 100%);
             transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 50;
             overflow: hidden;
@@ -113,8 +113,8 @@
             top: 0;
             z-index: 40;
             background: #fff;
-            border-bottom: 2px solid #F5E6D3;
-            box-shadow: 0 2px 12px rgba(139, 115, 85, 0.08);
+            border-bottom: 2px solid #E2E8F0;
+            box-shadow: 0 2px 12px rgba(15, 118, 110, 0.08);
         }
 
         .logo-text,
@@ -356,24 +356,24 @@
         }
 
         .btn-primary {
-            background: linear-gradient(to right, #4A7C59, #3d6647);
+            background: linear-gradient(to right, #0F766E, #0D5D56);
             color: white;
             font-weight: 700;
             padding: 0.625rem 1rem;
             border-radius: 0.75rem;
             font-size: 0.875rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);
             transition: all 0.2s;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 10px -1px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 6px 10px -1px rgba(15, 118, 110, 0.4);
         }
 
         .btn-secondary {
-            background: #F5E6D3;
-            color: #8B7355;
+            background: #E2E8F0;
+            color: #64748B;
             font-weight: 700;
             padding: 0.625rem 1rem;
             border-radius: 0.75rem;
@@ -382,13 +382,13 @@
         }
 
         .btn-secondary:hover {
-            background: #8B7355;
+            background: #64748B;
             color: white;
         }
 
         .btn-danger {
-            background: #FCE8E4;
-            color: #E76F51;
+            background: #FEE2E2;
+            color: #DC2626;
             font-weight: 700;
             padding: 0.625rem 1rem;
             border-radius: 0.75rem;
@@ -397,7 +397,7 @@
         }
 
         .btn-danger:hover {
-            background: #E76F51;
+            background: #DC2626;
             color: white;
         }
 
@@ -419,12 +419,12 @@
     <div id="app-shell">
         <aside id="sidebar">
             <div class="flex items-center gap-4 px-5 py-6 border-b border-white/10 min-h-[88px]">
-                <div class="w-12 h-12 bg-sun rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+                <div class="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
                     <img src="{{ asset('img/muni2.png') }}" alt="PROVALE" class="w-9 h-9 object-contain">
                 </div>
                 <div class="logo-text">
                     <div class="text-white font-extrabold text-xl tracking-tight">MDE</div>
-                    <div class="text-sun text-[11px] font-semibold uppercase tracking-widest">Vaso de Leche</div>
+                    <div class="text-primary-light text-[11px] font-semibold uppercase tracking-widest">Vaso de Leche</div>
                 </div>
             </div>
 
@@ -491,8 +491,8 @@
 
             <header id="top-header" class="flex items-center justify-between px-8 h-[72px]">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-leaf to-leaf-dark flex items-center justify-center text-white text-base">
-                        <i class="fas fa-shield-alt"></i>
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-base overflow-hidden">
+                        <img src="{{ asset('img/vasoLecheSin.png') }}" alt="PROVALE" class="w-6 h-6 object-contain">
                     </div>
                     <h2 class="text-charcoal font-bold text-[15px] uppercase tracking-wider">Sistema de Gestión PROVALE</h2>
                 </div>
@@ -500,7 +500,7 @@
                 <div class="flex items-center gap-3">
                     <button class="relative w-10 h-10 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
                         <i class="fas fa-bell text-base"></i>
-                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-clay text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">3</span>
+                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">3</span>
                     </button>
 
                     <div class="flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-wheat bg-cream hover:bg-wheat transition-all cursor-pointer">
@@ -515,7 +515,7 @@
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-clay-light text-clay font-bold text-sm border-2 border-transparent hover:bg-clay hover:text-white transition-all">
+                        <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500-light text-red-500 font-bold text-sm border-2 border-transparent hover:bg-red-500 hover:text-white transition-all">
                             <i class="fas fa-power-off"></i>
                             <span class="hidden sm:inline">Salir</span>
                         </button>
@@ -525,44 +525,44 @@
 
             <main class="flex-1 p-8">
                 @if(session('success'))
-                <div class="mb-6 px-6 py-4 bg-leaf-light border-2 border-leaf rounded-2xl flex items-center gap-3 animate-fade-in">
-                    <div class="w-10 h-10 bg-leaf rounded-xl flex items-center justify-center text-white">
+                <div class="mb-6 px-6 py-4 bg-primary-light border-2 border-primary rounded-2xl flex items-center gap-3 animate-fade-in">
+                    <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
                         <i class="fas fa-check"></i>
                     </div>
                     <div class="flex-1">
-                        <div class="font-bold text-leaf text-sm">¡Éxito!</div>
-                        <div class="text-leaf-dark text-sm">{{ session('success') }}</div>
+                        <div class="font-bold text-primary text-sm">¡Éxito!</div>
+                        <div class="text-primary-dark text-sm">{{ session('success') }}</div>
                     </div>
-                    <button onclick="this.parentElement.remove()" class="text-leaf hover:text-leaf-dark transition-colors">
+                    <button onclick="this.parentElement.remove()" class="text-primary hover:text-primary-dark transition-colors">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 @endif
 
                 @if(session('error'))
-                <div class="mb-6 px-6 py-4 bg-clay-light border-2 border-clay rounded-2xl flex items-center gap-3 animate-fade-in">
-                    <div class="w-10 h-10 bg-clay rounded-xl flex items-center justify-center text-white">
+                <div class="mb-6 px-6 py-4 bg-red-500-light border-2 border-red-500 rounded-2xl flex items-center gap-3 animate-fade-in">
+                    <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white">
                         <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     <div class="flex-1">
-                        <div class="font-bold text-clay text-sm">¡Error!</div>
-                        <div class="text-clay text-sm">{{ session('error') }}</div>
+                        <div class="font-bold text-red-500 text-sm">¡Error!</div>
+                        <div class="text-red-500 text-sm">{{ session('error') }}</div>
                     </div>
-                    <button onclick="this.parentElement.remove()" class="text-clay hover:text-clay-dark transition-colors">
+                    <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-500-dark transition-colors">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 @endif
 
                 @if($errors->any())
-                <div class="mb-6 px-6 py-4 bg-clay-light border-2 border-clay rounded-2xl animate-fade-in">
+                <div class="mb-6 px-6 py-4 bg-red-500-light border-2 border-red-500 rounded-2xl animate-fade-in">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-clay rounded-xl flex items-center justify-center text-white">
+                        <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white">
                             <i class="fas fa-exclamation-circle"></i>
                         </div>
-                        <div class="font-bold text-clay text-sm">Por favor corrige los siguientes errores:</div>
+                        <div class="font-bold text-red-500 text-sm">Por favor corrige los siguientes errores:</div>
                     </div>
-                    <ul class="list-disc list-inside text-clay text-sm space-y-1 ml-13">
+                    <ul class="list-disc list-inside text-red-500 text-sm space-y-1 ml-13">
                         @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                         @endforeach

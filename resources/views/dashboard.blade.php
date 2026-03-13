@@ -48,8 +48,12 @@
     }
 @endphp
 
-<div class="relative rounded-3xl overflow-hidden mb-8 bg-gradient-to-br from-leaf to-leaf-dark shadow-xl">
-    <div class="absolute inset-0 opacity-10" style="background: radial-gradient(circle at 80% 50%, #F4A261 0%, transparent 60%);"></div>
+    <div class="relative rounded-3xl overflow-hidden mb-8 shadow-xl">
+    <div class="absolute inset-0">
+        <img src="{{ asset('img/banner2.png') }}" alt="Banner" class="w-full h-full object-cover opacity-80">
+    </div>
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary-dark/60"></div>
+    <div class="absolute inset-0 opacity-20" style="background: radial-gradient(circle at 80% 50%, #F4A261 0%, transparent 60%);"></div>
     <div class="absolute -right-8 -top-8 w-64 h-64 bg-white/5 rounded-full"></div>
     <div class="absolute -right-4 bottom-0 w-40 h-40 bg-white/5 rounded-full"></div>
     <div class="relative z-10 flex items-center justify-between p-10 gap-8">
@@ -61,7 +65,7 @@
             <h1 class="text-white font-extrabold text-4xl leading-tight mb-3">Panel de Control<br><span class="text-sun">PROVALE</span></h1>
             <p class="text-white/75 text-base font-medium max-w-md">Gestiona beneficiarios, club de madres y entregas de manera eficiente. Todo en un solo lugar.</p>
             <div class="flex gap-3 mt-6">
-                <a href="{{ route('socios-beneficiarios.index') }}" class="px-5 py-2.5 bg-sun text-white font-bold rounded-xl text-sm hover:bg-sun/90 transition-all shadow-lg">
+                <a href="{{ route('socios-beneficiarios.index') }}" class="px-5 py-2.5 bg-white text-primary font-bold rounded-xl text-sm hover:bg-teal-50 transition-all shadow-lg">
                     <i class="fas fa-plus mr-2"></i>Ir a Módulos
                 </a>
                 <a href="{{ route('socios-beneficiarios.index') }}" class="px-5 py-2.5 bg-white/15 text-white font-bold rounded-xl text-sm hover:bg-white/25 transition-all backdrop-blur-sm border border-white/20">
@@ -69,9 +73,6 @@
                 </a>
 
             </div>
-        </div>
-        <div class="float-anim hidden md:flex w-40 h-40 bg-white/15 backdrop-blur-md rounded-full items-center justify-center text-6xl border-2 border-white/20 shadow-2xl flex-shrink-0">
-            <img src="{{ asset('img/vasoLecheSin.png') }}" alt="PROVALE" class="w-25 h-25 object-contain">
         </div>
     </div>
 </div>

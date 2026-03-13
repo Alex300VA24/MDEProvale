@@ -47,7 +47,7 @@
                     <tr>
                         <th class="px-4 py-3 text-left font-bold text-earth">Código</th>
                         <th class="px-4 py-3 text-left font-bold text-earth">Nombre del Comité</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Resolución</th>
+                        <th class="px-4 py-3 text-left font-bold text-earth">Última Resolución</th>
                         <th class="px-4 py-3 text-left font-bold text-earth">Vigencia</th>
                         <th class="px-4 py-3 text-center font-bold text-earth">Estado</th>
                         <th class="px-4 py-3 text-center font-bold text-earth">Acciones</th>
@@ -56,7 +56,7 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse($associations as $association)
                     @php
-                    $latestResolution = $association->resolution;
+                    $latestResolution = $association->latestResolution;
                     @endphp
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 font-mono text-xs">{{ $association->code ?? 'S/C' }}</td>
@@ -66,11 +66,11 @@
                         </td>
                         <td class="px-4 py-3">
                             @if($latestResolution)
-                            <span class="px-2 py-1 bg-sun-light text-sun-dark rounded text-[11px] font-bold">
-                                <i class="fas fa-file-invoice mr-1"></i> {{ $latestResolution->document }}
+                            <span class="px-2 py-1 bg-leaf-light text-leaf rounded text-[11px] font-bold border-2 border-leaf">
+                                <i class="fas fa-star mr-1"></i> {{ $latestResolution->document }}
                             </span>
                             @else
-                            <span class="text-gray-400">Sin resolución</span>
+                            <span class="text-gray-400">-</span>
                             @endif
                         </td>
                         <td class="px-4 py-3 text-xs">

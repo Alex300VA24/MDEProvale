@@ -22,14 +22,14 @@ class DatabaseSeeder extends Seeder
         $this->call(UomSeeder::class);
         $this->call(TypeTransactionSeeder::class);
         $this->call(UserSeeder::class);
-        //$this->call(PeopleSeeder::class);
-        //$this->call(PartnerSeeder::class);
-        //$this->call(BeneficiarieSeeder::class);
-        $this->call(ProductSeeder::class);
-        //$this->call(TransactionSeeder::class);
-        //$this->call(PecosaSeeder::class);
+        $this->call(PeopleSeeder::class);
         $this->call(ResolutionSeeder::class);
         $this->call(AssociationSeeder::class);
         $this->call(ResolutionAssociationSeeder::class);
+        $this->call(PartnerSeeder::class);
+        //$this->call(BeneficiarieSeeder::class);
+        //$this->call(ProductSeeder::class);
+        //$this->call(TransactionSeeder::class);
+        //$this->call(PecosaSeeder::class);
     }
 }

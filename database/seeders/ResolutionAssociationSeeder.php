@@ -197,598 +197,434 @@ class ResolutionAssociationSeeder extends Seeder
         // Jesus me guia: 19
         DB::table('resolution_associations')->insert([
             'resolution_id' => 190,
-            'association_id' => 15,
+            'association_id' => 19,
         ]);
         DB::table('resolution_associations')->insert([
             'resolution_id' => 14,
-            'association_id' => 15,
+            'association_id' => 19,
         ]);
 
         // San Pedro: 20
         DB::table('resolution_associations')->insert([
             'resolution_id' => 186,
-            'association_id' => 15,
+            'association_id' => 20,
         ]);
         DB::table('resolution_associations')->insert([
             'resolution_id' => 30,
-            'association_id' => 15,
+            'association_id' => 20,
         ]);
-/*
+
         // Tania Soledad Baca Romero: 21
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 184,
+            'association_id' => 21,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 11,
+            'association_id' => 21,
         ]);
 
         // Madres Trabajando por el gran cambio: 22
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 131,
+            'association_id' => 22,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 118,
+            'association_id' => 22,
         ]);
 
         // Virgen de la puerta: 23
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 61,
+            'association_id' => 23,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 31,
+            'association_id' => 23,
         ]);
 
         // Clementina Peralta de Acuña: 24
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 52,
+            'association_id' => 24,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 45,
+            'association_id' => 24,
         ]);
 
         // Las Palmeras III: 25
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 105,
+            'association_id' => 25,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 101,
+            'association_id' => 25,
         ]);
 
         // Virgen de la Puerta: 26
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 155,
+            'association_id' => 26,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 134,
+            'association_id' => 26,
         ]);
 
         // Zoila de la torre de haya (santa veronica): 27
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 173,
+            'association_id' => 27,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Zoila de la torre de haya (jerusalen): 29
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 143,
+            'association_id' => 27,
         ]);
 
-        // Nuestra Sra. del Perpetuo Socorro: 30
+        // Zoila de la torre de haya (jerusalen): 28
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 191,
+            'association_id' => 28,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Manuel Arevalo: 31
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 8,
+            'association_id' => 28,
         ]);
 
-        // Ramiro Priale: 32
+        // Nuestra Sra. del Perpetuo Socorro: 29
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 139,
+            'association_id' => 29,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 136,
+            'association_id' => 29,
+        ]);
+
+        // Manuel Arevalo: 30
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 153,
+            'association_id' => 30,
+        ]);
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 128,
+            'association_id' => 30,
+        ]);
+
+        // Ramiro Priale: 31
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 97,
+            'association_id' => 31,
+        ]);
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 93,
+            'association_id' => 31,
         ]);
         
-        // Amigos de Jesus: 33
+        // Amigos de Jesus: 32
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 146,
+            'association_id' => 32,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Bodas del Cordero: 34
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 140,
+            'association_id' => 32,
         ]);
 
-        // Corazon de jesus: 35
+        // Bodas del Cordero: 33
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 13,
+            'association_id' => 33,
         ]);
 
-        // Domitila chungara: 36
+        // Corazon de jesus: 34
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 74,
+            'association_id' => 34,
         ]);
 
-
-        // Edith sonrisas de niños: 37
+        // Domitila chungara: 35
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 81,
+            'association_id' => 35,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // En angel: 38
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 63,
+            'association_id' => 35,
         ]);
 
-        // Gloria Valderrama Garcia: 39
+        // Edith sonrisas de niños: 36
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 47,
+            'association_id' => 36,
         ]);
 
-        // Hijas de Sion: 40
+        // Gloria Valderrama Garcia: 38
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 159,
+            'association_id' => 38,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 108,
+            'association_id' => 38,
         ]);
 
-        // Hilo Rojo: 41
+        // Hijas de Sion: 39
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 138,
+            'association_id' => 39,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 124,
+            'association_id' => 39,
+        ]);
+
+        // Hilo Rojo: 40
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 55,
+            'association_id' => 40,
+        ]);
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 48,
+            'association_id' => 40,
         ]);
 
 
-        // Indoamericana: 42
+        // Indoamericana: 41
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 77,
+            'association_id' => 41,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Jerusalen madres unidas: 43
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 70,
+            'association_id' => 41,
         ]);
 
-
-        // Jesus es mi salvacion: 44
+        // Jerusalen madres unidas: 42
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 137,
+            'association_id' => 42,
         ]);
 
-        // Jesus mi salvador: 45
+        // Jesus mi salvador: 44
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 69,
+            'association_id' => 44,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Juana malaver de garrido: 46
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 65,
+            'association_id' => 44,
         ]);
 
-        // La caridad: 47
+        // Juana malaver de garrido: 45
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 68,
+            'association_id' => 45,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // La fuerza del pueblo: 48
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 23,
+            'association_id' => 45,
         ]);
 
-        // Las Dalias: 49
+        // La fuerza del pueblo: 47
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 119,
+            'association_id' => 47,
         ]);
 
-        // Los angeles de jesus: 50
+        // Las Dalias: 48
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 5,
+            'association_id' => 48,
         ]);
 
-
-        // Los geranios: 51
+        // Los angeles de jesus: 49
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 148,
+            'association_id' => 49,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Madre de cristo: 52
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 142,
+            'association_id' => 49,
         ]);
 
-
-        // Madre josefina potel: 53
+        // Los geranios: 50
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 80,
+            'association_id' => 50,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Madres trabajando por ampliacion: 54
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 76,
+            'association_id' => 50,
         ]);
 
-        // Manos Solidarias: 55
+        // Madre josefina potel: 52
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 117,
+            'association_id' => 52,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Martin Namay: 56
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 115,
+            'association_id' => 52,
         ]);
 
-        // Mujeres Luchadoras: 57
+        // Madres trabajando por ampliacion: 53
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 42,
+            'association_id' => 53,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Mujeres luchando por un futuro mejor: 58
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 27,
+            'association_id' => 53,
         ]);
 
-        // Niño manuelito: 59
+        // Manos Solidarias: 54
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 34,
+            'association_id' => 54,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Niños del triunfo: 60
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 22,
+            'association_id' => 54,
         ]);
 
-        // Nuestra Señora auxilio de los cristianos: 61
+        // Martin Namay: 55
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 89,
+            'association_id' => 55,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Nuevo eden: 62
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 28,
+            'association_id' => 55,
         ]);
 
-        // Nuevo Paraiso: 63
+        // Mujeres Luchadoras: 56
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 125,
+            'association_id' => 56,
         ]);
 
-        // Nuevo Jerusalen la alegria de los niños: 64
+        // Mujeres luchando por un futuro mejor: 57
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 58,
+            'association_id' => 57,
         ]);
 
-        // Rosita de amor: 65
+        // Niño manuelito: 58
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 35,
+            'association_id' => 58,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // San jose: 66
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 29,
+            'association_id' => 58,
         ]);
 
-        // Santa rita de casia: 67
+        // Nuestra Señora auxilio de los cristianos: 60
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 192,
+            'association_id' => 60,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Santisimo sacramento: 68
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 2,
+            'association_id' => 60,
         ]);
 
-        // Sembrando esperanza: 69
+        // Nuevo eden: 61
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 79,
+            'association_id' => 61,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Sol y arena de las palmeritas: 70
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 64,
+            'association_id' => 61,
         ]);
 
-        // Supermamas n1: 71
+        // Nuevo Paraiso: 62
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 49,
+            'association_id' => 62,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Tania Soledad baca romero II: 72
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 24,
+            'association_id' => 62,
         ]);
 
-        // Unidas en un solo corazon: 73
+        // Rosita de amor: 64
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 135,
+            'association_id' => 64,
         ]);
 
-        // Unidas por la familia: 74
+        // San jose: 65
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 197,
+            'association_id' => 65,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Victor Raul: 75
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 15,
+            'association_id' => 65,
         ]);
 
-        // Virgen de guadalupe: 76
+        // Santa rita de casia: 66
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 126,
+            'association_id' => 66,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
-        ]);
-
-        // Virgen de la puerta: 77
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
-        ]);
-        DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 120,
+            'association_id' => 66,
         ]);
 
-        // Wilmer Sanchez: 78
+        // Santisimo sacramento: 67
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 182,
-            'association_id' => 15,
+            'resolution_id' => 179,
+            'association_id' => 67,
         ]);
         DB::table('resolution_associations')->insert([
-            'resolution_id' => 165,
-            'association_id' => 15,
+            'resolution_id' => 17,
+            'association_id' => 67,
         ]);
-*/
+
+        // Tania Soledad baca romero II: 71
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 151,
+            'association_id' => 71,
+        ]);
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 149,
+            'association_id' => 71,
+        ]);
+
+        // Victor Raul: 74
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 181,
+            'association_id' => 74,
+        ]);
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 3,
+            'association_id' => 74,
+        ]);
+
+        // Virgen de guadalupe: 75
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 164,
+            'association_id' => 75,
+        ]);
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 160,
+            'association_id' => 75,
+        ]);
+
+        // Wilmer Sanchez: 77
+        DB::table('resolution_associations')->insert([
+            'resolution_id' => 43,
+            'association_id' => 77,
+        ]);
+
 
     }
 }

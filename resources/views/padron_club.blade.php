@@ -13,12 +13,35 @@
         
         @page {
             size: landscape;
-            margin: 8mm;
-            counter-increment: page;
+            margin: 1.5mm 3mm 1.5mm 3mm;
         }
         
-        @page :first {
-            counter-reset: page 0;
+        body {
+            margin: 0;
+            padding: 3mm;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Footer con número de página */
+        footer {
+            position: fixed;
+            bottom: -4px;
+            left: 0px;
+            right: 0px;
+            height: 20px;
+            text-align: center;
+            font-size: 8pt;
+            font-family: Arial, sans-serif;
+        }
+
+        .pagenum:before {
+            content: counter(page);
+        }
+        
+        .page-container {
+            width: 100%;
+            height: 100%;
+            padding: 10px;
         }
         
         tbody {
@@ -29,12 +52,12 @@
             display: table-header-group;
         }
         
-        tr {
-            page-break-inside: avoid;
+        tbody {
+            display: table-row-group;
         }
         
-        .page-number::before {
-            content: counter(page);
+        tr {
+            page-break-inside: avoid;
         }
         
         .header-table {
@@ -101,11 +124,13 @@
         }
         
         .section-header {
-            background-color: #d0d0d0;
+            background-color: #b0b0b0;
             font-weight: bold;
             text-align: center;
-            padding: 4px;
-            font-size: 8pt;
+            padding: 8px 4px;
+            font-size: 9pt;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
         }
         
         .subsection-header {
@@ -144,7 +169,7 @@
         .direccion-col {
             text-align: left;
             padding-left: 3px;
-            max-width: 150px;
+            max-width: 100px;
         }
         
         .sector-col {
@@ -164,16 +189,24 @@
             max-width: 120px;
         }
         
+        /* Columnas de resoluciones */
         .resolucion-col {
-            width: 65px;
+            width: 45px !important;      /* Reducir de 65px a 45px */
+            max-width: 45px !important;
             text-align: center;
             font-size: 5pt;
+            padding: 1px !important;     /* Reducir padding */
+            white-space: nowrap;         /* Evitar saltos de línea */
         }
-        
+
+        /* Columnas de fechas */
         .fecha-col {
-            width: 65px;
+            width: 50px !important;      /* Reducir de 65px a 50px */
+            max-width: 50px !important;
             text-align: center;
             font-size: 5pt;
+            padding: 1px !important;
+            white-space: nowrap;
         }
         
         .local-col {
@@ -212,32 +245,51 @@
             text-align: center;
             font-size: 7pt;
         }
+        
+        .page-break {
+            page-break-after: always;
+        }
     </style>
 </head>
 <body>
+    <!-- Footer con número de página -->
+    <footer>
+        <strong>PÁG <span class="pagenum"></span></strong>
+    </footer>
+    <div class="page-container">
     <!-- MAIN TABLE -->
     <table class="main-table">
         <thead>
+            <!-- HEADER ROW - Se repite en cada página -->
             <tr>
-                <td colspan="14" style="border: none; padding: 3px;">
-                    <table class="header-table" style="width: 100%;">
+                <td colspan="14" style="border: none; padding: 0;">
+                    <table class="header-table" style="width: 100%; border-collapse: collapse; border-spacing: 0;">
                         <tr>
-                            <td style="text-align: left; vertical-align: middle;">
-                                <img src="{{ public_path('img/muni2.png') }}" style="width: 50px; height: auto; vertical-align: middle; margin-right: 5px;" alt="Logo">
+                            <!-- Logo y texto lateral izquierdo -->
+                            <td style="width: 150px; text-align: left; vertical-align: middle; padding: 0;">
+                                <img src="{{ public_path('img/muni2.png') }}" 
+                                    style="width: 50px; height: auto; vertical-align: middle; margin-right: 5px;" 
+                                    alt="Logo">
                                 <div style="display: inline-block; vertical-align: middle; text-align: left; width: 80px;">
                                     <div style="font-size: 6pt; font-weight: bold;">MUNICIPALIDAD DISTRITAL</div>
                                     <div style="font-size: 6pt; font-weight: bold;">DE LA ESPERANZA</div>
                                     <div style="font-size: 6pt;">O.F. Vaso de Leche</div>
                                 </div>
                             </td>
-                            <td style="text-align: center; vertical-align: middle; line-height: 1.2;">
+
+                            <!-- Título central -->
+                            <td style="text-align: center; vertical-align: middle; line-height: 1.2; padding: 0; width: 60%;">
                                 <div style="font-size: 11pt; font-weight: bold; margin: 0;">
                                     PADRÓN DE CLUB DE MADRES Y/O COMITÉS DEL PROGRAMA VASO DE LECHE
                                 </div>
-                                <div style="font-size: 9pt; font-weight: bold; margin: 0;">RESOLUCIONES DE RECONOCIMIENTO</div>
+                                <div style="font-size: 9pt; font-weight: bold; margin: 0;">
+                                    RESOLUCIONES DE RECONOCIMIENTO
+                                </div>
                             </td>
-                            <td style="width: 90px; text-align: right; vertical-align: top; font-size: 7pt;">
-                                <div style="font-weight: bold; margin-bottom: 3px;">PÁG: <span class="page-number"></span></div>
+
+                            <!-- Datos laterales derechos -->
+                            <td style="width: 120px; text-align: right; vertical-align: top; font-size: 7pt; padding: 0;">
+                                <!-- <div style="font-weight: bold; margin-bottom: 3px;">PÁG: </div> -->
                                 <div>FECHA: {{ $fecha ?? date('d/m/Y') }}</div>
                                 <div>HORA: {{ $hora ?? date('H:i:s') }}</div>
                             </td>
@@ -245,26 +297,27 @@
                     </table>
                 </td>
             </tr>
+            <!-- TÍTULOS DE COLUMNAS - Se repiten en cada página -->
             <tr>
                 <th colspan="3" style="width: 80px;">Código</th>
-                <th rowspan="2" style="width: 180px;">CLUB DE MADRES</th>
-                <th rowspan="2" style="width: 150px;">DIRECCIÓN</th>
+                <th rowspan="2" style="width: 110px;">CLUB DE MADRES</th>
+                <th rowspan="2" style="width: 90px;">DIRECCIÓN</th>
                 <th rowspan="2" style="width: 70px;">SECTOR</th>
                 <th rowspan="2" style="width: 35px;">BENEF.</th>
-                <th rowspan="2" style="width: 120px;">PRESIDENTA</th>
-                <th colspan="3" style="background-color: #d8d8d8;">RESOLUCIONES</th>
-                <th colspan="2" style="background-color: #d8d8d8;">VIGENCIA</th>
-                <th rowspan="2" style="width: 60px;">LOCAL</th>
+                <th rowspan="2" style="width: 110px;">PRESIDENTA</th>
+                <th colspan="3" style="background-color: #d8d8d8; width: 90px;">RESOLUCIONES</th>
+                <th colspan="2" style="background-color: #d8d8d8; width: 100px;">VIGENCIA</th>
+                <th rowspan="2" style="width: 50px;">LOCAL</th>
             </tr>
             <tr>
                 <th style="width: 28px;">ZONA</th>
                 <th style="width: 28px;">C.S.</th>
                 <th style="width: 28px;">R.S.</th>
-                <th style="width: 70px;">Nº (Res.)</th>
-                <th style="width: 65px;">Nº (Res. 2)</th>
-                <th style="width: 65px;">Nº (Res. 3)</th>
-                <th style="width: 65px;">Inicio</th>
-                <th style="width: 65px;">Término</th>
+                <th style="width: 30px; max-width: 30px; padding: 1px;">N° (Res. 1)</th>
+                <th style="width: 30px; max-width: 30px; padding: 1px;">N° (Res. 2)</th>
+                <th style="width: 30px; max-width: 30px; padding: 1px;">N° (Res. 3)</th>
+                <th style="width: 50px; max-width: 50px; padding: 1px;">Inicio</th>
+                <th style="width: 50px; max-width: 50px; padding: 1px;">Término</th>
             </tr>
         </thead>
         <tbody>
@@ -294,8 +347,11 @@
                 
                 <!-- ZONA HEADER -->
                 <tr>
-                    <td colspan="14" class="section-header">
-                        {{ str_pad($zona['numero'] ?? 0, 2, '0', STR_PAD_LEFT) }} - {{ $sectoresList }}
+                    <td colspan="1" class="section-header">
+                        {{ str_pad($zona['numero'] ?? 0, 2, '0', STR_PAD_LEFT) }}
+                    </td>
+                    <td colspan="13" class="section-header">
+                        <strong>{{ mb_strtoupper($sectoresList) }}</strong>
                     </td>
                 </tr>
                 
@@ -306,7 +362,7 @@
                         <td class="codigo-col">{{ $club['razon_social'] ?? '' }}</td>
                         <td class="club-name">{{ $club['nombre'] ?? '' }}</td>
                         <td class="direccion-col">{{ $club['direccion'] ?? '' }}</td>
-                        <td class="sector-col">{{ $club['sector'] ?? '' }}</td>
+                        <td class="sector-col">{{ mb_strtoupper($club['sector']) ?? '' }}</td>
                         <td class="benef-col">{{ $club['beneficiarios'] ?? '' }}</td>
                         <td class="presidenta-col">{{ $club['presidenta'] ?? '' }}</td>
                         <td class="resolucion-col">{{ $club['resolucion_1'] ?? '' }}</td>
@@ -314,26 +370,61 @@
                         <td class="resolucion-col">{{ $club['resolucion_3'] ?? '' }}</td>
                         <td class="fecha-col">{{ $club['fecha_inicio'] ?? '' }}</td>
                         <td class="fecha-col">{{ $club['fecha_termino'] ?? '' }}</td>
-                        <td class="local-col">{{ $club['local'] ?? '' }}</td>
+                        <td class="local-col">{{ mb_strtoupper($club['local']) ?? '' }}</td>
                     </tr>
                     @php $numero_zona++; @endphp
                 @endforeach
-            @endforeach
-            
-            <!-- TOTALES GENERALES -->
-            @if(isset($totales_generales))
-                <tr style="background-color: #e0e0e0; font-weight: bold;">
-                    <td colspan="3" style="text-align: right; padding-right: 5px;">Total OSB:</td>
-                    <td class="text-center">{{ $totales_generales['total_osb'] ?? '' }}</td>
-                    <td style="text-align: right; padding-right: 5px;">Total CVL:</td>
-                    <td class="text-center">{{ $totales_generales['total_cvl'] ?? '' }}</td>
-                    <td style="text-align: right; padding-right: 5px;">Total CDM:</td>
-                    <td class="text-center">{{ $totales_generales['total_cdm'] ?? '' }}</td>
-                    <td colspan="2" style="text-align: center; padding: 3px; font-size: 8pt;">TOTAL ACUMULADO:</td>
-                    <td colspan="4" style="text-align: center; font-size: 9pt;">{{ $totales_generales['total_acumulado'] ?? '' }}</td>
+                
+                <!-- TOTALES ZONA -->
+                @php
+                    $totalOsbZona = 0;
+                    $totalCvlZona = 0;
+                    $totalCdmZona = 0;
+                    if (isset($zona['totales_rs'])) {
+                        foreach ($zona['totales_rs'] as $rs => $count) {
+                            $rsKey = strtoupper(trim($rs));
+                            if ($rsKey === 'OSB') $totalOsbZona = $count;
+                            elseif ($rsKey === 'CVL') $totalCvlZona = $count;
+                            elseif ($rsKey === 'CDM') $totalCdmZona = $count;
+                        }
+                    }
+                @endphp
+                <tr style="background-color: #d0d0d0; font-weight: bold;">
+                    <td colspan="14" style="text-align: center; padding: 4px; font-size: 7pt;">
+                        Total OSB: {{ $totalOsbZona }} &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; Total CVL: {{ $totalCvlZona }} &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; Total CDM: {{ $totalCdmZona }} &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; Total Beneficiarios: {{ $zona['total_beneficiarios'] ?? 0 }}
+                    </td>
                 </tr>
-            @endif
+            @endforeach
         </tbody>
     </table>
+    
+    <!-- TABLA DE TOTALES -->
+    @if(isset($totales_generales))
+    <table style="width: 60%; margin-top: 15px; border-collapse: collapse; border: 2px solid #000; margin-left: auto; margin-right: auto;">
+
+        <tbody>
+            <tr style="background-color: #e0e0e0;">
+                <td colspan="5" style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 10pt; font-weight: bold;">
+                    CUADRO RESUMEN DE ORGANIZACIONES
+                </td>
+            </tr>
+            <tr style="background-color: #f5f5f5;">
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">OSB</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">CVL</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">CDM</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">BENEFICIARIOS</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold; background-color: #d0d0d0;">TOTAL</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold;">{{ $totales_rs['OSB'] ?? 0 }}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold;">{{ $totales_rs['CVL'] ?? 0 }}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold;">{{ $totales_rs['CDM'] ?? 0 }}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold;">{{ $totales_generales['total_beneficiarios'] ?? 0 }}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 12pt; font-weight: bold; background-color: #e0e0e0;">{{ $totales_generales['total_acumulado'] ?? 0 }}</td>
+            </tr>
+        </tbody>
+    </table>
+    @endif
+    </div>
 </body>
 </html>
