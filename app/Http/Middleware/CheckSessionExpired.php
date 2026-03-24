@@ -16,9 +16,15 @@ class CheckSessionExpired
      */
     public function handle(Request $request, Closure $next)
     {
+        // No verificar si ya estamos en la ruta de login
+        if ($request->routeIs('login') || $request->is('login')) {
+            return $next($request);
+        }
+
         // Si el usuario estaba autenticado antes y ahora no lo está, la sesión expiró.
         if ($request->session()->has('user_was_authenticated') && !auth()->check()) {
             $request->session()->forget('user_was_authenticated');
+            $request->session()->put('session_just_expired', true);
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([

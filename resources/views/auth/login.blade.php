@@ -106,7 +106,7 @@
         }
     </style>
 </head>
-<body class="login-bg min-h-screen flex items-center justify-center p-4">
+<body class="login-bg min-h-screen flex items-center justify-center p-4 overflow-y-auto">
     
     <div id="loading-screen">
         <div class="w-20 h-20 bg-white/10 rounded-2xl shadow-xl flex items-center justify-center mb-6 overflow-hidden backdrop-blur-sm">
@@ -117,17 +117,17 @@
         <p class="text-slate-400 text-sm">Cargando...</p>
     </div>
     
-    <div class="w-full max-w-md relative z-10">
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-24 h-24 bg-white rounded-3xl shadow-2xl mb-6 overflow-hidden">
+    <div class="w-full max-w-md relative z-10 py-4">
+        <div class="text-center mb-6 sm:mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-3xl shadow-2xl mb-4 sm:mb-6 overflow-hidden">
                 <img src="{{ asset('img/muni2.png') }}" alt="PROVALE" class="w-18 h-18 object-contain">
             </div>
-            <h1 class="text-3xl font-extrabold text-white tracking-tight">PROVALE</h1>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">PROVALE</h1></h1>
             <p class="text-teal-200 text-sm font-medium mt-2">Programa Vaso de Leche</p>
             <p class="text-slate-400 text-xs mt-1">Municipalidad Distrital de La Esperanza</p>
         </div>
 
-        <div class="glass-card rounded-3xl p-8">
+        <div class="glass-card rounded-3xl p-6 sm:p-8">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">Bienvenido</h2>
                 <p class="text-slate-500 text-sm mt-1">Ingresa tus credenciales para continuar</p>
@@ -148,7 +148,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-5">
+            <form method="POST" action="{{ route('login') }}" class="space-y-4 sm:space-y-5">
                 @csrf
 
                 <div>
@@ -158,7 +158,7 @@
                             <i class="fas fa-user"></i>
                         </span>
                         <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus
-                            class="w-full pl-12 pr-4 py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-primary focus:bg-white transition-all"
+                            class="w-full pl-12 pr-4 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-primary focus:bg-white transition-all"
                             placeholder="Ingresa tu usuario">
                     </div>
                 </div>
@@ -170,7 +170,7 @@
                             <i class="fas fa-lock"></i>
                         </span>
                         <input id="password" type="password" name="password" required
-                            class="w-full pl-12 pr-14 py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-primary focus:bg-white transition-all"
+                            class="w-full pl-12 pr-14 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-primary focus:bg-white transition-all"
                             placeholder="••••••••">
                         <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-all">
                             <i class="fas fa-eye" id="eyeIcon"></i>
@@ -185,7 +185,7 @@
                     </label>
                 </div>
 
-                <button type="submit" class="btn-login w-full py-4 text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2">
+                <button type="submit" class="btn-login w-full py-3 sm:py-4 text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2">
                     <i class="fas fa-sign-in-alt"></i>
                     <span>Iniciar Sesión</span>
                 </button>
@@ -253,6 +253,14 @@
                     eyeIcon.classList.toggle('fa-eye');
                     eyeIcon.classList.toggle('fa-eye-slash');
                 });
+            }
+        });
+
+        // Manejar problema de caché del navegador con token CSRF
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.type === 1)) {
+                // La página fue restaurada desde el cache, recargar para obtener nuevo token
+                window.location.reload();
             }
         });
     </script>

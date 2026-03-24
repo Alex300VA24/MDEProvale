@@ -1,58 +1,43 @@
-@extends('reportes.layout')
+@extends('reportes.layout_patron')
 
 @section('title', 'Reporte de Pecosas')
+@section('titulo', 'PADRÓN DE PECOSAS')
+@section('subtitulo', $titulo ?? '')
 
 @section('content')
-<div class="info-box">
-    <h2>{{ $titulo }}</h2>
-    <div class="info-row">
-        <span class="info-label">Fecha de generación:</span>
-        <span>{{ date('d/m/Y H:i:s') }}</span>
-    </div>
-    <div class="info-row">
-        <span class="info-label">Total de registros:</span>
-        <span>{{ $pecosas->count() }}</span>
-    </div>
-</div>
+@php
+    $numero_fila = 1;
+    $totalPecosas = $pecosas->count();
+    $clubesAtendidos = $pecosas->groupBy('association_id')->count();
+    $ativas = $pecosas->filter(function($p) { return $p->state && $p->state->title == 'Activo'; })->count();
+@endphp
 
-@if($tipo == 'estadistico')
-<div class="summary-box">
-    <h3>Resumen Estadístico</h3>
-    <div class="summary-grid">
-        <div class="summary-item">
-            <div class="summary-value">{{ $pecosas->count() }}</div>
-            <div class="summary-label">Total Pecosas</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">{{ $pecosas->groupBy('association_id')->count() }}</div>
-            <div class="summary-label">Clubes Atendidos</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">{{ $pecosas->filter(function($p) { return $p->state && $p->state->title == 'Activo'; })->count() }}</div>
-            <div class="summary-label">Activas</div>
-        </div>
-    </div>
-</div>
-@endif
-
-<table>
+<table class="main-table">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Número Pecosa</th>
-            <th>Club de Madres</th>
-            <th>Fecha Entrega</th>
-            <th>Responsable</th>
-            <th>Estado</th>
+            <th style="width: 30px;">N°</th>
+            <th style="width: 50px;">CÓDIGO</th>
+            <th style="width: 60px;">N° PECOSA</th>
+            <th style="width: 120px;">CLUB DE MADRES</th>
+            <th style="width: 50px;">F. ENTREGA</th>
+            <th style="width: 100px;">RESPONSABLE</th>
+            <th style="width: 40px;">ESTADO</th>
         </tr>
     </thead>
     <tbody>
-        @foreach($pecosas as $pecosa)
+        @forelse($pecosas as $pecosa)
         <tr>
-            <td>#{{ $pecosa->id }}</td>
-            <td>{{ $pecosa->pecosa_number }}</td>
+            <td class="text-center">{{ $numero_fila }}</td>
+            <td class="text-center">{{ str_pad($pecosa->id, 4, '0', STR_PAD_LEFT) }}</td>
+            <td class="text-center">{{ $pecosa->pecosa_number }}</td>
             <td>{{ $pecosa->association->name ?? '-' }}</td>
-            <td>{{ \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') }}</td>
+            <td class="text-center">
+                @if($pecosa->delivery_date)
+                    {{ date('d/m/Y', strtotime($pecosa->delivery_date)) }}
+                @else
+                    -
+                @endif
+            </td>
             <td>
                 @if($pecosa->managingPartner && $pecosa->managingPartner->people)
                     {{ $pecosa->managingPartner->people->names }} {{ $pecosa->managingPartner->people->father_lastname }}
@@ -60,48 +45,40 @@
                     -
                 @endif
             </td>
-            <td>
+            <td class="text-center">
                 @if($pecosa->state && $pecosa->state->title == 'Activo')
-                    <span class="badge badge-success">Activo</span>
+                    ACTIVO
                 @else
-                    <span class="badge badge-danger">Inactivo</span>
+                    INACTIVO
                 @endif
             </td>
         </tr>
-        @endforeach
+        @php $numero_fila++; @endphp
+        @empty
+        <tr>
+            <td colspan="7" class="text-center" style="padding: 20px;">No se encontraron registros para este reporte.</td>
+        </tr>
+        @endforelse
     </tbody>
 </table>
 
-@if($tipo == 'detalle')
-    @foreach($pecosas as $pecosa)
-        @if($pecosa->detailPecosas && $pecosa->detailPecosas->count() > 0)
-        <div style="page-break-before: always;">
-            <h3 style="color: #4A7C59; margin: 20px 0 10px;">Detalle de Pecosa: {{ $pecosa->pecosa_number }}</h3>
-            <p style="margin-bottom: 10px;"><strong>Club:</strong> {{ $pecosa->association->name ?? '-' }}</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Unidad</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($pecosa->detailPecosas as $detail)
-                    <tr>
-                        <td>{{ $detail->product->title ?? '-' }}</td>
-                        <td>{{ $detail->quantity ?? '-' }}</td>
-                        <td>{{ $detail->product->uom->abbreviation ?? '-' }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @endif
-    @endforeach
-@endif
-
-@if($pecosas->isEmpty())
-<p style="text-align: center; color: #8B7355; padding: 20px;">No se encontraron registros para este reporte.</p>
+@if($pecosas->isNotEmpty())
+<table class="totales-table" style="width: 40%; margin-top: 15px; border-collapse: collapse; border: 2px solid #000; margin-left: auto; margin-right: auto;">
+    <tbody>
+        <tr style="background-color: #e0e0e0;">
+            <td colspan="2" style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">
+                CUADRO RESUMEN DE PECOSAS
+            </td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">TOTAL PECOSAS</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">CLUBES ATENDIDOS</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold; background-color: #e0e0e0;">{{ $totalPecosas }}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold;">{{ $clubesAtendidos }}</td>
+        </tr>
+    </tbody>
+</table>
 @endif
 @endsection

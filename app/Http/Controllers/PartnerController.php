@@ -41,7 +41,8 @@ class PartnerController extends Controller
 
     public function create()
     {
-        $people = People::all();
+        $people = People::whereDoesntHave('partners')->get();
+
         $associations = Association::all();
         $states = State::all();
         return view('socios.create', compact('people', 'associations', 'states'));

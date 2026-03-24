@@ -18,6 +18,12 @@ class Resolution extends Model
         'state_id',
     ];
 
+    protected $casts = [
+        'date_document' => 'date:Y-m-d',
+        'date_start'    => 'date:Y-m-d',
+        'date_end'      => 'date:Y-m-d',
+    ];
+
     public function state()
     {
         return $this->belongsTo(State::class);
@@ -30,7 +36,7 @@ class Resolution extends Model
 
     public function associations()
     {
-        return $this->hasMany(Association::class);
+        return $this->belongsToMany(Association::class, 'resolution_associations');
     }
 
     public function scopeActivas($query)

@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -360,7 +361,7 @@
             color: white;
             font-weight: 700;
             padding: 0.625rem 1rem;
-            border-radius: 0.75rem;
+            border-radius: 0.25rem;
             font-size: 0.875rem;
             box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);
             transition: all 0.2s;
@@ -376,7 +377,7 @@
             color: #64748B;
             font-weight: 700;
             padding: 0.625rem 1rem;
-            border-radius: 0.75rem;
+            border-radius: 0.25rem;
             font-size: 0.875rem;
             transition: all 0.2s;
         }
@@ -391,7 +392,7 @@
             color: #DC2626;
             font-weight: 700;
             padding: 0.625rem 1rem;
-            border-radius: 0.75rem;
+            border-radius: 0.25rem;
             font-size: 0.875rem;
             transition: all 0.2s;
         }
@@ -404,7 +405,7 @@
         .btn-action {
             width: 2rem;
             height: 2rem;
-            border-radius: 0.5rem;
+            border-radius: 0.25rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -440,30 +441,40 @@
                         <span class="nav-text text-[14px]">Socios y Beneficiarios</span>
                     </a>
 
+                    @if(Auth::user()->canAccessModule('productos') || Auth::user()->canAccessModule('pecosas'))
                     <a href="{{ route('productos-pecosas.pecosas.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('productos-pecosas.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="productos-pecosas">
                         <i class="fas fa-box w-5 text-center text-lg flex-shrink-0"></i>
                         <span class="nav-text text-[14px]">Productos y Pecosas</span>
                     </a>
+                    @endif
 
+                    @if(Auth::user()->canAccessModule('club-madres') || Auth::user()->canAccessModule('reconocimientos'))
                     <a href="{{ route('club-reconocimientos.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('club-reconocimientos.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="comite-resolucion">
                         <i class="fas fa-users w-5 text-center text-lg flex-shrink-0"></i>
                         <span class="nav-text text-[14px]">Comite y Resolucion</span>
                     </a>
+                    @endif
 
+                    @if(Auth::user()->canAccessModule('movimientos'))
                     <a href="{{ route('movimientos.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('movimientos.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="movimientos">
                         <i class="fas fa-exchange-alt w-5 text-center text-lg flex-shrink-0"></i>
                         <span class="nav-text text-[14px]">Movimientos</span>
                     </a>
+                    @endif
 
+                    @if(Auth::user()->canAccessModule('mantenimiento'))
                     <a href="{{ route('mantenimiento.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('mantenimiento.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="mantenimiento">
                         <i class="fas fa-screwdriver-wrench w-5 text-center text-lg flex-shrink-0"></i>
                         <span class="nav-text text-[14px]">Mantenimiento</span>
                     </a>
+                    @endif
 
+                    @if(Auth::user()->canAccessModule('sistema'))
                     <a href="{{ route('sistema.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('sistema.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="sistema">
                         <i class="fas fa-gear w-5 text-center text-lg flex-shrink-0"></i>
                         <span class="nav-text text-[14px]">Sistema</span>
                     </a>
+                    @endif
                 </div>
 
                 <div class="pt-4 border-t border-white/10">
@@ -618,6 +629,76 @@
                 }
             );
         }
+
+        function openModal(id) {
+            document.querySelectorAll('.fixed.z-40, .fixed.z-50, .fixed.z-60, .fixed.z-\\[70\\]').forEach(el => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+            var element = document.getElementById(id);
+            element.classList.remove('hidden');
+            element.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(id) {
+            var element = document.getElementById(id);
+            element.classList.add('hidden');
+            element.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function confirmDelete(formId, message) {
+            message = message || '¿Estás seguro de que deseas eliminar este registro?';
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#64748B',
+                confirmButtonText: '<i class="fas fa-trash mr-1"></i> Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                borderRadius: '1rem',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl font-bold',
+                    cancelButton: 'rounded-xl font-bold',
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(formId).submit();
+                }
+            });
+        }
+
+        @if(session('success'))
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                customClass: { popup: 'rounded-2xl' }
+            });
+        });
+        @endif
+
+        @if(session('error'))
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: '{{ session('error') }}',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false,
+                customClass: { popup: 'rounded-2xl' }
+            });
+        });
+        @endif
 
         const sidebar = document.getElementById('sidebar');
         const spacer = document.getElementById('sidebar-spacer');

@@ -9,15 +9,20 @@
             <i class="fas fa-exchange-alt text-leaf"></i> Gestión de Movimientos
         </h3>
         <div class="flex gap-3">
+            <a href="{{ route('movimientos.reparticion-tabla') }}" class="btn-secondary flex items-center gap-2">
+                <i class="fas fa-clipboard-list"></i> Repartición
+            </a>
             <a href="{{ route('movimientos.comprobante-salida') }}" target="_blank" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-receipt"></i> Comprobante Salida
             </a>
             <a href="{{ route('movimientos.reportes') }}" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-file-pdf"></i> Reportes
             </a>
-            <a href="{{ route('movimientos.create') }}" class="btn-primary flex items-center gap-2">
-                <i class="fas fa-plus"></i> Nuevo Movimiento
-            </a>
+            @if(Auth::user()->canCreateModule('movimientos'))
+            <button onclick="openModal('modal-crear-ingreso')" class="btn-primary flex items-center gap-2">
+                <i class="fas fa-plus"></i> Nuevo Ingreso
+            </button>
+            @endif
         </div>
     </div>
 
@@ -30,20 +35,14 @@
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Tipo de Movimiento</label>
             <select name="type_transaction_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
-                @foreach($types as $type)
-                <option value="{{ $type->id }}" {{ request('type_transaction_id') == $type->id ? 'selected' : '' }}>
-                    {{ $type->title }}
-                </option>
+                @foreach($types->where('title', 'Entrada') as $type)
+                <option value="{{ $type->id }}" {{ request('type_transaction_id') == $type->id ? 'selected' : '' }}>{{ $type->title }}</option>
                 @endforeach
             </select>
         </div>
         <div class="flex items-end gap-2">
-            <button type="submit" class="btn-primary">
-                <i class="fas fa-search mr-1"></i> Buscar
-            </button>
-            <a href="{{ route('movimientos.index') }}" class="btn-secondary">
-                <i class="fas fa-times mr-1"></i> Limpiar
-            </a>
+            <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
+            <a href="{{ route('movimientos.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
         </div>
     </form>
 
@@ -65,23 +64,15 @@
                 @forelse($transactions as $transaction)
                 <tr>
                     <td class="px-6 text-earth font-mono text-sm">#{{ $transaction->id }}</td>
-                    <td class="px-6 font-semibold">
-                        {{ $transaction->product->title ?? 'Sin producto' }}
-                    </td>
+                    <td class="px-6 font-semibold">{{ $transaction->product->title ?? 'Sin producto' }}</td>
                     <td class="px-6">
                         @if($transaction->typeTransaction)
-                        @if($transaction->typeTransaction->title == 'Ingreso')
-                        <span class="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">
-                            <i class="fas fa-arrow-down mr-1"></i>{{ $transaction->typeTransaction->title }}
-                        </span>
-                        @else
-                        <span class="px-2 py-1 rounded-lg bg-clay-light text-clay text-xs font-bold">
-                            <i class="fas fa-arrow-up mr-1"></i>{{ $transaction->typeTransaction->title }}
-                        </span>
-                        @endif
-                        @else
-                        -
-                        @endif
+                            @if($transaction->typeTransaction->title == 'Ingreso')
+                                <span class="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold"><i class="fas fa-arrow-down mr-1"></i>{{ $transaction->typeTransaction->title }}</span>
+                            @else
+                                <span class="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-bold"><i class="fas fa-arrow-up mr-1"></i>{{ $transaction->typeTransaction->title }}</span>
+                            @endif
+                        @else - @endif
                     </td>
                     <td class="px-6 text-earth font-mono">{{ $transaction->quantity }}</td>
                     <td class="px-6 text-earth font-mono">S/ {{ number_format($transaction->unit_price, 2) }}</td>
@@ -89,26 +80,29 @@
                     <td class="px-6 text-earth text-sm">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y') }}</td>
                     <td class="px-6">
                         <div class="flex gap-2">
-                            <a href="{{ route('movimientos.show', $transaction) }}" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white">
+                            <button onclick="openModal('modal-ver-movimiento-{{ $transaction->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
                                 <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route('movimientos.edit', $transaction) }}" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white">
+                            </button>
+                            @if(Auth::user()->canEditModule('movimientos') && $transaction->typeTransaction && $transaction->typeTransaction->title == 'Ingreso')
+                            <button onclick="openModal('modal-editar-movimiento-{{ $transaction->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
                                 <i class="fas fa-edit"></i>
-                            </a>
-                            <form action="{{ route('movimientos.destroy', $transaction) }}" method="POST" class="inline">
+                            </button>
+                            @endif
+                            @if(Auth::user()->canDeleteModule('movimientos'))
+                            <form id="form-delete-mov-{{ $transaction->id }}" action="{{ route('movimientos.destroy', $transaction) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white" onclick="return confirm('¿Estás seguro de eliminar este movimiento?')">
+                                <button type="button" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white" title="Eliminar"
+                                    onclick="confirmDelete('form-delete-mov-{{ $transaction->id }}', 'Se eliminará este movimiento de forma permanente.')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
+                            @endif
                         </div>
                     </td>
                 </tr>
                 @empty
-                <tr>
-                    <td colspan="8" class="px-6 py-8 text-center text-earth">No hay registros</td>
-                </tr>
+                <tr><td colspan="8" class="px-6 py-8 text-center text-earth">No hay registros</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -119,4 +113,190 @@
         {{ $transactions->appends(request()->query())->links() }}
     </div>
 </div>
+
+{{-- Modal Crear Ingreso --}}
+<div id="modal-crear-ingreso" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-plus-circle text-leaf"></i> Nuevo Ingreso
+                </h3>
+                <button onclick="closeModal('modal-crear-ingreso')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('movimientos.store') }}" method="POST" class="p-6">
+                @csrf
+                <input type="hidden" name="type_transaction_id" value="{{ $types->firstWhere('title', 'Ingreso')->id ?? '' }}">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto</label>
+                        <select name="product_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                            <option value="">Seleccionar producto</option>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}">{{ $product->title }} ({{ $product->abbreviation }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Precio Unitario</label>
+                        <input type="number" name="unit_price" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Cantidad</label>
+                        <input type="number" name="quantity" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Número de Documento</label>
+                        <input type="text" name="document_number" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha de Movimiento</label>
+                        <input type="date" name="transaction_date" value="{{ date('Y-m-d') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Inicio (Período)</label>
+                        <input type="date" name="start_date" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Fin (Período)</label>
+                        <input type="date" name="end_date" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                    <button type="button" onclick="closeModal('modal-crear-ingreso')" class="btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save mr-2"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Modales Ver / Editar por movimiento --}}
+@foreach($transactions as $transaction)
+
+{{-- Modal Ver --}}
+<div id="modal-ver-movimiento-{{ $transaction->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-lg mt-16 mb-8 px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-eye text-[#0284C7]"></i> Detalle del Movimiento
+                </h3>
+                <button onclick="closeModal('modal-ver-movimiento-{{ $transaction->id }}')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">ID</p>
+                    <p class="font-semibold text-charcoal">#{{ $transaction->id }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Producto</p>
+                    <p class="font-semibold text-charcoal">{{ $transaction->product->title ?? '-' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Tipo</p>
+                    <p class="font-semibold text-charcoal">{{ $transaction->typeTransaction->title ?? '-' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Cantidad</p>
+                    <p class="font-semibold text-charcoal">{{ $transaction->quantity }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Precio Unitario</p>
+                    <p class="font-semibold text-charcoal">S/ {{ number_format($transaction->unit_price, 2) }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Total</p>
+                    <p class="font-bold text-charcoal text-lg">S/ {{ number_format($transaction->total_price, 2) }}</p>
+                </div>
+                <div class="col-span-2">
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha</p>
+                    <p class="font-semibold text-charcoal">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y H:i') }}</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 px-6 pb-6">
+                <button type="button" onclick="closeModal('modal-ver-movimiento-{{ $transaction->id }}')" class="btn-secondary">Cerrar</button>
+                <button onclick="closeModal('modal-ver-movimiento-{{ $transaction->id }}'); openModal('modal-editar-movimiento-{{ $transaction->id }}')" class="btn-primary">
+                    <i class="fas fa-edit mr-2"></i> Editar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Editar --}}
+<div id="modal-editar-movimiento-{{ $transaction->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-edit text-[#D97706]"></i> Editar Movimiento
+                </h3>
+                <button onclick="closeModal('modal-editar-movimiento-{{ $transaction->id }}')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('movimientos.update', $transaction) }}" method="POST" class="p-6">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="type_transaction_id" value="{{ $transaction->type_transaction_id }}">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto</label>
+                        <select name="product_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}" {{ $transaction->product_id == $product->id ? 'selected' : '' }}>{{ $product->title }} ({{ $product->abbreviation }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Precio Unitario</label>
+                        <input type="number" name="unit_price" value="{{ $transaction->unit_price }}" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Cantidad</label>
+                        <input type="number" name="quantity" value="{{ $transaction->quantity }}" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Número de Documento</label>
+                        <input type="text" name="document_number" value="{{ $transaction->document_number }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha de Movimiento</label>
+                        <input type="date" name="transaction_date" value="{{ $transaction->transaction_date ?? date('Y-m-d') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Inicio (Período)</label>
+                        <input type="date" name="start_date" value="{{ $transaction->detail_start_date ? \Carbon\Carbon::parse($transaction->detail_start_date)->format('Y-m-d') : '' }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Fin (Período)</label>
+                        <input type="date" name="end_date" value="{{ $transaction->detail_end_date ? \Carbon\Carbon::parse($transaction->detail_end_date)->format('Y-m-d') : '' }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                    <button type="button" onclick="closeModal('modal-editar-movimiento-{{ $transaction->id }}')" class="btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save mr-2"></i> Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@endforeach
+
+<script>
+function toggleCreateFields() {
+    const sel = document.getElementById('create_type_id');
+    const title = sel.options[sel.selectedIndex]?.getAttribute('data-title') || '';
+    const isSalida = title.includes('salida');
+    document.getElementById('create_pecosa_field').classList.toggle('hidden', !isSalida);
+    document.getElementById('create_start_date_field').classList.toggle('hidden', isSalida);
+    document.getElementById('create_end_date_field').classList.toggle('hidden', isSalida);
+}
+</script>
 @endsection

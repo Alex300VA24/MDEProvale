@@ -1,8 +1,10 @@
 @extends('layouts.main')
 
 @section('title', 'Crear Pecosa - PROVALE')
-
 @section('content')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-theme@0.1.0-beta.10/dist/select2-bootstrap.min.css" rel="stylesheet" />
+
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
     <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
@@ -14,69 +16,7 @@
     </div>
 
     <div class="p-6">
-        <!-- Sección de Registro Rápido de Producto -->
-        <div class="mb-8 p-6 bg-leaf-light rounded-2xl border-2 border-leaf relative overflow-hidden">
-            <div class="absolute right-0 top-0 opacity-10 pointer-events-none translate-x-1/4 -translate-y-1/4">
-                <i class="fas fa-box-open text-9xl text-leaf"></i>
-            </div>
-            
-            <div class="relative z-10">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-12 h-12 bg-leaf rounded-xl flex items-center justify-center text-white shadow-lg">
-                        <i class="fas fa-plus-square text-xl"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-extrabold text-leaf text-lg">Registro Rápido de Producto</h4>
-                        <p class="text-leaf-dark text-xs font-semibold">Crea un producto nuevo (ej. Leche, Cereal) para incluirlo en la pecosa.</p>
-                    </div>
-                </div>
-
-                <form id="quick-product-form" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    @csrf
-                    <div class="md:col-span-2">
-                        <label class="block text-[10px] font-bold text-leaf-dark uppercase tracking-wider mb-1">Nombre del Producto</label>
-                        <input type="text" name="title" id="quick_title" class="w-full px-3 py-2 border-2 border-wheat rounded-xl text-sm font-semibold focus:border-leaf outline-none" placeholder="Ej: Leche Evaporada">
-                    </div>
-                    <div class="md:col-span-1">
-                        <label class="block text-[10px] font-bold text-leaf-dark uppercase tracking-wider mb-1">Abreviatura</label>
-                        <input type="text" name="abbreviation" id="quick_abbreviation" class="w-full px-3 py-2 border-2 border-wheat rounded-xl text-sm font-semibold focus:border-leaf outline-none" placeholder="Ej: LE">
-                    </div>
-                    <div class="md:col-span-1">
-                        <label class="block text-[10px] font-bold text-leaf-dark uppercase tracking-wider mb-1">U. Medida</label>
-                        <select name="uom_id" id="quick_uom" class="w-full px-3 py-2 border-2 border-wheat rounded-xl text-sm font-semibold focus:border-leaf outline-none">
-                            @foreach($uoms as $uom)
-                                <option value="{{ $uom->id }}">{{ $uom->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <div class="md:col-span-1">
-                        <label class="block text-[10px] font-bold text-leaf-dark uppercase tracking-wider mb-1">Stock Inicial</label>
-                        <input type="number" name="stock" id="quick_stock" value="0" class="w-full px-3 py-2 border-2 border-wheat rounded-xl text-sm font-semibold focus:border-leaf outline-none">
-                    </div>
-                    <div class="md:col-span-1">
-                        <label class="block text-[10px] font-bold text-leaf-dark uppercase tracking-wider mb-1">P. Unitario</label>
-                        <input type="number" step="0.01" name="unit_price" id="quick_price" value="0.00" class="w-full px-3 py-2 border-2 border-wheat rounded-xl text-sm font-semibold focus:border-leaf outline-none">
-                    </div>
-                    <div class="md:col-span-1">
-                        <label class="block text-[10px] font-bold text-leaf-dark uppercase tracking-wider mb-1">Estado</label>
-                        <select name="state_id" id="quick_state" class="w-full px-3 py-2 border-2 border-wheat rounded-xl text-sm font-semibold focus:border-leaf outline-none">
-                            @foreach($states as $state)
-                                <option value="{{ $state->id }}">{{ $state->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="md:col-span-1 flex justify-end items-end">
-                        <button type="button" onclick="registerQuickProduct()" class="btn-primary w-full flex items-center justify-center gap-2 shadow-md">
-                            <i class="fas fa-save"></i> Registrar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <form action="{{ route('productos-pecosas.pecosas.store') }}" method="POST">
+        <form action="{{ route('productos-pecosas.pecosas.store') }}" method="POST" id="pecosa-form">
             @csrf
             <h4 class="font-extrabold text-charcoal text-lg mb-4 flex items-center gap-2">
                 <i class="fas fa-file-invoice text-leaf"></i> Información de la Pecosa
@@ -89,10 +29,12 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Club de Madres</label>
-                    <select name="association_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    <select name="association_id" id="association_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all select2" required onchange="loadPresidenta()">
                         <option value="">Seleccionar club...</option>
                         @foreach($associations as $association)
-                            <option value="{{ $association->id }}">{{ $association->name }}</option>
+                            <option value="{{ $association->id }}" data-president-id="{{ $association->president_partner_id }}">
+                                {{ $association->name }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -101,17 +43,25 @@
                     <input type="date" name="delivery_date" value="{{ date('Y-m-d') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
                 </div>
                 <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Responsable de Recepción</label>
-                    <select name="managing_partner_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                        <option value="">Seleccionar responsable...</option>
-                        @foreach($partners as $partner)
-                            <option value="{{ $partner->id }}">{{ $partner->people->names }} {{ $partner->people->father_lastname }}</option>
-                        @endforeach
-                    </select>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Presidenta del Comité</label>
+                    <input type="text" id="president_name" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly placeholder="Se autocompletará al seleccionar club">
+                    <input type="hidden" name="managing_partner_id" id="president_id" value="">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Jefe de Almacén</label>
+                    @php $jefeActivo = $responsibles->where('type', 'chief')->first(); @endphp
+                    <input type="text" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly value="{{ $jefeActivo ? ($jefeActivo->person->names ?? '') . ' ' . ($jefeActivo->person->father_lastname ?? '') : 'No hay jefe activo' }}">
+                    <input type="hidden" name="chief_id" value="{{ $jefeActivo->id ?? '' }}">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Almacenero</label>
+                    @php $almaceneroActivo = $responsibles->where('type', 'storekeeper')->first(); @endphp
+                    <input type="text" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly value="{{ $almaceneroActivo ? ($almaceneroActivo->person->names ?? '') . ' ' . ($almaceneroActivo->person->father_lastname ?? '') : 'No hay almacenero activo' }}">
+                    <input type="hidden" name="storekeeper_id" value="{{ $almaceneroActivo->id ?? '' }}">
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
-                    <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all select2" required>
                         @foreach($states as $state)
                             <option value="{{ $state->id }}">{{ $state->title }}</option>
                         @endforeach
@@ -147,9 +97,43 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 let detailCount = 0;
-let registeredProducts = @json($products);
+let detailProductsList = @json($detailProductsList ?? []);
+
+function fmtDate(d) {
+    if (!d) return '';
+    const parts = d.split('-');
+    return parts.length === 3 ? parts[2] + '/' + parts[1] + '/' + parts[0] : d;
+}
+
+console.log('detailProductsList:', detailProductsList);
+
+if (detailProductsList.length === 0) {
+    console.warn('No hay productos disponibles. Asegúrate de crear ingresos primero.');
+}
+
+$(document).ready(function() {
+    $('.select2').select2({
+        theme: 'bootstrap',
+        placeholder: 'Seleccione una opción',
+        allowClear: true
+    });
+    
+    // Auto-add first product row
+    addProductDetail();
+});
+
+function loadPresidenta() {
+    const associationSelect = document.getElementById('association_id');
+    const selectedOption = associationSelect.options[associationSelect.selectedIndex];
+    const presidentId = selectedOption.getAttribute('data-president-id');
+    
+    document.getElementById('president_id').value = presidentId || '';
+    document.getElementById('president_name').value = presidentId ? 'Presidenta seleccionada (ID: ' + presidentId + ')' : '';
+}
 
 function addProductDetail() {
     const container = document.getElementById('details-container');
@@ -158,8 +142,12 @@ function addProductDetail() {
     div.id = 'detail-row-' + detailCount;
     
     let productOptions = '<option value="">Seleccionar producto...</option>';
-    registeredProducts.forEach(p => {
-        productOptions += `<option value="${p.id}" data-price="${p.unit_price}">${p.title} (${p.abbreviation})</option>`;
+    detailProductsList.forEach(dp => {
+        if (dp.available_stock > 0) {
+            const productName = dp.product ? dp.product.title + ' (' + dp.product.abbreviation + ')' : 'Sin nombre';
+            const period = fmtDate(dp.start_date) + ' al ' + fmtDate(dp.end_date);
+            productOptions += `<option value="${dp.id}" data-product-id="${dp.product_id}" data-price="${dp.unit_price}" data-stock="${dp.available_stock}">${productName} - Stock: ${dp.available_stock} (${period})</option>`;
+        }
     });
 
     div.innerHTML = `
@@ -169,25 +157,33 @@ function addProductDetail() {
                 <i class="fas fa-times-circle"></i>
             </button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto</label>
-                <select name="details[${detailCount}][product_id]" class="product-select w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required onchange="updatePrice(this, ${detailCount})">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto (Detalle)</label>
+                <select name="details[${detailCount}][detail_product_id]" class="product-select w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all select2" required onchange="updateDetailPrice(this, ${detailCount})">
                     ${productOptions}
                 </select>
+                <input type="hidden" name="details[${detailCount}][product_id]" id="product_id_${detailCount}">
             </div>
             <div>
                 <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Cantidad</label>
-                <input type="number" step="0.01" name="details[${detailCount}][quantity]" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                <input type="number" step="0.01" name="details[${detailCount}][quantity]" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required min="1">
             </div>
             <div>
-                <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">P. Unitario</label>
-                <input type="number" step="0.01" name="details[${detailCount}][unit_price]" id="price_${detailCount}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">P. Unitario (S/)</label>
+                <input type="number" step="0.01" name="details[${detailCount}][unit_price]" id="price_${detailCount}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required min="0" step="0.01">
             </div>
         </div>
     `;
     
     container.appendChild(div);
+    
+    $(div).find('.select2').select2({
+        theme: 'bootstrap',
+        placeholder: 'Seleccionar producto',
+        allowClear: true
+    });
+    
     detailCount++;
 }
 
@@ -203,46 +199,17 @@ function updatePrice(select, id) {
     }
 }
 
-async function registerQuickProduct() {
-    const form = document.getElementById('quick-product-form');
-    const formData = new FormData(form);
+function updateDetailPrice(select, id) {
+    const selectedOption = select.options[select.selectedIndex];
+    const productId = selectedOption.getAttribute('data-product-id');
+    const price = selectedOption.getAttribute('data-price');
     
-    try {
-        const response = await fetch("{{ route('productos-pecosas.productos.store-ajax') }}", {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            const product = result.product;
-            registeredProducts.push(product);
-            
-            // Actualizar todos los selectores de productos existentes
-            const selects = document.querySelectorAll('.product-select');
-            selects.forEach(select => {
-                const option = new Option(`${product.title} (${product.abbreviation})`, product.id);
-                option.setAttribute('data-price', product.unit_price);
-                select.add(option);
-            });
-
-            // Limpiar formulario rápido
-            form.reset();
-            alert('Producto registrado y habilitado en el detalle.');
-        } else {
-            alert('Error: ' + result.message);
-        }
-    } catch (error) {
-        console.error(error);
-        alert('Ocurrió un error al procesar la solicitud.');
+    document.getElementById('product_id_' + id).value = productId;
+    if (price) {
+        document.getElementById('price_' + id).value = price;
     }
 }
 
-// Agregar un ítem por defecto
 document.addEventListener('DOMContentLoaded', function() {
     addProductDetail();
 });

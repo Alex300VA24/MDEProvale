@@ -34,7 +34,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('general')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                             <option value="landscape">📃 Horizontal</option>
                         </select>
                         <button type="button" onclick="generarReporte('stock-bajo')" class="btn-primary px-4">
-                            <i class="fas fa-download"></i>
+                            <i class="fas fa-file-pdf"></i>
                         </button>
                     </div>
                 </form>
@@ -81,7 +81,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('valorizacion')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -103,7 +103,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('movimientos')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -125,7 +125,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('top')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>

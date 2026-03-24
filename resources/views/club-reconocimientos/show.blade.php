@@ -79,10 +79,10 @@
                 <button onclick="openModal('modal-presidenta-{{ $association->id }}')" class="btn-secondary">
                     <i class="fas fa-user-crown mr-2"></i> Asignar Presidenta
                 </button>
-                <form action="{{ route('club-reconocimientos.destroy', $association) }}" method="POST" class="inline">
+                <form id="form-delete-club-show" action="{{ route('club-reconocimientos.destroy', $association) }}" method="POST" class="inline">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn-danger" onclick="return confirm('¿Estás seguro de eliminar este club?')">
+                    <button type="button" class="btn-danger" onclick="confirmDelete('form-delete-club-show', 'Se eliminará este comité de forma permanente.')">
                         <i class="fas fa-trash mr-2"></i> Eliminar
                     </button>
                 </form>
@@ -234,13 +234,4 @@
     </div>
 </div>
 
-<script>
-function openModal(id) {
-    document.getElementById(id).classList.remove('hidden');
-}
-
-function closeModal(id) {
-    document.getElementById(id).classList.add('hidden');
-}
-</script>
 @endsection

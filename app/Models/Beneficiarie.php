@@ -32,7 +32,7 @@ class Beneficiarie extends Model
 
     public function histories()
     {
-        return $this->hasMany(BeneficiaryHistory::class);
+        return $this->hasMany(BeneficiaryHistory::class, 'beneficiary_id');
     }
 
     public function getNameAttribute()

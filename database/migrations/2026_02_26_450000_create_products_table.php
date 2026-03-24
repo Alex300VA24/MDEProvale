@@ -17,8 +17,6 @@ class CreateProductsTable extends Migration
             $table->id();
             $table->string('title', 100);
             $table->char('abbreviation', 5);
-            $table->integer('stock');
-            $table->decimal('unit_price', 8, 2);
             $table->foreignId('state_id')->constrained();
             $table->foreignId('uom_id')->constrained();
             $table->timestamps();

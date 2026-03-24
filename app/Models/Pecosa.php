@@ -13,9 +13,16 @@ class Pecosa extends Model
         'pecosa_number',
         'observation',
         'delivery_date',
+        'president_id',
+        'chief_id',
+        'storekeeper_id',
         'managing_partner_id',
         'state_id',
         'association_id',
+    ];
+
+    protected $casts = [
+        'delivery_date' => 'date:Y-m-d',
     ];
 
     public function state()
@@ -28,6 +35,21 @@ class Pecosa extends Model
         return $this->belongsTo(Association::class);
     }
 
+    public function president()
+    {
+        return $this->belongsTo(Partner::class, 'president_id');
+    }
+
+    public function chief()
+    {
+        return $this->belongsTo(Responsible::class, 'chief_id');
+    }
+
+    public function storekeeper()
+    {
+        return $this->belongsTo(Responsible::class, 'storekeeper_id');
+    }
+
     public function managingPartner()
     {
         return $this->belongsTo(Partner::class, 'managing_partner_id');
@@ -38,17 +60,11 @@ class Pecosa extends Model
         return $this->hasMany(DetailPecosa::class);
     }
 
-    /**
-     * Accessor: mes derivado de delivery_date
-     */
     public function getMonthAttribute()
     {
         return $this->delivery_date ? date('n', strtotime($this->delivery_date)) : null;
     }
 
-    /**
-     * Accessor: año derivado de delivery_date
-     */
     public function getYearAttribute()
     {
         return $this->delivery_date ? date('Y', strtotime($this->delivery_date)) : null;

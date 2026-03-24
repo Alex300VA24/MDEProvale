@@ -9,6 +9,8 @@ class BeneficiaryHistory extends Model
 {
     use HasFactory;
 
+    protected $table = 'beneficiary_histories';
+
     protected $fillable = [
         'weight',
         'height',
@@ -23,7 +25,7 @@ class BeneficiaryHistory extends Model
 
     public function beneficiary()
     {
-        return $this->belongsTo(Beneficiarie::class);
+        return $this->belongsTo(Beneficiarie::class, 'beneficiary_id');
     }
 
     public function state()

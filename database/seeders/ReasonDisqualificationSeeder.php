@@ -15,6 +15,12 @@ class ReasonDisqualificationSeeder extends Seeder
     public function run()
     {
         DB::table('reason_disqualifications')->insert([
+            'title' => 'Ninguna',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('reason_disqualifications')->insert([
             'title' => 'Pasó la fecha de parto',
             'created_at' => now(),
             'updated_at' => now(),

@@ -34,7 +34,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('general')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -56,7 +56,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('socios')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -78,7 +78,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('estadistico')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -100,7 +100,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('reconocimientos')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -117,7 +117,7 @@
                 </div>
                 <p class="text-sm text-earth mb-4">Padrón completo de clubes de madres con resoluciones.</p>
                 <button onclick="window.open('{{ route('club-reconocimientos.club.padron') }}', '_blank')" class="btn-primary w-full flex items-center justify-center gap-2">
-                    <i class="fas fa-download"></i> Generar PDF
+                    <i class="fas fa-file-pdf"></i> Generar PDF
                 </button>
             </div>
         </div>

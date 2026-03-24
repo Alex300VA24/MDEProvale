@@ -69,9 +69,9 @@
                 <tbody>
                     @foreach($pecosa->detailPecosas as $detail)
                     <tr>
-                        <td>{{ $detail->product->title ?? '-' }}</td>
+                        <td>{{ $detail->detailProduct->product->title ?? '-' }}</td>
                         <td>{{ $detail->quantity ?? '-' }}</td>
-                        <td>{{ $detail->product->uom->abbreviation ?? '-' }}</td>
+                        <td>{{ $detail->detailProduct->product->uom->abbreviation ?? '-' }}</td>
                     </tr>
                     @endforeach
                 </tbody>

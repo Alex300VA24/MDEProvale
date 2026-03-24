@@ -36,7 +36,7 @@ class People extends Model
 
     public function partners()
     {
-        return $this->hasMany(Partner::class);
+        return $this->hasMany(Partner::class, 'person_id');
     }
 
     public function beneficiaries()

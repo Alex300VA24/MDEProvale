@@ -32,6 +32,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Si la sesión acaba de expirar, redirigir al dashboard directamente
+        if ($request->session()->has('session_just_expired')) {
+            $request->session()->forget('session_just_expired');
+            return redirect()->route('dashboard');
+        }
+
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 

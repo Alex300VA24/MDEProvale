@@ -103,6 +103,8 @@
             width: 100%;
             border-collapse: collapse;
             border: 2px solid #000;
+            border-right: none;
+            border-bottom: none;
             margin-bottom: 5px;
         }
         
@@ -181,6 +183,7 @@
             width: 35px;
             text-align: center;
             font-weight: bold;
+            padding: 0px;
         }
         
         .presidenta-col {
@@ -188,31 +191,33 @@
             padding-left: 3px;
             max-width: 120px;
         }
-        
+
         /* Columnas de resoluciones */
         .resolucion-col {
-            width: 45px !important;      /* Reducir de 65px a 45px */
-            max-width: 45px !important;
+            width: 40px !important;
+            max-width: 40px !important;
             text-align: center;
             font-size: 5pt;
-            padding: 1px !important;     /* Reducir padding */
-            white-space: nowrap;         /* Evitar saltos de línea */
+            padding: 0px !important;
+            white-space: nowrap;
         }
 
         /* Columnas de fechas */
         .fecha-col {
-            width: 50px !important;      /* Reducir de 65px a 50px */
-            max-width: 50px !important;
+            width: 45px !important;
+            max-width: 45px !important;
             text-align: center;
             font-size: 5pt;
-            padding: 1px !important;
+            padding: 0px !important;
             white-space: nowrap;
         }
         
         .local-col {
-            width: 60px;
+            width: 50px;
             text-align: center;
             font-size: 5pt;
+            padding: 0px;
+            border-right: 1px solid #000;
         }
         
         .text-center {
@@ -248,6 +253,10 @@
         
         .page-break {
             page-break-after: always;
+        }
+        
+        .totales-table {
+            page-break-inside: avoid;
         }
     </style>
 </head>
@@ -308,16 +317,17 @@
                 <th colspan="3" style="background-color: #d8d8d8; width: 90px;">RESOLUCIONES</th>
                 <th colspan="2" style="background-color: #d8d8d8; width: 100px;">VIGENCIA</th>
                 <th rowspan="2" style="width: 50px;">LOCAL</th>
+                <th rowspan="2" style="width: 10px; border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white;">&nbsp;</th>
             </tr>
             <tr>
                 <th style="width: 28px;">ZONA</th>
                 <th style="width: 28px;">C.S.</th>
                 <th style="width: 28px;">R.S.</th>
-                <th style="width: 30px; max-width: 30px; padding: 1px;">N° (Res. 1)</th>
-                <th style="width: 30px; max-width: 30px; padding: 1px;">N° (Res. 2)</th>
-                <th style="width: 30px; max-width: 30px; padding: 1px;">N° (Res. 3)</th>
-                <th style="width: 50px; max-width: 50px; padding: 1px;">Inicio</th>
-                <th style="width: 50px; max-width: 50px; padding: 1px;">Término</th>
+                <th style="width: 35px; max-width: 35px; padding: 0px;">N° (Res. 1)</th>
+                <th style="width: 35px; max-width: 35px; padding: 0px;">N° (Res. 2)</th>
+                <th style="width: 35px; max-width: 35px; padding: 0px;">N° (Res. 3)</th>
+                <th style="width: 45px; max-width: 45px; padding: 0px;">Inicio</th>
+                <th style="width: 45px; max-width: 45px; padding: 0px;">Término</th>
             </tr>
         </thead>
         <tbody>
@@ -353,6 +363,7 @@
                     <td colspan="13" class="section-header">
                         <strong>{{ mb_strtoupper($sectoresList) }}</strong>
                     </td>
+                    <<td style="border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white; width: 10px;">&nbsp;</td>
                 </tr>
                 
                 @foreach($todosLosClubes as $club)
@@ -371,6 +382,7 @@
                         <td class="fecha-col">{{ $club['fecha_inicio'] ?? '' }}</td>
                         <td class="fecha-col">{{ $club['fecha_termino'] ?? '' }}</td>
                         <td class="local-col">{{ mb_strtoupper($club['local']) ?? '' }}</td>
+                        <td style="width: 10px; border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white;">&nbsp;</td>
                     </tr>
                     @php $numero_zona++; @endphp
                 @endforeach
@@ -393,6 +405,7 @@
                     <td colspan="14" style="text-align: center; padding: 4px; font-size: 7pt;">
                         Total OSB: {{ $totalOsbZona }} &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; Total CVL: {{ $totalCvlZona }} &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; Total CDM: {{ $totalCdmZona }} &nbsp;&nbsp;&nbsp;&nbsp; | &nbsp;&nbsp;&nbsp;&nbsp; Total Beneficiarios: {{ $zona['total_beneficiarios'] ?? 0 }}
                     </td>
+                    <td style="border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white; width: 10px;">&nbsp;</td>
                 </tr>
             @endforeach
         </tbody>
@@ -400,7 +413,7 @@
     
     <!-- TABLA DE TOTALES -->
     @if(isset($totales_generales))
-    <table style="width: 60%; margin-top: 15px; border-collapse: collapse; border: 2px solid #000; margin-left: auto; margin-right: auto;">
+    <table class="totales-table" style="width: 60%; margin-top: 15px; border-collapse: collapse; border: 2px solid #000; margin-left: auto; margin-right: auto;">
 
         <tbody>
             <tr style="background-color: #e0e0e0;">

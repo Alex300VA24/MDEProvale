@@ -16,10 +16,10 @@ class CreateTypeBenefitsTable extends Migration
         Schema::create('type_benefits', function (Blueprint $table) {
             $table->id();
             $table->string('title', 100)->unique();
+            $table->char('abbreviation', 3)->unique();
             $table->integer('min_age');
             $table->integer('max_age')->nullable();
             $table->integer('priority');
-            $table->text('observation')->nullable();
             $table->timestamps();
         });
     }

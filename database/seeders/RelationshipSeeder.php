@@ -15,29 +15,26 @@ class RelationshipSeeder extends Seeder
      */
     public function run()
     {
-        // insert into Parentescos(descripcion) values('Hijo(a)'), ('Nieto(a)'), ('Sobrino(a)'), ('Socio');
-        DB::table('relationships')->insert([
-            'title' => 'Hijo(a)',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('relationships')->insert([
-            'title' => 'Nieto(a)',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('relationships')->insert([
-            'title' => 'Sobrino(a)',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
         DB::table('relationships')->insert([
             'title' => 'Socio',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        DB::table('relationships')->insert([
+            'title' => 'Hijos',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('relationships')->insert([
+            'title' => 'Apoderado',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('relationships')->insert([
+            'title' => 'Tutelado',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
     }
 }

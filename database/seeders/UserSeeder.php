@@ -7,19 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
-        /* 
-        insert into usuarios(nombresApellidos, nombreUsuario, password, dni, cui,codRol, codEstado)
-values
-('Larri Rodrigo Estrada León', 'lestradal', 'admin', '71086437', '9',1, 1),
-('Miguel Angel Vega Perez', 'mvegape', 'admin', '74283707', '1',1, 1);
-        */
         DB::table('users')->insert([
             'names' => 'Larri Rodrigo',
             'father_surname' => 'Estrada',
@@ -50,5 +39,80 @@ values
             'updated_at' => now(),
         ]);
 
+        DB::table('users')->insert([
+            'names' => 'Usuario',
+            'father_surname' => 'Basico',
+            'mother_surname' => 'Test',
+            'username' => 'usuario1',
+            'password' => bcrypt('admin'),
+            'dni' => '12345678',
+            'cui' => '2',
+            'email' => 'usuario1@example.com',
+            'rol_id' => 3,
+            'state_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $modules = DB::table('modules')->get();
+        $moduleIds = $modules->pluck('id')->toArray();
+
+        $adminPermissions = [];
+        foreach ($moduleIds as $moduleId) {
+            $adminPermissions[$moduleId] = [
+                'can_view' => true,
+                'can_create' => true,
+                'can_edit' => true,
+                'can_delete' => true,
+            ];
+        }
+        DB::table('module_rol')->insert(array_map(function($moduleId) use ($adminPermissions) {
+            return [
+                'module_id' => $moduleId,
+                'rol_id' => 1,
+                'can_view' => true,
+                'can_create' => true,
+                'can_edit' => true,
+                'can_delete' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }, $moduleIds));
+
+        $excludedModules = [7, 8];
+        $mainUserPermissions = [];
+        foreach ($moduleIds as $moduleId) {
+            if (!in_array($moduleId, $excludedModules)) {
+                $mainUserPermissions[$moduleId] = [
+                    'can_view' => true,
+                    'can_create' => true,
+                    'can_edit' => true,
+                    'can_delete' => true,
+                ];
+            }
+        }
+        foreach ($mainUserPermissions as $moduleId => $perms) {
+            DB::table('module_rol')->insert([
+                'module_id' => $moduleId,
+                'rol_id' => 2,
+                'can_view' => true,
+                'can_create' => true,
+                'can_edit' => true,
+                'can_delete' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        DB::table('module_rol')->insert([
+            'module_id' => 1,
+            'rol_id' => 3,
+            'can_view' => true,
+            'can_create' => true,
+            'can_edit' => true,
+            'can_delete' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

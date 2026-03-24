@@ -48,7 +48,12 @@ class ClubReconocimientosController extends Controller
             $association->latestResolution = isset($resolutionsAll[0]) ? $resolutionsAll[0] : null;
         }
 
-        return view('club-reconocimientos.index', compact('associations'));
+        $states = State::all();
+        $placeSectors = PlaceSector::with(['place', 'sector'])->get();
+        $typePremises = TypePremises::all();
+        $resolutions = Resolution::orderBy('date_document', 'desc')->get();
+
+        return view('club-reconocimientos.index', compact('associations', 'states', 'placeSectors', 'typePremises', 'resolutions'));
     }
 
     // ==================== CLUB DE MADRES ====================
@@ -344,10 +349,10 @@ class ClubReconocimientosController extends Controller
                 $titulo = 'Reporte de Club de Madres';
         }
 
-        $orientacion = $request->get('orientacion', 'portrait');
+        $orientacion = $request->get('orientacion', 'landscape');
         $pdf = \PDF::loadView('club-reconocimientos.reportes.pdf', compact('associations', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
-        return $pdf->download('reporte-club-de-madres-' . $tipo . '-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('reporte-club-de-madres-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }
 
     public function reportesReconocimientos()
@@ -388,10 +393,10 @@ class ClubReconocimientosController extends Controller
                 $titulo = 'Reporte de Reconocimientos';
         }
 
-        $orientacion = $request->get('orientacion', 'portrait');
+        $orientacion = $request->get('orientacion', 'landscape');
         $pdf = \PDF::loadView('club-reconocimientos.reconocimientos.reportes.pdf', compact('resolutions', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
-        return $pdf->download('reporte-reconocimientos-' . $tipo . '-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('reporte-reconocimientos-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }
 
     /**
@@ -458,7 +463,7 @@ class ClubReconocimientosController extends Controller
             })->whereHas('position', function ($q) {
                 $q->where('title', 'like', '%PRESIDENTA%');
             })->whereHas('state', function ($q) {
-                $q->where('abbreviation', 'ACTI');
+                $q->where('abbreviation', 'A');
             })->with('partner.people')->first();
 
             if ($directiva && $directiva->partner && $directiva->partner->people) {

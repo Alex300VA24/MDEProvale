@@ -15,6 +15,14 @@ class Transaction extends Model
         'total_price',
         'product_id',
         'type_transaction_id',
+        'document_number',
+        'stock_quantity',
+        'stock_unit_price',
+        'stock_total_price',
+        'adjustment',
+        'transaction_date',
+        'start_date',
+        'end_date',
     ];
 
     public function product()
@@ -25,5 +33,10 @@ class Transaction extends Model
     public function typeTransaction()
     {
         return $this->belongsTo(TypeTransaction::class);
+    }
+
+    public function detailProducts()
+    {
+        return $this->hasMany(DetailProduct::class, 'product_id', 'product_id');
     }
 }

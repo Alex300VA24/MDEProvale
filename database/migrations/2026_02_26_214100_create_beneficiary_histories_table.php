@@ -19,7 +19,7 @@ class CreateBeneficiaryHistoriesTable extends Migration
             $table->decimal('height', 5, 2);
             $table->decimal('hmg', 5, 2);
             $table->date('date_begin');
-            $table->date('date_end');
+            $table->date('date_end')->nullable();
             $table->foreignId('type_benefit_id')->constrained();
             $table->foreignId('beneficiary_id')->constrained();
             $table->foreignId('state_id')->constrained();

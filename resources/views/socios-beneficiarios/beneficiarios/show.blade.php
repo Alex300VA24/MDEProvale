@@ -53,10 +53,10 @@
             <a href="{{ route('socios-beneficiarios.beneficiarios.edit', $beneficiarie) }}" class="btn-primary">
                 <i class="fas fa-edit mr-2"></i> Editar
             </a>
-            <form action="{{ route('socios-beneficiarios.beneficiarios.destroy', $beneficiarie) }}" method="POST" class="inline">
+            <form id="form-delete-benef-show" action="{{ route('socios-beneficiarios.beneficiarios.destroy', $beneficiarie) }}" method="POST" class="inline">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn-danger" onclick="return confirm('¿Estás seguro de eliminar este beneficiario?')">
+                <button type="button" class="btn-danger" onclick="confirmDelete('form-delete-benef-show', 'Se eliminará este beneficiario de forma permanente.')">
                     <i class="fas fa-trash mr-2"></i> Eliminar
                 </button>
             </form>

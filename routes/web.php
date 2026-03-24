@@ -23,13 +23,18 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Ruta para refrescar CSRF token sin middleware de sesión
+Route::get('/refresh-csrf', function () {
+    return response()->json(['csrf_token' => csrf_token()]);
+})->middleware('web');
+
 Route::middleware('auth')->group(function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->name('dashboard');
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================
-Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->group(function () {
+Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->middleware('module:socios-beneficiarios')->group(function () {
     // Índice principal - muestra lista de socios con sus beneficiarios
     Route::get('/', [SociosBeneficiariosController::class, 'index'])->name('index');
 
@@ -44,7 +49,6 @@ Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->group(func
     Route::post('personas/ajax', [SociosBeneficiariosController::class, 'storePersonAjax'])->name('personas.store-ajax');
 
     // Socios
-    Route::get('socios', [SociosBeneficiariosController::class, 'indexSocios'])->name('socios.index');
     Route::get('socios/crear', [SociosBeneficiariosController::class, 'createSocio'])->name('socios.create');
     Route::post('socios', [SociosBeneficiariosController::class, 'storeSocio'])->name('socios.store');
     Route::get('socios/{partner}', [SociosBeneficiariosController::class, 'showSocio'])->name('socios.show');
@@ -69,7 +73,7 @@ Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->group(func
 });
 
 // ==================== MÓDULO: CLUB DE MADRES Y RECONOCIMIENTOS ====================
-Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->group(function () {
+Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->middleware('module:club-madres')->group(function () {
     // Índice principal
     Route::get('/', [ClubReconocimientosController::class, 'index'])->name('index');
 
@@ -100,7 +104,7 @@ Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->group(func
 });
 
 // ==================== MÓDULO: PRODUCTOS Y PECOSAS ====================
-Route::prefix('productos-pecosas')->name('productos-pecosas.')->group(function () {
+Route::prefix('productos-pecosas')->name('productos-pecosas.')->middleware('module:productos')->group(function () {
     // Índice principal
     Route::get('/', [ProductosPecosasController::class, 'index'])->name('index');
 
@@ -128,33 +132,43 @@ Route::prefix('productos-pecosas')->name('productos-pecosas.')->group(function (
     Route::get('pecosas-reportes', [ProductosPecosasController::class, 'reportesPecosas'])->name('pecosas.reportes');
     Route::get('pecosas-reporte/{tipo}', [ProductosPecosasController::class, 'generarReportePecosas'])->name('pecosas.generar-reporte');
     Route::get('pecosas-programacion-entrega', [ProductosPecosasController::class, 'generarProgramacionEntrega'])->name('pecosas.programacion-entrega');
+
+    // Kardex / Detalle Productos
+    Route::get('productos-detalle', [ProductosPecosasController::class, 'productosDetalle'])->name('productos-detalle');
+    Route::post('productos-detalle', [ProductosPecosasController::class, 'storeProductoDetalle'])->name('productos-detalle.store');
 });
 
 // ==================== OTROS MÓDULOS ====================
-Route::resource('movimientos', TransactionController::class)->parameters([
+Route::resource('movimientos', TransactionController::class)->middleware('module:movimientos')->parameters([
     'movimientos' => 'transaction'
 ]);
-Route::get('movimientos-reportes', [TransactionController::class, 'reportes'])->name('movimientos.reportes');
-Route::get('movimientos-reporte/{tipo}', [TransactionController::class, 'generarReporte'])->name('movimientos.generar-reporte');
-Route::get('movimientos-comprobante-salida', [TransactionController::class, 'generarComprobanteSalida'])->name('movimientos.comprobante-salida');
+Route::get('movimientos-reportes', [TransactionController::class, 'reportes'])->name('movimientos.reportes')->middleware('module:movimientos');
+Route::get('movimientos-reporte/{tipo}', [TransactionController::class, 'generarReporte'])->name('movimientos.generar-reporte')->middleware('module:movimientos');
+Route::get('movimientos-comprobante-salida', [TransactionController::class, 'generarComprobanteSalida'])->name('movimientos.comprobante-salida')->middleware('module:movimientos');
+Route::get('movimientos-reparticion', [TransactionController::class, 'reparticion'])->name('movimientos.reparticion')->middleware('module:movimientos');
+Route::get('movimientos-reparticion-tabla', [TransactionController::class, 'reparticionTabla'])->name('movimientos.reparticion-tabla')->middleware('module:movimientos');
 
-Route::get('sistema', [SistemaController::class, 'index'])->name('sistema.index');
-Route::get('sistema/usuarios', [SistemaController::class, 'usuarios'])->name('sistema.usuarios');
-Route::post('sistema/usuarios', [SistemaController::class, 'storeUsuario'])->name('sistema.usuarios.store');
-Route::put('sistema/usuarios/{usuario}', [SistemaController::class, 'updateUsuario'])->name('sistema.usuarios.update');
-Route::delete('sistema/usuarios/{usuario}', [SistemaController::class, 'destroyUsuario'])->name('sistema.usuarios.destroy');
+Route::get('sistema', [SistemaController::class, 'index'])->name('sistema.index')->middleware('module:sistema');
+Route::get('sistema/usuarios', [SistemaController::class, 'usuarios'])->name('sistema.usuarios')->middleware('module:sistema');
+Route::post('sistema/usuarios', [SistemaController::class, 'storeUsuario'])->name('sistema.usuarios.store')->middleware('module:sistema');
+Route::put('sistema/usuarios/{usuario}', [SistemaController::class, 'updateUsuario'])->name('sistema.usuarios.update')->middleware('module:sistema');
+Route::delete('sistema/usuarios/{usuario}', [SistemaController::class, 'destroyUsuario'])->name('sistema.usuarios.destroy')->middleware('module:sistema');
 
-Route::get('sistema/roles', [SistemaController::class, 'roles'])->name('sistema.roles');
-Route::post('sistema/roles', [SistemaController::class, 'storeRol'])->name('sistema.roles.store');
-Route::put('sistema/roles/{rol}', [SistemaController::class, 'updateRol'])->name('sistema.roles.update');
-Route::delete('sistema/roles/{rol}', [SistemaController::class, 'destroyRol'])->name('sistema.roles.destroy');
+Route::get('sistema/roles', [SistemaController::class, 'roles'])->name('sistema.roles')->middleware('module:sistema');
+Route::post('sistema/roles', [SistemaController::class, 'storeRol'])->name('sistema.roles.store')->middleware('module:sistema');
+Route::put('sistema/roles/{rol}', [SistemaController::class, 'updateRol'])->name('sistema.roles.update')->middleware('module:sistema');
+Route::delete('sistema/roles/{rol}', [SistemaController::class, 'destroyRol'])->name('sistema.roles.destroy')->middleware('module:sistema');
 
-Route::get('sistema/modulos', [SistemaController::class, 'modulos'])->name('sistema.modulos');
-Route::post('sistema/modulos', [SistemaController::class, 'storeModulo'])->name('sistema.modulos.store');
-Route::put('sistema/modulos/{modulo}', [SistemaController::class, 'updateModulo'])->name('sistema.modulos.update');
-Route::delete('sistema/modulos/{modulo}', [SistemaController::class, 'destroyModulo'])->name('sistema.modulos.destroy');
+Route::get('sistema/modulos', [SistemaController::class, 'modulos'])->name('sistema.modulos')->middleware('module:sistema');
+Route::post('sistema/modulos', [SistemaController::class, 'storeModulo'])->name('sistema.modulos.store')->middleware('module:sistema');
+Route::put('sistema/modulos/{modulo}', [SistemaController::class, 'updateModulo'])->name('sistema.modulos.update')->middleware('module:sistema');
+Route::delete('sistema/modulos/{modulo}', [SistemaController::class, 'destroyModulo'])->name('sistema.modulos.destroy')->middleware('module:sistema');
 
-Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('mantenimiento.index');
+Route::get('mantenimiento', [MantenimientoController::class, 'index'])->name('mantenimiento.index')->middleware('module:mantenimiento');
+Route::post('mantenimiento/responsibles/{type}', [MantenimientoController::class, 'updateResponsible'])->name('mantenimiento.responsibles.update')->middleware('module:mantenimiento');
+Route::post('mantenimiento/raciones', [MantenimientoController::class, 'storeRacion'])->name('mantenimiento.raciones.store')->middleware('module:mantenimiento');
+Route::put('mantenimiento/raciones/{id}', [MantenimientoController::class, 'updateRacion'])->name('mantenimiento.raciones.update')->middleware('module:mantenimiento');
+Route::delete('mantenimiento/raciones/{id}', [MantenimientoController::class, 'deleteRacion'])->name('mantenimiento.raciones.destroy')->middleware('module:mantenimiento');
 });
 
 require __DIR__ . '/auth.php';

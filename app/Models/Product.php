@@ -13,8 +13,6 @@ class Product extends Model
         'code',
         'title',
         'abbreviation',
-        'stock',
-        'unit_price',
         'state_id',
         'uom_id',
     ];
@@ -37,5 +35,62 @@ class Product extends Model
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    public function prices()
+    {
+        return $this->hasMany(ProductPrice::class);
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(ProductStock::class);
+    }
+
+    public function detailProducts()
+    {
+        return $this->hasMany(DetailProduct::class);
+    }
+
+    public function getCurrentPrice($date = null)
+    {
+        return ProductPrice::getPriceForProduct($this->id, $date);
+    }
+
+    public function getCurrentStock($month = null, $year = null)
+    {
+        return ProductStock::getStockForProduct($this->id, $month, $year);
+    }
+
+    public function getAvailableStock()
+    {
+        $detailProducts = $this->detailProducts()
+            ->where('start_date', '<=', now()->toDateString())
+            ->where('end_date', '>=', now()->toDateString())
+            ->get();
+
+        $totalStock = 0;
+        foreach ($detailProducts as $detail) {
+            $in = $detail->quantity;
+            $out = $detail->stocks()->sum('quantity');
+            $totalStock += ($in - $out);
+        }
+
+        return $totalStock;
+    }
+
+    // Accessors para compatibilidad con vistas existentes
+    public function getStockAttribute()
+    {
+        return $this->getAvailableStock();
+    }
+
+    public function getUnitPriceAttribute()
+    {
+        $detailProduct = DetailProduct::where('product_id', $this->id)
+            ->where('start_date', '<=', now()->toDateString())
+            ->where('end_date', '>=', now()->toDateString())
+            ->first();
+        return $detailProduct ? $detailProduct->unit_price : 0;
     }
 }

@@ -9,8 +9,8 @@ class PeopleSeeder extends Seeder
 {
     public function run(): void
     {
-
-        $chunk_1 = [
+        // Chunk 1 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'RAQUEL',
                 'father_lastname'  => 'ALDAVE',
@@ -788,7 +788,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ 8 LT 26  NUEVO HORIZONTE',
+                'address'          => 'MZ 8 LT 26 NUEVO HORIZONTE',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -2035,7 +2035,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'LEYNI  GEANI',
+                'names'            => 'LEYNI GEANI',
                 'father_lastname'  => 'ALCANTARA',
                 'mother_lastname'  => 'CHAVEZ',
                 'dni'              => '48098039',
@@ -2374,6 +2374,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 2 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'DEBORA SAMARA',
                 'father_lastname'  => 'LINO',
@@ -3072,7 +3076,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'GINA  YANETH',
+                'names'            => 'GINA YANETH',
                 'father_lastname'  => 'SANCHEZ',
                 'mother_lastname'  => 'NEIRA',
                 'dni'              => '73680131',
@@ -3423,7 +3427,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.S\' LT.12 LAS PALMERAS',
+                'address'          => 'MZ.S LT.12 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -3440,7 +3444,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.S\' LT.12 LAS PALMERAS',
+                'address'          => 'MZ.S LT.12 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -3593,7 +3597,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.LL\' LT.1 LAS PALMERAS',
+                'address'          => 'MZ.LL LT.1 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -3610,7 +3614,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.LL\' LT.1 LAS PALMERAS',
+                'address'          => 'MZ.LL LT.1 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -3627,7 +3631,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.LL\' LT.1 LAS PALMERAS',
+                'address'          => 'MZ.LL LT.1 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -3916,7 +3920,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.V\' LT.10 INT.B LAS PALMERAS',
+                'address'          => 'MZ.V LT.10 INT.B LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -3933,7 +3937,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.V\' LT.10 INT.B LAS PALMERAS',
+                'address'          => 'MZ.V LT.10 INT.B LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -3950,7 +3954,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.V\' LT.10 INT.B LAS PALMERAS',
+                'address'          => 'MZ.V LT.10 INT.B LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4035,7 +4039,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.S\' LT.14 LAS PALMERAS',
+                'address'          => 'MZ.S LT.14 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4052,7 +4056,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.S\' LT.14 LAS PALMERAS',
+                'address'          => 'MZ.S LT.14 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4069,7 +4073,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.S\' LT.2 LAS PALMERAS',
+                'address'          => 'MZ.S LT.2 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4086,7 +4090,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.S\' LT.2 LAS PALMERAS',
+                'address'          => 'MZ.S LT.2 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4103,7 +4107,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.S\' LT.2 LAS PALMERAS',
+                'address'          => 'MZ.S LT.2 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4273,7 +4277,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.J\' LT.4 LAS PALMERAS',
+                'address'          => 'MZ.J LT.4 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4290,7 +4294,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.J\' LT.4 LAS PALMERAS',
+                'address'          => 'MZ.J LT.4 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4737,8 +4741,12 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 3 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
-                'names'            => 'MARIA  MERCEDES',
+                'names'            => 'MARIA MERCEDES',
                 'father_lastname'  => 'GANOZA',
                 'mother_lastname'  => 'MARTINEZ',
                 'dni'              => '71701172',
@@ -4840,7 +4848,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'KARINA  VANESSA',
+                'names'            => 'KARINA VANESSA',
                 'father_lastname'  => 'GUTIERREZ',
                 'mother_lastname'  => 'LUJAN',
                 'dni'              => '42379225',
@@ -4851,7 +4859,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ. J LT.6  LAS PALMERAS I',
+                'address'          => 'MZ. J LT.6 LAS PALMERAS I',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -4868,7 +4876,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ. J LT.6  LAS PALMERAS I',
+                'address'          => 'MZ. J LT.6 LAS PALMERAS I',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -5242,7 +5250,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.J\' LT.12 LAS PALMERAS',
+                'address'          => 'MZ.J LT.12 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -5259,7 +5267,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.J\' LT.12 LAS PALMERAS',
+                'address'          => 'MZ.J LT.12 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -5344,7 +5352,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.X\' LT.16 I SECTOR - LAS PALMERAS',
+                'address'          => 'MZ.X LT.16 I SECTOR - LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -5361,7 +5369,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.X\' LT.16 I SECTOR - LAS PALMERAS',
+                'address'          => 'MZ.X LT.16 I SECTOR - LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -5378,7 +5386,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.K\' LT.21 LAS PALMERAS',
+                'address'          => 'MZ.K LT.21 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -5395,7 +5403,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.K\' LT.21 LAS PALMERAS',
+                'address'          => 'MZ.K LT.21 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -5412,7 +5420,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.K\' LT.21 LAS PALMERAS',
+                'address'          => 'MZ.K LT.21 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -6015,7 +6023,7 @@ class PeopleSeeder extends Seeder
             [
                 'names'            => 'TEOFILA',
                 'father_lastname'  => 'FERNANDEZ',
-                'mother_lastname'  => 'SANCHEZ  DE CARRANZA',
+                'mother_lastname'  => 'SANCHEZ DE CARRANZA',
                 'dni'              => '43607403',
                 'gender'           => 'F',
                 'telephone_number' => null,
@@ -6064,7 +6072,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'ANGELITA  MIRLLA',
+                'names'            => 'ANGELITA MIRLLA',
                 'father_lastname'  => 'HONORES',
                 'mother_lastname'  => 'LAVADO',
                 'dni'              => '42498071',
@@ -6925,7 +6933,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ B LT 23  LAS PALMERAS',
+                'address'          => 'MZ B LT 23 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -6942,7 +6950,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ B LT 23  LAS PALMERAS',
+                'address'          => 'MZ B LT 23 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -6959,7 +6967,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ B LT 23  LAS PALMERAS',
+                'address'          => 'MZ B LT 23 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -6976,7 +6984,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ B LT 23  LAS PALMERAS',
+                'address'          => 'MZ B LT 23 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7100,6 +7108,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 4 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'CATALINA BELEN',
                 'father_lastname'  => 'NAUCA',
@@ -7265,7 +7277,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.C\' LT.19 LAS PALMERAS',
+                'address'          => 'MZ.C LT.19 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7282,7 +7294,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.C\' LT.19 LAS PALMERAS',
+                'address'          => 'MZ.C LT.19 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7350,7 +7362,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.1A LAS PALMERAS',
+                'address'          => 'MZ.E LT.1A LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7367,7 +7379,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.1A LAS PALMERAS',
+                'address'          => 'MZ.E LT.1A LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7418,7 +7430,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.I\' LT.5 LAS PALMERAS',
+                'address'          => 'MZ.I LT.5 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7435,7 +7447,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.I\' LT.5 LAS PALMERAS',
+                'address'          => 'MZ.I LT.5 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7486,7 +7498,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.6 LAS PALMERAS',
+                'address'          => 'MZ.E LT.6 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7503,7 +7515,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.6 LAS PALMERAS',
+                'address'          => 'MZ.E LT.6 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7724,7 +7736,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.I\' LT.4 LAS PALMERAS',
+                'address'          => 'MZ.I LT.4 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -7741,7 +7753,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.I\' LT.4 LAS PALMERAS',
+                'address'          => 'MZ.I LT.4 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -8511,12 +8523,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_1, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_2 = [
             [
                 'names'            => 'ALESSANDRO IZAEL',
                 'father_lastname'  => 'QUEZADA',
@@ -9243,7 +9249,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.I\' LT.02 LAS PALMERAS',
+                'address'          => 'MZ.I LT.02 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -9260,7 +9266,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.I\' LT.02 LAS PALMERAS',
+                'address'          => 'MZ.I LT.02 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -9277,7 +9283,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.I\' LT.02 LAS PALMERAS',
+                'address'          => 'MZ.I LT.02 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -9469,6 +9475,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 5 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'CARLA LUCERO',
                 'father_lastname'  => 'RODRIGUEZ',
@@ -9736,7 +9746,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ C LT 4  LAS PALMERAS',
+                'address'          => 'MZ C LT 4 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -9753,7 +9763,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ C LT 4  LAS PALMERAS',
+                'address'          => 'MZ C LT 4 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -10008,7 +10018,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ T\' LT 19 LAS PALMERAS',
+                'address'          => 'MZ T LT 19 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -10025,7 +10035,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ T\' LT 19 LAS PALMERAS',
+                'address'          => 'MZ T LT 19 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -10354,7 +10364,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'JULIZA  ANGELICA',
+                'names'            => 'JULIZA ANGELICA',
                 'father_lastname'  => 'SEVILLA',
                 'mother_lastname'  => 'GOMEZ',
                 'dni'              => '75910071',
@@ -10535,7 +10545,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ  E LT 22 LAS PALMERAS',
+                'address'          => 'MZ E LT 22 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -10552,7 +10562,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ  E LT 22 LAS PALMERAS',
+                'address'          => 'MZ E LT 22 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -10654,7 +10664,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.05 LAS PALMERAS',
+                'address'          => 'MZ.E LT.05 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -10671,7 +10681,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.05 LAS PALMERAS',
+                'address'          => 'MZ.E LT.05 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -11000,7 +11010,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'BRENDA  JAQUELIN',
+                'names'            => 'BRENDA JAQUELIN',
                 'father_lastname'  => 'CRUZ',
                 'mother_lastname'  => 'GONSALES',
                 'dni'              => '70294624',
@@ -11283,7 +11293,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.B\' LT.23 LAS PALMERAS',
+                'address'          => 'MZ.B LT.23 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -11300,7 +11310,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.B\' LT.23 LAS PALMERAS',
+                'address'          => 'MZ.B LT.23 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -11832,6 +11842,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 6 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'LUCERITO DEL PILAR',
                 'father_lastname'  => 'SAUCEDO',
@@ -11969,7 +11983,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'MARIA  NERCIDA',
+                'names'            => 'MARIA NERCIDA',
                 'father_lastname'  => 'VASQUEZ',
                 'mother_lastname'  => 'ROJAS',
                 'dni'              => '71603687',
@@ -13969,7 +13983,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.15 LAS PALMERAS',
+                'address'          => 'MZ.E LT.15 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -13986,7 +14000,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.15 LAS PALMERAS',
+                'address'          => 'MZ.E LT.15 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -14003,7 +14017,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.15 LAS PALMERAS',
+                'address'          => 'MZ.E LT.15 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -14020,7 +14034,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.15 LAS PALMERAS',
+                'address'          => 'MZ.E LT.15 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -14190,11 +14204,15 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.20 LAS PALMERAS',
+                'address'          => 'MZ.E LT.20 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 7 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'NILTON GAEL',
                 'father_lastname'  => 'ROMERO',
@@ -14207,7 +14225,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.E\' LT.20 LAS PALMERAS',
+                'address'          => 'MZ.E LT.20 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -14411,7 +14429,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.G\' LT.07 LAS PALMERAS',
+                'address'          => 'MZ.G LT.07 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -14428,7 +14446,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.G\' LT.07 LAS PALMERAS',
+                'address'          => 'MZ.G LT.07 LAS PALMERAS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -16558,6 +16576,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 8 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'MARYORI ELIZABETH',
                 'father_lastname'  => 'LOPEZ',
@@ -16570,7 +16592,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.M\' LT.4 CLEMENTINA PERALTA DE A.',
+                'address'          => 'MZ.M LT.4 CLEMENTINA PERALTA DE A.',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -16587,7 +16609,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.M\' LT.4 CLEMENTINA PERALTA DE A.',
+                'address'          => 'MZ.M LT.4 CLEMENTINA PERALTA DE A.',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -17017,12 +17039,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_2, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_3 = [
             [
                 'names'            => 'DANNAE ALEXZANDRA',
                 'father_lastname'  => 'ALVA',
@@ -18927,6 +18943,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 9 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'LIAM JOSUE',
                 'father_lastname'  => 'ARTEAGA',
@@ -21290,6 +21310,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 10 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'MARILU ELISET',
                 'father_lastname'  => 'CABANILLAS',
@@ -22050,7 +22074,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.D LT.08  LOMAS DE WICHANZAO',
+                'address'          => 'MZ.D LT.08 LOMAS DE WICHANZAO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -22067,7 +22091,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.D LT.08  LOMAS DE WICHANZAO',
+                'address'          => 'MZ.D LT.08 LOMAS DE WICHANZAO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -23653,6 +23677,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 11 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'ELIDA MARELI',
                 'father_lastname'  => 'CASTILLO',
@@ -25523,12 +25551,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_3, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_4 = [
             [
                 'names'            => 'ANGELY ARIANA',
                 'father_lastname'  => 'PEREZ',
@@ -26022,6 +26044,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 12 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'ROSA MELBA',
                 'father_lastname'  => 'VILLA',
@@ -28385,6 +28411,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 13 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'YEIMY AITANA',
                 'father_lastname'  => 'FLORES',
@@ -28669,7 +28699,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ 2 LT 4  INDOAMERICA',
+                'address'          => 'MZ 2 LT 4 INDOAMERICA',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -28760,7 +28790,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'MAYRA  YESENIA',
+                'names'            => 'MAYRA YESENIA',
                 'father_lastname'  => 'HONORIO',
                 'mother_lastname'  => 'PINO',
                 'dni'              => '47544161',
@@ -29474,7 +29504,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'TEODORO  JAZIEL',
+                'names'            => 'TEODORO JAZIEL',
                 'father_lastname'  => 'CHASNAMOTE',
                 'mother_lastname'  => 'GONZALES',
                 'dni'              => '91455925',
@@ -30352,7 +30382,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.1 LT.2 AMPLIAC.  NVO. INDOAMERICA',
+                'address'          => 'MZ.1 LT.2 AMPLIAC. NVO. INDOAMERICA',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -30748,6 +30778,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 14 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'KAROL THAIS',
                 'father_lastname'  => 'VARGAS',
@@ -31633,7 +31667,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'LIANN  ENRIQUE',
+                'names'            => 'LIANN ENRIQUE',
                 'father_lastname'  => 'ARMAS',
                 'mother_lastname'  => 'REYES',
                 'dni'              => '90388049',
@@ -33111,6 +33145,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 15 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'RUTH PAOLA',
                 'father_lastname'  => 'PALACIOS',
@@ -33503,7 +33541,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'VALENTINA  GRACIELA',
+                'names'            => 'VALENTINA GRACIELA',
                 'father_lastname'  => 'MUÑANTE',
                 'mother_lastname'  => 'SANTILLAN',
                 'dni'              => '92115533',
@@ -33605,7 +33643,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'MAYTE  MELEK',
+                'names'            => 'MAYTE MELEK',
                 'father_lastname'  => 'VARELA',
                 'mother_lastname'  => 'SICCHA',
                 'dni'              => '92900702',
@@ -34029,12 +34067,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_4, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_5 = [
             [
                 'names'            => 'TILSA VALENTINA',
                 'father_lastname'  => 'SARMIENTO',
@@ -35339,7 +35371,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.16 LT.2  LOS OLIVOS',
+                'address'          => 'MZ.16 LT.2 LOS OLIVOS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -35356,7 +35388,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.16 LT.2  LOS OLIVOS',
+                'address'          => 'MZ.16 LT.2 LOS OLIVOS',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -35480,6 +35512,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 16 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'GEORGINA ANTONELLA',
                 'father_lastname'  => 'HERRERA',
@@ -37379,7 +37415,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.09 LT.16  EL MIRADOR II',
+                'address'          => 'MZ.09 LT.16 EL MIRADOR II',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -37396,7 +37432,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.09 LT.16  EL MIRADOR II',
+                'address'          => 'MZ.09 LT.16 EL MIRADOR II',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -37843,6 +37879,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 17 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'YOLANDA VANESSA',
                 'father_lastname'  => 'TIRADO',
@@ -40206,6 +40246,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 18 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'RENZO CRISTOPHER',
                 'father_lastname'  => 'ALVARADO',
@@ -42535,12 +42579,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_5, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_6 = [
             [
                 'names'            => 'LETICIA MARIBEL',
                 'father_lastname'  => 'VILLANUEVA',
@@ -42575,6 +42613,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 19 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'CARLA JULIANA',
                 'father_lastname'  => 'YAMUNAQUE',
@@ -44938,6 +44980,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 20 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'DANNA KHALESSI PAOLA',
                 'father_lastname'  => 'SANCHEZ',
@@ -46837,7 +46883,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.03 LT.01 SUB LT.16  PUEBLO EL SOL',
+                'address'          => 'MZ.03 LT.01 SUB LT.16 PUEBLO EL SOL',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -46854,7 +46900,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.03 LT.01 SUB LT.16  PUEBLO EL SOL',
+                'address'          => 'MZ.03 LT.01 SUB LT.16 PUEBLO EL SOL',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -47301,6 +47347,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 21 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'ESTHER',
                 'father_lastname'  => 'MORALES',
@@ -49664,6 +49714,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 22 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'ARIEL MATTEO',
                 'father_lastname'  => 'ORRILLO',
@@ -51041,12 +51095,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_6, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_7 = [
             [
                 'names'            => 'ARLEN UZIEL',
                 'father_lastname'  => 'CASTILLO',
@@ -52033,6 +52081,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 23 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'ROCIO AYDEE',
                 'father_lastname'  => 'VALVERDE',
@@ -54396,6 +54448,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 24 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'JENNIFER MADELEY',
                 'father_lastname'  => 'CAJUSOL',
@@ -54901,7 +54957,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.7 LT.8  FRATERNIDAD I',
+                'address'          => 'MZ.7 LT.8 FRATERNIDAD I',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -54918,7 +54974,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.7 LT.8  FRATERNIDAD I',
+                'address'          => 'MZ.7 LT.8 FRATERNIDAD I',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -56759,6 +56815,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 25 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'MARIA DEL CARMEN',
                 'father_lastname'  => 'VASQUEZ',
@@ -59122,6 +59182,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 26 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'MILAN MATEO',
                 'father_lastname'  => 'JUAREZ',
@@ -59547,12 +59611,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_7, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_8 = [
             [
                 'names'            => 'ESTEFANY YOSELIN',
                 'father_lastname'  => 'ANTICONA',
@@ -61491,6 +61549,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 27 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'EITHAN JHAZIEL',
                 'father_lastname'  => 'CASTAÑEDA',
@@ -62761,7 +62823,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.B LT.21 IV  SECTOR NVO. JERUSALEN',
+                'address'          => 'MZ.B LT.21 IV SECTOR NVO. JERUSALEN',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -63854,6 +63916,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 28 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'MARIA ELIZABETH',
                 'father_lastname'  => 'NEGREIROS',
@@ -66217,6 +66283,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 29 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'LIAM MATEO',
                 'father_lastname'  => 'LAGUNA',
@@ -68053,12 +68123,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_8, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_9 = [
             [
                 'names'            => 'ARACELI NOEMY',
                 'father_lastname'  => 'LAZARO',
@@ -68586,6 +68650,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 30 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'MARIA LUISA',
                 'father_lastname'  => 'ROBLES',
@@ -68859,7 +68927,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'NICOLASA  TOLENTINA',
+                'names'            => 'NICOLASA TOLENTINA',
                 'father_lastname'  => 'AGREDA',
                 'mother_lastname'  => 'GONZALES',
                 'dni'              => '42107602',
@@ -70689,7 +70757,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.Q LT.22  IV SECTOR NVO JERUSALEN',
+                'address'          => 'MZ.Q LT.22 IV SECTOR NVO JERUSALEN',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -70706,7 +70774,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.Q LT.22  IV SECTOR NVO JERUSALEN',
+                'address'          => 'MZ.Q LT.22 IV SECTOR NVO JERUSALEN',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -70949,6 +71017,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 31 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'TAVITA ESTER',
                 'father_lastname'  => 'VALDERRAMA',
@@ -73312,6 +73384,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 32 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'SANTOS CELIA',
                 'father_lastname'  => 'AVALOS',
@@ -74112,7 +74188,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'D\'ALESSANDRO FABRIZZIO',
+                'names'            => 'DALESSANDRO FABRIZZIO',
                 'father_lastname'  => 'RIOS',
                 'mother_lastname'  => 'PAREDES',
                 'dni'              => '92730826',
@@ -75675,6 +75751,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 33 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'THIAM ALEJANDRO',
                 'father_lastname'  => 'LAUREANO',
@@ -76559,12 +76639,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_9, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_10 = [
             [
                 'names'            => 'GRECY ESTEFANY',
                 'father_lastname'  => 'DELGADO',
@@ -78044,6 +78118,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 34 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'AITANA ZAHORI',
                 'father_lastname'  => 'GONZALES',
@@ -80407,6 +80485,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 35 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'THEO DERICK JESUS',
                 'father_lastname'  => 'VELASQUEZ',
@@ -82770,6 +82852,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 36 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'SAIDA MIRELLY',
                 'father_lastname'  => 'CHAVEZ',
@@ -83309,7 +83395,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.A16 LT.34 IIIETAPA MANUELA  AREAVLO',
+                'address'          => 'MZ.A16 LT.34 IIIETAPA MANUELA AREAVLO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -83326,7 +83412,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.A16 LT.34 IIIETAPA MANUELA  AREAVLO',
+                'address'          => 'MZ.A16 LT.34 IIIETAPA MANUELA AREAVLO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -85065,12 +85151,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_10, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_11 = [
             [
                 'names'            => 'LISBET MARISOL',
                 'father_lastname'  => 'SALAZAR',
@@ -85139,6 +85219,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 37 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'KHALESY ANTUANET',
                 'father_lastname'  => 'ZAVALETA',
@@ -86001,7 +86085,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ M LT 9  ALAN GARCIA',
+                'address'          => 'MZ M LT 9 ALAN GARCIA',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -86018,7 +86102,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ M LT 9  ALAN GARCIA',
+                'address'          => 'MZ M LT 9 ALAN GARCIA',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -86239,7 +86323,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ R LT 8  ALAN GARCIA',
+                'address'          => 'MZ R LT 8 ALAN GARCIA',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -86256,7 +86340,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ R LT 8  ALAN GARCIA',
+                'address'          => 'MZ R LT 8 ALAN GARCIA',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -87502,6 +87586,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 38 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'DEYSI DIANNE',
                 'father_lastname'  => 'MARTINEZ',
@@ -88908,7 +88996,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.J LT.18  SOL NACIENTE',
+                'address'          => 'MZ.J LT.18 SOL NACIENTE',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -88925,7 +89013,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.J LT.18  SOL NACIENTE',
+                'address'          => 'MZ.J LT.18 SOL NACIENTE',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -89865,6 +89953,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 39 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'ROSANA MAGALI',
                 'father_lastname'  => 'ACIPALI',
@@ -90285,7 +90377,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.N-12 LT.3  VIRGEN DEL SOCORRO',
+                'address'          => 'MZ.N-12 LT.3 VIRGEN DEL SOCORRO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -90302,7 +90394,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.N-12 LT.3  VIRGEN DEL SOCORRO',
+                'address'          => 'MZ.N-12 LT.3 VIRGEN DEL SOCORRO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -92228,6 +92320,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 40 (139 registros — 15 cols × 139 = 2085 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'DEYSI FLOR',
                 'father_lastname'  => 'ARENAS',
@@ -93011,7 +93107,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'JUANA  VICTORIA CLOTILDE',
+                'names'            => 'JUANA VICTORIA CLOTILDE',
                 'father_lastname'  => 'GONZALES',
                 'mother_lastname'  => 'CABANILLAS',
                 'dni'              => '47488826',
@@ -93521,7 +93617,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'MARIA  DORALIZA',
+                'names'            => 'MARIA DORALIZA',
                 'father_lastname'  => 'MURRUGARRA',
                 'mother_lastname'  => 'LEYVA',
                 'dni'              => '42362149',
@@ -93532,7 +93628,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.N-12 LT 08  VIRGEN DEL SOCORRO',
+                'address'          => 'MZ.N-12 LT 08 VIRGEN DEL SOCORRO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -93549,7 +93645,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ.N-12 LT 08  VIRGEN DEL SOCORRO',
+                'address'          => 'MZ.N-12 LT 08 VIRGEN DEL SOCORRO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -93571,12 +93667,6 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_11, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
-        $chunk_12 = [
             [
                 'names'            => 'DEREK JOSUE',
                 'father_lastname'  => 'CERDAN',
@@ -94258,7 +94348,7 @@ class PeopleSeeder extends Seeder
                 'updated_at'       => now(),
             ],
             [
-                'names'            => 'ISKRA  THALIA',
+                'names'            => 'ISKRA THALIA',
                 'father_lastname'  => 'VERGARAY',
                 'mother_lastname'  => 'RENGIFO',
                 'dni'              => '75505524',
@@ -94597,6 +94687,10 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
+        ]);
+
+        // Chunk 41 (91 registros — 15 cols × 91 = 1365 params)
+        DB::table('people')->insert([
             [
                 'names'            => 'JUAN APOLINAR',
                 'father_lastname'  => 'CASTILLO',
@@ -95340,7 +95434,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ A LT 12  VIRGEN DEL SOCORRO',
+                'address'          => 'MZ A LT 12 VIRGEN DEL SOCORRO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -95357,7 +95451,7 @@ class PeopleSeeder extends Seeder
                 'years_old'        => null,
                 'months_old'       => null,
                 'days_old'         => null,
-                'address'          => 'MZ A LT 12  VIRGEN DEL SOCORRO',
+                'address'          => 'MZ A LT 12 VIRGEN DEL SOCORRO',
                 'place_sector_id'  => 1,
                 'created_at'       => now(),
                 'updated_at'       => now(),
@@ -96144,10 +96238,91 @@ class PeopleSeeder extends Seeder
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ],
-        ];
-        foreach (array_chunk($chunk_12, 100) as $chunk) {
-            DB::table('people')->insert($chunk);
-        }
-
+            [
+                'names'            => 'ALESSANDRA THAIS',
+                'father_lastname'  => 'URQUIAGA',
+                'mother_lastname'  => 'ACEVEDO',
+                'dni'              => '74295078',
+                'gender'           => 'F',
+                'telephone_number' => null,
+                'phone_number'     => null,
+                'birthdate'        => '1990-01-01',
+                'years_old'        => null,
+                'months_old'       => null,
+                'days_old'         => null,
+                'address'          => 'MZ.M14 LT.9F VIRGEN DEL SOCORRO',
+                'place_sector_id'  => 1,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ],
+            [
+                'names'            => 'YOLANDA',
+                'father_lastname'  => 'ROMERO',
+                'mother_lastname'  => 'SALVADOR',
+                'dni'              => '17985528',
+                'gender'           => 'F',
+                'telephone_number' => null,
+                'phone_number'     => null,
+                'birthdate'        => '1990-01-01',
+                'years_old'        => null,
+                'months_old'       => null,
+                'days_old'         => null,
+                'address'          => 'MZ.M14 LT.9F VIRGEN DEL SOCORRO',
+                'place_sector_id'  => 1,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ],
+            [
+                'names'            => 'ROSA IMERITA',
+                'father_lastname'  => 'PRIETO',
+                'mother_lastname'  => 'SALINAS',
+                'dni'              => '42613416',
+                'gender'           => 'F',
+                'telephone_number' => null,
+                'phone_number'     => null,
+                'birthdate'        => '1990-01-01',
+                'years_old'        => null,
+                'months_old'       => null,
+                'days_old'         => null,
+                'address'          => 'MZ.M14 LT.9F VIRGEN DEL SOCORRO',
+                'place_sector_id'  => 1,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ],
+            [
+                'names'            => 'EVA JACKELINE',
+                'father_lastname'  => 'CHÁVEZ',
+                'mother_lastname'  => 'QUISPE',
+                'dni'              => '70012952',
+                'gender'           => 'F',
+                'telephone_number' => null,
+                'phone_number'     => null,
+                'birthdate'        => '2022-01-14',
+                'years_old'        => null,
+                'months_old'       => null,
+                'days_old'         => null,
+                'address'          => 'MZ.M14 LT.9F VIRGEN DEL SOCORRO',
+                'place_sector_id'  => 1,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ],
+            [
+                'names'            => 'JEANETTE FANNY',
+                'father_lastname'  => 'TORRES',
+                'mother_lastname'  => 'VARAS',
+                'dni'              => '41639793',
+                'gender'           => 'F',
+                'telephone_number' => null,
+                'phone_number'     => null,
+                'birthdate'        => '2022-01-14',
+                'years_old'        => null,
+                'months_old'       => null,
+                'days_old'         => null,
+                'address'          => 'MZ.M14 LT.9F VIRGEN DEL SOCORRO',
+                'place_sector_id'  => 1,
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ],
+        ]);
     }
 }

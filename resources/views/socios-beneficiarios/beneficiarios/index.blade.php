@@ -15,9 +15,9 @@
             <a href="{{ route('socios-beneficiarios.beneficiarios.reportes') }}" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-file-pdf"></i> Reportes
             </a>
-            <a href="{{ route('socios-beneficiarios.beneficiarios.create') }}" class="btn-primary flex items-center gap-2">
+            <button onclick="openModal('modal-crear-beneficiario')" class="btn-primary flex items-center gap-2">
                 <i class="fas fa-plus"></i> Nuevo Beneficiario
-            </a>
+            </button>
         </div>
     </div>
 
@@ -42,21 +42,21 @@
             <select name="relationship_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
                 @foreach($relationships as $relationship)
-                    <option value="{{ $relationship->id }}" {{ request('relationship_id') == $relationship->id ? 'selected' : '' }}>
-                        {{ $relationship->title }}
-                    </option>
+                    <option value="{{ $relationship->id }}" {{ request('relationship_id') == $relationship->id ? 'selected' : '' }}>{{ $relationship->title }}</option>
                 @endforeach
             </select>
         </div>
         <div class="flex items-end gap-2">
-            <button type="submit" class="btn-primary">
-                <i class="fas fa-search mr-1"></i> Buscar
-            </button>
-            <a href="{{ route('socios-beneficiarios.beneficiarios.index') }}" class="btn-secondary">
-                <i class="fas fa-times mr-1"></i> Limpiar
-            </a>
+            <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
+            <a href="{{ route('socios-beneficiarios.beneficiarios.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
         </div>
     </form>
+
+    @if(session('success'))
+        <div class="mx-6 mt-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
+            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+        </div>
+    @endif
 
     <div class="overflow-x-auto">
         <table class="data-table w-full">
@@ -75,43 +75,31 @@
                 <tr>
                     <td class="px-6 text-earth font-mono text-sm">#{{ $beneficiarie->id }}</td>
                     <td class="px-6 font-semibold">
-                        @if($beneficiarie->person)
-                            {{ $beneficiarie->person->names }} {{ $beneficiarie->person->father_lastname }} {{ $beneficiarie->person->mother_lastname }}
-                        @else
-                            Sin nombre
-                        @endif
+                        {{ $beneficiarie->person ? $beneficiarie->person->names . ' ' . $beneficiarie->person->father_lastname . ' ' . $beneficiarie->person->mother_lastname : 'Sin nombre' }}
                     </td>
-                    <td class="px-6 text-earth font-mono text-sm">
-                        @if($beneficiarie->person)
-                            {{ $beneficiarie->person->dni }}
-                        @else
-                            -
-                        @endif
-                    </td>
+                    <td class="px-6 text-earth font-mono text-sm">{{ $beneficiarie->person->dni ?? '-' }}</td>
                     <td class="px-6">
                         @if($beneficiarie->partner && $beneficiarie->partner->people)
                             <span class="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">
                                 {{ $beneficiarie->partner->people->names }} {{ $beneficiarie->partner->people->father_lastname }}
                             </span>
-                        @else
-                            -
+                        @else -
                         @endif
                     </td>
-                    <td class="px-6 text-earth text-sm">
-                        {{ $beneficiarie->relationship->title ?? '-' }}
-                    </td>
+                    <td class="px-6 text-earth text-sm">{{ $beneficiarie->relationship->title ?? '-' }}</td>
                     <td class="px-6">
                         <div class="flex gap-2">
-                            <a href="{{ route('socios-beneficiarios.beneficiarios.show', $beneficiarie) }}" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white">
+                            <button onclick="openModal('modal-ver-beneficiario-{{ $beneficiarie->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
                                 <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{{ route('socios-beneficiarios.beneficiarios.edit', $beneficiarie) }}" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white">
+                            </button>
+                            <button onclick="openModal('modal-editar-beneficiario-{{ $beneficiarie->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
                                 <i class="fas fa-edit"></i>
-                            </a>
-                            <form action="{{ route('socios-beneficiarios.beneficiarios.destroy', $beneficiarie) }}" method="POST" class="inline">
+                            </button>
+                            <form id="form-delete-benef-{{ $beneficiarie->id }}" action="{{ route('socios-beneficiarios.beneficiarios.destroy', $beneficiarie) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white" onclick="return confirm('¿Estás seguro de eliminar este beneficiario?')">
+                                <button type="button" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                    onclick="confirmDelete('form-delete-benef-{{ $beneficiarie->id }}', 'Se eliminará este beneficiario de forma permanente.')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
@@ -132,4 +120,142 @@
         {{ $beneficiaries->appends(request()->query())->links() }}
     </div>
 </div>
+
+{{-- Modal Crear Beneficiario --}}
+<div id="modal-crear-beneficiario" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-lg mt-16 mb-8 px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-hand-holding-heart text-leaf"></i> Nuevo Beneficiario
+                </h3>
+                <button onclick="closeModal('modal-crear-beneficiario')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('socios-beneficiarios.beneficiarios.store') }}" method="POST" class="p-6 space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Persona *</label>
+                    <select name="person_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        <option value="">Seleccionar persona...</option>
+                        @foreach($people as $person)
+                        <option value="{{ $person->id }}">{{ $person->names }} {{ $person->father_lastname }} ({{ $person->dni }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Socio *</label>
+                    <select name="partner_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        <option value="">Seleccionar socio...</option>
+                        @foreach($partners as $partner)
+                        <option value="{{ $partner->id }}">{{ $partner->people->names ?? '' }} {{ $partner->people->father_lastname ?? '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Parentesco *</label>
+                    <select name="relationship_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        <option value="">Seleccionar...</option>
+                        @foreach($relationships as $relationship)
+                        <option value="{{ $relationship->id }}">{{ $relationship->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
+                    <button type="button" onclick="closeModal('modal-crear-beneficiario')" class="btn-secondary flex-1">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@foreach($beneficiaries as $beneficiarie)
+
+{{-- Modal Ver Beneficiario --}}
+<div id="modal-ver-beneficiario-{{ $beneficiarie->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-md mt-16 mb-8 px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-hand-holding-heart text-leaf"></i> Detalle del Beneficiario
+                </h3>
+                <button onclick="closeModal('modal-ver-beneficiario-{{ $beneficiarie->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-3 text-sm">
+                <div><span class="text-[11px] font-bold text-earth uppercase">Nombre</span>
+                    <p class="font-semibold text-charcoal">{{ $beneficiarie->person ? $beneficiarie->person->names . ' ' . $beneficiarie->person->father_lastname . ' ' . $beneficiarie->person->mother_lastname : 'Sin nombre' }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><span class="text-[11px] font-bold text-earth uppercase">DNI</span><p>{{ $beneficiarie->person->dni ?? '-' }}</p></div>
+                    <div><span class="text-[11px] font-bold text-earth uppercase">Parentesco</span><p>{{ $beneficiarie->relationship->title ?? '-' }}</p></div>
+                </div>
+                <div><span class="text-[11px] font-bold text-earth uppercase">Socio</span>
+                    <p>{{ $beneficiarie->partner && $beneficiarie->partner->people ? $beneficiarie->partner->people->names . ' ' . $beneficiarie->partner->people->father_lastname : '-' }}</p>
+                </div>
+                @if($beneficiarie->person && $beneficiarie->person->birthdate)
+                <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Nacimiento</span>
+                    <p>{{ \Carbon\Carbon::parse($beneficiarie->person->birthdate)->format('d/m/Y') }}</p>
+                </div>
+                @endif
+            </div>
+            <div class="px-6 pb-6">
+                <button onclick="closeModal('modal-ver-beneficiario-{{ $beneficiarie->id }}')" class="btn-secondary w-full">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Editar Beneficiario --}}
+<div id="modal-editar-beneficiario-{{ $beneficiarie->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-lg mt-16 mb-8 px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-edit text-sun"></i> Editar Beneficiario
+                </h3>
+                <button onclick="closeModal('modal-editar-beneficiario-{{ $beneficiarie->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('socios-beneficiarios.beneficiarios.update', $beneficiarie) }}" method="POST" class="p-6 space-y-4">
+                @csrf
+                @method('PUT')
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Persona *</label>
+                    <select name="person_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        @foreach($people as $person)
+                        <option value="{{ $person->id }}" {{ $beneficiarie->person_id == $person->id ? 'selected' : '' }}>{{ $person->names }} {{ $person->father_lastname }} ({{ $person->dni }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Socio *</label>
+                    <select name="partner_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        @foreach($partners as $partner)
+                        <option value="{{ $partner->id }}" {{ $beneficiarie->partner_id == $partner->id ? 'selected' : '' }}>{{ $partner->people->names ?? '' }} {{ $partner->people->father_lastname ?? '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Parentesco *</label>
+                    <select name="relationship_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        @foreach($relationships as $relationship)
+                        <option value="{{ $relationship->id }}" {{ $beneficiarie->relationship_id == $relationship->id ? 'selected' : '' }}>{{ $relationship->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
+                    <button type="button" onclick="closeModal('modal-editar-beneficiario-{{ $beneficiarie->id }}')" class="btn-secondary flex-1">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@endforeach
 @endsection

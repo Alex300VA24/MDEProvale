@@ -40,11 +40,17 @@ class SociosBeneficiariosController extends Controller
             $query->where('state_id', $request->state_id);
         }
 
-        $partners = $query->orderBy('id', 'desc')->paginate(10);
+        $partners = $query->with('beneficiaries.person', 'beneficiaries.relationship', 'beneficiaries.histories')->orderBy('id', 'desc')->paginate(10);
         $associations = Association::all();
         $states = State::all();
+        $people = People::whereDoesntHave('partners')->get();
+        $allPeople = People::all();
+        $relationships = Relationship::all();
+        $placeSectors = PlaceSector::with(['place', 'sector'])->get();
+        $typeBenefits = \App\Models\TypeBenefit::all();
+        $reasonDisqualifications = \App\Models\ReasonDisqualification::all();
 
-        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states'));
+        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states', 'people', 'allPeople', 'relationships', 'placeSectors', 'typeBenefits', 'reasonDisqualifications'));
     }
 
     // ==================== PERSONAS ====================
@@ -62,7 +68,8 @@ class SociosBeneficiariosController extends Controller
         }
 
         $people = $query->orderBy('id', 'desc')->paginate(15);
-        return view('socios-beneficiarios.personas.index', compact('people'));
+        $placeSectors = PlaceSector::with(['place', 'sector'])->get();
+        return view('socios-beneficiarios.personas.index', compact('people', 'placeSectors'));
     }
 
     public function createPersona()
@@ -171,7 +178,9 @@ class SociosBeneficiariosController extends Controller
         $associations = Association::all();
         $states = State::all();
         $relationships = Relationship::all();
-        return view('socios-beneficiarios.socios.create', compact('people', 'associations', 'states', 'relationships'));
+        $typeBenefits = \App\Models\TypeBenefit::all();
+        $reasonDisqualifications = \App\Models\ReasonDisqualification::all();
+        return view('socios-beneficiarios.socios.create', compact('people', 'associations', 'states', 'relationships', 'typeBenefits', 'reasonDisqualifications'));
     }
 
     public function storeSocio(Request $request)
@@ -202,6 +211,14 @@ class SociosBeneficiariosController extends Controller
             'beneficiaries' => 'nullable|array',
             'beneficiaries.*.person_id' => 'required_with:beneficiaries|exists:people,id',
             'beneficiaries.*.relationship_id' => 'required_with:beneficiaries|exists:relationships,id',
+            'beneficiaries.*.weight' => 'nullable|numeric|min:0',
+            'beneficiaries.*.height' => 'nullable|numeric|min:0',
+            'beneficiaries.*.hmg' => 'nullable|numeric|min:0',
+            'beneficiaries.*.date_begin' => 'nullable|date',
+            'beneficiaries.*.date_end' => 'nullable|date',
+            'beneficiaries.*.type_benefit_id' => 'nullable|exists:type_benefits,id',
+            'beneficiaries.*.history_state_id' => 'nullable|exists:states,id',
+            'beneficiaries.*.reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
         ]);
 
         $partner = Partner::create($validated);
@@ -209,11 +226,27 @@ class SociosBeneficiariosController extends Controller
         if ($request->has('beneficiaries') && !empty($request->beneficiaries)) {
             foreach ($request->beneficiaries as $beneficiary) {
                 if (!empty($beneficiary['person_id']) && !empty($beneficiary['relationship_id'])) {
-                    Beneficiarie::create([
+                    $ben = Beneficiarie::create([
                         'person_id' => $beneficiary['person_id'],
                         'partner_id' => $partner->id,
                         'relationship_id' => $beneficiary['relationship_id'],
                     ]);
+
+                    // Guardar historial si se proporcionaron datos
+                    if (!empty($beneficiary['type_benefit_id']) && !empty($beneficiary['history_state_id'])
+                        && !empty($beneficiary['date_begin']) && !empty($beneficiary['date_end'])) {
+                        \App\Models\BeneficiaryHistory::create([
+                            'weight' => $beneficiary['weight'] ?? 0,
+                            'height' => $beneficiary['height'] ?? 0,
+                            'hmg' => $beneficiary['hmg'] ?? 0,
+                            'date_begin' => $beneficiary['date_begin'],
+                            'date_end' => $beneficiary['date_end'],
+                            'type_benefit_id' => $beneficiary['type_benefit_id'],
+                            'beneficiary_id' => $ben->id,
+                            'state_id' => $beneficiary['history_state_id'],
+                            'reason_disqualification_id' => $beneficiary['reason_disqualification_id'] ?? null,
+                        ]);
+                    }
                 }
             }
         }
@@ -333,8 +366,9 @@ class SociosBeneficiariosController extends Controller
         $beneficiaries = $query->orderBy('id', 'desc')->paginate(10);
         $partners = Partner::with('people')->get();
         $relationships = Relationship::all();
+        $people = People::all();
 
-        return view('socios-beneficiarios.beneficiarios.index', compact('beneficiaries', 'partners', 'relationships'));
+        return view('socios-beneficiarios.beneficiarios.index', compact('beneficiaries', 'partners', 'relationships', 'people'));
     }
 
     public function createBeneficiario()
@@ -434,10 +468,10 @@ class SociosBeneficiariosController extends Controller
                 $titulo = 'Reporte de Socios';
         }
 
-        $orientacion = $request->get('orientacion', 'portrait');
+        $orientacion = $request->get('orientacion', 'landscape');
         $pdf = \PDF::loadView('socios-beneficiarios.socios.reportes.pdf', compact('partners', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
-        return $pdf->download('reporte-socios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('reporte-socios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }
 
     public function reportesBeneficiarios()
@@ -475,10 +509,10 @@ class SociosBeneficiariosController extends Controller
                 $titulo = 'Reporte de Beneficiarios';
         }
 
-        $orientacion = $request->get('orientacion', 'portrait');
+        $orientacion = $request->get('orientacion', 'landscape');
         $pdf = \PDF::loadView('socios-beneficiarios.beneficiarios.reportes.pdf', compact('beneficiaries', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
-        return $pdf->download('reporte-beneficiarios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
+        return $pdf->stream('reporte-beneficiarios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }
 
     public function imprimirFichaBeneficiario()
@@ -517,7 +551,7 @@ class SociosBeneficiariosController extends Controller
             })->whereHas('position', function ($q) {
                 $q->where('title', 'like', '%PRESIDENTA%');
             })->whereHas('state', function ($q) {
-                $q->where('abbreviation', 'ACTI');
+                $q->where('abbreviation', 'A');
             })->with('partner.people')->first();
 
             if ($directivaPresidenta && $directivaPresidenta->partner && $directivaPresidenta->partner->people) {
@@ -532,7 +566,7 @@ class SociosBeneficiariosController extends Controller
             ->get();
 
         // Obtener PECOSA del periodo (mes/año) para este comité
-        $pecosa = Pecosa::with('detailPecosas.product')
+        $pecosa = Pecosa::with('detailPecosas.detailProduct.product')
             ->where('association_id', $associationId)
             ->whereMonth('delivery_date', $mes)
             ->whereYear('delivery_date', $anio)

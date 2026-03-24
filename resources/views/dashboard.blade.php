@@ -17,29 +17,36 @@
         ->get();
     
     $monthlyData = array_fill(0, 12, 0);
-    if (\Illuminate\Support\Facades\Schema::hasColumn('beneficiaries', 'created_at')) {
-        $beneficiariesByMonth = \App\Models\Beneficiarie::selectRaw('DATEPART(MONTH, created_at) as month, COUNT(*) as total')
-            ->whereNotNull('created_at')
-            ->whereYear('created_at', date('Y'))
-        ->groupByRaw('DATEPART(MONTH, created_at)')
-            ->get();
-        foreach ($beneficiariesByMonth as $item) {
-            $monthlyData[$item->month - 1] = $item->total;
-        }
+    $beneficiariesByMonth = \App\Models\Beneficiarie::selectRaw('MONTH(created_at) as month, COUNT(*) as total')
+        ->whereNotNull('created_at')
+        ->whereYear('created_at', date('Y'))
+        ->groupByRaw('MONTH(created_at)')
+        ->get();
+    foreach ($beneficiariesByMonth as $item) {
+        $monthlyData[$item->month - 1] = $item->total;
     }
     
     // Transacciones por tipo
     $transactionsIn = \App\Models\Transaction::where('type_transaction_id', 1)->count();
     $transactionsOut = \App\Models\Transaction::where('type_transaction_id', 2)->count();
     
-    // Stock total
-    $totalStock = \App\Models\Product::sum('stock');
+    // Stock total - calculado desde detail_products
+    $totalStock = \App\Models\DetailProduct::get()->sum(function($dp) {
+        $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
+        return $dp->quantity - $used;
+    });
     
-    // PECOSAS por mes - usando DATEPART para SQL Server
-    $pecosasByMonth = \App\Models\Pecosa::selectRaw('DATEPART(MONTH, delivery_date) as month, COUNT(*) as total')
+    // Variables para las barras de progreso
+    $coberturaPorcentaje = $totalPartners > 0 ? min(($totalBeneficiaries / $totalPartners) * 100, 100) : 0;
+    $clubesPorcentaje = min($totalAssociations * 10, 100);
+    $activasPorcentaje = $totalPartners > 0 ? ($activePartners / $totalPartners) * 100 : 0;
+    $stockPorcentaje = min(($totalStock / 500) * 100, 100);
+    
+    // PECOSAS por mes
+    $pecosasByMonth = \App\Models\Pecosa::selectRaw('MONTH(delivery_date) as month, COUNT(*) as total')
         ->whereNotNull('delivery_date')
         ->whereYear('delivery_date', date('Y'))
-        ->groupByRaw('DATEPART(MONTH, delivery_date)')
+        ->groupByRaw('MONTH(delivery_date)')
         ->get();
     
     $pecosaData = array_fill(0, 12, 0);
@@ -65,13 +72,12 @@
             <h1 class="text-white font-extrabold text-4xl leading-tight mb-3">Panel de Control<br><span class="text-sun">PROVALE</span></h1>
             <p class="text-white/75 text-base font-medium max-w-md">Gestiona beneficiarios, club de madres y entregas de manera eficiente. Todo en un solo lugar.</p>
             <div class="flex gap-3 mt-6">
-                <a href="{{ route('socios-beneficiarios.index') }}" class="px-5 py-2.5 bg-white text-primary font-bold rounded-xl text-sm hover:bg-teal-50 transition-all shadow-lg">
-                    <i class="fas fa-plus mr-2"></i>Ir a Módulos
+                <a href="" class="px-5 py-2.5 bg-white text-primary font-bold rounded-xl text-sm hover:bg-teal-50 transition-all shadow-lg">
+                    <i class="fas fa-plus mr-2"></i>Crear Pecosa
                 </a>
-                <a href="{{ route('socios-beneficiarios.index') }}" class="px-5 py-2.5 bg-white/15 text-white font-bold rounded-xl text-sm hover:bg-white/25 transition-all backdrop-blur-sm border border-white/20">
-                    <i class="fas fa-file-alt mr-2"></i>Ver Reportes
+                <a href="" class="px-5 py-2.5 bg-white/15 text-white font-bold rounded-xl text-sm hover:bg-white/25 transition-all backdrop-blur-sm border border-white/20">
+                    <i class="fas fa-file-alt mr-2"></i>Ver Movimientos
                 </a>
-
             </div>
         </div>
     </div>
@@ -172,11 +178,11 @@
     <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
         <h3 class="text-charcoal font-bold text-lg mb-5">Acciones Rápidas</h3>
         <div class="grid grid-cols-2 gap-3">
-            <a href="{{ route('socios-beneficiarios.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-leaf-light hover:bg-leaf/20 transition-all group">
-                <div class="w-10 h-10 bg-leaf rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
+            <a href="{{ route('socios-beneficiarios.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-green-100 hover:bg-green/20 transition-all group">
+                <div class="w-10 h-10 bg-[#2EE67B] rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
                     <i class="fas fa-users"></i>
                 </div>
-                <span class="text-xs font-bold text-leaf text-center leading-tight">Socios y Beneficiarios</span>
+                <span class="text-xs font-bold text-[#2EE67B] text-center leading-tight">Socios y Beneficiarios</span>
             </a>
             <a href="{{ route('club-reconocimientos.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-sky-light hover:bg-sky/20 transition-all group">
                 <div class="w-10 h-10 bg-[#0284C7] rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
@@ -199,16 +205,16 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
+    <!-- <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
         <h3 class="text-charcoal font-bold text-lg mb-5">Metas del Mes</h3>
         <div class="space-y-5">
             <div>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-earth">Cobertura Beneficiarios</span>
-                    <span class="text-sm font-bold text-charcoal">{{ $totalPartners > 0 ? round(($totalBeneficiaries / $totalPartners) * 100) : 0 }}%</span>
+                    <span class="text-sm font-semibold text-earth">Beneficiarios</span>
+                    <span class="text-sm font-bold text-charcoal">{{ $totalPartners > 0 ? $totalPartners : 0 }}</span>
                 </div>
                 <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-leaf to-leaf-dark rounded-full" style="width:{{ $totalPartners > 0 ? min(($totalBeneficiaries / $totalPartners) * 100, 100) : 0 }}%"></div>
+                    <div class="h-full bg-gradient-to-r from-leaf to-leaf-dark rounded-full" style="width:{{ $coberturaPorcentaje }}%"></div>
                 </div>
             </div>
             <div>
@@ -217,16 +223,16 @@
                     <span class="text-sm font-bold text-charcoal">{{ $totalAssociations }}</span>
                 </div>
                 <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-sky to-[#5ba3c5] rounded-full" style="width:{{ min($totalAssociations * 10, 100) }}%"></div>
+                    <div class="h-full bg-gradient-to-r from-sky to-[#5ba3c5] rounded-full" style="width:{{ $clubesPorcentaje }}%"></div>
                 </div>
             </div>
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-sm font-semibold text-earth">Socias Activas</span>
-                    <span class="text-sm font-bold text-charcoal">{{ $totalPartners > 0 ? round(($activePartners / $totalPartners) * 100) : 0 }}%</span>
+                    <span class="text-sm font-bold text-charcoal">{{ round($activasPorcentaje) }}%</span>
                 </div>
                 <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-sun to-[#e69553] rounded-full" style="width:{{ $totalPartners > 0 ? ($activePartners / $totalPartners) * 100 : 0 }}%"></div>
+                    <div class="h-full bg-gradient-to-r from-sun to-[#e69553] rounded-full" style="width:{{ $activasPorcentaje }}%"></div>
                 </div>
             </div>
             <div>
@@ -235,37 +241,11 @@
                     <span class="text-sm font-bold text-charcoal">{{ $totalStock > 0 ? 'OK' : 'Bajo' }}</span>
                 </div>
                 <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-clay to-[#d55d3f] rounded-full" style="width:{{ min(($totalStock / 500) * 100, 100) }}%"></div>
+                    <div class="h-full bg-gradient-to-r from-clay to-[#d55d3f] rounded-full" style="width:{{ $stockPorcentaje }}%"></div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
-        <h3 class="font-bold text-charcoal text-lg flex items-center gap-2">
-            <i class="fas fa-clock-rotate-left text-leaf"></i> Resumen por Módulo
-        </h3>
-    </div>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
-        <div class="text-center p-4 rounded-xl bg-leaf-light">
-            <div class="text-3xl font-extrabold text-leaf">{{ $totalPartners }}</div>
-            <div class="text-sm font-bold text-leaf-dark">Socios</div>
-        </div>
-        <div class="text-center p-4 rounded-xl bg-sky-light">
-            <div class="text-3xl font-extrabold text-[#0284C7]">{{ $totalBeneficiaries }}</div>
-            <div class="text-sm font-bold text-[#0369a1]">Beneficiarios</div>
-        </div>
-        <div class="text-center p-4 rounded-xl bg-sun-light">
-            <div class="text-3xl font-extrabold text-[#D97706]">{{ $totalAssociations }}</div>
-            <div class="text-sm font-bold text-[#b45309]">Clubes</div>
-        </div>
-        <div class="text-center p-4 rounded-xl bg-clay-light">
-            <div class="text-3xl font-extrabold text-clay">{{ $totalProducts }}</div>
-            <div class="text-sm font-bold text-[#b45309]">Productos</div>
-        </div>
-    </div>
+    </div> -->
 </div>
 
 <script>

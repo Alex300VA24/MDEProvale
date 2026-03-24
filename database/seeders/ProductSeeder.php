@@ -15,21 +15,15 @@ class ProductSeeder extends Seeder
     public function run()
     {
         DB::table('products')->insert([
-            'title' => 'Leche Evaporada',
-            'code' => 'PROD-001',
-            'abbreviation' => 'LCH',
-            'stock' => 100,
-            'unit_price' => 100.00,
+            'title' => 'LECHE EVAPORADA ENTERA',
+            'abbreviation' => 'LEC',
             'state_id' => 1,
-            'uom_id' => 1,
+            'uom_id' => 2,
         ]);
         
         DB::table('products')->insert([
-            'title' => 'Hojuela de Quinua',
-            'code' => 'PROD-002',
-            'abbreviation' => 'QUN',
-            'stock' => 100,
-            'unit_price' => 100.00,
+            'title' => 'HOJUELA DE QUINUA AVENA PRECOCIDO FORTIFICADO CON VITAMINAS Y MINERALES',
+            'abbreviation' => 'HOJ',
             'state_id' => 1,
             'uom_id' => 1,
         ]);

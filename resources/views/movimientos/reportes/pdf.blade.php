@@ -1,83 +1,83 @@
-@extends('reportes.layout')
+@extends('reportes.layout_patron')
 
 @section('title', 'Reporte de Movimientos')
+@section('titulo', 'PADRÓN DE MOVIMIENTOS')
+@section('subtitulo', $titulo ?? '')
 
 @section('content')
-<div class="info-box">
-    <h2>{{ $titulo }}</h2>
-    <div class="info-row">
-        <span class="info-label">Fecha de generación:</span>
-        <span>{{ date('d/m/Y H:i:s') }}</span>
-    </div>
-    <div class="info-row">
-        <span class="info-label">Total de registros:</span>
-        <span>{{ $transactions->count() }}</span>
-    </div>
-</div>
+@php
+    $numero_fila = 1;
+    $totalMovimientos = $transactions->count();
+    $ingresos = $transactions->filter(function($t) { return $t->typeTransaction && $t->typeTransaction->title == 'Ingreso'; })->count();
+    $salidas = $transactions->filter(function($t) { return $t->typeTransaction && $t->typeTransaction->title == 'Salida'; })->count();
+    $valorTotal = $transactions->sum('total_price');
+@endphp
 
-@if($tipo == 'valorizacion' || $tipo == 'estadistico')
-<div class="summary-box">
-    <h3>Resumen</h3>
-    <div class="summary-grid">
-        <div class="summary-item">
-            <div class="summary-value">{{ $transactions->count() }}</div>
-            <div class="summary-label">Total Movimientos</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">{{ $transactions->filter(function($t) { return $t->typeTransaction && $t->typeTransaction->title == 'Ingreso'; })->count() }}</div>
-            <div class="summary-label">Ingresos</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">{{ $transactions->filter(function($t) { return $t->typeTransaction && $t->typeTransaction->title == 'Salida'; })->count() }}</div>
-            <div class="summary-label">Salidas</div>
-        </div>
-    </div>
-</div>
-@endif
-
-<table>
+<table class="main-table">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Producto</th>
-            <th>Tipo</th>
-            <th>Cantidad</th>
-            <th>Precio Unit.</th>
-            <th>Total</th>
-            <th>Fecha</th>
+            <th style="width: 30px;">N°</th>
+            <th style="width: 40px;">CÓDIGO</th>
+            <th style="width: 100px;">PRODUCTO</th>
+            <th style="width: 50px;">TIPO</th>
+            <th style="width: 40px;">CANTIDAD</th>
+            <th style="width: 50px;">PRECIO</th>
+            <th style="width: 50px;">TOTAL</th>
+            <th style="width: 50px;">FECHA</th>
         </tr>
     </thead>
     <tbody>
-        @foreach($transactions as $transaction)
+        @forelse($transactions as $transaction)
         <tr>
-            <td>#{{ $transaction->id }}</td>
+            <td class="text-center">{{ $numero_fila }}</td>
+            <td class="text-center">{{ str_pad($transaction->id, 4, '0', STR_PAD_LEFT) }}</td>
             <td>{{ $transaction->product->title ?? 'Sin producto' }}</td>
-            <td>
+            <td class="text-center">
                 @if($transaction->typeTransaction && $transaction->typeTransaction->title == 'Ingreso')
-                    <span class="badge badge-success">Ingreso</span>
+                    INGRESO
                 @else
-                    <span class="badge badge-danger">Salida</span>
+                    SALIDA
                 @endif
             </td>
-            <td>{{ $transaction->quantity }}</td>
-            <td>S/ {{ number_format($transaction->unit_price, 2) }}</td>
-            <td>S/ {{ number_format($transaction->total_price, 2) }}</td>
-            <td>{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y') }}</td>
+            <td class="text-center">{{ $transaction->quantity }}</td>
+            <td class="text-center">S/ {{ number_format($transaction->unit_price, 2) }}</td>
+            <td class="text-center">S/ {{ number_format($transaction->total_price, 2) }}</td>
+            <td class="text-center">
+                @if($transaction->created_at)
+                    {{ date('d/m/Y', strtotime($transaction->created_at)) }}
+                @else
+                    -
+                @endif
+            </td>
         </tr>
-        @endforeach
+        @php $numero_fila++; @endphp
+        @empty
+        <tr>
+            <td colspan="8" class="text-center" style="padding: 20px;">No se encontraron registros para este reporte.</td>
+        </tr>
+        @endforelse
     </tbody>
-    @if($tipo == 'valorizacion')
-    <tfoot>
-        <tr style="background: #E8F5E9; font-weight: bold;">
-            <td colspan="5" style="text-align: right;">TOTAL:</td>
-            <td>S/ {{ number_format($transactions->sum('total_price'), 2) }}</td>
-            <td></td>
-        </tr>
-    </tfoot>
-    @endif
 </table>
 
-@if($transactions->isEmpty())
-<p style="text-align: center; color: #8B7355; padding: 20px;">No se encontraron registros para este reporte.</p>
+@if($transactions->isNotEmpty())
+<table class="totales-table" style="width: 50%; margin-top: 15px; border-collapse: collapse; border: 2px solid #000; margin-left: auto; margin-right: auto;">
+    <tbody>
+        <tr style="background-color: #e0e0e0;">
+            <td colspan="3" style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">
+                CUADRO RESUMEN DE MOVIMIENTOS
+            </td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">INGRESOS</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">SALIDAS</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">VALOR TOTAL</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold; color: #4A7C59;">{{ $ingresos }}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold; color: #E76F51;">{{ $salidas }}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold; background-color: #e0e0e0;">S/ {{ number_format($valorTotal, 2) }}</td>
+        </tr>
+    </tbody>
+</table>
 @endif
 @endsection

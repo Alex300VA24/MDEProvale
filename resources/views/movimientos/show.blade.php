@@ -49,10 +49,10 @@
             <a href="{{ route('movimientos.edit', $transaction) }}" class="btn-primary">
                 <i class="fas fa-edit mr-2"></i> Editar
             </a>
-            <form action="{{ route('movimientos.destroy', $transaction) }}" method="POST" class="inline">
+            <form id="form-delete-mov-show" action="{{ route('movimientos.destroy', $transaction) }}" method="POST" class="inline">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn-danger" onclick="return confirm('¿Estás seguro de eliminar este movimiento?')">
+                <button type="button" class="btn-danger" onclick="confirmDelete('form-delete-mov-show', 'Se eliminará este movimiento de forma permanente.')">
                     <i class="fas fa-trash mr-2"></i> Eliminar
                 </button>
             </form>

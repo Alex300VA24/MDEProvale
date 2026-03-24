@@ -24,7 +24,7 @@ class TypeBenefitSeeder extends Seeder
             'min_age' => 0,
             'max_age' => 6,
             'priority' => 1,
-            'observation' => '',
+            'abbreviation' => 'NI0',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -34,7 +34,7 @@ class TypeBenefitSeeder extends Seeder
             'min_age' => 7,
             'max_age' => 13,
             'priority' => 2,
-            'observation' => '',
+            'abbreviation' => 'NI7',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -44,7 +44,7 @@ class TypeBenefitSeeder extends Seeder
             'min_age' => 65,
             'max_age' => null,
             'priority' => 2,
-            'observation' => '',
+            'abbreviation' => 'ADU',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -54,7 +54,7 @@ class TypeBenefitSeeder extends Seeder
             'min_age' => 12,
             'max_age' => null,
             'priority' => 1,
-            'observation' => '',
+            'abbreviation' => 'GES',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -64,7 +64,7 @@ class TypeBenefitSeeder extends Seeder
             'min_age' => 12,
             'max_age' => null,
             'priority' => 1,
-            'observation' => '',
+            'abbreviation' => 'LAC',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -74,7 +74,7 @@ class TypeBenefitSeeder extends Seeder
             'min_age' => 0,
             'max_age' => null,
             'priority' => 2,
-            'observation' => '',
+            'abbreviation' => 'TBC',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

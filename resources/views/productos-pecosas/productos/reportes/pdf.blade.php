@@ -1,88 +1,99 @@
-@extends('reportes.layout')
+@extends('reportes.layout_patron')
 
 @section('title', 'Reporte de Productos')
+@section('titulo', 'PADRÓN DE PRODUCTOS')
+@section('subtitulo', $titulo ?? '')
 
 @section('content')
-<div class="info-box">
-    <h2>{{ $titulo }}</h2>
-    <div class="info-row">
-        <span class="info-label">Fecha de generación:</span>
-        <span>{{ date('d/m/Y H:i:s') }}</span>
-    </div>
-    <div class="info-row">
-        <span class="info-label">Total de registros:</span>
-        <span>{{ $products->count() }}</span>
-    </div>
-</div>
+@php
+    $numero_fila = 1;
+    $totalProductos = $products->count();
+    $stockTotal = $products->sum('stock');
+    $valorTotal = $products->sum(function($p) { return $p->stock * $p->unit_price; });
+    $stockBajo = $products->filter(function($p) { return $p->stock <= 10; })->count();
+@endphp
 
-@if($tipo == 'valorizacion')
-<div class="summary-box">
-    <h3>Resumen de Valorización</h3>
-    <div class="summary-grid">
-        <div class="summary-item">
-            <div class="summary-value">{{ $products->count() }}</div>
-            <div class="summary-label">Total Productos</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">{{ number_format($products->sum('stock'), 0) }}</div>
-            <div class="summary-label">Stock Total</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">S/ {{ number_format($products->sum(function($p) { return $p->stock * $p->unit_price; }), 2) }}</div>
-            <div class="summary-label">Valor Total</div>
-        </div>
-    </div>
-</div>
-@endif
-
-<table>
+<table class="main-table">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Producto</th>
-            <th>Abreviatura</th>
-            <th>Stock</th>
-            <th>Unidad</th>
-            <th>Precio Unit.</th>
+            <th style="width: 30px;">N°</th>
+            <th style="width: 40px;">CÓDIGO</th>
+            <th style="width: 120px;">PRODUCTO</th>
+            <th style="width: 50px;">ABREV.</th>
+            <th style="width: 40px;">STOCK</th>
+            <th style="width: 40px;">UNIDAD</th>
+            <th style="width: 50px;">PRECIO</th>
             @if($tipo == 'valorizacion')
-            <th>Valor Total</th>
+            <th style="width: 50px;">VALOR</th>
             @endif
-            <th>Estado</th>
+            <th style="width: 40px;">ESTADO</th>
         </tr>
     </thead>
     <tbody>
-        @foreach($products as $product)
+        @forelse($products as $product)
         <tr>
-            <td>#{{ $product->id }}</td>
+            <td class="text-center">{{ $numero_fila }}</td>
+            <td class="text-center">{{ str_pad($product->id, 4, '0', STR_PAD_LEFT) }}</td>
             <td>{{ $product->title }}</td>
-            <td>{{ $product->abbreviation ?? '-' }}</td>
-            <td>
+            <td class="text-center">{{ $product->abbreviation ?? '-' }}</td>
+            <td class="text-center">
                 @if($product->stock <= 10)
-                    <span class="badge badge-danger">{{ $product->stock }}</span>
+                    <span style="background-color: #FCE8E4; color: #E76F51; padding: 1px 4px; border-radius: 2px; font-size: 5pt; font-weight: bold;">{{ $product->stock }}</span>
                 @elseif($product->stock <= 50)
-                    <span class="badge badge-warning">{{ $product->stock }}</span>
+                    <span style="background-color: #FEF3E2; color: #D97706; padding: 1px 4px; border-radius: 2px; font-size: 5pt; font-weight: bold;">{{ $product->stock }}</span>
                 @else
-                    <span class="badge badge-success">{{ $product->stock }}</span>
+                    {{ $product->stock }}
                 @endif
             </td>
-            <td>{{ $product->uom->abbreviation ?? '-' }}</td>
-            <td>S/ {{ number_format($product->unit_price, 2) }}</td>
+            <td class="text-center">{{ $product->uom->abbreviation ?? '-' }}</td>
+            <td class="text-center">S/ {{ number_format($product->unit_price, 2) }}</td>
             @if($tipo == 'valorizacion')
-            <td>S/ {{ number_format($product->stock * $product->unit_price, 2) }}</td>
+            <td class="text-center">S/ {{ number_format($product->stock * $product->unit_price, 2) }}</td>
             @endif
-            <td>
+            <td class="text-center">
                 @if($product->state && $product->state->title == 'Activo')
-                    <span class="badge badge-success">Activo</span>
+                    ACTIVO
                 @else
-                    <span class="badge badge-danger">Inactivo</span>
+                    INACTIVO
                 @endif
             </td>
         </tr>
-        @endforeach
+        @php $numero_fila++; @endphp
+        @empty
+        <tr>
+            <td colspan="{{ ($tipo == 'valorizacion') ? 9 : 8 }}" class="text-center" style="padding: 20px;">
+                No se encontraron registros para este reporte.
+            </td>
+        </tr>
+        @endforelse
     </tbody>
 </table>
 
-@if($products->isEmpty())
-<p style="text-align: center; color: #8B7355; padding: 20px;">No se encontraron registros para este reporte.</p>
+@if($products->isNotEmpty())
+<table class="totales-table" style="width: 50%; margin-top: 15px; border-collapse: collapse; border: 2px solid #000; margin-left: auto; margin-right: auto;">
+    <tbody>
+        <tr style="background-color: #e0e0e0;">
+            <td colspan="{{ ($tipo == 'valorizacion') ? 4 : 3 }}" style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">
+                CUADRO RESUMEN DE PRODUCTOS
+            </td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">TOTAL</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">STOCK</td>
+            @if($tipo == 'valorizacion')
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">VALOR</td>
+            @endif
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">STOCK BAJO</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold; background-color: #e0e0e0;">{{ $totalProductos }}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold;">{{ number_format($stockTotal, 0) }}</td>
+            @if($tipo == 'valorizacion')
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold;">S/ {{ number_format($valorTotal, 2) }}</td>
+            @endif
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold; color: #E76F51;">{{ $stockBajo }}</td>
+        </tr>
+    </tbody>
+</table>
 @endif
 @endsection

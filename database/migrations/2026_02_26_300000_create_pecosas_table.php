@@ -15,10 +15,16 @@ class CreatePecosasTable extends Migration
     {
         Schema::create('pecosas', function (Blueprint $table) {
             $table->id();
-            $table->char('pecosa_number', 8);
+            $table->char('pecosa_number', 8)->unique();
             $table->text('observation')->nullable();
             $table->dateTime('delivery_date');
-            $table->integer('managing_partner_id');
+            $table->foreignId('chief_id')
+              ->constrained('responsibles');
+
+            // Responsable almacenero
+            $table->foreignId('storekeeper_id')
+                ->constrained('responsibles');
+            $table->foreignId('managing_partner_id')->constrained('partners');
             $table->foreignId('state_id')->constrained();
             $table->foreignId('association_id')->constrained();
             $table->timestamps();

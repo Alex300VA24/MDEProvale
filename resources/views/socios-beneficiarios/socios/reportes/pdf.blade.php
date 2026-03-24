@@ -1,84 +1,97 @@
-@extends('reportes.layout')
+@extends('reportes.layout_patron')
 
 @section('title', 'Reporte de Socios')
+@section('titulo', 'PADRÓN DE SOCIOS')
+@section('subtitulo', $titulo ?? '')
 
 @section('content')
-<div class="info-box">
-    <h2>{{ $titulo }}</h2>
-    <div class="info-row">
-        <span class="info-label">Fecha de generación:</span>
-        <span>{{ date('d/m/Y H:i:s') }}</span>
-    </div>
-    <div class="info-row">
-        <span class="info-label">Total de registros:</span>
-        <span>{{ $partners->count() }}</span>
-    </div>
-</div>
+@php
+    $numero_fila = 1;
+    $totalSocios = $partners->count();
+    $activos = $partners->filter(function($p) { return $p->state && $p->state->title == 'Activo'; })->count();
+    $inactivos = $totalSocios - $activos;
+    $clubes = $partners->groupBy('association_id')->count();
+@endphp
 
-@if($tipo == 'estadistico')
-<div class="summary-box">
-    <h3>Resumen Estadístico</h3>
-    <div class="summary-grid">
-        <div class="summary-item">
-            <div class="summary-value">{{ $partners->count() }}</div>
-            <div class="summary-label">Total Socios</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">{{ $partners->filter(function($p) { return $p->state && $p->state->title == 'Activo'; })->count() }}</div>
-            <div class="summary-label">Activos</div>
-        </div>
-        <div class="summary-item">
-            <div class="summary-value">{{ $partners->groupBy('association_id')->count() }}</div>
-            <div class="summary-label">Clubes</div>
-        </div>
-    </div>
-</div>
-@endif
-
-<table>
+<table class="main-table">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Socio</th>
-            <th>DNI</th>
-            <th>Club de Madres</th>
-            <th>Fecha Inicio</th>
-            <th>Estado</th>
-            @if($tipo == 'beneficiarios')
-            <th>Beneficiarios</th>
-            @endif
+            <th style="width: 30px;">N°</th>
+            <th style="width: 50px;">CÓDIGO</th>
+            <th style="width: 120px;">APELLIDOS Y NOMBRES</th>
+            <th style="width: 50px;">DNI</th>
+            <th style="width: 120px;">CLUB DE MADRES</th>
+            <th style="width: 60px;">FECHA INICIO</th>
+            <th style="width: 50px;">ESTADO</th>
+            <th style="width: 30px;">BENEF.</th>
         </tr>
     </thead>
     <tbody>
-        @foreach($partners as $partner)
+        @forelse($partners as $partner)
         <tr>
-            <td>#{{ $partner->id }}</td>
+            <td class="text-center">{{ $numero_fila }}</td>
+            <td class="text-center">{{ str_pad($partner->id, 4, '0', STR_PAD_LEFT) }}</td>
             <td>
                 @if($partner->people)
-                    {{ $partner->people->names }} {{ $partner->people->father_lastname }} {{ $partner->people->mother_lastname }}
+                    {{ $partner->people->father_lastname }} {{ $partner->people->mother_lastname }}, {{ $partner->people->names }}
                 @else
                     Sin nombre
                 @endif
             </td>
-            <td>{{ $partner->people->dni ?? '-' }}</td>
+            <td class="text-center">{{ $partner->people->dni ?? '-' }}</td>
             <td>{{ $partner->association->name ?? '-' }}</td>
-            <td>{{ \Carbon\Carbon::parse($partner->date_begin)->format('d/m/Y') }}</td>
-            <td>
-                @if($partner->state && $partner->state->title == 'Activo')
-                    <span class="badge badge-success">Activo</span>
+            <td class="text-center">
+                @if($partner->date_begin)
+                    {{ date('d/m/Y', strtotime($partner->date_begin)) }}
                 @else
-                    <span class="badge badge-danger">Inactivo</span>
+                    -
                 @endif
             </td>
-            @if($tipo == 'beneficiarios')
-            <td>{{ $partner->beneficiaries->count() }}</td>
-            @endif
+            <td class="text-center">
+                @if($partner->state && $partner->state->title == 'Activo')
+                    ACTIVO
+                @else
+                    INACTIVO
+                @endif
+            </td>
+            <td class="text-center">
+                @if($tipo == 'beneficiarios' && $partner->beneficiaries)
+                    {{ $partner->beneficiaries->count() }}
+                @else
+                    -
+                @endif
+            </td>
         </tr>
-        @endforeach
+        @php $numero_fila++; @endphp
+        @empty
+        <tr>
+            <td colspan="8" class="text-center" style="padding: 20px;">No se encontraron registros para este reporte.</td>
+        </tr>
+        @endforelse
     </tbody>
 </table>
 
-@if($partners->isEmpty())
-<p style="text-align: center; color: #8B7355; padding: 20px;">No se encontraron registros para este reporte.</p>
+@if($partners->isNotEmpty())
+<table class="totales-table" style="width: 50%; margin-top: 15px; border-collapse: collapse; border: 2px solid #000; margin-left: auto; margin-right: auto;">
+    <tbody>
+        <tr style="background-color: #e0e0e0;">
+            <td colspan="4" style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 9pt; font-weight: bold;">
+                CUADRO RESUMEN DE SOCIOS
+            </td>
+        </tr>
+        <tr style="background-color: #f5f5f5;">
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">ACTIVOS</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">INACTIVOS</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold;">CLUBES</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 8pt; font-weight: bold; background-color: #d0d0d0;">TOTAL</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 10pt; font-weight: bold;">{{ $activos }}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 10pt; font-weight: bold;">{{ $inactivos }}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 10pt; font-weight: bold;">{{ $clubes }}</td>
+            <td style="border: 1px solid #000; padding: 8px; text-align: center; font-size: 11pt; font-weight: bold; background-color: #e0e0e0;">{{ $totalSocios }}</td>
+        </tr>
+    </tbody>
+</table>
 @endif
 @endsection

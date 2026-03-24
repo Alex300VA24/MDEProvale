@@ -34,7 +34,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('general')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -59,7 +59,7 @@
                             <option value="landscape">📃 Horizontal</option>
                         </select>
                         <button type="button" onclick="generarReporte('ingresos')" class="btn-primary px-4">
-                            <i class="fas fa-download"></i>
+                            <i class="fas fa-file-pdf"></i>
                         </button>
                     </div>
                 </form>
@@ -85,7 +85,7 @@
                             <option value="landscape">📃 Horizontal</option>
                         </select>
                         <button type="button" onclick="generarReporte('salidas')" class="btn-primary px-4">
-                            <i class="fas fa-download"></i>
+                            <i class="fas fa-file-pdf"></i>
                         </button>
                     </div>
                 </form>
@@ -115,7 +115,7 @@
                             <option value="landscape">📃 Horizontal</option>
                         </select>
                         <button type="button" onclick="generarReporte('producto')" class="btn-primary px-4">
-                            <i class="fas fa-download"></i>
+                            <i class="fas fa-file-pdf"></i>
                         </button>
                     </div>
                 </form>
@@ -138,7 +138,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('estadistico')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>
@@ -160,7 +160,7 @@
                         <option value="landscape">📃 Horizontal</option>
                     </select>
                     <button onclick="generarReporte('valorizacion')" class="btn-primary px-4">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>

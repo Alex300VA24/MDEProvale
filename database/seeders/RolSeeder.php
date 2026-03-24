@@ -22,8 +22,15 @@ class RolSeeder extends Seeder
         ]);
 
         DB::table('rols')->insert([
-            'title' => 'Usuario',
-            'description' => 'Usuario con acceso básico',
+            'title' => 'Usuario Principal',
+            'description' => 'Acceso a todos los módulos excepto mantenimiento y sistema',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('rols')->insert([
+            'title' => 'Usuario Básico',
+            'description' => 'Acceso a un solo módulo',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

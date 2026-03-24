@@ -71,17 +71,26 @@ class Association extends Model
                 $q->where('title', 'like', '%PRESIDENTA%');
             })
             ->whereHas('state', function ($q) {
-                $q->where('abbreviation', 'ACTI');
+                $q->where('abbreviation', 'A');
             })
             ->exists();
     }
 
     public function isHabilitado()
     {
-        return $this->state && $this->state->abbreviation === 'ACTI';
+        return $this->state && $this->state->abbreviation === 'A';
     }
 
-    // En Asociacion.php
+    public function getPresidenta()
+    {
+        $directive = Directive::where('resolution_id', $this->resolution_id)
+            ->where('state_id', 1)
+            ->where('position_id', 1)
+            ->first();
+
+        return $directive ? $directive->partner : null;
+    }
+
     public function resolutionsHistory()
     {
         return $this->belongsToMany(Resolution::class, 'resolution_associations');

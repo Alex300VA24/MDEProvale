@@ -49,10 +49,10 @@
             <a href="{{ route('productos-pecosas.productos.edit', $product) }}" class="btn-primary">
                 <i class="fas fa-edit mr-2"></i> Editar
             </a>
-            <form action="{{ route('productos-pecosas.productos.destroy', $product) }}" method="POST" class="inline">
+            <form id="form-delete-prod-show" action="{{ route('productos-pecosas.productos.destroy', $product) }}" method="POST" class="inline">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn-danger" onclick="return confirm('¿Estás seguro de eliminar este producto?')">
+                <button type="button" class="btn-danger" onclick="confirmDelete('form-delete-prod-show', 'Se eliminará este producto de forma permanente.')">
                     <i class="fas fa-trash mr-2"></i> Eliminar
                 </button>
             </form>

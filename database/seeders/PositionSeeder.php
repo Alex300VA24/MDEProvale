@@ -16,13 +16,13 @@ class PositionSeeder extends Seeder
     {
 
         DB::table('positions')->insert([
-            'title' => 'Presidenta',
+            'title' => 'PRESIDENTA',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('positions')->insert([
-            'title' => 'Vice Presidenta',
+            'title' => 'VICE PRESIDENTA',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
