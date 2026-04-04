@@ -13,30 +13,35 @@ class Transaction extends Model
         'quantity',
         'unit_price',
         'total_price',
-        'product_id',
+        'detail_product_id',
         'type_transaction_id',
         'document_number',
-        'stock_quantity',
-        'stock_unit_price',
-        'stock_total_price',
         'adjustment',
         'transaction_date',
-        'start_date',
-        'end_date',
+        'product_name',
+        'uom_title',
     ];
 
+    public function detailProduct()
+    {
+        return $this->belongsTo(DetailProduct::class);
+    }
+
+    // Acceso al producto actual a través del lote
     public function product()
     {
-        return $this->belongsTo(Product::class);
+        return $this->hasOneThrough(
+            Product::class,
+            DetailProduct::class,
+            'id',               // FK en detail_products
+            'id',               // FK en products
+            'detail_product_id',// local key en transactions
+            'product_id'        // local key en detail_products
+        );
     }
 
     public function typeTransaction()
     {
         return $this->belongsTo(TypeTransaction::class);
-    }
-
-    public function detailProducts()
-    {
-        return $this->hasMany(DetailProduct::class, 'product_id', 'product_id');
     }
 }

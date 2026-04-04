@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ResponsibleSeeder::class);
         $this->call(BeneficiarieHistorySeeder::class);
         $this->call(DirectiveSeeder::class);
+        $this->call(RacionesSeeder::class);
         //$this->call(TransactionSeeder::class);
         //$this->call(PecosaSeeder::class);
     }

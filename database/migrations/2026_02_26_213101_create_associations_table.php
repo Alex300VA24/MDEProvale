@@ -6,11 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 class CreateAssociationsTable extends Migration
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
     public function up()
     {
         Schema::create('associations', function (Blueprint $table) {
@@ -18,9 +13,8 @@ class CreateAssociationsTable extends Migration
             $table->string('code', 20)->unique();
             $table->string('name', 100);
             $table->string('address', 150);
-            $table->string('company_name', 10);
+            $table->string('company_name', 150);
             $table->text('observation')->nullable();
-            $table->string('president', 150)->nullable();
             $table->foreignId('resolution_id')->constrained();
             $table->foreignId('state_id')->constrained();
             $table->foreignId('place_sector_id')->constrained();
@@ -29,11 +23,6 @@ class CreateAssociationsTable extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('associations');

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Association extends Model
 {
@@ -15,12 +16,10 @@ class Association extends Model
         'address',
         'company_name',
         'observation',
-        'property_number',
         'state_id',
         'place_sector_id',
         'type_premises_id',
         'resolution_id',
-        'president',
     ];
 
     public function placeSector()
@@ -61,34 +60,70 @@ class Association extends Model
 
     public function directives()
     {
-        return $this->hasManyThrough(Directive::class, Resolution::class);
+        // Directivas del comité a través de los socios que pertenecen a él
+        return Directive::whereIn('partner_id', $this->partners()->pluck('id'));
     }
 
-    public function hasPresidenta()
+    public function hasPresidenta(): bool
     {
-        return $this->directives()
-            ->whereHas('position', function ($q) {
-                $q->where('title', 'like', '%PRESIDENTA%');
-            })
-            ->whereHas('state', function ($q) {
-                $q->where('abbreviation', 'A');
-            })
+        $partnerIds = $this->partners()->pluck('id');
+        $resolutionIds = \DB::table('resolution_associations')
+            ->where('association_id', $this->id)
+            ->pluck('resolution_id');
+        
+        return Directive::whereIn('partner_id', $partnerIds)
+            ->whereIn('resolution_id', $resolutionIds)
+            ->whereHas('position', fn($q) => $q->where('title', 'like', '%PRESIDENTA%'))
+            ->whereHas('state', fn($q) => $q->where('abbreviation', 'A'))
             ->exists();
     }
 
-    public function isHabilitado()
+    public function isHabilitado(): bool
     {
         return $this->state && $this->state->abbreviation === 'A';
     }
 
-    public function getPresidenta()
+    public function getPresidenta(): ?Partner
     {
-        $directive = Directive::where('resolution_id', $this->resolution_id)
+        $partnerIds = $this->partners()
             ->where('state_id', 1)
-            ->where('position_id', 1)
+            ->pluck('id');
+        
+        $resolutionIds = \DB::table('resolution_associations')
+            ->where('association_id', $this->id)
+            ->orderBy('resolution_id', 'desc')
+            ->pluck('resolution_id');
+
+        if ($resolutionIds->isEmpty()) {
+            return null;
+        }
+
+        $directive = Directive::whereIn('partner_id', $partnerIds)
+            ->whereIn('resolution_id', $resolutionIds)
+            ->whereHas('position', fn($q) => $q->where('title', 'like', '%PRESIDENTA%'))
+            ->whereHas('state', fn($q) => $q->where('abbreviation', 'A'))
+            ->with('partner')
             ->first();
 
+        if (!$directive) {
+            $directive = Directive::whereIn('partner_id', $partnerIds)
+                ->whereHas('position', fn($q) => $q->where('title', 'like', '%PRESIDENTA%'))
+                ->whereHas('state', fn($q) => $q->where('abbreviation', 'A'))
+                ->orderBy('resolution_id', 'desc')
+                ->with('partner')
+                ->first();
+        }
+
         return $directive ? $directive->partner : null;
+    }
+
+    public function getPresidentName(): ?string
+    {
+        $presidenta = $this->getPresidenta();
+        if ($presidenta && $presidenta->people) {
+            return $presidenta->people->names . ' ' . $presidenta->people->father_lastname;
+        }
+        return null;
     }
 
     public function resolutionsHistory()

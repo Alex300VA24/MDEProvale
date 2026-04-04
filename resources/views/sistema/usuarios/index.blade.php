@@ -58,6 +58,14 @@
                                 <i class="fas fa-edit"></i>
                             </button>
                             @endif
+                            @if(Auth::user()->canEditModule('sistema'))
+                            <button onclick="confirmResetPassword('{{ $usuario->id }}', '{{ addslashes($usuario->names) }} {{ addslashes($usuario->father_surname) }}', '{{ $usuario->dni }}')" class="btn-action bg-red-100 text-red-600 hover:bg-red-500 hover:text-white" title="Restablecer contraseña a DNI">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <form id="form-reset-password-{{ $usuario->id }}" action="{{ route('sistema.usuarios.reset-password', $usuario->id) }}" method="POST" class="hidden">
+                                @csrf
+                            </form>
+                            @endif
                             @if(Auth::user()->canDeleteModule('sistema'))
                             <form id="form-delete-usuario-{{ $usuario->id }}" action="{{ route('sistema.usuarios.destroy', $usuario->id) }}" method="POST" class="inline">
                                 @csrf

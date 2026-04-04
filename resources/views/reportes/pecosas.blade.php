@@ -34,11 +34,7 @@
             <td>{{ $pecosa->association->name ?? '-' }}</td>
             <td>{{ \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') }}</td>
             <td>
-                @if($pecosa->managingPartner && $pecosa->managingPartner->people)
-                    {{ $pecosa->managingPartner->people->names }} {{ $pecosa->managingPartner->people->father_lastname }}
-                @else
-                    -
-                @endif
+                {{ $pecosa->managing_partner_name ?? '-' }}
             </td>
             <td>
                 @if($pecosa->state && $pecosa->state->title == 'Activo')

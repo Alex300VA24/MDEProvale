@@ -9,20 +9,14 @@
             <i class="fas fa-exchange-alt text-leaf"></i> Gestión de Movimientos
         </h3>
         <div class="flex gap-3">
-            <a href="{{ route('movimientos.reparticion-tabla') }}" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-clipboard-list"></i> Repartición
-            </a>
-            <a href="{{ route('movimientos.comprobante-salida') }}" target="_blank" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-receipt"></i> Comprobante Salida
-            </a>
-            <a href="{{ route('movimientos.reportes') }}" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-file-pdf"></i> Reportes
-            </a>
             @if(Auth::user()->canCreateModule('movimientos'))
             <button onclick="openModal('modal-crear-ingreso')" class="btn-primary flex items-center gap-2">
                 <i class="fas fa-plus"></i> Nuevo Ingreso
             </button>
             @endif
+            <a href="{{ route('movimientos.reparticion-tabla') }}" class="btn-secondary flex items-center gap-2">
+                <i class="fas fa-clipboard-list"></i> Repartición
+            </a>
         </div>
     </div>
 

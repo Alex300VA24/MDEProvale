@@ -12,9 +12,6 @@
             <a href="{{ route('socios-beneficiarios.beneficiarios.imprimir') }}" target="_blank" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-print"></i> Imprimir Ficha
             </a>
-            <a href="{{ route('socios-beneficiarios.beneficiarios.reportes') }}" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-file-pdf"></i> Reportes
-            </a>
             <button onclick="openModal('modal-crear-beneficiario')" class="btn-primary flex items-center gap-2">
                 <i class="fas fa-plus"></i> Nuevo Beneficiario
             </button>

@@ -19,6 +19,12 @@ class Pecosa extends Model
         'managing_partner_id',
         'state_id',
         'association_id',
+        'chief_name',
+        'storekeeper_name',
+        'managing_partner_name',
+        'president_name',
+        'association_name',
+        'association_code',
     ];
 
     protected $casts = [

@@ -15,13 +15,13 @@ class ResponsibleSeeder extends Seeder
     public function run()
     {
         DB::table('responsibles')->insert([
-            'person_id' => 5656,
+            'person_id' => 5655,
             'type' => 'chief',
             'active' => 1,
         ]);
 
         DB::table('responsibles')->insert([
-            'person_id' => 5654,
+            'person_id' => 5653,
             'type' => 'storekeeper',
             'active' => 1,
         ]);

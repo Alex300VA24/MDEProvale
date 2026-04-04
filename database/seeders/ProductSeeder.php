@@ -22,7 +22,7 @@ class ProductSeeder extends Seeder
         ]);
         
         DB::table('products')->insert([
-            'title' => 'HOJUELA DE QUINUA AVENA PRECOCIDO FORTIFICADO CON VITAMINAS Y MINERALES',
+            'title' => 'HOJUELA DE QUINUA',
             'abbreviation' => 'HOJ',
             'state_id' => 1,
             'uom_id' => 1,

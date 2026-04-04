@@ -20,14 +20,18 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('login');
 });
 
-// Ruta para refrescar CSRF token sin middleware de sesión
+// Ruta pública para refrescar CSRF token
 Route::get('/refresh-csrf', function () {
     return response()->json(['csrf_token' => csrf_token()]);
 })->middleware('web');
 
+// Rutas públicas para recuperación de contraseña (SIN autenticación)
+Route::post('password-reset-request', [SistemaController::class, 'requestPasswordReset'])->name('password-reset-request');
+
+// Rutas que requieren autenticación
 Route::middleware('auth')->group(function () {
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -40,34 +44,17 @@ Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->middleware
 
     // Personas
     Route::get('personas', [SociosBeneficiariosController::class, 'indexPersonas'])->name('personas.index');
-    Route::get('personas/crear', [SociosBeneficiariosController::class, 'createPersona'])->name('personas.create');
     Route::post('personas', [SociosBeneficiariosController::class, 'storePersona'])->name('personas.store');
-    Route::get('personas/{person}', [SociosBeneficiariosController::class, 'showPersona'])->name('personas.show');
-    Route::get('personas/{person}/editar', [SociosBeneficiariosController::class, 'editPersona'])->name('personas.edit');
     Route::put('personas/{person}', [SociosBeneficiariosController::class, 'updatePersona'])->name('personas.update');
     Route::delete('personas/{person}', [SociosBeneficiariosController::class, 'destroyPersona'])->name('personas.destroy');
-    Route::post('personas/ajax', [SociosBeneficiariosController::class, 'storePersonAjax'])->name('personas.store-ajax');
 
     // Socios
-    Route::get('socios/crear', [SociosBeneficiariosController::class, 'createSocio'])->name('socios.create');
     Route::post('socios', [SociosBeneficiariosController::class, 'storeSocio'])->name('socios.store');
-    Route::get('socios/{partner}', [SociosBeneficiariosController::class, 'showSocio'])->name('socios.show');
-    Route::get('socios/{partner}/editar', [SociosBeneficiariosController::class, 'editSocio'])->name('socios.edit');
     Route::put('socios/{partner}', [SociosBeneficiariosController::class, 'updateSocio'])->name('socios.update');
     Route::delete('socios/{partner}', [SociosBeneficiariosController::class, 'destroySocio'])->name('socios.destroy');
-    Route::get('socios-reportes', [SociosBeneficiariosController::class, 'reportesSocios'])->name('socios.reportes');
-    Route::get('socios-reporte/{tipo}', [SociosBeneficiariosController::class, 'generarReporteSocios'])->name('socios.generar-reporte');
 
     // Beneficiarios
     Route::get('beneficiarios', [SociosBeneficiariosController::class, 'indexBeneficiarios'])->name('beneficiarios.index');
-    Route::get('beneficiarios/crear', [SociosBeneficiariosController::class, 'createBeneficiario'])->name('beneficiarios.create');
-    Route::post('beneficiarios', [SociosBeneficiariosController::class, 'storeBeneficiario'])->name('beneficiarios.store');
-    Route::get('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'showBeneficiario'])->name('beneficiarios.show');
-    Route::get('beneficiarios/{beneficiarie}/editar', [SociosBeneficiariosController::class, 'editBeneficiario'])->name('beneficiarios.edit');
-    Route::put('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'updateBeneficiario'])->name('beneficiarios.update');
-    Route::delete('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'destroyBeneficiario'])->name('beneficiarios.destroy');
-    Route::get('beneficiarios-reportes', [SociosBeneficiariosController::class, 'reportesBeneficiarios'])->name('beneficiarios.reportes');
-    Route::get('beneficiarios-reporte/{tipo}', [SociosBeneficiariosController::class, 'generarReporteBeneficiarios'])->name('beneficiarios.generar-reporte');
     Route::get('beneficiarios-imprimir', [SociosBeneficiariosController::class, 'imprimirFichaBeneficiario'])->name('beneficiarios.imprimir');
     Route::get('beneficiarios-padron', [SociosBeneficiariosController::class, 'reportePadronBeneficiarios'])->name('beneficiarios.padron');
 });
@@ -78,26 +65,16 @@ Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->middleware
     Route::get('/', [ClubReconocimientosController::class, 'index'])->name('index');
 
     // Club de Madres
-    Route::get('club/crear', [ClubReconocimientosController::class, 'createClub'])->name('create');
     Route::post('club', [ClubReconocimientosController::class, 'storeClub'])->name('store');
-    Route::get('club/{association}', [ClubReconocimientosController::class, 'showClub'])->name('show');
-    Route::get('club/{association}/editar', [ClubReconocimientosController::class, 'editClub'])->name('edit');
     Route::put('club/{association}', [ClubReconocimientosController::class, 'updateClub'])->name('update');
     Route::delete('club/{association}', [ClubReconocimientosController::class, 'destroyClub'])->name('destroy');
-    Route::get('club-reportes', [ClubReconocimientosController::class, 'reportesClub'])->name('club.reportes');
-    Route::get('club-reporte/{tipo}', [ClubReconocimientosController::class, 'generarReporteClub'])->name('club.generar-reporte');
     Route::get('club-padron', [ClubReconocimientosController::class, 'generarPadronClub'])->name('club.padron');
 
     // Reconocimientos
     Route::get('reconocimientos', [ClubReconocimientosController::class, 'indexReconocimientos'])->name('reconocimientos.index');
-    Route::get('reconocimientos/crear', [ClubReconocimientosController::class, 'createReconocimiento'])->name('reconocimientos.create');
     Route::post('reconocimientos', [ClubReconocimientosController::class, 'storeReconocimiento'])->name('reconocimientos.store');
-    Route::get('reconocimientos/{resolution}', [ClubReconocimientosController::class, 'showReconocimiento'])->name('reconocimientos.show');
-    Route::get('reconocimientos/{resolution}/editar', [ClubReconocimientosController::class, 'editReconocimiento'])->name('reconocimientos.edit');
     Route::put('reconocimientos/{resolution}', [ClubReconocimientosController::class, 'updateReconocimiento'])->name('reconocimientos.update');
     Route::delete('reconocimientos/{resolution}', [ClubReconocimientosController::class, 'destroyReconocimiento'])->name('reconocimientos.destroy');
-    Route::get('reconocimientos-reportes', [ClubReconocimientosController::class, 'reportesReconocimientos'])->name('reconocimientos.reportes');
-    Route::get('reconocimientos-reporte/{tipo}', [ClubReconocimientosController::class, 'generarReporteReconocimientos'])->name('reconocimientos.generar-reporte');
 
     // Asignar presidenta al comité
     Route::post('club/{association}/asignar-presidenta', [ClubReconocimientosController::class, 'asignarPresidenta'])->name('club.asignar-presidenta');
@@ -138,21 +115,28 @@ Route::prefix('productos-pecosas')->name('productos-pecosas.')->middleware('modu
     Route::post('productos-detalle', [ProductosPecosasController::class, 'storeProductoDetalle'])->name('productos-detalle.store');
 });
 
-// ==================== OTROS MÓDULOS ====================
+// ==================== MODULO MOVIMIENTOS ====================
 Route::resource('movimientos', TransactionController::class)->middleware('module:movimientos')->parameters([
     'movimientos' => 'transaction'
 ]);
 Route::get('movimientos-reportes', [TransactionController::class, 'reportes'])->name('movimientos.reportes')->middleware('module:movimientos');
 Route::get('movimientos-reporte/{tipo}', [TransactionController::class, 'generarReporte'])->name('movimientos.generar-reporte')->middleware('module:movimientos');
-Route::get('movimientos-comprobante-salida', [TransactionController::class, 'generarComprobanteSalida'])->name('movimientos.comprobante-salida')->middleware('module:movimientos');
 Route::get('movimientos-reparticion', [TransactionController::class, 'reparticion'])->name('movimientos.reparticion')->middleware('module:movimientos');
 Route::get('movimientos-reparticion-tabla', [TransactionController::class, 'reparticionTabla'])->name('movimientos.reparticion-tabla')->middleware('module:movimientos');
 
+
+// ==================== MODULO SISTEMA ====================
 Route::get('sistema', [SistemaController::class, 'index'])->name('sistema.index')->middleware('module:sistema');
 Route::get('sistema/usuarios', [SistemaController::class, 'usuarios'])->name('sistema.usuarios')->middleware('module:sistema');
 Route::post('sistema/usuarios', [SistemaController::class, 'storeUsuario'])->name('sistema.usuarios.store')->middleware('module:sistema');
 Route::put('sistema/usuarios/{usuario}', [SistemaController::class, 'updateUsuario'])->name('sistema.usuarios.update')->middleware('module:sistema');
 Route::delete('sistema/usuarios/{usuario}', [SistemaController::class, 'destroyUsuario'])->name('sistema.usuarios.destroy')->middleware('module:sistema');
+Route::post('sistema/usuarios/{usuario}/reset-password', [SistemaController::class, 'resetUserPassword'])->name('sistema.usuarios.reset-password')->middleware('module:sistema');
+
+Route::get('sistema/notifications', [SistemaController::class, 'notifications'])->name('sistema.notifications')->middleware('module:sistema');
+Route::post('sistema/notifications/{notification}/approve', [SistemaController::class, 'approveNotification'])->name('sistema.notifications.approve')->middleware('module:sistema');
+Route::post('sistema/notifications/{notification}/reject', [SistemaController::class, 'rejectNotification'])->name('sistema.notifications.reject')->middleware('module:sistema');
+Route::post('sistema/notifications/mark-seen', [SistemaController::class, 'markAllNotificationsAsSeen'])->name('sistema.notifications.mark-seen')->middleware('module:sistema');
 
 Route::get('sistema/roles', [SistemaController::class, 'roles'])->name('sistema.roles')->middleware('module:sistema');
 Route::post('sistema/roles', [SistemaController::class, 'storeRol'])->name('sistema.roles.store')->middleware('module:sistema');

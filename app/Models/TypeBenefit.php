@@ -11,10 +11,10 @@ class TypeBenefit extends Model
 
     protected $fillable = [
         'title',
+        'abbreviation',
         'min_age',
         'max_age',
         'priority',
-        'observation',
     ];
 
     public function histories()

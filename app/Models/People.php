@@ -19,11 +19,7 @@ class People extends Model
         'telephone_number',
         'phone_number',
         'birthdate',
-        'years_old',
-        'months_old',
-        'days_old',
         'address',
-        'finca_number',
         'place_sector_id',
     ];
 

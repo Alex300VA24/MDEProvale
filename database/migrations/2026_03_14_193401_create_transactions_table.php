@@ -18,8 +18,15 @@ class CreateTransactionsTable extends Migration
             $table->integer('quantity');
             $table->decimal('unit_price', 8, 2);
             $table->decimal('total_price', 8, 2);
-            $table->foreignId('product_id')->constrained();
+            $table->string('document_number', 20)->nullable();
+            $table->decimal('adjustment', 8, 2)->nullable();
+            $table->date('transaction_date')->nullable()->after('adjustment');
+            $table->foreignId('detail_product_id')->constrained();
             $table->foreignId('type_transaction_id')->constrained();
+            
+            // Snapshot histórico del producto al momento de la transacción
+            $table->string('product_name', 100)->nullable();
+            $table->string('uom_title', 80)->nullable();
             $table->timestamps();
         });
     }

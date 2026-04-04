@@ -21,6 +21,17 @@ class CheckSessionExpired
             return $next($request);
         }
 
+        // Si el usuario tenía un remember_token activo, no expirar la sesión
+        if ($request->session()->has('had_remember_token') && auth()->check() && auth()->user()->remember_token) {
+            $request->session()->put('user_was_authenticated', true);
+            return $next($request);
+        }
+
+        // Guardar si el usuario tenía remember_token la primera vez
+        if (auth()->check() && auth()->user()->remember_token) {
+            $request->session()->put('had_remember_token', true);
+        }
+
         // Si el usuario estaba autenticado antes y ahora no lo está, la sesión expiró.
         if ($request->session()->has('user_was_authenticated') && !auth()->check()) {
             $request->session()->forget('user_was_authenticated');

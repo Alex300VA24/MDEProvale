@@ -17,6 +17,9 @@ class DetailPecosa extends Model
         'subtotal',
         'detail_product_id',
         'pecosa_id',
+        'product_name',
+        'product_abbreviation',
+        'uom_title',
     ];
 
     protected $casts = [

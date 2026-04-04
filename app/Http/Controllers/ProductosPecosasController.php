@@ -13,6 +13,7 @@ use App\Models\Association;
 use App\Models\State;
 use App\Models\Uom;
 use App\Models\Partner;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -46,27 +47,32 @@ class ProductosPecosasController extends Controller
         foreach ($associationsForModal as $association) {
             $president = $association->getPresidenta();
             $association->president_partner_id = $president ? $president->id : null;
-            $association->president_name = $president && $president->people 
-                ? $president->people->names . ' ' . $president->people->father_lastname 
-                : null;
+            $association->president_name = $association->getPresidentName();
         }
         
         $pecosas = Pecosa::with(['association', 'state', 'managingPartner.people', 'detailPecosas'])
             ->orderBy('id', 'desc')
             ->paginate(10);
         
-        $responsibles = \App\Models\Responsible::with('person')->where('active', true)->get();
         $detailProductsList = DetailProduct::with('product')
-            ->where('end_date', '>=', now()->toDateString())
             ->orderBy('start_date', 'asc')
             ->get()
             ->map(function($dp) {
-                $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
+                $used = \App\Models\DetailPecosa::where('detail_product_id', $dp->id)->sum('quantity');
                 $dp->available_stock = $dp->quantity - $used;
                 return $dp;
             });
 
-        return view('productos-pecosas.index', compact('products', 'states', 'uoms', 'pecosas', 'associationsForModal', 'responsibles', 'detailProductsList'));
+        $detailProductsListForPecosa = DetailProduct::with('product')
+            ->orderBy('start_date', 'asc')
+            ->get()
+            ->map(function($dp) {
+                $used = \App\Models\DetailPecosa::where('detail_product_id', $dp->id)->sum('quantity');
+                $dp->available_stock = $dp->quantity - $used;
+                return $dp;
+            });
+
+        return view('productos-pecosas.index', compact('products', 'states', 'uoms', 'pecosas', 'associationsForModal', 'responsibles', 'detailProductsList', 'detailProductsListForPecosa'));
     }
 
     // ==================== PRODUCTOS ====================
@@ -87,7 +93,7 @@ class ProductosPecosasController extends Controller
         }
 
 
-        $products = $query->orderBy('id', 'desc')->paginate(10);
+        $products = $query->orderBy('id')->paginate(10);
         $states = State::all();
         $uoms = Uom::all();
 
@@ -230,35 +236,20 @@ class ProductosPecosasController extends Controller
         foreach ($associationsForModal as $association) {
             $president = $association->getPresidenta();
             $association->president_partner_id = $president ? $president->id : null;
-            $association->president_name = $president && $president->people 
-                ? $president->people->names . ' ' . $president->people->father_lastname 
-                : null;
+            $association->president_name = $association->getPresidentName();
         }
         
         $partners = Partner::with('people')->get();
         $responsibles = \App\Models\Responsible::with('person')->where('active', true)->get();
+        
         $detailProductsList = DetailProduct::with('product')
-            ->where('end_date', '>=', now()->toDateString())
             ->orderBy('start_date', 'asc')
             ->get()
             ->map(function($dp) {
-                $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
+                $used = \App\Models\DetailPecosa::where('detail_product_id', $dp->id)->sum('quantity');
                 $dp->available_stock = $dp->quantity - $used;
                 return $dp;
             });
-
-        // Para los modales de editar, incluir también detail_products ya asignados aunque tengan stock 0
-        $assignedDetailProductIds = $pecosas->pluck('detailPecosas')->flatten()->pluck('detail_product_id')->filter()->unique();
-        $extraDetailProducts = DetailProduct::with('product')
-            ->whereIn('id', $assignedDetailProductIds)
-            ->whereNotIn('id', $detailProductsList->pluck('id'))
-            ->get()
-            ->map(function($dp) {
-                $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
-                $dp->available_stock = $dp->quantity - $used;
-                return $dp;
-            });
-        $detailProductsList = $detailProductsList->concat($extraDetailProducts);
 
         return view('productos-pecosas.pecosas.index', compact('pecosas', 'associations', 'states', 'associationsForModal', 'partners', 'responsibles', 'detailProductsList'));
     }
@@ -309,7 +300,6 @@ class ProductosPecosasController extends Controller
             'association_id' => 'required|exists:associations,id',
             'details' => 'required|array|min:1',
             'details.*.detail_product_id' => 'required|exists:detail_products,id',
-            'details.*.product_id' => 'required|exists:products,id',
             'details.*.quantity' => 'required|numeric|min:0.01',
         ]);
 
@@ -339,40 +329,81 @@ class ProductosPecosasController extends Controller
         try {
             DB::beginTransaction();
 
-            $pecosa = Pecosa::create($validated);
+            $chiefName = null;
+            if ($request->filled('chief_id')) {
+                $chief = \App\Models\Responsible::with('person')->find($request->chief_id);
+                if ($chief && $chief->person) {
+                    $chiefName = $chief->person->names . ' ' . $chief->person->father_lastname;
+                }
+            }
+
+            $storekeeperName = null;
+            if ($request->filled('storekeeper_id')) {
+                $storekeeper = \App\Models\Responsible::with('person')->find($request->storekeeper_id);
+                if ($storekeeper && $storekeeper->person) {
+                    $storekeeperName = $storekeeper->person->names . ' ' . $storekeeper->person->father_lastname;
+                }
+            }
+
+            $managingPartnerName = null;
+            if ($request->filled('managing_partner_id')) {
+                $managingPartner = Partner::with('people')->find($request->managing_partner_id);
+                if ($managingPartner && $managingPartner->people) {
+                    $managingPartnerName = $managingPartner->people->names . ' ' . $managingPartner->people->father_lastname;
+                }
+            }
+
+            $presidentName = null;
+            $association = Association::find($request->association_id);
+            if ($association) {
+                $presidentName = $association->getPresidentName();
+            }
+
+            $pecosaData = array_merge($validated, [
+                'chief_name'            => $chiefName,
+                'storekeeper_name'      => $storekeeperName,
+                'managing_partner_name' => $managingPartnerName,
+                'president_name'        => $presidentName,
+                'association_name'      => $association ? $association->name : null,
+                'association_code'      => $association ? $association->code : null,
+            ]);
+
+            $pecosa = Pecosa::create($pecosaData);
             $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
 
             foreach ($request->details as $index => $detail) {
-                $detailProduct = DetailProduct::find($detail['detail_product_id']);
+                $detailProduct = DetailProduct::with('product.uom')->find($detail['detail_product_id']);
                 
-                $unitPrice = $detailProduct ? $detailProduct->unit_price : (isset($detail['unit_price']) ? $detail['unit_price'] : 0);
-                $subtotal = $detail['quantity'] * $unitPrice;
+                $unitPrice = $detailProduct ? $detailProduct->unit_price : ($detail['unit_price'] ?? 0);
+                $subtotal  = $detail['quantity'] * $unitPrice;
 
                 DetailPecosa::create([
-                    'pecosa_id' => $pecosa->id,
-                    'detail_product_id' => $detail['detail_product_id'],
-                    'quantity' => $detail['quantity'],
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $subtotal,
-                    'priority' => $index + 1,
+                    'pecosa_id'            => $pecosa->id,
+                    'detail_product_id'    => $detail['detail_product_id'],
+                    'quantity'             => $detail['quantity'],
+                    'unit_price'           => $unitPrice,
+                    'subtotal'             => $subtotal,
+                    'priority'             => $index + 1,
+                    // Snapshots históricos
+                    'product_name'         => $detailProduct ? ($detailProduct->product ? $detailProduct->product->title : null) : null,
+                    'product_abbreviation' => $detailProduct ? ($detailProduct->product ? $detailProduct->product->abbreviation : null) : null,
+                    'uom_title'            => $detailProduct ? ($detailProduct->product ? ($detailProduct->product->uom ? $detailProduct->product->uom->title : null) : null) : null,
                 ]);
 
                 $this->deductStockByDetailProduct($detail['detail_product_id'], $detail['quantity'], $pecosa->id);
 
-                if ($typeSalida) {
-                    $stockData = $this->getStockInfo($detail['product_id']);
-                    
+                if ($typeSalida && $detailProduct) {
                     Transaction::create([
-                        'product_id' => $detail['product_id'],
+                        'detail_product_id'  => $detail['detail_product_id'],
                         'type_transaction_id' => $typeSalida->id,
-                        'quantity' => $detail['quantity'],
-                        'unit_price' => $unitPrice,
-                        'total_price' => $detail['quantity'] * $unitPrice,
-                        'document_number' => $validated['pecosa_number'],
-                        'stock_quantity' => $stockData['quantity'],
-                        'stock_unit_price' => $stockData['unit_price'],
-                        'stock_total_price' => $stockData['total'],
-                        'transaction_date' => $validated['delivery_date'],
+                        'quantity'           => $detail['quantity'],
+                        'unit_price'         => $unitPrice,
+                        'total_price'        => $subtotal,
+                        'document_number'    => $validated['pecosa_number'],
+                        'transaction_date'   => $validated['delivery_date'],
+                        // Snapshots históricos
+                        'product_name'       => $detailProduct->product ? $detailProduct->product->title : null,
+                        'uom_title'          => ($detailProduct->product && $detailProduct->product->uom) ? $detailProduct->product->uom->title : null,
                     ]);
                 }
             }
@@ -498,16 +529,28 @@ class ProductosPecosasController extends Controller
 
     public function generarComprobante(Pecosa $pecosa)
     {
-        $pecosa->load(['detailPecosas.detailProduct.product', 'association.placeSector.place', 'managingPartner.people']);
+        $pecosa->load([
+            'detailPecosas.detailProduct.product.uom',
+            'association.placeSector.place',
+            'association.partners.beneficiaries',
+            'chief.person',
+            'storekeeper.person'
+        ]);
+
+        $formatCantidad = function ($value) {
+            return floor($value) == $value
+                ? number_format($value, 0, '.', '')
+                : rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');
+        };
 
         $articulos = [];
         foreach ($pecosa->detailPecosas as $index => $detail) {
             $product = $detail->detailProduct->product ?? null;
             $articulos[] = [
                 'numero' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
-                'cantidad_solicitado' => number_format($detail->quantity, 2),
+                'cantidad_solicitado' => $formatCantidad($detail->quantity),
                 'descripcion' => $product ? $product->title . ' (' . $product->abbreviation . ')' : '-',
-                'cantidad_despachado' => number_format($detail->quantity, 2),
+                'cantidad_despachado' => $formatCantidad($detail->quantity),
                 'unidad' => $product && $product->uom ? $product->uom->title : 'UNIDAD',
                 'unitary' => number_format($detail->unit_price, 2),
                 'unitario' => number_format($detail->unit_price, 2),
@@ -519,25 +562,42 @@ class ProductosPecosasController extends Controller
             return $d->quantity * $d->unit_price;
         }), 2);
 
+        $jefePerson = $pecosa->chief && $pecosa->chief->person ? $pecosa->chief->person : null;
+        $storekeeperPerson = $pecosa->storekeeper && $pecosa->storekeeper->person ? $pecosa->storekeeper->person : null;
+        $jefeName = $pecosa->chief_name ?? ($jefePerson ? trim($jefePerson->names . ' ' . $jefePerson->father_lastname . ' ' . $jefePerson->mother_lastname) : 'ENCARGADO DE PROVALE');
+        $storekeeperName = $pecosa->storekeeper_name ?? ($storekeeperPerson ? trim($storekeeperPerson->names . ' ' . $storekeeperPerson->father_lastname . ' ' . $storekeeperPerson->mother_lastname) : 'JEFA DE ALMACÉN PROVALE');
+        $association = $pecosa->association;
+        $zonaCode = $association && $association->placeSector && $association->placeSector->place
+            ? ($association->placeSector->place->code ?? '01')
+            : '01';
+        $totalBeneficiarios = $association
+            ? $association->partners->sum(function ($partner) {
+                return $partner->beneficiaries->count();
+            })
+            : 0;
+        $fechaLarga = Carbon::parse($pecosa->delivery_date)
+            ->locale('es')
+            ->translatedFormat('l, j \d\e F \d\e Y');
+
         $data = [
-            'zona' => $pecosa->association && $pecosa->association->placeSector && $pecosa->association->placeSector->place ? $pecosa->association->placeSector->place->title : '01',
-            'comite' => $pecosa->association ? $pecosa->association->name : 'N/A',
-            'num_mes' => date('m', strtotime($pecosa->delivery_date)),
+            'zona' => $zonaCode,
+            'comite' => $association ? $association->code : 'N/A',
+            'num_mes' => $totalBeneficiarios,
             'racion' => 'N/A',
             'numero_orden' => $pecosa->pecosa_number,
-            'solicitante_nombre' => $pecosa->managingPartner && $pecosa->managingPartner->people ?
-                $pecosa->managingPartner->people->names . ' ' . $pecosa->managingPartner->people->father_lastname : 'N/A',
-            'domicilio' => $pecosa->association ? $pecosa->association->address : 'N/A',
-            'fecha' => date('d/m/Y', strtotime($pecosa->delivery_date)),
+            'solicitante_nombre' => $pecosa->managing_partner_name ?? 'N/A',
+            'domicilio' => $association ? $association->name : 'N/A',
+            'fecha' => $fechaLarga,
             'articulos' => $articulos,
             'total_general' => 'S/. ' . $total_general,
-            'encargado_almacen' => 'ENCARGADO DE PROVALE',
-            'dni_encargado' => '18357683',
-            'control' => 'JEFA DE ALMACÉN PROVALE',
-            'dni_control' => '40353394',
+            'encargado_almacen' => $jefeName,
+            'dni_encargado' => $jefePerson->dni ?? '',
+            'control' => $storekeeperName,
+            'dni_control' => $storekeeperPerson->dni ?? '',
         ];
 
-        return view('comprobante_salida', $data);
+        $pdf = \PDF::loadView('comprobante_salida', $data);
+        return $pdf->setPaper('A4', 'landscape')->stream('comprobante-salida-' . $pecosa->pecosa_number . '.pdf');
     }
 
     public function editPecosa(Pecosa $pecosa)
@@ -561,7 +621,6 @@ class ProductosPecosasController extends Controller
             'association_id' => 'required|exists:associations,id',
             'details' => 'required|array|min:1',
             'details.*.detail_product_id' => 'required|exists:detail_products,id',
-            'details.*.product_id' => 'required|exists:products,id',
             'details.*.quantity' => 'required|numeric|min:0.01',
         ]);
 
@@ -583,34 +642,35 @@ class ProductosPecosasController extends Controller
             $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
 
             foreach ($request->details as $index => $detail) {
-                $detailProduct = DetailProduct::find($detail['detail_product_id']);
+                $detailProduct = DetailProduct::with('product.uom')->find($detail['detail_product_id']);
                 $unitPrice = $detailProduct ? $detailProduct->unit_price : ($detail['unit_price'] ?? 0);
-                $subtotal = $detail['quantity'] * $unitPrice;
+                $subtotal  = $detail['quantity'] * $unitPrice;
 
                 DetailPecosa::create([
-                    'pecosa_id' => $pecosa->id,
-                    'detail_product_id' => $detail['detail_product_id'],
-                    'quantity' => $detail['quantity'],
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $subtotal,
-                    'priority' => $index + 1,
+                    'pecosa_id'            => $pecosa->id,
+                    'detail_product_id'    => $detail['detail_product_id'],
+                    'quantity'             => $detail['quantity'],
+                    'unit_price'           => $unitPrice,
+                    'subtotal'             => $subtotal,
+                    'priority'             => $index + 1,
+                    'product_name'         => $detailProduct ? ($detailProduct->product ? $detailProduct->product->title : null) : null,
+                    'product_abbreviation' => $detailProduct ? ($detailProduct->product ? $detailProduct->product->abbreviation : null) : null,
+                    'uom_title'            => $detailProduct ? ($detailProduct->product ? ($detailProduct->product->uom ? $detailProduct->product->uom->title : null) : null) : null,
                 ]);
 
                 $this->deductStockByDetailProduct($detail['detail_product_id'], $detail['quantity'], $pecosa->id);
 
-                if ($typeSalida) {
-                    $stockData = $this->getStockInfo($detail['product_id']);
+                if ($typeSalida && $detailProduct) {
                     Transaction::create([
-                        'product_id' => $detail['product_id'],
+                        'detail_product_id'   => $detail['detail_product_id'],
                         'type_transaction_id' => $typeSalida->id,
-                        'quantity' => $detail['quantity'],
-                        'unit_price' => $unitPrice,
-                        'total_price' => $subtotal,
-                        'document_number' => $validated['pecosa_number'],
-                        'stock_quantity' => $stockData['quantity'],
-                        'stock_unit_price' => $stockData['unit_price'],
-                        'stock_total_price' => $stockData['total'],
-                        'transaction_date' => $validated['delivery_date'],
+                        'quantity'            => $detail['quantity'],
+                        'unit_price'          => $unitPrice,
+                        'total_price'         => $subtotal,
+                        'document_number'     => $validated['pecosa_number'],
+                        'transaction_date'    => $validated['delivery_date'],
+                        'product_name'        => $detailProduct->product ? $detailProduct->product->title : null,
+                        'uom_title'           => ($detailProduct->product && $detailProduct->product->uom) ? $detailProduct->product->uom->title : null,
                     ]);
                 }
             }
@@ -736,13 +796,16 @@ class ProductosPecosasController extends Controller
         $clubes = [];
         foreach ($associations as $association) {
             $presidenta = '';
-            $directiva = \App\Models\Directive::whereHas('resolution', function ($q) use ($association) {
-                $q->where('association_id', $association->id);
-            })->whereHas('position', function ($q) {
-                $q->where('title', 'like', '%PRESIDENTA%');
-            })->whereHas('state', function ($q) {
-                $q->where('abbreviation', 'ACTI');
-            })->with('partner.people')->first();
+            $resolutionIds = DB::table('resolution_associations')
+                ->where('association_id', $association->id)
+                ->pluck('resolution_id');
+            
+            $directiva = \App\Models\Directive::whereIn('resolution_id', $resolutionIds)
+                ->whereHas('position', function ($q) {
+                    $q->where('title', 'like', '%PRESIDENTA%');
+                })->whereHas('state', function ($q) {
+                    $q->where('abbreviation', 'ACTI');
+                })->with('partner.people')->first();
 
             if ($directiva && $directiva->partner && $directiva->partner->people) {
                 $p = $directiva->partner->people;
@@ -803,9 +866,12 @@ class ProductosPecosasController extends Controller
         $data = [
             'clubes' => $clubes,
             'sector' => $sector,
+            'mes' => $mes,
+            'anio' => $anio,
         ];
 
-        return view('programacion_entrega', $data);
+        $pdf = \PDF::loadView('programacion_entrega', $data);
+        return $pdf->setPaper('A4', 'landscape')->stream('programacion-entrega-' . $anio . '-' . sprintf('%02d', $mes) . '.pdf');
     }
 
     // ==================== KARDEX ====================
@@ -918,8 +984,33 @@ class ProductosPecosasController extends Controller
             'end_date' => 'required|date|after:start_date',
         ]);
 
-        DetailProduct::create($validated);
+        try {
+            DB::beginTransaction();
 
-        return redirect()->route('productos-pecosas.productos.index')->with('success', 'Producto registrado correctamente.');
+            $detailProduct = DetailProduct::create($validated);
+
+            $typeIngreso = TypeTransaction::whereRaw('LOWER(title) = ?', ['ingreso'])->first();
+            
+            if ($typeIngreso) {
+                $product = Product::with('uom')->find($validated['product_id']);
+                
+                Transaction::create([
+                    'detail_product_id'   => $detailProduct->id,
+                    'type_transaction_id' => $typeIngreso->id,
+                    'quantity'            => $validated['quantity'],
+                    'unit_price'          => $validated['unit_price'],
+                    'total_price'         => $validated['quantity'] * $validated['unit_price'],
+                    'transaction_date'     => $validated['start_date'],
+                    'product_name'        => $product ? $product->title : null,
+                    'uom_title'            => $product && $product->uom ? $product->uom->title : null,
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('productos-pecosas.productos.index')->with('success', 'Producto registrado correctamente.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Error al registrar el producto: ' . $e->getMessage());
+        }
     }
 }

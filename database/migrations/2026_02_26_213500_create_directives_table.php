@@ -19,15 +19,12 @@ class CreateDirectivesTable extends Migration
             $table->foreignId('partner_id')->constrained();
             $table->foreignId('position_id')->constrained();
             $table->foreignId('state_id')->constrained();
+            $table->date('date_start')->nullable();
+            $table->date('date_end')->nullable();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('directives');

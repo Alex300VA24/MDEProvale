@@ -37,11 +37,6 @@ class Product extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    public function prices()
-    {
-        return $this->hasMany(ProductPrice::class);
-    }
-
     public function stocks()
     {
         return $this->hasMany(ProductStock::class);
@@ -50,16 +45,6 @@ class Product extends Model
     public function detailProducts()
     {
         return $this->hasMany(DetailProduct::class);
-    }
-
-    public function getCurrentPrice($date = null)
-    {
-        return ProductPrice::getPriceForProduct($this->id, $date);
-    }
-
-    public function getCurrentStock($month = null, $year = null)
-    {
-        return ProductStock::getStockForProduct($this->id, $month, $year);
     }
 
     public function getAvailableStock()

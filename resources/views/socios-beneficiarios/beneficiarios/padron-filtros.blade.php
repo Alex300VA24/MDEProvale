@@ -8,7 +8,7 @@
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-users text-leaf"></i> Padrón de Beneficiarios del PVL
         </h3>
-        <a href="{{ route('socios-beneficiarios.beneficiarios.index') }}" class="btn-secondary flex items-center gap-2">
+        <a href="{{ route('socios-beneficiarios.index') }}" class="btn-secondary flex items-center gap-2">
             <i class="fas fa-arrow-left"></i> Volver
         </a>
     </div>
@@ -16,7 +16,7 @@
     <div class="p-6">
         <p class="text-earth mb-6">Seleccione los filtros para generar el padrón de beneficiarios:</p>
 
-        <form action="{{ route('socios-beneficiarios.beneficiarios.padron') }}" method="GET" class="space-y-6">
+        <form action="{{ route('socios-beneficiarios.beneficiarios.padron') }}" method="GET" target="_blank" class="space-y-6" data-no-loading>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {{-- Comité --}}
                 <div>
@@ -56,7 +56,7 @@
                         <i class="fas fa-calendar mr-1"></i> Año
                     </label>
                     <select name="year" class="w-full px-3 py-2 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                        @for($y = date('Y') - 2; $y <= date('Y') + 1; $y++)
+                        @for($y = date('Y') - 10; $y <= date('Y') + 1; $y++)
                             <option value="{{ $y }}" {{ $anio == $y ? 'selected' : '' }}>
                             {{ $y }}
                             </option>

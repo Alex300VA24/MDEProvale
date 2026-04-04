@@ -10,57 +10,86 @@
     $totalAssociations = \App\Models\Association::count();
     $totalProducts = \App\Models\Product::count();
     
-    // Socios por club
+    // Socios por club (top 10)
     $partnersByClub = \App\Models\Partner::selectRaw('associations.name as club, COUNT(partners.id) as total')
         ->join('associations', 'partners.association_id', '=', 'associations.id')
         ->groupBy('associations.name')
+        ->orderByDesc('total')
+        ->limit(10)
         ->get();
     
-    $monthlyData = array_fill(0, 12, 0);
-    $beneficiariesByMonth = \App\Models\Beneficiarie::selectRaw('MONTH(created_at) as month, COUNT(*) as total')
-        ->whereNotNull('created_at')
-        ->whereYear('created_at', date('Y'))
-        ->groupByRaw('MONTH(created_at)')
-        ->get();
-    foreach ($beneficiariesByMonth as $item) {
-        $monthlyData[$item->month - 1] = $item->total;
-    }
-    
-    // Transacciones por tipo
-    $transactionsIn = \App\Models\Transaction::where('type_transaction_id', 1)->count();
-    $transactionsOut = \App\Models\Transaction::where('type_transaction_id', 2)->count();
-    
-    // Stock total - calculado desde detail_products
-    $totalStock = \App\Models\DetailProduct::get()->sum(function($dp) {
-        $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
-        return $dp->quantity - $used;
-    });
-    
-    // Variables para las barras de progreso
-    $coberturaPorcentaje = $totalPartners > 0 ? min(($totalBeneficiaries / $totalPartners) * 100, 100) : 0;
-    $clubesPorcentaje = min($totalAssociations * 10, 100);
-    $activasPorcentaje = $totalPartners > 0 ? ($activePartners / $totalPartners) * 100 : 0;
-    $stockPorcentaje = min(($totalStock / 500) * 100, 100);
-    
-    // PECOSAS por mes
+    // PECOSAs por mes del año actual
     $pecosasByMonth = \App\Models\Pecosa::selectRaw('MONTH(delivery_date) as month, COUNT(*) as total')
         ->whereNotNull('delivery_date')
         ->whereYear('delivery_date', date('Y'))
         ->groupByRaw('MONTH(delivery_date)')
         ->get();
-    
     $pecosaData = array_fill(0, 12, 0);
     foreach ($pecosasByMonth as $item) {
         $pecosaData[$item->month - 1] = $item->total;
     }
+    
+    // Ingresos por mes (transactions tipo 1 = entrada)
+    $ingresosByMonth = \App\Models\Transaction::selectRaw('MONTH(transaction_date) as month, SUM(quantity) as total')
+        ->where('type_transaction_id', 1)
+        ->whereNotNull('transaction_date')
+        ->whereYear('transaction_date', date('Y'))
+        ->groupByRaw('MONTH(transaction_date)')
+        ->get();
+    $ingresosData = array_fill(0, 12, 0);
+    foreach ($ingresosByMonth as $item) {
+        $ingresosData[$item->month - 1] = (int)$item->total;
+    }
+    
+    // Productos distribuidos (Leche y Hojuelas) por mes
+    $productosByMonth = \App\Models\DetailPecosa::selectRaw('MONTH(pecosas.delivery_date) as month, SUM(detail_pecosas.quantity) as total, products.title as product')
+        ->join('pecosas', 'detail_pecosas.pecosa_id', '=', 'pecosas.id')
+        ->join('detail_products', 'detail_pecosas.detail_product_id', '=', 'detail_products.id')
+        ->join('products', 'detail_products.product_id', '=', 'products.id')
+        ->whereYear('pecosas.delivery_date', date('Y'))
+        ->groupByRaw('MONTH(pecosas.delivery_date), products.title')
+        ->get();
+    
+    $lecheData = array_fill(0, 12, 0);
+    $hojuelasData = array_fill(0, 12, 0);
+    foreach ($productosByMonth as $item) {
+        $mes = $item->month - 1;
+        if (stripos($item->product, 'leche') !== false) {
+            $lecheData[$mes] = (int)$item->total;
+        } elseif (stripos($item->product, 'hojuela') !== false) {
+            $hojuelasData[$mes] = (int)$item->total;
+        }
+    }
+    
+    // Clubes con más PECOSAs
+    $clubsWithPecosas = \App\Models\Pecosa::selectRaw('associations.name as club, COUNT(pecosas.id) as total')
+        ->join('associations', 'pecosas.association_id', '=', 'associations.id')
+        ->whereYear('pecosas.delivery_date', date('Y'))
+        ->groupBy('associations.name')
+        ->orderByDesc('total')
+        ->limit(10)
+        ->get();
+    
+    // Total stock disponible
+    $totalStock = \App\Models\DetailProduct::get()->sum(function($dp) {
+        $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
+        return $dp->quantity - $used;
+    });
+    
+    // Socios vs Beneficiarios
+    $sociosActivos = $activePartners;
+    $beneficiariosActivos = $totalBeneficiaries;
+    
+    // Total PECOSAs año actual
+    $totalPecosasAnio = \App\Models\Pecosa::whereYear('delivery_date', date('Y'))->count();
 @endphp
 
     <div class="relative rounded-3xl overflow-hidden mb-8 shadow-xl">
     <div class="absolute inset-0">
-        <img src="{{ asset('img/banner2.png') }}" alt="Banner" class="w-full h-full object-cover opacity-80">
+        <img src="{{ asset('img/banner2.png') }}" alt="Banner" class="w-full h-full object-cover">
     </div>
-    <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary-dark/60"></div>
-    <div class="absolute inset-0 opacity-20" style="background: radial-gradient(circle at 80% 50%, #F4A261 0%, transparent 60%);"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-primary/40 to-primary-dark/30"></div>
+    <div class="absolute inset-0 opacity-10" style="background: radial-gradient(circle at 80% 50%, #F4A261 0%, transparent 60%);"></div>
     <div class="absolute -right-8 -top-8 w-64 h-64 bg-white/5 rounded-full"></div>
     <div class="absolute -right-4 bottom-0 w-40 h-40 bg-white/5 rounded-full"></div>
     <div class="relative z-10 flex items-center justify-between p-10 gap-8">
@@ -133,45 +162,61 @@
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <div class="lg:col-span-2 bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
         <div class="flex items-center justify-between mb-6">
             <div>
-                <h3 class="text-charcoal font-bold text-lg">Socios por Mes</h3>
-                <p class="text-earth text-sm font-medium">Evolución {{ date('Y') }}</p>
+                <h3 class="text-charcoal font-bold text-lg">PECOSAs por Mes</h3>
+                <p class="text-earth text-sm font-medium">Salidas - {{ date('Y') }}</p>
             </div>
-            <div class="flex gap-2">
-                <button class="px-3 py-1.5 text-xs font-bold bg-leaf text-white rounded-lg">{{ date('Y') }}</button>
-            </div>
+            <span class="px-3 py-1.5 text-xs font-bold bg-sun text-white rounded-lg">{{ $totalPecosasAnio }} total</span>
         </div>
         <div class="chart-wrap h-52">
-            <canvas id="lineChart"></canvas>
+            <canvas id="pecosasChart"></canvas>
         </div>
     </div>
 
     <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <h3 class="text-charcoal font-bold text-lg mb-1">Por Club</h3>
-        <p class="text-earth text-sm font-medium mb-4">Distribución de socios</p>
-        <div class="chart-wrap h-44">
-            <canvas id="doughnutChart"></canvas>
-        </div>
-        <div class="mt-4 space-y-2 max-h-32 overflow-y-auto">
-            @foreach($partnersByClub as $club)
-            <div class="flex items-center justify-between text-sm">
-                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-[#4A7C59]"></span><span class="font-medium text-earth truncate">{{ $club->club }}</span></span>
-                <span class="font-bold text-charcoal">{{ $club->total }}</span>
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-charcoal font-bold text-lg">Productos Distribuidos</h3>
+                <p class="text-earth text-sm font-medium">Leche y Hojuelas - {{ date('Y') }}</p>
             </div>
-            @endforeach
+            <div class="flex gap-2">
+                <span class="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded">Leche</span>
+                <span class="px-2 py-1 text-xs font-bold bg-amber-100 text-amber-700 rounded">Hojuelas</span>
+            </div>
+        </div>
+        <div class="chart-wrap h-52">
+            <canvas id="productosChart"></canvas>
         </div>
     </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
     <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <h3 class="text-charcoal font-bold text-lg mb-1">Movimientos</h3>
-        <p class="text-earth text-sm font-medium mb-4">Ingresos vs Salidas</p>
-        <div class="chart-wrap h-44">
-            <canvas id="barChart"></canvas>
+        <h3 class="text-charcoal font-bold text-lg mb-1">Socios vs Beneficiarios</h3>
+        <p class="text-earth text-sm font-medium mb-4">Comparativa total</p>
+        <div class="chart-wrap h-40">
+            <canvas id="sociosBenefChart"></canvas>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-3">
+            <div class="text-center p-3 bg-leaf-light rounded-xl">
+                <div class="text-2xl font-extrabold text-leaf">{{ $sociosActivos }}</div>
+                <div class="text-xs font-bold text-leaf uppercase">Socios</div>
+            </div>
+            <div class="text-center p-3 bg-sky-light rounded-xl">
+                <div class="text-2xl font-extrabold text-[#0284C7]">{{ $beneficiariosActivos }}</div>
+                <div class="text-xs font-bold text-[#0284C7] uppercase">Beneficiarios</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
+        <h3 class="text-charcoal font-bold text-lg mb-1">Top Comités</h3>
+        <p class="text-earth text-sm font-medium mb-4">Con más PECOSAs - {{ date('Y') }}</p>
+        <div class="chart-wrap h-40">
+            <canvas id="topClubsChart"></canvas>
         </div>
     </div>
 
@@ -204,48 +249,6 @@
             </a>
         </div>
     </div>
-
-    <!-- <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <h3 class="text-charcoal font-bold text-lg mb-5">Metas del Mes</h3>
-        <div class="space-y-5">
-            <div>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-earth">Beneficiarios</span>
-                    <span class="text-sm font-bold text-charcoal">{{ $totalPartners > 0 ? $totalPartners : 0 }}</span>
-                </div>
-                <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-leaf to-leaf-dark rounded-full" style="width:{{ $coberturaPorcentaje }}%"></div>
-                </div>
-            </div>
-            <div>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-earth">Clubes Activos</span>
-                    <span class="text-sm font-bold text-charcoal">{{ $totalAssociations }}</span>
-                </div>
-                <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-sky to-[#5ba3c5] rounded-full" style="width:{{ $clubesPorcentaje }}%"></div>
-                </div>
-            </div>
-            <div>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-earth">Socias Activas</span>
-                    <span class="text-sm font-bold text-charcoal">{{ round($activasPorcentaje) }}%</span>
-                </div>
-                <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-sun to-[#e69553] rounded-full" style="width:{{ $activasPorcentaje }}%"></div>
-                </div>
-            </div>
-            <div>
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-earth">Stock Disponible</span>
-                    <span class="text-sm font-bold text-charcoal">{{ $totalStock > 0 ? 'OK' : 'Bajo' }}</span>
-                </div>
-                <div class="h-2.5 bg-wheat rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-clay to-[#d55d3f] rounded-full" style="width:{{ $stockPorcentaje }}%"></div>
-                </div>
-            </div>
-        </div>
-    </div> -->
 </div>
 
 <script>
@@ -253,21 +256,62 @@
     const gridColor = '#F5E6D3';
     const tickColor = '#8B7355';
 
-    // Line Chart - Socios por mes
-    new Chart(document.getElementById('lineChart'), {
-        type: 'line',
+    // Chart: PECOSAs por mes (Salidas)
+    new Chart(document.getElementById('pecosasChart'), {
+        type: 'bar',
         data: {
             labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
             datasets: [{
-                data: [{{ implode(',', $monthlyData) }}],
-                borderColor: '#4A7C59', backgroundColor: 'rgba(74,124,89,0.08)',
-                borderWidth: 2.5, pointBackgroundColor: '#4A7C59', pointRadius: 4,
-                pointHoverRadius: 6, fill: true, tension: 0.4
+                label: 'PECOSAs',
+                data: [{{ implode(',', $pecosaData) }}],
+                backgroundColor: '#F59E0B',
+                borderRadius: 6,
+                borderSkipped: false
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
+                y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor, stepSize: 5 } }
+            }
+        }
+    });
+
+    // Chart: Productos distribuidos (Leche y Hojuelas)
+    new Chart(document.getElementById('productosChart'), {
+        type: 'line',
+        data: {
+            labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+            datasets: [
+                {
+                    label: 'Leche',
+                    data: [{{ implode(',', $lecheData) }}],
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#3B82F6',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Hojuelas',
+                    data: [{{ implode(',', $hojuelasData) }}],
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245,158,11,0.1)',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#F59E0B',
+                    pointRadius: 4,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'top', labels: { font: chartFont } } },
             scales: {
                 x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
                 y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor } }
@@ -275,33 +319,47 @@
         }
     });
 
-    // Doughnut Chart - Socios por club
-    new Chart(document.getElementById('doughnutChart'), {
+    // Chart: Socios vs Beneficiarios
+    new Chart(document.getElementById('sociosBenefChart'), {
         type: 'doughnut',
         data: {
-            labels: [@foreach($partnersByClub as $club)'{{ $club->club }}'@if(!$loop->last),@endif @endforeach],
-            datasets: [{ data: [@foreach($partnersByClub as $club){{ $club->total }}@if(!$loop->last),@endif @endforeach], backgroundColor: ['#4A7C59','#87CEEB','#F4A261','#E76F51','#9B59B6','#3498DB','#1ABC9C','#F39C12','#E74C3C','#2C3E50'], borderWidth: 0, hoverOffset: 8 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
-    });
-
-    // Bar Chart - Movimientos
-    new Chart(document.getElementById('barChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Ingresos','Salidas'],
+            labels: ['Socios', 'Beneficiarios'],
             datasets: [{
-                data: [{{ $transactionsIn }}, {{ $transactionsOut }}],
-                backgroundColor: ['#4A7C59','#E76F51'],
-                borderRadius: 8, borderSkipped: false
+                data: [{{ $sociosActivos }}, {{ $beneficiariosActivos }}],
+                backgroundColor: ['#4A7C59', '#0EA5E9'],
+                borderWidth: 0,
+                hoverOffset: 8
             }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Chart: Top Comités con más PECOSAs
+    new Chart(document.getElementById('topClubsChart'), {
+        type: 'bar',
+        data: {
+            labels: [@foreach($clubsWithPecosas as $club)'{{ substr($club->club, 0, 15) }}'@if(!$loop->last),@endif @endforeach],
+            datasets: [{
+                label: 'PECOSAs',
+                data: [@foreach($clubsWithPecosas as $club){{ $club->total }}@if(!$loop->last),@endif @endforeach],
+                backgroundColor: '#4A7C59',
+                borderRadius: 4,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
-                y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor } }
+                x: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor } },
+                y: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans', size: 10 }, color: tickColor } }
             }
         }
     });

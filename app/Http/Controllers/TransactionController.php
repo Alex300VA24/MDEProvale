@@ -17,34 +17,21 @@ class TransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Transaction::with(['product', 'typeTransaction']);
+        $query = Transaction::with(['detailProduct.product', 'typeTransaction']);
 
         if ($request->filled('search')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->search . '%');
-            });
+            $query->where('product_name', 'like', '%' . $request->search . '%');
         }
 
         if ($request->filled('type_transaction_id')) {
             $query->where('type_transaction_id', $request->type_transaction_id);
         }
 
-        $transactions = Transaction::with(['product', 'typeTransaction', 'detailProducts'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-        
-        foreach ($transactions as $transaction) {
-            $detailProduct = DetailProduct::where('product_id', $transaction->product_id)
-                ->where('quantity', $transaction->quantity)
-                ->where('unit_price', $transaction->unit_price)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            $transaction->detail_start_date = $detailProduct ? $detailProduct->start_date : null;
-            $transaction->detail_end_date = $detailProduct ? $detailProduct->end_date : null;
-        }
-        $types = TypeTransaction::all();
+        $transactions = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        $types    = TypeTransaction::all();
         $products = Product::all();
-        $pecosas = Pecosa::with('association')->orderBy('created_at', 'desc')->get();
+        $pecosas  = Pecosa::with('association')->orderBy('created_at', 'desc')->get();
 
         return view('movimientos.index', compact('transactions', 'types', 'products', 'pecosas'));
     }
@@ -60,65 +47,71 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
-        $typeTransaction = TypeTransaction::find(1);
-        $isSalida = $typeTransaction && strtolower($typeTransaction->title) === 'salida';
-
         $rules = [
-            'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|numeric|min:0',
-            'unit_price' => 'required|numeric|min:0',
-            'document_number' => 'nullable|string|max:20',
-            'transaction_date' => 'nullable|date',
+            'product_id'        => 'required|exists:products,id',
+            'quantity'          => 'required|numeric|min:0',
+            'unit_price'        => 'required|numeric|min:0',
+            'document_number'   => 'nullable|string|max:20',
+            'transaction_date'  => 'nullable|date',
+            'start_date'        => 'nullable|date',
+            'end_date'          => 'nullable|date',
         ];
-
-        if (!$isSalida) {
-            $rules['start_date'] = 'required|date';
-            $rules['end_date'] = 'required|date|after:start_date';
-        }
 
         $validated = $request->validate($rules);
 
-        $totalPrice = $validated['quantity'] * $validated['unit_price'];
+        $typeIngreso = TypeTransaction::whereRaw('LOWER(title) = ?', ['ingreso'])->first();
+        $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
 
-        $stockQuantity = $validated['quantity'];
-        $stockUnitPrice = $validated['unit_price'];
-        $stockTotalPrice = $totalPrice;
+        $isIngreso = $typeIngreso && $request->type_transaction_id == $typeIngreso->id;
+        $isSalida = $typeSalida && $request->type_transaction_id == $typeSalida->id;
 
-        if (strtolower($typeTransaction->title) === 'ingreso') {
+        if ($isIngreso) {
             $detailProduct = DetailProduct::create([
-                'product_id' => $validated['product_id'],
-                'unit_price' => $validated['unit_price'],
-                'quantity' => $validated['quantity'],
-                'start_date' => $validated['start_date'],
-                'end_date' => $validated['end_date'],
+                'product_id'   => $validated['product_id'],
+                'quantity'     => $validated['quantity'],
+                'unit_price'   => $validated['unit_price'],
+                'start_date'   => $validated['start_date'] ?? now()->toDateString(),
+                'end_date'     => $validated['end_date'] ?? now()->addYear()->toDateString(),
             ]);
 
-            $previousStock = $this->getStockForProduct($validated['product_id']);
-            $stockQuantity = $previousStock + $validated['quantity'];
-            $stockTotalPrice = $stockQuantity * $stockUnitPrice;
-        } elseif (strtolower($typeTransaction->title) === 'salida') {
-            $pecosaId = $request->filled('pecosa_id') ? $request->pecosa_id : null;
-            $this->deductStock($validated['product_id'], $validated['quantity'], $pecosaId);
-            
-            $previousStock = $this->getStockForProduct($validated['product_id']);
-            $stockQuantity = $previousStock;
-            $stockTotalPrice = $stockQuantity * $stockUnitPrice;
+            $detailProductWithRelations = DetailProduct::with('product.uom')->find($detailProduct->id);
+
+            Transaction::create([
+                'detail_product_id'   => $detailProduct->id,
+                'type_transaction_id' => $typeIngreso->id,
+                'quantity'            => $validated['quantity'],
+                'unit_price'          => $validated['unit_price'],
+                'total_price'         => $validated['quantity'] * $validated['unit_price'],
+                'document_number'     => $validated['document_number'] ?? null,
+                'transaction_date'    => $validated['transaction_date'] ?? now()->toDateString(),
+                'product_name'        => $detailProductWithRelations->product ? $detailProductWithRelations->product->title : null,
+                'uom_title'           => ($detailProductWithRelations->product && $detailProductWithRelations->product->uom) ? $detailProductWithRelations->product->uom->title : null,
+            ]);
+
+            return redirect()->route('movimientos.index')->with('success', 'Ingreso registrado correctamente.');
         }
 
-        Transaction::create([
-            'product_id' => $validated['product_id'],
-            'type_transaction_id' => 1,
-            'quantity' => $validated['quantity'],
-            'unit_price' => $validated['unit_price'],
-            'total_price' => $totalPrice,
-            'document_number' => $validated['document_number'] ?? ($request->filled('pecosa_id') ? 'PECOSA-' . $request->pecosa_id : null),
-            'stock_quantity' => $stockQuantity,
-            'stock_unit_price' => $stockUnitPrice,
-            'stock_total_price' => $stockTotalPrice,
-            'transaction_date' => $validated['transaction_date'] ?? now()->toDateString(),
-        ]);
+        if ($isSalida) {
+            $detailProduct = DetailProduct::with('product.uom')->findOrFail($request->detail_product_id);
+            $pecosaId = $request->filled('pecosa_id') ? $request->pecosa_id : null;
+            $this->deductStock($detailProduct->product_id, $validated['quantity'], $pecosaId);
 
-        return redirect()->route('movimientos.index')->with('success', 'Movimiento registrado correctamente.');
+            Transaction::create([
+                'detail_product_id'   => $request->detail_product_id,
+                'type_transaction_id' => $typeSalida->id,
+                'quantity'            => $validated['quantity'],
+                'unit_price'          => $validated['unit_price'],
+                'total_price'         => $validated['quantity'] * $validated['unit_price'],
+                'document_number'     => $validated['document_number'] ?? null,
+                'transaction_date'    => $validated['transaction_date'] ?? now()->toDateString(),
+                'product_name'        => $detailProduct->product ? $detailProduct->product->title : null,
+                'uom_title'           => ($detailProduct->product && $detailProduct->product->uom) ? $detailProduct->product->uom->title : null,
+            ]);
+
+            return redirect()->route('movimientos.index')->with('success', 'Salida registrada correctamente.');
+        }
+
+        return back()->with('error', 'Tipo de transacción no válido.');
     }
 
     private function getStockForProduct($productId)
@@ -236,17 +229,18 @@ class TransactionController extends Controller
         $transaction_id = $request->get('transaction_id');
 
         if ($transaction_id) {
-            $transaction = Transaction::with(['product.uom', 'typeTransaction'])->findOrFail($transaction_id);
+            $transaction = Transaction::with(['detailProduct.product.uom', 'typeTransaction'])->findOrFail($transaction_id);
+            $product = $transaction->detailProduct ? $transaction->detailProduct->product : null;
 
             $articulos = [
                 [
-                    'numero' => '01',
-                    'cantidad_solicitado' => number_format($transaction->quantity, 2),
-                    'descripcion' => strtoupper($transaction->product->title ?? ''),
-                    'cantidad_despachado' => number_format($transaction->quantity, 2),
-                    'unidad' => strtoupper($transaction->product->uom->title ?? 'KILOS'),
-                    'unitario' => number_format($transaction->unit_price, 2),
-                    'total' => number_format($transaction->total_price, 2),
+                    'numero'               => '01',
+                    'cantidad_solicitado'  => number_format($transaction->quantity, 2),
+                    'descripcion'          => strtoupper($transaction->product_name ?? ($product ? $product->title : '') ?? ''),
+                    'cantidad_despachado'  => number_format($transaction->quantity, 2),
+                    'unidad'               => strtoupper($transaction->uom_title ?? ($product && $product->uom ? $product->uom->title : 'KILOS')),
+                    'unitario'             => number_format($transaction->unit_price, 2),
+                    'total'                => number_format($transaction->total_price, 2),
                 ],
             ];
 
@@ -277,14 +271,16 @@ class TransactionController extends Controller
             ];
         }
 
-        return view('comprobante_salida', $data);
+        $pdf = \PDF::loadView('comprobante_salida', $data);
+        return $pdf->setPaper('A4', 'landscape')->stream('comprobante-salida-' . date('Ymd') . '.pdf');
     }
 
-    public function reparticion()
+    public function reparticion(Request $request)
     {
-        $currentYear = date('Y');
-        $currentMonth = date('n');
-        $daysInMonth = date('t');
+        $currentYear = $request->get('year', date('Y'));
+        $currentMonth = $request->get('month', date('n'));
+        
+        $daysInMonth = date('t', strtotime("$currentYear-$currentMonth-01"));
 
         $racion = \App\Models\Racion::where('year', $currentYear)->where('active', true)->first();
 
@@ -296,41 +292,71 @@ class TransactionController extends Controller
         $racionHojuelasGr = $racion->racion_hojuelas_gramos;
 
         $activeState = State::whereRaw('LOWER(title) = ?', ['activo'])->first();
+        
+        $startDate = "$currentYear-$currentMonth-01";
+        $endDate = "$currentYear-$currentMonth-" . $daysInMonth;
 
-        $associations = \App\Models\Association::with(['partners' => function($query) use ($activeState) {
-            $query->where('state_id', $activeState->id ?? 0);
-        }, 'partners.beneficiaries'])->get()->map(function($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth, $activeState) {
+        $associations = \App\Models\Association::with(['placeSector.sector', 'partners' => function($query) use ($activeState, $startDate, $endDate) {
+            $query->where('state_id', $activeState->id ?? 0)
+                  ->where(function($q) use ($startDate, $endDate) {
+                      $q->whereNull('date_begin')
+                        ->orWhere('date_begin', '')
+                        ->orWhere('date_begin', '<=', $endDate);
+                  })
+                  ->where(function($q) use ($startDate) {
+                      $q->whereNull('date_end')
+                        ->orWhere('date_end', '')
+                        ->orWhere('date_end', '>=', $startDate);
+                  });
+        }, 'partners.beneficiaries', 'partners.beneficiaries.histories' => function($q) use ($startDate, $endDate) {
+            $q->where(function($q) use ($endDate) {
+                  $q->whereNull('date_begin')
+                    ->orWhere('date_begin', '')
+                    ->orWhere('date_begin', '<=', $endDate);
+              })
+              ->where(function($q) use ($startDate) {
+                  $q->whereNull('date_end')
+                    ->orWhere('date_end', '')
+                    ->orWhere('date_end', '>=', $startDate);
+              });
+        }])->get()->map(function($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth, $activeState, $startDate, $endDate) {
             $totalBeneficiaries = 0;
 
             foreach ($association->partners as $partner) {
-                $beneficiaryCount = $partner->beneficiaries()->where('relationship_id', '!=', 1)->count();
-                $totalBeneficiaries += $beneficiaryCount;
+                foreach ($partner->beneficiaries as $beneficiary) {
+                    $isActive = $beneficiary->histories->where('state_id', $activeState->id)->count() > 0;
+                    if ($isActive) {
+                        $totalBeneficiaries++;
+                    }
+                }
             }
 
-            $presidenta = '';
-            $directive = \App\Models\Directive::where('resolution_id', $association->resolution_id)
-                ->where('position_id', 1)
-                ->where('state_id', 1)
-                ->first();
-            if ($directive && $directive->partner && $directive->partner->person) {
-                $presidenta = $directive->partner->person->names . ' ' . $directive->partner->person->father_lastname;
-            }
+            $presidenta = $association->getPresidentName() ?? '';
 
-            $lecheLitros = round(($totalBeneficiaries * $daysInMonth * $racionLecheMl) / 410, 2);
-            $hojuelasKg = round(($totalBeneficiaries * $daysInMonth * $racionHojuelasGr) / 1000, 2);
+            $lecheTarros = round(($totalBeneficiaries * $daysInMonth * $racionLecheMl) / 410);
+            $lecheCajas = intdiv((int) $lecheTarros, 48);
+            $lecheTarrosSueltos = (int) $lecheTarros % 48;
+            $hojuelasKg = round(($totalBeneficiaries * $daysInMonth * $racionHojuelasGr) / 1000);
+            $hojuelasSacos = intdiv((int) $hojuelasKg, 30);
+            $hojuelasKilosSueltos = (int) $hojuelasKg % 30;
 
             return [
                 'id' => $association->id,
-                'codigo' => $association->id,
+                'codigo' => $association->code ?? $association->id,
                 'nombre' => $association->name,
                 'presidenta' => $presidenta,
                 'direccion' => $association->address ?? '',
+                'sector' => optional(optional($association->placeSector)->sector)->title ?? '',
                 'beneficiarios' => $totalBeneficiaries,
                 'dias' => $daysInMonth,
                 'leche_ml' => $racionLecheMl,
                 'hojuelas_gramos' => $racionHojuelasGr,
-                'leche_litros' => $lecheLitros,
+                'leche_litros' => $lecheTarros,
+                'leche_cajas' => $lecheCajas,
+                'leche_tarros' => $lecheTarrosSueltos,
                 'hojuelas_kg' => $hojuelasKg,
+                'hojuelas_sacos' => $hojuelasSacos,
+                'hojuelas_kilos' => $hojuelasKilosSueltos,
             ];
         })->filter(function($club) {
             return $club['beneficiarios'] > 0;
@@ -340,7 +366,7 @@ class TransactionController extends Controller
             'clubs' => $associations,
             'currentYear' => $currentYear,
             'currentMonth' => $currentMonth,
-            'monthName' => date('F'),
+            'monthName' => date('F', strtotime($startDate)),
             'daysInMonth' => $daysInMonth,
             'racionLecheMl' => $racionLecheMl,
             'racionHojuelasGr' => $racionHojuelasGr,
@@ -352,11 +378,11 @@ class TransactionController extends Controller
         return $pdf->setPaper('landscape')->stream('reparticion-' . $currentYear . '-' . date('m') . '.pdf');
     }
 
-    public function reparticionTabla()
+    public function reparticionTabla(Request $request)
     {
-        $currentYear = date('Y');
-        $currentMonth = date('n');
-        $daysInMonth = date('t');
+        $currentYear = $request->get('year', date('Y'));
+        $currentMonth = $request->get('month', date('n'));
+        $daysInMonth = date('t', strtotime("$currentYear-$currentMonth-01"));
 
         $racion = \App\Models\Racion::where('year', $currentYear)->where('active', true)->first();
 
@@ -368,38 +394,73 @@ class TransactionController extends Controller
         $racionHojuelasGr = $racion->racion_hojuelas_gramos;
 
         $activeState = State::whereRaw('LOWER(title) = ?', ['activo'])->first();
+        
+        $startDate = "$currentYear-$currentMonth-01";
+        $endDate = "$currentYear-$currentMonth-" . $daysInMonth;
 
-        $associations = Association::with(['partners' => function($query) use ($activeState) {
-            $query->where('state_id', $activeState->id ?? 0);
-        }, 'partners.beneficiaries'])->get()->map(function($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth, $activeState) {
+        $associations = Association::with(['placeSector.sector', 'partners' => function($query) use ($activeState, $startDate, $endDate) {
+            $query->where('state_id', $activeState->id ?? 0)
+                  ->where(function($q) use ($startDate, $endDate) {
+                      $q->whereNull('date_begin')
+                        ->orWhere('date_begin', '')
+                        ->orWhere('date_begin', '<=', $endDate);
+                  })
+                  ->where(function($q) use ($startDate) {
+                      $q->whereNull('date_end')
+                        ->orWhere('date_end', '')
+                        ->orWhere('date_end', '>=', $startDate);
+                  });
+        }, 'partners.beneficiaries', 'partners.beneficiaries.histories' => function($q) use ($startDate, $endDate) {
+            $q->where(function($q) use ($endDate) {
+                  $q->whereNull('date_begin')
+                    ->orWhere('date_begin', '')
+                    ->orWhere('date_begin', '<=', $endDate);
+              })
+              ->where(function($q) use ($startDate) {
+                  $q->whereNull('date_end')
+                    ->orWhere('date_end', '')
+                    ->orWhere('date_end', '>=', $startDate);
+              });
+        }])->get()->map(function($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth, $activeState, $startDate, $endDate) {
             $totalBeneficiaries = 0;
 
             foreach ($association->partners as $partner) {
-                $beneficiaryCount = $partner->beneficiaries()->where('relationship_id', '!=', 1)->count();
-                $totalBeneficiaries += $beneficiaryCount;
+                foreach ($partner->beneficiaries as $beneficiary) {
+                    $isActive = $beneficiary->histories->where('state_id', $activeState->id)->count() > 0;
+                    if ($isActive) {
+                        $totalBeneficiaries++;
+                    }
+                }
             }
 
-            $lecheLitros = round(($totalBeneficiaries * $daysInMonth * $racionLecheMl) / 410, 2);
-            $lecheKilos = round($lecheLitros, 2);
-            $hojuelasKg = round(($totalBeneficiaries * $daysInMonth * $racionHojuelasGr) / 1000, 2);
-            $hojuelasBolsas = (int) ceil($hojuelasKg / 0.5);
+            $lecheTarros = round(($totalBeneficiaries * $daysInMonth * $racionLecheMl) / 410);
+            $lecheCajas = intdiv((int) $lecheTarros, 48);
+            $lecheTarrosSueltos = (int) $lecheTarros % 48;
+            $hojuelasKg = round(($totalBeneficiaries * $daysInMonth * $racionHojuelasGr) / 1000);
+            $hojuelasSacos = intdiv((int) $hojuelasKg, 30);
+            $hojuelasKilosSueltos = (int) $hojuelasKg % 30;
 
-            $presidenta = $association->president ?? '';
+            $presidenta = $association->getPresidentName() ?? '';
 
             return [
                 'id' => $association->id,
-                'codigo' => $association->id,
+                'codigo' => $association->code ?? $association->id,
                 'nombre' => $association->name,
                 'presidenta' => $presidenta,
                 'direccion' => $association->address ?? '',
+                'sector' => optional(optional($association->placeSector)->sector)->title ?? '',
                 'beneficiarios' => $totalBeneficiaries,
                 'dias' => $daysInMonth,
                 'leche_ml' => $racionLecheMl,
                 'hojuelas_gramos' => $racionHojuelasGr,
-                'leche_litros' => $lecheLitros,
-                'leche_kilos' => $lecheKilos,
+                'leche_litros' => $lecheTarros,
+                'leche_kilos' => $lecheCajas,
+                'leche_cajas' => $lecheCajas,
+                'leche_tarros' => $lecheTarrosSueltos,
                 'hojuelas_kg' => $hojuelasKg,
-                'hojuelas_bolsas' => $hojuelasBolsas,
+                'hojuelas_bolsas' => $hojuelasSacos,
+                'hojuelas_sacos' => $hojuelasSacos,
+                'hojuelas_kilos' => $hojuelasKilosSueltos,
             ];
         })->filter(function($club) {
             return $club['beneficiarios'] > 0;

@@ -47,8 +47,6 @@
                     <th class="px-6 py-4 text-left">ID</th>
                     <th class="px-6 py-4 text-left">Nombre</th>
                     <th class="px-6 py-4 text-left">Abreviatura</th>
-                    <th class="px-6 py-4 text-left">Stock</th>
-                    <th class="px-6 py-4 text-left">Precio Unitario</th>
                     <th class="px-6 py-4 text-left">Estado</th>
                     <th class="px-6 py-4 text-left">Acciones</th>
                 </tr>
@@ -59,12 +57,6 @@
                     <td class="px-6 text-earth font-mono text-sm">#{{ $product->id }}</td>
                     <td class="px-6 font-semibold">{{ $product->title ?? 'Sin nombre' }}</td>
                     <td class="px-6 text-earth">{{ $product->abbreviation ?? '-' }}</td>
-                    <td class="px-6">
-                        <span class="px-2 py-1 rounded {{ $product->stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }} text-xs font-bold">
-                            {{ $product->stock }} {{ $product->uom->abbreviation ?? '' }}
-                        </span>
-                    </td>
-                    <td class="px-6 text-earth font-mono">S/ {{ number_format($product->unit_price, 2) }}</td>
                     <td class="px-6">
                         @if($product->state)
                             <span class="px-3 py-1 rounded-full text-xs font-bold {{ $product->state->title == 'Activo' ? 'badge-active' : 'badge-inactive' }}">{{ $product->state->title }}</span>
@@ -245,7 +237,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('productos-pecosas.productos.store') }}" method="POST" class="p-6">
+            <form action="{{ route('productos-pecosas.productos.store') }}" method="POST" class="p-6" onsubmit="document.getElementById('loading-screen').classList.add('active');">
                 @csrf
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
@@ -361,7 +353,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('productos-pecosas.productos.update', $product) }}" method="POST" class="p-6">
+            <form action="{{ route('productos-pecosas.productos.update', $product) }}" method="POST" class="p-6" onsubmit="document.getElementById('loading-screen').classList.add('active');">
                 @csrf
                 @method('PUT')
                 <div class="grid grid-cols-2 gap-4">

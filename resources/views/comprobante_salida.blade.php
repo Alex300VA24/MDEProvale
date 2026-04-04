@@ -3,436 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedido-Comprobante de Salida - Cereales</title>
+    <title>Pedido-Comprobante de Salida</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: landscape; margin: 1.5mm 3mm 1.5mm 3mm; }
+        body { margin: 0; padding: 3mm; font-family: Arial, sans-serif; font-size: 8pt; line-height: 1.2; }
+        .page-container { width: 100%; padding: 6px 8px 4px; }
+        thead { display: table-header-group; }
+        tbody { display: table-row-group; }
+        tr { page-break-inside: avoid; }
+
+        /* HEADER */
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+        .header-table td { vertical-align: middle; padding: 6px; border: none; }
+        .header-logo { width: 90px; text-align: center; }
+        .header-logo img { width: 75px; height: auto; }
+        .header-title { text-align: center; padding: 10px 14px; position: relative; left: -18px; }
+        .header-title .inst { font-size: 9pt; font-weight: bold; }
+        .header-title .prog { font-size: 8pt; margin: 2px 0; }
+        .header-title .doc-title { font-size: 18pt; font-weight: bold; letter-spacing: 1px; margin: 3px 0; }
+        .header-title .doc-sub { font-size: 10pt; font-weight: bold; margin: 2px 0; }
+        .header-title .mes-ano { font-size: 8pt; margin-top: 3px; }
+        .header-boxes { width: 170px; padding: 6px 4px; }
+        .header-spacer { width: 12px; padding: 0 !important; border: none !important; background: transparent !important; }
+        .boxes-table { width: 100%; border-collapse: collapse; }
+        .boxes-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; font-size: 7pt; }
+        .boxes-table .lbl { background-color: #e0e0e0; font-weight: bold; font-size: 6.5pt; }
+        .boxes-table .val { font-size: 9pt; font-weight: bold; height: 18px; }
+        .boxes-table .num-orden { font-size: 14pt; font-weight: bold; padding: 6px; }
+
+        /* INFO ROWS */
+        .info-row { width: 50%; border: 2px solid #000; padding: 5px 8px; margin-bottom: 2px; font-size: 8pt; display: flex; align-items: center; }
+        .info-row-2col { width: 51.9%; border-collapse: collapse; margin-bottom: 4px; }
+        .info-row-2col td { border: 2px solid #000; padding: 5px 8px; font-size: 8pt; }
+        .field-line { border-bottom: 1px solid #000; display: inline-block; min-width: 190px; padding: 0 5px; margin-left: 5px; }
+        .lbl-bold { font-weight: bold; }
+        .date-right { text-align: right; font-size: 9pt; margin-bottom: 8px; padding-right: 20px; }
+
+        /* MAIN TABLE */
+        .main-table { width: 100%; border-collapse: collapse; margin-bottom: 2px; }
+        .main-table th { background-color: #ffffff; border: 1px solid #000; padding: 5px 3px; font-size: 8.5pt; font-weight: bold; text-align: center; }
+        .main-table td { border: 1px solid #000; padding: 4px; font-size: 8pt; text-align: center; vertical-align: middle; }
+        .main-table thead tr:first-child th:not(.spacer-col) { border-top: 2px solid #000; }
+        .main-table tr > *:first-child { border-left: 2px solid #000; }
+        .main-table tbody tr:last-child td:not(.spacer-col) { border-bottom: 2px solid #000; }
+        .main-table .sec-hdr { background-color: #ffffff; font-weight: bold; font-size: 9pt; text-align: center; padding: 6px; letter-spacing: 3px; }
+        .main-table .subsec-hdr { background-color: #ffffff; font-weight: bold; font-size: 8pt; text-align: center; padding: 5px; letter-spacing: 2px; }
+        .main-table .desc-col { text-align: left; padding-left: 8px; min-width: 200px; }
+        .main-table .num-col { width: 35px; background-color: #f5f5f5; font-weight: bold; }
+        .main-table .qty-col { width: 46px; }
+        .main-table .uom-col { width: 65px; }
+        .main-table .price-col { width: 72px; }
+        .main-table .spacer-col {
+            width: 10px;
+            border-top: none !important;
+            border-bottom: none !important;
+            border-right: none !important;
+            border-left: 1px solid #000 !important;
+            background-color: #fff !important;
+            padding: 0 !important;
         }
-        
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 9pt;
-            line-height: 1.2;
-            padding: 15px;
-        }
-        
-        .header {
-            display: table;
-            width: 100%;
-            border: 2px solid #000;
-            margin-bottom: 10px;
-        }
-        
-        .header-row {
-            display: table-row;
-        }
-        
-        .header-cell {
-            display: table-cell;
-            padding: 8px;
-            vertical-align: middle;
-            border-right: 1px solid #000;
-        }
-        
-        .header-cell:last-child {
-            border-right: none;
-        }
-        
-        .logo-cell {
-            width: 90px;
-            text-align: center;
-        }
-        
-        .title-cell {
-            text-align: center;
-            padding: 5px;
-        }
-        
-        .title-cell h3 {
-            font-size: 10pt;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-        
-        .title-cell h2 {
-            font-size: 12pt;
-            font-weight: bold;
-            margin: 3px 0;
-        }
-        
-        .title-cell .subtitle {
-            font-size: 8pt;
-            margin-top: 2px;
-        }
-        
-        .info-boxes {
-            display: table-cell;
-            width: 250px;
-        }
-        
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .info-table td {
-            border: 1px solid #000;
-            padding: 3px;
-            text-align: center;
-            font-size: 8pt;
-            font-weight: bold;
-        }
-        
-        .info-table .label {
-            background-color: #e8e8e8;
-            font-size: 7pt;
-        }
-        
-        .info-table .value {
-            font-size: 10pt;
-            height: 20px;
-        }
-        
-        .info-row {
-            border: 1px solid #000;
-            padding: 5px;
-            margin-bottom: 2px;
-            font-size: 8pt;
-        }
-        
-        .info-row-flex {
-            display: flex;
-            justify-content: space-between;
-            border: 1px solid #000;
-            margin-bottom: 2px;
-        }
-        
-        .info-section {
-            padding: 5px;
-            flex: 1;
-        }
-        
-        .info-section:first-child {
-            border-right: 1px solid #000;
-        }
-        
-        .label-bold {
-            font-weight: bold;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        
-        .underline-field {
-            border-bottom: 1px solid #000;
-            display: inline-block;
-            min-width: 200px;
-            padding: 0 5px;
-        }
-        
-        .main-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 2px solid #000;
-            margin-bottom: 10px;
-        }
-        
-        .main-table th {
-            background-color: #f0f0f0;
-            border: 1px solid #000;
-            padding: 5px;
-            font-size: 9pt;
-            font-weight: bold;
-            text-align: center;
-        }
-        
-        .main-table td {
-            border: 1px solid #000;
-            padding: 4px;
-            font-size: 8pt;
-            text-align: center;
-        }
-        
-        .main-table .section-header {
-            background-color: #e0e0e0;
-            font-weight: bold;
-            font-size: 10pt;
-            text-align: center;
-            padding: 6px;
-        }
-        
-        .main-table .row-number {
-            width: 30px;
-            background-color: #f8f8f8;
-            font-weight: bold;
-        }
-        
-        .main-table .cantidad-col {
-            width: 60px;
-        }
-        
-        .main-table .descripcion-col {
-            text-align: left;
-            padding-left: 8px;
-        }
-        
-        .main-table .unidad-col {
-            width: 70px;
-        }
-        
-        .main-table .unitario-col {
-            width: 70px;
-        }
-        
-        .main-table .total-col {
-            width: 70px;
-        }
-        
-        .total-row {
-            background-color: #f8f8f8;
-            font-weight: bold;
-        }
-        
-        .total-value {
-            text-align: right;
-            padding-right: 10px;
-            font-size: 9pt;
-        }
-        
-        .footer-note {
-            border: 1px solid #000;
-            padding: 8px;
-            margin-bottom: 10px;
-            font-size: 8pt;
-            text-align: center;
-        }
-        
-        .signatures {
-            display: table;
-            width: 100%;
-            margin-top: 20px;
-        }
-        
-        .signature-cell {
-            display: table-cell;
-            width: 33.33%;
-            text-align: center;
-            vertical-align: bottom;
-            padding: 5px;
-        }
-        
-        .signature-box {
-            border: 1px solid #000;
-            padding: 5px;
-            min-height: 80px;
-        }
-        
-        .signature-title {
-            font-weight: bold;
-            font-size: 8pt;
-            margin-bottom: 5px;
-            background-color: #f0f0f0;
-            padding: 3px;
-        }
-        
-        .signature-content {
-            padding-top: 30px;
-            font-size: 7pt;
-        }
-        
-        .signature-line {
-            border-top: 1px solid #000;
-            margin-top: 20px;
-            padding-top: 3px;
-            font-size: 7pt;
-        }
-        
-        .date-location {
-            text-align: right;
-            font-size: 8pt;
-            margin-bottom: 10px;
-            padding-right: 10px;
-        }
+        .total-row td { background-color: #ffffff; font-weight: bold; font-size: 8.5pt; }
+
+        /* FOOTER NOTE */
+        .footer-note { border: 2px solid #000; padding: 5px; margin-bottom: 6px; font-size: 7.5pt; text-align: center; }
+
+        /* SIGNATURES */
+        .sig-table { width: 100%; border-collapse: separate; border-spacing: 16px 0; margin-top: 4px; padding-top: 20px}
+        .sig-table td { border: none; padding: 0; vertical-align: top; width: 33.33%; }
+        .sig-block { min-height: 96px; }
+        .sig-block-head { display: table; width: 100%; margin-bottom: 6px; }
+        .sig-logo { display: table-cell; width: 48px; vertical-align: top; text-align: left; }
+        .sig-logo img { width: 38px; height: auto; }
+        .sig-entity { display: table-cell; vertical-align: top; text-align: left; font-size: 7.5pt; line-height: 1.25; }
+        .sig-entity strong { display: block; font-size: 8pt; }
+        .sig-hidden { visibility: hidden; }
+        .sig-space { height: 26px; }
+        .sig-line { border-top: 1px solid #000; padding-top: 4px; font-size: 7.5pt; text-align: center; }
+        .sig-role { text-align: center; font-size: 7pt; margin-top: 2px; font-weight: bold; }
+        .sig-area { text-align: center; font-size: 7pt; margin-top: 2px; }
+        .sig-dni { text-align: center; font-size: 7pt; margin-top: 3px; }
+        .dni-write-line { display: inline-block; width: 110px; border-bottom: 1px solid #000; height: 10px; vertical-align: middle; margin-left: 4px; }
     </style>
 </head>
 <body>
-    <!-- HEADER -->
-    <table style="width: 100%; border: 2px solid #000; margin-bottom: 5px;">
+    <div class="page-container">
+
+    {{-- HEADER --}}
+    <table class="header-table">
         <tr>
-            <td style="width: 90px; text-align: center; padding: 5px; border-right: 1px solid #000;">
-                <div style="width: 75px; height: 75px; border: 1px solid #000; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                    <!-- Logo aquí -->
-                    <div style="font-size: 8pt;">LOGO</div>
-                </div>
+            <td style="width: 150px; text-align: left; vertical-align: middle; padding: 0;" class="header-logo">
+                <img src="{{ public_path('img/muni2.png') }}" 
+                style="width: 50px; height: auto; vertical-align: middle; margin-right: 5px;" 
+                alt="Logo">
+                    <div style="display: inline-block; vertical-align: middle; text-align: left; width: 80px;">
+                    <div style="font-size: 6pt; font-weight: bold;">MUNICIPALIDAD DISTRITAL DE LA ESPERANZA</div>
+                    
+                    <div style="font-size: 6pt;">O.F. Vaso de Leche</div>
+                    </div>
             </td>
-            
-            <td style="text-align: center; padding: 10px; border-right: 1px solid #000;">
-                <div style="font-weight: bold; font-size: 9pt;">Municipalidad</div>
-                <div style="font-size: 9pt;">Distrital de la Esperanza</div>
-                <div style="font-size: 8pt;">Gerencia de Desarrollo Social</div>
-                <div style="font-weight: bold; font-size: 13pt; margin: 5px 0; letter-spacing: 1px;">PEDIDO-COMPROBANTE DE SALIDA</div>
-                <div style="font-weight: bold; font-size: 10pt;">CEREALES</div>
-                <div style="font-size: 8pt; margin-top: 3px;">MES/AÑO: <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px; margin-left: 5px;"></span></div>
+            <td class="header-title">
+                <div class="doc-title">PEDIDO-COMPROBANTE DE SALIDA</div>
+                <div class="doc-sub">SUBGERENCIA DE PROGRAMAS SOCIALES</div>
+                <div class="doc-sub">PROGRAMA VASO DE LECHE</div>
             </td>
-            
-            <td style="width: 250px; padding: 5px;">
-                <table style="width: 100%; border-collapse: collapse;">
+            <td class="header-boxes">
+                <table class="boxes-table">
                     <tr>
-                        <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 7pt; font-weight: bold; background-color: #e8e8e8;">ZONA</td>
-                        <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 7pt; font-weight: bold; background-color: #e8e8e8;">COMITÉ</td>
-                        <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 7pt; font-weight: bold; background-color: #e8e8e8;">Nº MES</td>
-                        <td style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 7pt; font-weight: bold; background-color: #e8e8e8;">RACIÓN SUPLEMENTO</td>
-                        <td rowspan="2" style="border: 1px solid #000; padding: 2px; text-align: center; font-size: 7pt; font-weight: bold; background-color: #e8e8e8; vertical-align: middle;">NUMERO<br/>DE<br/>ORDEN</td>
+                        <td class="lbl">ZONA</td>
+                        <td class="lbl">CÓDIGO</td>
+                        <td class="lbl">BENEF</td>
                     </tr>
                     <tr>
-                        <td style="border: 1px solid #000; padding: 3px; text-align: center; font-size: 10pt; font-weight: bold; height: 22px;">{{ $zona ?? '01' }}</td>
-                        <td style="border: 1px solid #000; padding: 3px; text-align: center; font-size: 10pt; font-weight: bold;">{{ $comite ?? '005' }}</td>
-                        <td style="border: 1px solid #000; padding: 3px; text-align: center; font-size: 10pt; font-weight: bold;">{{ $num_mes ?? '51' }}</td>
-                        <td style="border: 1px solid #000; padding: 3px; text-align: center; font-size: 9pt; font-weight: bold;">{{ $racion ?? '36.00 gr.' }}</td>
-                        <td style="border: 1px solid #000; padding: 3px; text-align: center; font-size: 10pt; font-weight: bold;">{{ $numero_orden ?? '000001' }}</td>
+                        <td class="val">{{ $zona ?? '01' }}</td>
+                        <td class="val">{{ $comite ?? '005' }}</td>
+                        <td class="val">{{ $num_mes ?? '51' }}</td>
                     </tr>
                 </table>
+            </td>
+            <td class="header-boxes" style="width: 120px;">
+                <table class="boxes-table">
+                    <tr>
+                        <td class="lbl">NÚMERO</td>
+                    </tr>
+                    <tr>
+                        <td class="num-orden">{{ $numero_orden ?? '000001' }}</td>
+                    </tr>
+                </table>
+            </td>
+            <td class="header-spacer">&nbsp;</td>
+        </tr>
+    </table>
+
+    <div class="date-right">La Esperanza, {{ $fecha ?? '2 de Marzo del 2026' }}</div>
+
+    {{-- SOLICITANTE --}}
+    <div class="info-row">
+        <span class="lbl-bold">Se les entrega a la Sra. (Sr.):</span>
+        <span class="field-line">{{ $solicitante_nombre ?? 'MARIA NELLY RODRIGUEZ LOYOLA' }}</span>
+    </div>
+
+
+    <table class="info-row-2col" style="margin-bottom: 12px;">
+        <tr>
+            <td style="width:60%;">
+                <span class="lbl-bold">Con destino al club de Madres:</span>
+                <span class="field-line" style="min-width:180px;">{{ $domicilio ?? 'SANTA RITA DE CASA' }}</span>
+                los siguientes artículos.
             </td>
         </tr>
     </table>
 
-    <!-- INFORMACIÓN DEL SOLICITANTE -->
-    <div style="border: 1px solid #000; padding: 5px; margin-bottom: 2px; font-size: 8pt;">
-        <span style="font-weight: bold;">Se les entrega a la Sra. (Sr.):</span>
-        <span style="border-bottom: 1px solid #000; display: inline-block; width: 350px; margin-left: 5px;">{{ $solicitante_nombre ?? 'MARIA NELLY RODRIGUEZ LOYOLA' }}</span>
-    </div>
-
-    <div style="display: flex; border: 1px solid #000; margin-bottom: 5px;">
-        <div style="flex: 1; padding: 5px; border-right: 1px solid #000; font-size: 8pt;">
-            <span style="font-weight: bold;">Con domicilio en (Urb./Modesto):</span>
-            <span style="border-bottom: 1px solid #000; display: inline-block; width: 180px; margin-left: 5px;">{{ $domicilio ?? 'SANTA RITA DE CASSIA' }}</span>
-        </div>
-        <div style="flex: 1; padding: 5px; font-size: 8pt; text-align: right;">
-            <span style="font-style: italic;">los siguientes artículos</span>
-        </div>
-    </div>
-
-    <!-- FECHA Y LUGAR -->
-    <div class="date-location">
-        La Esperanza, {{ $fecha ?? '2 de Marzo del 2026' }}
-    </div>
-
-    <!-- TABLA PRINCIPAL -->
+    {{-- TABLA PRINCIPAL --}}
     <table class="main-table">
-        <!-- HEADER -->
         <thead>
             <tr>
-                <th colspan="2" class="section-header">SOLICITADO</th>
-                <th colspan="3" class="section-header">DESPACHADO</th>
-                <th colspan="2" class="section-header">VALORES</th>
+                <th rowspan="3">ITEM</th>
+                <th colspan="2" class="sec-hdr">SOLICITADO</th>
+                <th colspan="2" class="sec-hdr">DESPACHADO</th>
+                <th colspan="2" class="sec-hdr">VALORES</th>
+                <th rowspan="3" class="spacer-col">&nbsp;</th>
             </tr>
             <tr>
-                <th style="width: 30px;"></th>
-                <th style="width: 60px;">CANTIDAD</th>
-                <th style="width: 60px;">CANTIDAD<br/>DESPACHADO</th>
-                <th style="width: 80px;">UNIDAD<br/>DE MEDIDA</th>
-                <th style="width: 80px;">UNITARIO<br/>S/.</th>
-                <th style="width: 80px;">TOTAL<br/>S/.</th>
+                <th colspan="2" class="subsec-hdr">ARTÍCULOS</th>
+                <th rowspan="2" class="qty-col">CANTIDAD<br/>DESPACHADO</th>
+                <th rowspan="2" class="uom-col">UNIDAD<br/>DE MEDIDA</th>
+                <th rowspan="2" class="price-col">UNITARIO<br/>S/.</th>
+                <th rowspan="2" class="price-col">TOTAL<br/>S/.</th>
             </tr>
             <tr>
-                <th></th>
-                <th colspan="6" style="text-align: left; padding-left: 8px; background-color: #fff;">ARTICULOS</th>
-            </tr>
-            <tr>
-                <th></th>
-                <th colspan="1"></th>
-                <th colspan="5" style="text-align: center; font-weight: normal; font-size: 8pt; background-color: #fff;">DESCRIPCIÓN</th>
+                <th class="qty-col">CANTIDAD</th>
+                <th class="desc-col" style="text-align:center; padding-left:0;">DESCRIPCIÓN</th>
             </tr>
         </thead>
-        
-        <!-- BODY -->
         <tbody>
             @php
                 $articulos = $articulos ?? [
-                    ['numero' => '01', 'cantidad_solicitado' => '0.00', 'descripcion' => 'MEZCLAS CEREAL FORTIFICADO ESPECIAL INTEGRADO NIÑO(A) 36 MESES Y NIÑEZ GEST.', 'cantidad_despachado' => '0.00', 'unidad' => 'KILOS', 'unitario' => '6.55', 'total' => '0.00'],
+                    [
+                        'cantidad_solicitado' => '0.00',
+                        'descripcion' => 'MEZCLAS PARA YOGURES MARCA ESTERILIZADA V/FORMA + AVENA + VIVIR BEST.',
+                        'cantidad_despachado' => '0.00',
+                        'unidad' => 'KILOS',
+                        'unitario' => '6.55',
+                        'total' => '0.00'
+                    ]
                 ];
-                
-                // Rellenar hasta 15 filas
-                $rows_count = 15;
+                $rows_count = max(count($articulos), 14);
             @endphp
-            
             @for ($i = 0; $i < $rows_count; $i++)
-                @php
-                    $articulo = $articulos[$i] ?? null;
-                @endphp
+                @php $art = $articulos[$i] ?? null; @endphp
                 <tr>
-                    <td class="row-number">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}</td>
-                    <td class="cantidad-col">{{ $articulo['cantidad_solicitado'] ?? '' }}</td>
-                    <td class="cantidad-col">{{ $articulo['cantidad_despachado'] ?? '' }}</td>
-                    <td class="unidad-col">{{ $articulo['unidad'] ?? '' }}</td>
-                    <td class="descripcion-col" colspan="1">{{ $articulo['descripcion'] ?? '' }}</td>
-                    <td class="unitario-col">{{ $articulo['unitario'] ?? '' }}</td>
-                    <td class="total-col">{{ $articulo['total'] ?? '' }}</td>
+                    <td class="num-col">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}</td>
+                    <td class="qty-col">{{ $art['cantidad_solicitado'] ?? '' }}</td>
+                    <td class="desc-col">{{ $art['descripcion'] ?? '' }}</td>
+                    <td class="qty-col">{{ $art['cantidad_despachado'] ?? '' }}</td>
+                    <td class="uom-col">{{ $art['unidad'] ?? '' }}</td>
+                    <td class="price-col">{{ $art['unitario'] ?? '' }}</td>
+                    <td class="price-col">{{ $art['total'] ?? '' }}</td>
+                    <td class="spacer-col"></td>
                 </tr>
             @endfor
-            
-            <!-- TOTAL ROW -->
             <tr class="total-row">
-                <td colspan="6" class="total-value">TOTAL:</td>
-                <td style="text-align: center; font-size: 10pt;">{{ $total_general ?? '*****0.00' }}</td>
+                <td colspan="6" style="text-align:right; padding-right:10px;">TOTAL:</td>
+                <td class="price-col" style="background-color: #e0e0e0;">{{ $total_general ?? '*****0.00' }}</td>
+                <td class="spacer-col"></td>
             </tr>
         </tbody>
     </table>
 
-    <!-- NOTA PIE -->
-    <div class="footer-note">
-        <div style="font-weight: bold;">FORMULARIO UTILIZADO PARA EL ALMACEN</div>
-        <div>N°__________</div>
-        <div style="font-style: italic; font-size: 7pt; margin-top: 3px;">(en letras)</div>
-    </div>
-
-    <!-- FIRMAS -->
-    <table style="width: 100%; border-collapse: collapse;">
+    {{-- FIRMAS --}}
+    <table class="sig-table">
         <tr>
-            <td style="width: 33.33%; border: 1px solid #000; padding: 5px; vertical-align: top;">
-                <div style="font-weight: bold; font-size: 8pt; text-align: center; background-color: #f0f0f0; padding: 3px; margin-bottom: 5px;">
-                    Municipalidad Distrital de la Esperanza
-                </div>
-                <div style="height: 50px;"></div>
-                <div style="border-top: 1px solid #000; padding-top: 3px; font-size: 7pt; text-align: center; margin-top: 5px;">
-                    Sra. Municipalidad Pro Vaso de Cereales
-                </div>
-                <div style="text-align: center; font-size: 7pt;">
-                    {{ $encargado_almacen ?? 'ENCARGADO DE PROVIDURIS' }}
-                </div>
-                <div style="text-align: center; font-size: 7pt; margin-top: 2px;">
-                    D.N.I. {{ $dni_encargado ?? '18357683' }}
-                </div>
-            </td>
-            
-            <td style="width: 33.33%; border: 1px solid #000; border-left: none; padding: 5px; vertical-align: top;">
-                <div style="font-weight: bold; font-size: 8pt; text-align: center; background-color: #f0f0f0; padding: 3px; margin-bottom: 5px;">
-                    Municipalidad Distrital de la Esperanza
-                </div>
-                <div style="height: 50px;"></div>
-                <div style="border-top: 1px solid #000; padding-top: 3px; font-size: 7pt; text-align: center; margin-top: 5px;">
-                    Lic. Isabel María Puerta Aguilar
-                </div>
-                <div style="text-align: center; font-size: 7pt;">
-                    {{ $control ?? 'JEFA DE ALMACÉN PROVALE' }}
-                </div>
-                <div style="text-align: center; font-size: 7pt; margin-top: 2px;">
-                    D.N.I. {{ $dni_control ?? '40353394' }}
+            <td>
+                <div class="sig-block">
+                    <div class="sig-block-head">
+                        <div class="sig-logo">
+                            <img src="{{ public_path('img/muni2.png') }}" alt="Logo">
+                        </div>
+                        <div class="sig-entity">
+                            <strong>Municipalidad Distrital de La Esperanza</strong>
+                        </div>
+                    </div>
+                    <div class="sig-space"></div>
+                    <div class="sig-line"></div>
+                    <div class="sig-role">{{ $encargado_almacen ?? 'NOMBRE DE LA JEFA' }}</div>
+                    <div class="sig-area">SUBGERENCIA PROGRAMAS SOCIALES</div>
+                    <div class="sig-area">PROGRAMA VASO DE LECHE</div>
+                    <div class="sig-dni">DNI: {{ $dni_encargado ?? '' }}</div>
                 </div>
             </td>
-            
-            <td style="width: 33.33%; border: 1px solid #000; border-left: none; padding: 5px; vertical-align: top;">
-                <div style="height: 55px;"></div>
-                <div style="border-top: 1px solid #000; padding-top: 3px; font-size: 7pt; text-align: center; margin-top: 5px;">
-                    <span style="font-weight: bold;">RECIBI CONFORME</span>
+            <td>
+                <div class="sig-block">
+                    <div class="sig-block-head">
+                        <div class="sig-logo">
+                            <img src="{{ public_path('img/muni2.png') }}" alt="Logo">
+                        </div>
+                        <div class="sig-entity">
+                            <strong>Municipalidad Distrital de La Esperanza</strong>
+                        </div>
+                    </div>
+                    <div class="sig-space"></div>
+                    <div class="sig-line"></div>
+                    <div class="sig-role">{{ $control ?? 'NOMBRE RESPONSABLE' }}</div>
+                    <div class="sig-area">ALMACÉN PROVALE</div>
+                    <div class="sig-dni">DNI: {{ $dni_control ?? '' }}</div>
                 </div>
-                <div style="text-align: center; font-size: 7pt; margin-top: 8px;">
-                    D.N.I. <span style="border-bottom: 1px solid #000; display: inline-block; width: 100px;"></span>
+            </td>
+            <td>
+                <div class="sig-block">
+                    <div class="sig-block-head">
+                        <div class="sig-logo sig-hidden">
+                            <img src="{{ public_path('img/muni2.png') }}" alt="Logo">
+                        </div>
+                        <div class="sig-entity sig-hidden">
+                            <strong>Municipalidad Distrital de La Esperanza</strong>
+                        </div>
+                    </div>
+                    <div class="sig-space"></div>
+                    <div class="sig-line"></div>
+                    <div class="sig-role">RECIBÍ CONFORME</div>
+                    <div class="sig-dni">DNI:<span class="dni-write-line"></span></div>
                 </div>
             </td>
         </tr>
     </table>
+    </div>
 
 </body>
 </html>

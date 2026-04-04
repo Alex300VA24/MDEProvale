@@ -9,17 +9,15 @@
             <i class="fas fa-file-alt text-leaf"></i> Gestión de Pecosas
         </h3>
         <div class="flex gap-3">
-            <a href="{{ route('productos-pecosas.productos.index') }}" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-clipboard-list"></i> Detalle Productos
-            </a>
-            <a href="{{ route('productos-pecosas.pecosas.reportes') }}" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-file-pdf"></i> Reportes
-            </a>
+
             @if(Auth::user()->canCreateModule('pecosas'))
             <button onclick="openModal('modal-crear-pecosa')" class="btn-primary flex items-center gap-2">
                 <i class="fas fa-plus"></i> Nueva Pecosa
             </button>
             @endif
+            <a href="{{ route('productos-pecosas.productos.index') }}" class="btn-secondary flex items-center gap-2">
+                <i class="fas fa-clipboard-list"></i> Detalle Productos
+            </a>
         </div>
     </div>
 
@@ -52,11 +50,11 @@
         </div>
     </form>
 
-    @if(session('success'))
+    {{--  @if(session('success'))
         <div class="mx-6 mt-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
             <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
         </div>
-    @endif
+    @endif --}}
 
     <div class="overflow-x-auto">
         <table class="data-table w-full">
@@ -86,7 +84,7 @@
                         {{ $pecosa->delivery_date ? \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') : '-' }}
                     </td>
                     <td class="px-6 text-sm">
-                        {{ $pecosa->managingPartner && $pecosa->managingPartner->people ? $pecosa->managingPartner->people->names . ' ' . $pecosa->managingPartner->people->father_lastname : '-' }}
+                        {{ $pecosa->managing_partner_name ?? '-' }}
                     </td>
                     <td class="px-6">
                         @if($pecosa->state)
@@ -152,7 +150,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('productos-pecosas.pecosas.store') }}" method="POST" id="pecosa-form-modal">
+            <form action="{{ route('productos-pecosas.pecosas.store') }}" method="POST" id="pecosa-form-modal" onsubmit="document.getElementById('loading-screen').classList.add('active');">
                 @csrf
                 <div class="p-6">
                     <h4 class="font-extrabold text-charcoal text-lg mb-4 flex items-center gap-2">
@@ -242,7 +240,8 @@ let detailProductsListModal = @json($detailProductsList ?? []);
 
 function fmtDate(d) {
     if (!d) return '';
-    const parts = d.split('-');
+    const datePart = d.split('T')[0];
+    const parts = datePart.split('-');
     return parts.length === 3 ? parts[2] + '/' + parts[1] + '/' + parts[0] : d;
 }
 
@@ -271,9 +270,11 @@ function addProductDetailModal() {
     let productOptions = '<option value="">Seleccionar producto...</option>';
     detailProductsListModal.forEach(dp => {
         if (dp.available_stock > 0) {
-            const productName = dp.product ? dp.product.title + ' (' + dp.product.abbreviation + ')' : 'Sin nombre';
-            const period = fmtDate(dp.start_date) + ' al ' + fmtDate(dp.end_date);
-            productOptions += `<option value="${dp.id}" data-product-id="${dp.product_id}" data-price="${dp.unit_price}" data-stock="${dp.available_stock}">${productName} - Stock: ${dp.available_stock} (${period})</option>`;
+            const productName = dp.product ? dp.product.title : 'Sin nombre';
+            const abbreviation = dp.product ? dp.product.abbreviation.trim() : '';
+            const startDate = fmtDate(dp.start_date);
+            const endDate = fmtDate(dp.end_date);
+            productOptions += `<option value="${dp.id}" data-product-id="${dp.product_id}" data-price="${dp.unit_price}" data-stock="${dp.available_stock}">${productName} (${abbreviation}) ${startDate} ${endDate}</option>`;
         }
     });
 
@@ -427,7 +428,7 @@ function updateDetailPriceEdit(select, pecosaId, idx) {
                         <p>{{ $pecosa->delivery_date ? \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') : '-' }}</p>
                     </div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Responsable</span>
-                        <p>{{ $pecosa->managingPartner && $pecosa->managingPartner->people ? $pecosa->managingPartner->people->names . ' ' . $pecosa->managingPartner->people->father_lastname : '-' }}</p>
+                        <p>{{ $pecosa->managing_partner_name ?? '-' }}</p>
                     </div>
                 </div>
                 @if($pecosa->observation)
@@ -457,7 +458,7 @@ function updateDetailPriceEdit(select, pecosaId, idx) {
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('productos-pecosas.pecosas.update', $pecosa) }}" method="POST" id="pecosa-edit-form-{{ $pecosa->id }}">
+            <form action="{{ route('productos-pecosas.pecosas.update', $pecosa) }}" method="POST" id="pecosa-edit-form-{{ $pecosa->id }}" onsubmit="document.getElementById('loading-screen').classList.add('active');">
                 @csrf
                 @method('PUT')
                 <div class="p-6">
@@ -491,9 +492,7 @@ function updateDetailPriceEdit(select, pecosaId, idx) {
                         <div>
                             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Presidenta del Comité</label>
                             @php
-                                $currentPresident = $pecosa->managingPartner && $pecosa->managingPartner->people
-                                    ? $pecosa->managingPartner->people->names . ' ' . $pecosa->managingPartner->people->father_lastname
-                                    : 'Sin presidenta asignada';
+                                $currentPresident = $pecosa->managing_partner_name ?? 'Sin presidenta asignada';
                             @endphp
                             <input type="text" id="president_name_edit_{{ $pecosa->id }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly value="{{ $currentPresident }}">
                             <input type="hidden" name="managing_partner_id" id="president_id_edit_{{ $pecosa->id }}" value="{{ $pecosa->managing_partner_id }}">

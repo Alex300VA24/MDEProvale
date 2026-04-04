@@ -10,7 +10,7 @@ class CreateRacionesTable extends Migration
     {
         Schema::create('raciones', function (Blueprint $table) {
             $table->id();
-            $table->integer('year');
+            $table->string('year', 4);
             $table->decimal('racion_hojuelas_gramos', 8, 2);
             $table->decimal('racion_leche_militros', 8, 2);
             $table->boolean('active')->default(true);

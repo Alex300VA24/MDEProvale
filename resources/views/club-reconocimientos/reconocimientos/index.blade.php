@@ -9,9 +9,6 @@
             <i class="fas fa-file-contract text-leaf"></i> Resoluciones
         </h3>
         <div class="flex gap-3">
-            <a href="{{ route('club-reconocimientos.reconocimientos.reportes') }}" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-file-pdf"></i> Reportes
-            </a>
             <button onclick="openModal('modal-crear-resolucion')" class="btn-primary flex items-center gap-2">
                 <i class="fas fa-plus"></i> Nueva Resolución
             </button>

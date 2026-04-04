@@ -58,18 +58,6 @@ class ClubReconocimientosController extends Controller
 
     // ==================== CLUB DE MADRES ====================
 
-    public function createClub(Request $request)
-    {
-        $states = State::all();
-        $placeSectors = PlaceSector::with(['place', 'sector'])->get();
-        $typePremises = TypePremises::all();
-        $resolutions = Resolution::where('state_id', State::where('abbreviation', 'A')->first()->id ?? 1)
-            ->orderBy('date_document', 'desc')
-            ->get();
-        
-        return view('club-reconocimientos.create', compact('states', 'placeSectors', 'typePremises', 'resolutions'));
-    }
-
     public function storeClub(Request $request)
     {
         // Validación de datos
@@ -112,34 +100,6 @@ class ClubReconocimientosController extends Controller
             DB::rollBack();
             return back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
         }
-    }
-
-    public function showClub(Association $association)
-    {
-        $association->load(['partners', 'resolution', 'resolutionsHistory']);
-        
-        $resolutionsAll = [];
-        if ($association->resolution) {
-            $resolutionsAll[] = $association->resolution;
-        }
-        foreach ($association->resolutionsHistory as $res) {
-            if ($res->id !== $association->resolution_id) {
-                $resolutionsAll[] = $res;
-            }
-        }
-        
-        usort($resolutionsAll, function ($a, $b) {
-            return strtotime($b->date_start) - strtotime($a->date_start);
-        });
-
-        $association->allResolutions = $resolutionsAll;
-        
-        return view('club-reconocimientos.show', compact('association'));
-    }
-
-    public function editClub(Association $association)
-    {
-        return view('club-reconocimientos.edit', compact('association'));
     }
 
     public function updateClub(Request $request, Association $association)
@@ -199,12 +159,6 @@ class ClubReconocimientosController extends Controller
         return view('club-reconocimientos.reconocimientos.index', compact('resolutions', 'states'));
     }
 
-    public function createReconocimiento()
-    {
-        $states = State::all();
-        return view('club-reconocimientos.reconocimientos.create', compact('states'));
-    }
-
     public function storeReconocimiento(Request $request)
     {
         $validated = $request->validate([
@@ -218,17 +172,6 @@ class ClubReconocimientosController extends Controller
         Resolution::create($validated);
         
         return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución creada exitosamente');
-    }
-
-    public function showReconocimiento(Resolution $resolution)
-    {
-        return view('club-reconocimientos.reconocimientos.show', compact('resolution'));
-    }
-
-    public function editReconocimiento(Resolution $resolution)
-    {
-        $states = State::all();
-        return view('club-reconocimientos.reconocimientos.edit', compact('resolution', 'states'));
     }
 
     public function updateReconocimiento(Request $request, Resolution $resolution)
@@ -286,25 +229,18 @@ class ClubReconocimientosController extends Controller
                     ->update(['state_id' => State::where('abbreviation', 'I')->first()->id ?? 1]);
             }
 
-            // Obtener los datos de la socia seleccionada
-            $partner = Partner::with('people')->find($request->partner_id);
-            $nombrePresidenta = '';
-            if ($partner && $partner->people) {
-                $nombrePresidenta = $partner->people->names . ' ' . $partner->people->father_lastname . ' ' . $partner->people->mother_lastname;
-            }
-
             // Crear nueva directiva de presidenta usando la resolución del comité
-            Directive::create([
+            $directive = Directive::create([
                 'resolution_id' => $resolutionId,
-                'partner_id' => $request->partner_id,
-                'position_id' => $posicionPresidenta->id,
-                'state_id' => $estadoActivo->id,
+                'partner_id'    => $request->partner_id,
+                'position_id'   => $posicionPresidenta->id,
+                'state_id'      => $estadoActivo->id,
+                'date_start'    => now()->toDateString(),
             ]);
 
-            // Habilitar el comité y guardar el nombre de la presidenta
+            // Habilitar el comité (ya no guarda directive_id ni president_name en associations)
             $association->update([
                 'state_id' => $estadoActivo->id,
-                'president' => $nombrePresidenta,
             ]);
 
             DB::commit();
@@ -317,87 +253,6 @@ class ClubReconocimientosController extends Controller
     }
 
     // ==================== REPORTES ====================
-
-    public function reportesClub()
-    {
-        return view('club-reconocimientos.reportes');
-    }
-
-    public function generarReporteClub($tipo, Request $request)
-    {
-        $query = Association::query();
-
-        switch ($tipo) {
-            case 'general':
-                $associations = $query->get();
-                $titulo = 'Listado General de Club de Madres';
-                break;
-            case 'socios':
-                $associations = $query->with('partners.people')->get();
-                $titulo = 'Club de Madres con Socios';
-                break;
-            case 'estadistico':
-                $associations = $query->withCount('partners')->get();
-                $titulo = 'Reporte Estadístico de Club de Madres';
-                break;
-            case 'reconocimientos':
-                $associations = $query->with('resolution')->get();
-                $titulo = 'Club de Madres con Reconocimientos';
-                break;
-            default:
-                $associations = $query->get();
-                $titulo = 'Reporte de Club de Madres';
-        }
-
-        $orientacion = $request->get('orientacion', 'landscape');
-        $pdf = \PDF::loadView('club-reconocimientos.reportes.pdf', compact('associations', 'titulo', 'tipo'));
-        $pdf->setPaper('a4', $orientacion);
-        return $pdf->stream('reporte-club-de-madres-' . $tipo . '-' . date('Y-m-d') . '.pdf');
-    }
-
-    public function reportesReconocimientos()
-    {
-        return view('club-reconocimientos.reconocimientos.reportes');
-    }
-
-    public function generarReporteReconocimientos($tipo, Request $request)
-    {
-        $query = Resolution::with(['state', 'associations']);
-
-        switch ($tipo) {
-            case 'general':
-                $resolutions = $query->get();
-                $titulo = 'Todos los Reconocimientos';
-                break;
-            case 'club':
-                $associationId = $request->get('association_id');
-                $resolutions = $query->where('association_id', $associationId)->get();
-                $association = Association::find($associationId);
-                $titulo = 'Reconocimientos del Club: ' . ($association->name ?? 'N/A');
-                break;
-            case 'anio':
-                $anio = $request->get('anio', date('Y'));
-                $resolutions = $query->whereYear('date_start', $anio)->get();
-                $titulo = 'Reconocimientos del Año ' . $anio;
-                break;
-            case 'vigentes':
-                $resolutions = $query->where('date_end', '>=', date('Y-m-d'))->get();
-                $titulo = 'Reconocimientos Vigentes';
-                break;
-            case 'estadistico':
-                $resolutions = $query->get();
-                $titulo = 'Reporte Estadístico de Reconocimientos';
-                break;
-            default:
-                $resolutions = $query->get();
-                $titulo = 'Reporte de Reconocimientos';
-        }
-
-        $orientacion = $request->get('orientacion', 'landscape');
-        $pdf = \PDF::loadView('club-reconocimientos.reconocimientos.reportes.pdf', compact('resolutions', 'titulo', 'tipo'));
-        $pdf->setPaper('a4', $orientacion);
-        return $pdf->stream('reporte-reconocimientos-' . $tipo . '-' . date('Y-m-d') . '.pdf');
-    }
 
     /**
      * Generar Padrón de Club de Madres con Resoluciones de Reconocimiento
@@ -455,21 +310,10 @@ class ClubReconocimientosController extends Controller
             ];
         }
 
-        $presidenta = $association->president ?? '';
+        $presidenta = $association->getPresidentName() ?? '';
         
         if (empty($presidenta)) {
-            $directiva = Directive::whereHas('resolution', function ($q) use ($association) {
-                $q->where('association_id', $association->id);
-            })->whereHas('position', function ($q) {
-                $q->where('title', 'like', '%PRESIDENTA%');
-            })->whereHas('state', function ($q) {
-                $q->where('abbreviation', 'A');
-            })->with('partner.people')->first();
-
-            if ($directiva && $directiva->partner && $directiva->partner->people) {
-                $p = $directiva->partner->people;
-                $presidenta = strtoupper($p->names . ' ' . $p->father_lastname . ' ' . $p->mother_lastname);
-            }
+            $presidenta = $association->president ?? '';
         }
 
         $totalBenef = 0;

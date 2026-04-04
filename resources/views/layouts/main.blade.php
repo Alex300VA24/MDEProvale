@@ -70,6 +70,115 @@
             border-radius: 3px;
         }
 
+        #loading-screen {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            opacity: 0;
+            backdrop-filter: blur(4px);
+        }
+        #loading-screen.active {
+            display: flex;
+            opacity: 1;
+        }
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .loader-icon {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+        .loader-icon::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+        }
+        .loader-icon img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+        .loader-spin {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            width: 120px;
+            height: 120px;
+            border: 3px solid rgba(255,255,255,0.15);
+            border-top: 3px solid #5EEAD4;
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
+        .loader-ring {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            width: 110px;
+            height: 110px;
+            border: 2px solid transparent;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            animation: spin 1.8s linear infinite reverse;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loader-text {
+            text-align: center;
+        }
+        .loader-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.05em;
+        }
+        .loader-subtitle {
+            font-size: 0.875rem;
+            color: rgba(255,255,255,0.6);
+            margin-top: 0.25rem;
+        }
+        .loader-progress {
+            width: 180px;
+            height: 4px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .loader-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #5EEAD4, #14B8A6);
+            border-radius: 999px;
+            animation: progress 1.5s ease-in-out infinite;
+        }
+        @keyframes progress {
+            0% { width: 0%; margin-left: 0; }
+            50% { width: 70%; margin-left: 15%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+
         #sidebar {
             position: fixed;
             left: 0;
@@ -417,6 +526,23 @@
 
 <body class="font-jakarta">
 
+    <div id="loading-screen">
+        <div class="loader-container">
+            <div class="loader-icon">
+                <div class="loader-spin"></div>
+                <div class="loader-ring"></div>
+                <img src="{{ asset('img/muni2.png') }}" alt="PROVALE">
+            </div>
+            <div class="loader-text">
+                <div class="loader-title">PROVALE</div>
+                <div class="loader-subtitle">Cargando sistema...</div>
+            </div>
+            <div class="loader-progress">
+                <div class="loader-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="app-shell">
         <aside id="sidebar">
             <div class="flex items-center gap-4 px-5 py-6 border-b border-white/10 min-h-[88px]">
@@ -438,20 +564,20 @@
 
                     <a href="{{ route('socios-beneficiarios.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('socios-beneficiarios.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="socios-beneficiarios">
                         <i class="fas fa-user-friends w-5 text-center text-lg flex-shrink-0"></i>
-                        <span class="nav-text text-[14px]">Socios y Beneficiarios</span>
+                        <span class="nav-text text-[14px]">Socios</span>
                     </a>
 
                     @if(Auth::user()->canAccessModule('productos') || Auth::user()->canAccessModule('pecosas'))
                     <a href="{{ route('productos-pecosas.pecosas.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('productos-pecosas.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="productos-pecosas">
                         <i class="fas fa-box w-5 text-center text-lg flex-shrink-0"></i>
-                        <span class="nav-text text-[14px]">Productos y Pecosas</span>
+                        <span class="nav-text text-[14px]">Pecosas</span>
                     </a>
                     @endif
 
                     @if(Auth::user()->canAccessModule('club-madres') || Auth::user()->canAccessModule('reconocimientos'))
                     <a href="{{ route('club-reconocimientos.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('club-reconocimientos.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="comite-resolucion">
                         <i class="fas fa-users w-5 text-center text-lg flex-shrink-0"></i>
-                        <span class="nav-text text-[14px]">Comite y Resolucion</span>
+                        <span class="nav-text text-[14px]">Comites</span>
                     </a>
                     @endif
 
@@ -509,9 +635,11 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <button class="relative w-10 h-10 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <button class="relative w-10 h-10 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all" onclick="openModal('modal-notifications'); markAllAsSeen();">
                         <i class="fas fa-bell text-base"></i>
-                        <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">3</span>
+                        @if($unreadNotifications > 0)
+                        <span class="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1">{{ $unreadNotificationsLabel }}</span>
+                        @endif
                     </button>
 
                     <div class="flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-wheat bg-cream hover:bg-wheat transition-all cursor-pointer">
@@ -535,55 +663,147 @@
             </header>
 
             <main class="flex-1 p-8">
+                @if(session('success') || session('error') || $errors->any())
                 @if(session('success'))
-                <div class="mb-6 px-6 py-4 bg-primary-light border-2 border-primary rounded-2xl flex items-center gap-3 animate-fade-in">
-                    <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white">
-                        <i class="fas fa-check"></i>
+                <div id="flash-alert" class="mb-6 px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 1px solid #34d399;">
+                    <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-check text-white text-sm"></i>
                     </div>
-                    <div class="flex-1">
-                        <div class="font-bold text-primary text-sm">¡Éxito!</div>
-                        <div class="text-primary-dark text-sm">{{ session('success') }}</div>
+                    <div class="text-sm font-medium text-emerald-800">{{ session('success') }}</div>
+                    <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-emerald-600 hover:text-emerald-800 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                @elseif(session('error'))
+                <div id="flash-alert" class="mb-6 px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 1px solid #f87171;">
+                    <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-times text-white text-sm"></i>
                     </div>
-                    <button onclick="this.parentElement.remove()" class="text-primary hover:text-primary-dark transition-colors">
+                    <div class="text-sm font-medium text-red-800">{{ session('error') }}</div>
+                    <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-red-600 hover:text-red-800 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                @elseif($errors->any())
+                <div id="flash-alert" class="mb-6 px-5 py-4 rounded-xl flex items-start gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #fbbf24;">
+                    <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                    </div>
+                    <div class="text-sm text-amber-800">
+                        <ul class="list-disc list-inside space-y-0.5">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-amber-600 hover:text-amber-800 transition-colors">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 @endif
-
-                @if(session('error'))
-                <div class="mb-6 px-6 py-4 bg-red-500-light border-2 border-red-500 rounded-2xl flex items-center gap-3 animate-fade-in">
-                    <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="flex-1">
-                        <div class="font-bold text-red-500 text-sm">¡Error!</div>
-                        <div class="text-red-500 text-sm">{{ session('error') }}</div>
-                    </div>
-                    <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-500-dark transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                @endif
-
-                @if($errors->any())
-                <div class="mb-6 px-6 py-4 bg-red-500-light border-2 border-red-500 rounded-2xl animate-fade-in">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center text-white">
-                            <i class="fas fa-exclamation-circle"></i>
-                        </div>
-                        <div class="font-bold text-red-500 text-sm">Por favor corrige los siguientes errores:</div>
-                    </div>
-                    <ul class="list-disc list-inside text-red-500 text-sm space-y-1 ml-13">
-                        @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
                 @endif
 
                 @yield('content')
             </main>
         </div>
+    </div>
+
+    <div id="modal-notifications" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50" style="display: none;">
+        <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+            <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                    <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                        <i class="fas fa-bell text-primary"></i> Bandeja de Notificaciones
+                    </h3>
+                    <button onclick="closeModal('modal-notifications')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6 max-h-96 overflow-y-auto">
+                    @php
+                    $query = \App\Models\Notification::with('user', 'processedByUser')->orderBy('requested_at', 'desc');
+                    if (auth()->user()->rol_id != 1) {
+                        $query->where('requested_by', auth()->id());
+                    }
+                    $solicitudes = $query->get();
+                    @endphp
+                    @if($solicitudes->count() > 0)
+                        <div class="space-y-4">
+                            @foreach($solicitudes as $solicitud)
+                            <div class="p-4 rounded-xl border-2 border-wheat {{ $solicitud->is_seen ? 'bg-gray-50' : 'bg-cream' }}">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            @if($solicitud->type === 'password_reset')
+                                            <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded">Contraseña</span>
+                                            @else
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">{{ $solicitud->type }}</span>
+                                            @endif
+                                            @if($solicitud->status === 'approved')
+                                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded"><i class="fas fa-check mr-1"></i> Aprobado</span>
+                                            @elseif($solicitud->status === 'rejected')
+                                            <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded"><i class="fas fa-times mr-1"></i> Rechazado</span>
+                                            @endif
+                                        </div>
+                                        <p class="font-bold text-charcoal">{{ $solicitud->title }}</p>
+                                        <p class="text-sm text-earth mt-1">{{ $solicitud->description }}</p>
+                                        <p class="text-xs text-earth mt-2">
+                                            Usuario: {{ $solicitud->user->names ?? 'N/A' }} | Fecha: {{ $solicitud->requested_at->format('d/m/Y H:i') }}
+                                            @if($solicitud->processed_at)
+                                            | Procesado: {{ $solicitud->processedByUser->names ?? 'Admin' }} ({{ $solicitud->processed_at->format('d/m/Y H:i') }})
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <div class="flex gap-2 ml-4">
+                                        @if(Auth::user()->rol_id == 1 && $solicitud->status === 'pending')
+                                        <form action="{{ route('sistema.notifications.approve', $solicitud->id) }}" method="POST" class="inline" onsubmit="document.getElementById('loading-screen').classList.add('active');">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:opacity-90">
+                                                <i class="fas fa-check mr-1"></i> Aprobar
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('sistema.notifications.reject', $solicitud->id) }}" method="POST" class="inline" onsubmit="document.getElementById('loading-screen').classList.add('active');">
+                                            @csrf
+                                            <button type="submit" class="px-3 py-2 bg-red-500 text-white text-sm font-bold rounded-lg hover:opacity-90">
+                                                <i class="fas fa-times mr-1"></i> Rechazar
+                                            </button>
+                                        </form>
+                                        @elseif($solicitud->status === 'approved')
+                                        <button class="px-3 py-2 bg-green-100 text-green-700 text-sm font-bold rounded-lg cursor-default" disabled>
+                                            <i class="fas fa-check-circle mr-1"></i> Aprobado
+                                        </button>
+                                        @elseif($solicitud->status === 'rejected')
+                                        <button class="px-3 py-2 bg-red-100 text-red-700 text-sm font-bold rounded-lg cursor-default" disabled>
+                                            <i class="fas fa-times-circle mr-1"></i> Rechazado
+                                        </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-8 text-earth">
+                            <i class="fas fa-inbox text-4xl mb-3"></i>
+                            <p>No hay notificaciones</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function markAllAsSeen() {
+        fetch('{{ route('sistema.notifications.mark-seen') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        });
+    }
+    </script>
     </div>
 
     <script>
@@ -651,13 +871,37 @@
         function confirmDelete(formId, message) {
             message = message || '¿Estás seguro de que deseas eliminar este registro?';
             Swal.fire({
-                title: '¿Estás seguro?',
+                title: '<span class="font-extrabold text-charcoal text-xl">¿Estás seguro?</span>',
                 text: message,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#DC2626',
                 cancelButtonColor: '#64748B',
                 confirmButtonText: '<i class="fas fa-trash mr-1"></i> Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-2xl shadow-2xl border-2 border-wheat',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2',
+                },
+                backdrop: 'rgba(0,0,0,0.4)',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById(formId).submit();
+                }
+            });
+        }
+
+        function confirmResetPassword(userId, userName, dni) {
+            Swal.fire({
+                title: 'Restablecer Contraseña',
+                html: '¿Estás seguro de que deseas restablecer la contraseña del usuario <strong>' + userName + '</strong>?<br><br><span class="text-red-500 font-bold">La contraseña será su DNI: ' + dni + '</span>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#64748B',
+                confirmButtonText: '<i class="fas fa-key mr-1"></i> Sí, restablecer',
                 cancelButtonText: 'Cancelar',
                 borderRadius: '1rem',
                 customClass: {
@@ -667,38 +911,10 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById(formId).submit();
+                    document.getElementById('form-reset-password-' + userId).submit();
                 }
             });
         }
-
-        @if(session('success'))
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                icon: 'success',
-                title: '¡Éxito!',
-                text: '{{ session('success') }}',
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                customClass: { popup: 'rounded-2xl' }
-            });
-        });
-        @endif
-
-        @if(session('error'))
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: '{{ session('error') }}',
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false,
-                customClass: { popup: 'rounded-2xl' }
-            });
-        });
-        @endif
 
         const sidebar = document.getElementById('sidebar');
         const spacer = document.getElementById('sidebar-spacer');
@@ -747,6 +963,46 @@
                 submenu.classList.add('open');
             }
         }
+
+        // Loading screen: solo al navegar si tarda más de 300ms, logout y formularios de sesión
+        const loadingScreen = document.getElementById('loading-screen');
+        let loadingTimer = null;
+
+        function showLoadingDelayed(delay) {
+            clearTimeout(loadingTimer);
+            loadingTimer = setTimeout(() => loadingScreen.classList.add('active'), delay);
+        }
+
+        function hideLoading() {
+            clearTimeout(loadingTimer);
+            loadingScreen.classList.remove('active');
+        }
+
+        // Links de navegación: mostrar solo si tarda más de 300ms
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            const href = link.getAttribute('href');
+            if (!href || href === '#' || href.startsWith('javascript') || href.startsWith('mailto')) return;
+            if (link.target === '_blank') return;
+            if (link.hasAttribute('data-no-loading')) return;
+            showLoadingDelayed(300);
+        });
+
+        // Formulario de logout: mostrar inmediatamente
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            const action = form.getAttribute('action') || '';
+            if (action.includes('logout')) {
+                loadingScreen.classList.add('active');
+                return;
+            }
+            if (form.hasAttribute('data-no-loading')) return;
+            if (form.closest('[id$="-modal"]') || form.closest('.modal')) return;
+        });
+
+        // Ocultar al restaurar desde caché (back/forward)
+        window.addEventListener('pageshow', function() { hideLoading(); });
     </script>
 
 </body>

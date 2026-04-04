@@ -17,9 +17,6 @@
                 <i class="fas fa-users"></i> Nuevo Comité
             </button>
             @endif
-            <a href="{{ route('club-reconocimientos.club.reportes') }}" class="btn-secondary flex items-center gap-2">
-                <i class="fas fa-file-pdf"></i> Reportes
-            </a>
             <a href="{{ route('club-reconocimientos.club.padron') }}" target="_blank" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-clipboard-list"></i> Padrón
             </a>
@@ -230,7 +227,7 @@
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Nombre</span><p class="font-semibold text-charcoal">{{ $association->name }}</p></div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Dirección</span><p class="text-charcoal">{{ $association->address ?? '-' }}</p></div>
-                <div><span class="text-[11px] font-bold text-earth uppercase">Presidenta</span><p class="text-charcoal">{{ $association->president ?? 'Sin asignar' }}</p></div>
+                <div><span class="text-[11px] font-bold text-earth uppercase">Presidenta</span><p class="text-charcoal">{{ $association->getPresidentName() ?? 'Sin asignar' }}</p></div>
                 @if($association->latestResolution)
                 <div><span class="text-[11px] font-bold text-earth uppercase">Última Resolución</span>
                     <p class="font-semibold text-leaf">{{ $association->latestResolution->document }}</p>
@@ -342,15 +339,15 @@
             <form id="form-presidenta-{{ $association->id }}" action="{{ route('club-reconocimientos.club.asignar-presidenta', $association) }}" method="POST" class="p-6 space-y-4">
                 @csrf
                 <p class="text-sm text-earth">{{ $association->name }}</p>
-                @if($association->president)
+                @if($association->getPresidentName())
                 <div class="bg-leaf-light border-2 border-leaf rounded-xl p-4">
                     <p class="text-[11px] font-bold text-leaf uppercase tracking-wider mb-1">Presidenta Actual</p>
-                    <p class="font-semibold text-charcoal text-lg">{{ $association->president }}</p>
+                    <p class="font-semibold text-charcoal text-lg">{{ $association->getPresidentName() }}</p>
                     <p class="text-xs text-earth mt-1">Para cambiar, selecciona una nueva socia abajo</p>
                 </div>
                 @endif
                 <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">{{ $association->president ? 'Nueva Presidenta' : 'Socia a asignar como Presidenta' }}</label>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">{{ $association->getPresidentName() ? 'Nueva Presidenta' : 'Socia a asignar como Presidenta' }}</label>
                     <select name="partner_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
                         <option value="">Seleccionar socia...</option>
                         @forelse($association->partners as $partner)
@@ -365,7 +362,7 @@
                     @endif
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="confirmPresidenta('{{ $association->id }}', '{{ $association->name }}')" class="btn-primary flex-1" {{ $association->partners->isEmpty() ? 'disabled' : '' }}><i class="fas fa-save mr-2"></i> {{ $association->president ? 'Cambiar' : 'Asignar' }}</button>
+                    <button type="button" onclick="confirmPresidenta('{{ $association->id }}', '{{ $association->name }}')" class="btn-primary flex-1" {{ $association->partners->isEmpty() ? 'disabled' : '' }}><i class="fas fa-save mr-2"></i> {{ $association->getPresidentName() ? 'Cambiar' : 'Asignar' }}</button>
                     <button type="button" onclick="closeModal('modal-presidenta-{{ $association->id }}')" class="btn-secondary flex-1">Cancelar</button>
                 </div>
             </form>
