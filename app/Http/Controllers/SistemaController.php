@@ -148,6 +148,25 @@ class SistemaController extends Controller
         return view('sistema.notifications.index', compact('solicitudes'));
     }
 
+    public function notificationsPartial()
+    {
+        $user = auth()->user();
+        
+        if (!$user || !$user->id) {
+            return '<div class="text-center py-8 text-slate"><i class="fas fa-exclamation-circle text-3xl mb-3"></i><p>Sesión expirada</p></div>';
+        }
+        
+        $query = Notification::with(['user', 'processedByUser'])
+            ->orderBy('requested_at', 'desc');
+        
+        if ($user->rol_id != 1) {
+            $query->where('requested_by', $user->id);
+        }
+        
+        $solicitudes = $query->limit(50)->get();
+        return view('sistema.notifications.index', compact('solicitudes'));
+    }
+
     public function approveNotification(Notification $notification)
     {
         if ($notification->status !== 'pending') {

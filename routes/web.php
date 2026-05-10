@@ -135,6 +135,7 @@ Route::post('sistema/usuarios/{usuario}/reset-password', [SistemaController::cla
 
 Route::get('sistema/notifications/count/unread', [SistemaController::class, 'getUnreadNotificationsCount'])->name('sistema.notifications.count')->middleware('module:sistema');
 Route::get('sistema/notifications', [SistemaController::class, 'notifications'])->name('sistema.notifications')->middleware('module:sistema');
+Route::get('sistema/notifications/partial', [SistemaController::class, 'notificationsPartial'])->name('sistema.notifications.partial')->middleware('module:sistema');
 Route::post('sistema/notifications/{notification}/approve', [SistemaController::class, 'approveNotification'])->name('sistema.notifications.approve')->middleware('module:sistema');
 Route::post('sistema/notifications/{notification}/reject', [SistemaController::class, 'rejectNotification'])->name('sistema.notifications.reject')->middleware('module:sistema');
 Route::post('sistema/notifications/mark-seen', [SistemaController::class, 'markAllNotificationsAsSeen'])->name('sistema.notifications.mark-seen')->middleware('module:sistema');

@@ -701,13 +701,7 @@
 
     <script>
         function loadNotifications() {
-            fetch('{{ route('sistema.notifications') }}', {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
+            fetch('{{ route('sistema.notifications.partial') }}')
             .then(response => response.text())
             .then(html => {
                 document.getElementById('notifications-container').innerHTML = html;

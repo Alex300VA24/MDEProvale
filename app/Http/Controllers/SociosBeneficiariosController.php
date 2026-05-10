@@ -58,9 +58,13 @@ class SociosBeneficiariosController extends Controller
         $associations = Association::select(['id', 'name'])->get();
         $states = State::select(['id', 'title'])->get();
         
-        $partnerIdsWithPartners = Partner::distinct()->pluck('person_id');
-        $people = People::whereNotIn('id', $partnerIdsWithPartners)
+        $people = People::whereDoesntHave('partners')
             ->select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
+            ->limit(500)
+            ->get();
+        
+        $allPeople = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
+            ->limit(1000)
             ->get();
         
         $relationships = Relationship::select(['id', 'title'])->get();
@@ -68,7 +72,7 @@ class SociosBeneficiariosController extends Controller
         $typeBenefits = TypeBenefit::select(['id', 'title', 'abbreviation'])->get();
         $reasonDisqualifications = ReasonDisqualification::select(['id', 'title'])->get();
 
-        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states', 'people', 'relationships', 'placeSectors', 'typeBenefits', 'reasonDisqualifications'));
+        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states', 'people', 'allPeople', 'relationships', 'placeSectors', 'typeBenefits', 'reasonDisqualifications'));
     }
 
     // ==================== PERSONAS ====================
