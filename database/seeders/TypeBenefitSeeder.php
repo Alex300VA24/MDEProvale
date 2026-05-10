@@ -78,5 +78,14 @@ class TypeBenefitSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        DB::table('type_benefits')->insert([
+            'title' => 'Persona con Discapacidad',
+            'min_age' => 0,
+            'max_age' => null,
+            'priority' => 2,
+            'abbreviation' => 'DIS',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

@@ -39,30 +39,41 @@
         @endif
 
         <form method="GET" class="mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="md:col-span-2">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o DNI..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <div class="flex gap-4">
+                <div class="flex-1">
+                    <input type="text" name="search" value="{{ request('search') }}" 
+                        placeholder="Buscar por nombre o DNI..." 
+                        class="w-full px-10 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
+
                 <div>
-                    <select name="association_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    <select name="association_id" 
+                        class="w-32 px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todos los Clubes</option>
                         @foreach($associations as $association)
-                        <option value="{{ $association->id }}" {{ request('association_id') == $association->id ? 'selected' : '' }}>{{ $association->name }}</option>
+                            <option value="{{ $association->id }}" {{ request('association_id') == $association->id ? 'selected' : '' }}>
+                                {{ $association->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <select name="state_id" 
+                        class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <option value="">Todos los Estados</option>
+                        @foreach($states as $state)
+                            <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>
+                                {{ $state->title }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div>
-                    <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                        <option value="">Todos los Estados</option>
-                        @foreach($states as $state)
-                        <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
-                        @endforeach
-                    </select>
+                    <button type="submit" class="btn-primary"><i class="fas fa-search mr-2"></i> Buscar</button>
+                    <a href="{{ route('socios-beneficiarios.index') }}" class="btn-secondary"><i class="fas fa-broom mr-2"></i> Limpiar</a>
                 </div>
-            </div>
-            <div class="flex gap-2 mt-4">
-                <button type="submit" class="btn-primary"><i class="fas fa-search mr-2"></i> Buscar</button>
-                <a href="{{ route('socios-beneficiarios.index') }}" class="btn-secondary"><i class="fas fa-broom mr-2"></i> Limpiar</a>
+                
             </div>
         </form>
 

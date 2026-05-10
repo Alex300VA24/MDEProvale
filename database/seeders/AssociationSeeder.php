@@ -329,7 +329,7 @@ class AssociationSeeder extends Seeder
                 'address'          => 'Tadeo Monagas N° 1694',
                 'observation'      => 'Centro Poblado: San Martin',
                 #'president'        => 'JENNYFER LUCIA LIZA QUEZADA',
-                'resolution_id'    => 91,
+                'resolution_id'    => 177,
                 'state_id'         => 1,
                 'place_sector_id'  => 30,
                 'type_premises_id' => 2,

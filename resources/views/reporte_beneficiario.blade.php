@@ -144,14 +144,10 @@
             $resumenFilas = $resumen_filas ?? [];
             $observaciones = $observaciones ?? [
                 ['codigo' => '-', 'descripcion' => 'EDAD >= 14 años (BAJA)', 'cantidad' => 0],
-                ['codigo' => '-', 'descripcion' => 'ANCIANO < DE 60 AÑOS', 'cantidad' => 0],
+                ['codigo' => '-', 'descripcion' => 'ANCIANO < DE 65 AÑOS', 'cantidad' => 0],
                 ['codigo' => '-', 'descripcion' => 'GES / LAC <= DE 12 AÑOS', 'cantidad' => 0],
-                ['codigo' => '-', 'descripcion' => 'FEC. NAC EN BLANCO', 'cantidad' => 0],
                 ['codigo' => '-', 'descripcion' => 'GES. MAS DE 9 MESES / SIN FECHA DE INGRESO (BAJA)', 'cantidad' => 0],
-                ['codigo' => '-', 'descripcion' => 'LAC. MAS DE UN AÑO / SIN FECHA INGRESO (BAJA)', 'cantidad' => 0],
-                ['codigo' => '-', 'descripcion' => 'BENEFICIARIO DUPLICADO (NOMBRE)', 'cantidad' => 0],
-                ['codigo' => '-', 'descripcion' => 'NO TIENE DNI', 'cantidad' => 0],
-                ['codigo' => '-', 'descripcion' => 'NRO DE DNI DUPLICADO', 'cantidad' => 0],
+                ['codigo' => '-', 'descripcion' => 'LAC. MAS DE 2 AÑOS / SIN FECHA INGRESO (BAJA)', 'cantidad' => 0],
             ];
         @endphp
 

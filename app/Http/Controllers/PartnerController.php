@@ -12,15 +12,17 @@ class PartnerController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Partner::with(['people', 'association', 'state']);
+        $query = Partner::query()
+            ->select(['id', 'date_begin', 'date_end', 'observations', 'state_id', 'person_id', 'association_id', 'created_at', 'updated_at'])
+            ->with(['people:id,names,father_lastname,mother_lastname,dni', 'association:id,name,code', 'state:id,title']);
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->whereHas('people', function ($q) use ($search) {
-                $q->where('names', 'like', "%{$search}%")
-                  ->orWhere('father_lastname', 'like', "%{$search}%")
-                  ->orWhere('mother_lastname', 'like', "%{$search}%")
-                  ->orWhere('dni', 'like', "%{$search}%");
+                $q->where('dni', $search)
+                  ->orWhere('names', 'like', "{$search}%")
+                  ->orWhere('father_lastname', 'like', "{$search}%")
+                  ->orWhere('mother_lastname', 'like', "{$search}%");
             });
         }
 
@@ -33,18 +35,20 @@ class PartnerController extends Controller
         }
 
         $partners = $query->orderBy('id', 'desc')->paginate(10);
-        $associations = Association::all();
-        $states = State::all();
+        $associations = Association::select(['id', 'name', 'code'])->get();
+        $states = State::select(['id', 'title'])->get();
 
         return view('socios.index', compact('partners', 'associations', 'states'));
     }
 
     public function create()
     {
-        $people = People::whereDoesntHave('partners')->get();
+        $people = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
+            ->whereDoesntHave('partners')
+            ->get();
 
-        $associations = Association::all();
-        $states = State::all();
+        $associations = Association::select(['id', 'name', 'code'])->get();
+        $states = State::select(['id', 'title'])->get();
         return view('socios.create', compact('people', 'associations', 'states'));
     }
 
@@ -71,9 +75,9 @@ class PartnerController extends Controller
 
     public function edit(Partner $partner)
     {
-        $people = People::all();
-        $associations = Association::all();
-        $states = State::all();
+$people = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])->get();
+        $associations = Association::select(['id', 'name', 'code'])->get();
+        $states = State::select(['id', 'title'])->get();
         return view('socios.edit', compact('partner', 'people', 'associations', 'states'));
     }
 

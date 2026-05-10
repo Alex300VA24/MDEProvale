@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Notification extends Model
 {
@@ -55,6 +56,21 @@ class Notification extends Model
     public static function unreadCount()
     {
         return self::where('is_seen', false)->count();
+    }
+
+    public static function unreadCountForUser(?User $user): int
+    {
+        if (!$user || !$user->id) {
+            return 0;
+        }
+
+        if ((int) $user->rol_id === 1) {
+            return self::where('is_seen', false)->count();
+        }
+
+        return self::where('requested_by', $user->id)
+            ->where('is_seen', false)
+            ->count();
     }
 
     public static function createPasswordResetRequest(User $user)

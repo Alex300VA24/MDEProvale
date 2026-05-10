@@ -4,22 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - PROVALE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { 'jakarta': ['"Plus Jakarta Sans"', 'sans-serif'] },
-                    colors: {
-                        charcoal: '#1E293B',
-                        primary: { DEFAULT: '#0F766E', light: '#14B8A6', dark: '#0D5D56' },
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="icon" href="{{ asset('img/logovaso.svg') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/400.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/500.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/600.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/700.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script src="{{ asset('js/app.js') }}" defer></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         
@@ -122,7 +115,7 @@
         }
         .loader-progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #5EEAD4, #14B8A6);
+            background: linear-gradient(90deg, #4A90D9, #1E5799);
             border-radius: 999px;
             animation: progress 1.5s ease-in-out infinite;
         }
@@ -169,7 +162,7 @@
         }
         
         .btn-login {
-            background: linear-gradient(135deg, #0F766E 0%, #14B8A6 100%);
+            background: linear-gradient(135deg, #1E5799 0%, #2E6DB4 100%);
             position: relative;
             overflow: hidden;
         }
@@ -210,16 +203,12 @@
     </div>
     
     <div class="w-full max-w-md relative z-10 py-4">
-        <div class="text-center mb-6 sm:mb-8">
+
+        <div class="glass-card rounded-3xl p-6 sm:p-8">
+            <div class="text-center mb-6 sm:mb-8">
             <div class="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-3xl shadow-2xl mb-4 sm:mb-6 overflow-hidden">
                 <img src="{{ asset('img/muni2.png') }}" alt="PROVALE" class="w-18 h-18 object-contain">
             </div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">PROVALE</h1></h1>
-            <p class="text-teal-200 text-sm font-medium mt-2">Programa Vaso de Leche</p>
-            <p class="text-slate-400 text-xs mt-1">Municipalidad Distrital de La Esperanza</p>
-        </div>
-
-        <div class="glass-card rounded-3xl p-6 sm:p-8">
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">Bienvenido</h2>
                 <p class="text-slate-500 text-sm mt-1">Ingresa tus credenciales para continuar</p>
@@ -234,12 +223,6 @@
                 </div>
             @endif
 
-            @if (session('status'))
-                <div class="mb-4 p-4 bg-teal-50 border border-teal-100 rounded-2xl">
-                    <span class="text-sm text-teal-600">{{ session('status') }}</span>
-                </div>
-            @endif
-
             <form method="POST" action="{{ route('login') }}" class="space-y-4 sm:space-y-5">
                 @csrf
 
@@ -250,7 +233,7 @@
                             <i class="fas fa-user"></i>
                         </span>
                         <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus
-                            class="w-full pl-12 pr-4 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-primary focus:bg-white transition-all"
+                            class="w-full pl-12 pr-4 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-blue focus:bg-white transition-all"
                             placeholder="Ingresa tu usuario">
                     </div>
                 </div>
@@ -262,9 +245,9 @@
                             <i class="fas fa-lock"></i>
                         </span>
                         <input id="password" type="password" name="password" required
-                            class="w-full pl-12 pr-14 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-primary focus:bg-white transition-all"
+                            class="w-full pl-12 pr-14 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-blue focus:bg-white transition-all"
                             placeholder="••••••••">
-                        <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-all">
+                        <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue transition-all">
                             <i class="fas fa-eye-slash" id="eyeIcon"></i>
                         </button>
                     </div>
@@ -272,7 +255,7 @@
 
                 <div class="flex items-center justify-between">
                     <label for="remember_me" class="inline-flex items-center">
-                        <input id="remember_me" type="checkbox" name="remember" class="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary/20">
+                        <input id="remember_me" type="checkbox" name="remember" class="w-5 h-5 rounded border-slate-300 text-blue focus:ring-primary/20">
                         <span class="ml-2 text-sm text-slate-600">Recordarme</span>
                     </label>
                 </div>
@@ -285,7 +268,7 @@
 
             @if (Route::has('password.request'))
                 <div class="mt-6 text-center">
-                    <button type="button" class="text-sm text-slate-500 hover:text-primary transition-all" onclick="openModal('modal-forgot-password')">
+                    <button type="button" class="text-sm text-slate-500 hover:text-blue transition-all" onclick="openModal('modal-forgot-password')">
                         ¿Olvidaste tu contraseña?
                     </button>
                 </div>
@@ -297,22 +280,22 @@
         </div>
     </div>
 
-    @if(session('session_expired'))
-    <div id="session-expired-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div class="glass-card w-full max-w-sm rounded-3xl p-6">
+    @if(session('session_expired') || request()->get('expired') == 1)
+    <div id="session-expired-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border-2 border-red-200">
             <div class="flex items-center gap-4 mb-4">
-                <div class="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-500">
-                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold text-slate-800">Sesión expirada</h3>
-                    <p class="text-sm text-slate-500">Tu sesión ha expirado</p>
+                    <h3 class="text-xl font-extrabold text-red-700">Sesión expirada</h3>
+                    <p class="text-sm font-medium text-red-500">Tu sesión ha expirado</p>
                 </div>
             </div>
-            <p class="text-sm text-slate-600 mb-6">
-                Tu sesión ha expirado por inactividad. Por favor, inicia sesión nuevamente.
+            <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+                Tu sesión ha expirado por inactividad. Por favor, inicia sesión nuevamente para continuar.
             </p>
-            <button id="session-expired-confirm" class="w-full py-3 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-700 transition-all">
+            <button id="session-expired-confirm" class="w-full py-3 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg" style="background-color: #DC2626 !important;">
                 Entendido
             </button>
         </div>
@@ -323,7 +306,7 @@
         <div class="glass-card w-full max-w-sm rounded-3xl p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                    <div class="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center text-blue">
                         <i class="fas fa-key text-lg"></i>
                     </div>
                     <h3 class="text-lg font-bold text-slate-800">Restablecer Contraseña</h3>
@@ -338,11 +321,11 @@
                 <div class="mb-4">
                     <label for="forgot-email" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Correo Electrónico</label>
                     <input type="email" id="forgot-email" name="email" required
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:border-primary focus:bg-white transition-all"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:border-blue focus:bg-white transition-all"
                         placeholder="correo@ejemplo.com">
                 </div>
                 <div id="forgot-message" class="mb-4 p-3 rounded-xl text-sm" style="display: none;"></div>
-                <button type="submit" id="forgot-submit" class="w-full py-3 bg-primary text-white font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                <button type="submit" id="forgot-submit" class="w-full py-3 bg-blue text-white font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
                     <i class="fas fa-paper-plane"></i>
                     <span>Enviar Solicitud</span>
                 </button>
@@ -351,11 +334,34 @@
     </div>
 
     <script>
+        function showSwalWhenReady(config, retries = 20) {
+            if (window.Swal) {
+                window.Swal.fire(config);
+                return;
+            }
+
+            if (retries > 0) {
+                setTimeout(() => showSwalWhenReady(config, retries - 1), 150);
+            }
+        }
+
         window.addEventListener('load', function() {
             // No mostrar loading al cargar la página
         });
 
         document.addEventListener('DOMContentLoaded', function() {
+            const statusMessage = @json(session('status'));
+
+            if (statusMessage) {
+                showSwalWhenReady({
+                    icon: 'success',
+                    title: 'Contraseña restablecida correctamente',
+                    text: statusMessage,
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#1E5799'
+                });
+            }
+
             // Mostrar loading al enviar el formulario de login
             const loginForm = document.querySelector('form[action*="login"]');
             if (loginForm) {
@@ -368,6 +374,10 @@
             if (button) {
                 button.addEventListener('click', function() {
                     document.getElementById('session-expired-modal')?.remove();
+                    if (window.history.replaceState) {
+                        const cleanUrl = window.location.pathname;
+                        window.history.replaceState({}, document.title, cleanUrl);
+                    }
                 });
             }
 
@@ -387,14 +397,6 @@
                         eyeIcon.classList.add('fa-eye-slash');
                     }
                 });
-            }
-        });
-
-        // Manejar problema de caché del navegador con token CSRF
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted || (window.performance && window.performance.type === 1)) {
-                // La página fue restaurada desde el cache, recargar para obtener nuevo token
-                window.location.reload();
             }
         });
 

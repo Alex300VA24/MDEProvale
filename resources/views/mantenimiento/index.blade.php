@@ -37,7 +37,7 @@
                             <i class="fas fa-user-shield"></i>
                         </div>
                         <div>
-                            <p class="text-[11px] font-bold text-earth uppercase tracking-wider">Jefe de Almacén</p>
+                            <p class="text-[11px] font-bold text-earth uppercase tracking-wider">Subgerencia de Programas Sociales</p>
                             <p class="font-bold text-charcoal">
                                 {{ $chief && $chief->person ? $chief->person->names . ' ' . $chief->person->father_lastname . ' ' . $chief->person->mother_lastname : 'Sin asignar' }}
                             </p>
@@ -47,7 +47,7 @@
                         </div>
                     </div>
                     <button onclick="openModal('modal-chief')" class="btn-primary w-full text-sm">
-                        <i class="fas fa-exchange-alt mr-2"></i> Cambiar Jefe de Almacén
+                        <i class="fas fa-exchange-alt mr-2"></i> Cambiar Subgerente de Programas Sociales
                     </button>
                 </div>
 
@@ -58,7 +58,7 @@
                             <i class="fas fa-warehouse"></i>
                         </div>
                         <div>
-                            <p class="text-[11px] font-bold text-earth uppercase tracking-wider">Almacenero</p>
+                            <p class="text-[11px] font-bold text-earth uppercase tracking-wider">Programa Vaso de Leche</p>
                             <p class="font-bold text-charcoal">
                                 {{ $storekeeper && $storekeeper->person ? $storekeeper->person->names . ' ' . $storekeeper->person->father_lastname . ' ' . $storekeeper->person->mother_lastname : 'Sin asignar' }}
                             </p>
@@ -68,7 +68,7 @@
                         </div>
                     </div>
                     <button onclick="openModal('modal-storekeeper')" class="btn-primary w-full text-sm">
-                        <i class="fas fa-exchange-alt mr-2"></i> Cambiar Almacenero
+                        <i class="fas fa-exchange-alt mr-2"></i> Cambiar Encargado de PROVALE
                     </button>
                 </div>
 
@@ -141,7 +141,7 @@
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
-                    <i class="fas fa-user-shield text-leaf"></i> Cambiar Jefe de Almacén
+                    <i class="fas fa-user-shield text-leaf"></i> Cambiar Subgerente de Programas Sociales
                 </h3>
                 <button onclick="closeModal('modal-chief')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
                     <i class="fas fa-times"></i>
@@ -175,7 +175,7 @@
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
-                    <i class="fas fa-warehouse text-[#0284C7]"></i> Cambiar Almacenero
+                    <i class="fas fa-warehouse text-[#0284C7]"></i> Cambiar Encargado de PROVALE
                 </h3>
                 <button onclick="closeModal('modal-storekeeper')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
                     <i class="fas fa-times"></i>

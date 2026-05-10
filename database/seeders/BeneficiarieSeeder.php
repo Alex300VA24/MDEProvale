@@ -17,7 +17,7 @@ class BeneficiarieSeeder extends Seeder
                                         ->where('person_id',
                                             DB::table('people')->where('dni', '90161846')->value('id')
                                         )->value('id'),
-                'relationship_id' => 4,
+                'relationship_id' => 2,
                 'created_at'      => now(),
                 'updated_at'      => now(),
             ],
@@ -27,10 +27,11 @@ class BeneficiarieSeeder extends Seeder
                                         ->where('person_id',
                                             DB::table('people')->where('dni', '75776547')->value('id')
                                         )->value('id'),
-                'relationship_id' => 4,
+                'relationship_id' => 2,
                 'created_at'      => now(),
                 'updated_at'      => now(),
             ],
+            // aca me quede
             [
                 'person_id'       => DB::table('people')->where('dni', '93478369')->value('id'),
                 'partner_id'      => DB::table('partners')

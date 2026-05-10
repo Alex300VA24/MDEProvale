@@ -4,28 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - PROVALE</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { 'jakarta': ['"Plus Jakarta Sans"', 'sans-serif'] },
-                    colors: {
-                        cream: '#FDF8F3',
-                        wheat: '#F5E6D3',
-                        earth: '#8B7355',
-                        charcoal: '#2C2420',
-                        leaf: { DEFAULT: '#4A7C59', light: '#E8F5E9', dark: '#3d6647' },
-                        sun: { DEFAULT: '#F4A261', light: '#FEF3E2' },
-                        clay: { DEFAULT: '#E76F51', light: '#FCE8E4' },
-                        sky: { DEFAULT: '#87CEEB', light: '#E0F2FE' },
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/400.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/500.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/600.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/700.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>

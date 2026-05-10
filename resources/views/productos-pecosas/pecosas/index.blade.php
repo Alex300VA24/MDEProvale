@@ -84,7 +84,7 @@
                         {{ $pecosa->delivery_date ? \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') : '-' }}
                     </td>
                     <td class="px-6 text-sm">
-                        {{ $pecosa->managing_partner_name ?? '-' }}
+                        {{ $pecosa->president_name ?? '-' }}
                     </td>
                     <td class="px-6">
                         @if($pecosa->state)
@@ -183,13 +183,13 @@
                             <input type="hidden" name="managing_partner_id" id="president_id_modal" value="">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Jefe de Almacén</label>
+                            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Subgerencia de Programas Sociales</label>
                             @php $jefeActivo = $responsibles->where('type', 'chief')->first(); @endphp
                             <input type="text" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly value="{{ $jefeActivo ? ($jefeActivo->person->names ?? '') . ' ' . ($jefeActivo->person->father_lastname ?? '') : 'No hay jefe activo' }}">
                             <input type="hidden" name="chief_id" value="{{ $jefeActivo->id ?? '' }}">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Almacenero</label>
+                            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Programa Vaso de Leche</label>
                             @php $almaceneroActivo = $responsibles->where('type', 'storekeeper')->first(); @endphp
                             <input type="text" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly value="{{ $almaceneroActivo ? ($almaceneroActivo->person->names ?? '') . ' ' . ($almaceneroActivo->person->father_lastname ?? '') : 'No hay almacenero activo' }}">
                             <input type="hidden" name="storekeeper_id" value="{{ $almaceneroActivo->id ?? '' }}">
@@ -427,8 +427,8 @@ function updateDetailPriceEdit(select, pecosaId, idx) {
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Entrega</span>
                         <p>{{ $pecosa->delivery_date ? \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') : '-' }}</p>
                     </div>
-                    <div><span class="text-[11px] font-bold text-earth uppercase">Responsable</span>
-                        <p>{{ $pecosa->managing_partner_name ?? '-' }}</p>
+                    <div><span class="text-[11px] font-bold text-earth uppercase">Presidenta</span>
+                        <p>{{ $pecosa->president_name ?? '-' }}</p>
                     </div>
                 </div>
                 @if($pecosa->observation)
@@ -492,10 +492,10 @@ function updateDetailPriceEdit(select, pecosaId, idx) {
                         <div>
                             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Presidenta del Comité</label>
                             @php
-                                $currentPresident = $pecosa->managing_partner_name ?? 'Sin presidenta asignada';
+                                $currentPresident = $pecosa->president_name ?? 'Sin presidenta asignada';
                             @endphp
                             <input type="text" id="president_name_edit_{{ $pecosa->id }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly value="{{ $currentPresident }}">
-                            <input type="hidden" name="managing_partner_id" id="president_id_edit_{{ $pecosa->id }}" value="{{ $pecosa->managing_partner_id }}">
+                            <input type="hidden" name="managing_partner_id" id="president_id_edit_{{ $pecosa->id }}" value="{{ $pecosa->president_id ?? '' }}">
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Jefe de Almacén</label>

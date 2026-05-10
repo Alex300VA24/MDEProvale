@@ -27,6 +27,27 @@ class ClubReconocimientosController extends Controller
                 ->orWhere('code', 'like', "%{$search}%");
         }
 
+        if ($request->has('state_id') && $request->state_id != '') {
+            $query->where('state_id', $request->state_id);
+        }
+
+        if ($request->has('vigencia') && $request->vigencia != '') {
+            $today = now()->toDateString();
+            if ($request->vigencia == 'vigente') {
+                $query->whereHas('resolution', function($q) use ($today) {
+                    $q->where('date_end', '>=', $today);
+                });
+            } elseif ($request->vigencia == 'vencido') {
+                $query->whereHas('resolution', function($q) use ($today) {
+                    $q->where('date_end', '<', $today);
+                });
+            }
+        }
+
+        if ($request->has('resolution_id') && $request->resolution_id != '') {
+            $query->where('resolution_id', $request->resolution_id);
+        }
+
         $associations = $query->orderBy('id', 'desc')->paginate(10);
 
         foreach ($associations as $association) {
@@ -138,12 +159,13 @@ class ClubReconocimientosController extends Controller
             $query->where('state_id', $request->state_id);
         }
 
-        // Filtro por vigencia
-        if ($request->has('vigencia') && $request->vigencia != '') {
+        // Filtro por vigencia (por defecto vigentes)
+        $vigencia = $request->vigencia ?: 'vigentes';
+        if ($vigencia != '') {
             $today = date('Y-m-d');
-            if ($request->vigencia == 'vigentes') {
+            if ($vigencia == 'vigentes') {
                 $query->where('date_end', '>=', $today);
-            } elseif ($request->vigencia == 'vencidas') {
+            } elseif ($vigencia == 'vencidas') {
                 $query->where('date_end', '<', $today);
             }
         }
@@ -214,22 +236,38 @@ class ClubReconocimientosController extends Controller
         try {
             DB::beginTransaction();
 
-            // Buscar o crear la posición "PRESIDENTA"
             $posicionPresidenta = Position::firstOrCreate(
                 ['title' => 'PRESIDENTA']
             );
 
             $estadoActivo = State::where('abbreviation', 'A')->first();
+            $estadoInhabilitado = State::where('abbreviation', 'I')->first();
 
-            // Desactivar presidentas anteriores del mismo comité
-            $resolutionId = $association->resolution_id;
-            if ($resolutionId) {
-                Directive::where('resolution_id', $resolutionId)
-                    ->where('position_id', $posicionPresidenta->id)
-                    ->update(['state_id' => State::where('abbreviation', 'I')->first()->id ?? 1]);
+            $resolutionIds = DB::table('resolution_associations')
+                ->where('association_id', $association->id)
+                ->pluck('resolution_id');
+            
+            if ($association->resolution_id) {
+                $resolutionIds->push($association->resolution_id);
+            }
+            
+            $resolutionIds = $resolutionIds->unique();
+
+            $partnerIds = $association->partners()->pluck('id');
+
+            Directive::whereIn('partner_id', $partnerIds)
+                ->whereIn('resolution_id', $resolutionIds)
+                ->where('position_id', $posicionPresidenta->id)
+                ->update(['state_id' => $estadoInhabilitado->id ?? 1]);
+
+            $resolutionId = $association->resolution_id 
+                ?? $resolutionIds->first() 
+                ?? null;
+
+            if (!$resolutionId) {
+                throw new \Exception('No hay resolución asociada al comité');
             }
 
-            // Crear nueva directiva de presidenta usando la resolución del comité
             $directive = Directive::create([
                 'resolution_id' => $resolutionId,
                 'partner_id'    => $request->partner_id,
@@ -238,7 +276,6 @@ class ClubReconocimientosController extends Controller
                 'date_start'    => now()->toDateString(),
             ]);
 
-            // Habilitar el comité (ya no guarda directive_id ni president_name en associations)
             $association->update([
                 'state_id' => $estadoActivo->id,
             ]);

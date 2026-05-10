@@ -24,7 +24,7 @@
     </div>
 
     <div class="p-6">
-        @if(session('success'))
+        <!-- @if(session('success'))
             <div class="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
                 <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
             </div>
@@ -33,12 +33,35 @@
             <div class="mb-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700">
                 <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
             </div>
-        @endif
+        @endif -->
 
         <form method="GET" class="mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o código..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                </div>
+                <div>
+                    <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <option value="">Todos los Estados</option>
+                        @foreach($states as $state)
+                        <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <select name="vigencia" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <option value="">Todas las Vigencias</option>
+                        <option value="vigente" {{ request('vigencia') == 'vigente' ? 'selected' : '' }}>Vigente</option>
+                        <option value="vencido" {{ request('vigencia') == 'vencido' ? 'selected' : '' }}>Vencido</option>
+                    </select>
+                </div>
+                <div>
+                    <select name="resolution_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <option value="">Todas las Resoluciones</option>
+                        @foreach($resolutions as $resolution)
+                        <option value="{{ $resolution->id }}" {{ request('resolution_id') == $resolution->id ? 'selected' : '' }}>{{ $resolution->document }}</option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
             <div class="flex gap-2 mt-4">
@@ -228,10 +251,20 @@
                 <div><span class="text-[11px] font-bold text-earth uppercase">Nombre</span><p class="font-semibold text-charcoal">{{ $association->name }}</p></div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Dirección</span><p class="text-charcoal">{{ $association->address ?? '-' }}</p></div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Presidenta</span><p class="text-charcoal">{{ $association->getPresidentName() ?? 'Sin asignar' }}</p></div>
-                @if($association->latestResolution)
-                <div><span class="text-[11px] font-bold text-earth uppercase">Última Resolución</span>
-                    <p class="font-semibold text-leaf">{{ $association->latestResolution->document }}</p>
-                    <p class="text-xs text-earth">{{ \Carbon\Carbon::parse($association->latestResolution->date_start)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($association->latestResolution->date_end)->format('d/m/Y') }}</p>
+                @php $allResolutions = $association->getAllResolutions(); @endphp
+                @if($allResolutions->count() > 0)
+                <div><span class="text-[11px] font-bold text-earth uppercase">Resoluciones</span>
+                    <div class="mt-1 space-y-1">
+                        @foreach($allResolutions as $index => $res)
+                        <p class="font-semibold text-leaf{{ $loop->last ? '' : '' }}">
+                            {{ $index + 1 }}. {{ $res->document }}
+                            <span class="text-xs text-earth">({{ \Carbon\Carbon::parse($res->date_start)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($res->date_end)->format('d/m/Y') }})</span>
+                            @if($res->id === $association->resolution_id)
+                            <span class="text-[10px] bg-leaf text-white px-1 rounded">Original</span>
+                            @endif
+                        </p>
+                        @endforeach
+                    </div>
                 </div>
                 @endif
                 <div class="grid grid-cols-2 gap-3">

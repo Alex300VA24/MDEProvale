@@ -29,10 +29,18 @@
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Tipo de Movimiento</label>
             <select name="type_transaction_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
-                @foreach($types->where('title', 'Entrada') as $type)
+                @foreach($types as $type)
                 <option value="{{ $type->id }}" {{ request('type_transaction_id') == $type->id ? 'selected' : '' }}>{{ $type->title }}</option>
                 @endforeach
             </select>
+        </div>
+        <div class="min-w-36">
+            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Desde</label>
+            <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+        </div>
+        <div class="min-w-36">
+            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Hasta</label>
+            <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
         <div class="flex items-end gap-2">
             <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>

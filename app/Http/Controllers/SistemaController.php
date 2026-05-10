@@ -83,11 +83,23 @@ class SistemaController extends Controller
 
     public function requestPasswordReset(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
+        $email = $request->email;
+        
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El correo electrónico no es válido.'
+            ], 422);
+        }
+        
+        $user = User::where('email', $email)->first();
+        
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El correo electrónico no está registrado en el sistema.'
+            ], 422);
+        }
         
         $existingPending = Notification::where('type', 'password_reset')
             ->where('requested_by', $user->id)
@@ -103,15 +115,27 @@ class SistemaController extends Controller
         
         Notification::createPasswordResetRequest($user);
 
+        $unreadCount = Notification::where('requested_by', $user->id)
+            ->where('is_seen', false)
+            ->count();
+        
+        $label = $unreadCount > 9 ? '9+' : $unreadCount;
+
         return response()->json([
             'success' => true,
-            'message' => 'Solicitud de recuperación enviada correctamente. Un administrador revisará tu solicitud.'
+            'message' => 'Solicitud de recuperación enviada correctamente. Un administrador revisará tu solicitud.',
+            'unreadCount' => $unreadCount,
+            'label' => $label
         ]);
     }
 
     public function notifications()
     {
         $user = auth()->user();
+        
+        if (!$user || !$user->id) {
+            return redirect()->route('login')->with('error', 'No hay usuario autenticado.');
+        }
         
         $query = Notification::with(['user', 'requestedByUser', 'processedByUser'])
             ->orderBy('requested_at', 'desc');
@@ -126,29 +150,47 @@ class SistemaController extends Controller
 
     public function approveNotification(Notification $notification)
     {
+        if ($notification->status !== 'pending') {
+            return back()->with('error', 'La solicitud ya fue procesada.');
+        }
+
         $requestedUser = User::find($notification->requested_by);
+
+        if (!$requestedUser) {
+            return back()->with('error', 'No se encontró el usuario de la solicitud.');
+        }
+
+        $this->restorePasswordToDni($requestedUser);
         
-        if ($requestedUser) {
-            $requestedUser->update([
-                'password' => Hash::make($requestedUser->dni),
-            ]);
+        $processedById = auth()->id();
+        if (!$processedById) {
+            return back()->with('error', 'No hay usuario autenticado.');
         }
         
         $notification->update([
             'status' => 'approved',
             'processed_at' => now(),
-            'processed_by' => auth()->id(),
+            'processed_by' => $processedById,
+            'is_seen' => true,
+            'seen_at' => now(),
         ]);
 
-        return redirect()->route('login')->with('status', 'Su solicitud de recuperación de contraseña ha sido aprobada. Su contraseña ha sido restablecida a su número de DNI.');
+        return back()->with('success', 'Contraseña restaurada a DNI y solicitud aprobada para el usuario ' . $requestedUser->names);
     }
 
     public function rejectNotification(Notification $notification)
     {
+        $processedById = auth()->id();
+        if (!$processedById) {
+            return back()->with('error', 'No hay usuario autenticado.');
+        }
+        
         $notification->update([
             'status' => 'rejected',
             'processed_at' => now(),
-            'processed_by' => auth()->id(),
+            'processed_by' => $processedById,
+            'is_seen' => true,
+            'seen_at' => now(),
         ]);
 
         return back()->with('success', 'Solicitud rechazada.');
@@ -162,6 +204,47 @@ class SistemaController extends Controller
         ]);
         
         return response()->json(['success' => true]);
+    }
+
+    public function getUnreadNotificationsCount(Request $request)
+    {
+        $unreadCount = 0;
+        $email = $request->query('email');
+
+        try {
+            // Si se proporciona un email, buscar notificaciones por ese usuario
+            if ($email) {
+                $user = User::where('email', $email)->first();
+                if ($user) {
+                    $unreadCount = Notification::unreadCountForUser($user);
+                    \Log::debug("Notificaciones para email {$email}: {$unreadCount}");
+                }
+            } elseif (auth()->check()) {
+                // Si hay usuario autenticado, usar su ID
+                $user = auth()->user();
+                $unreadCount = Notification::unreadCountForUser($user);
+
+                if (!$user || !$user->id) {
+                    \Log::debug("Usuario autenticado pero no tiene ID");
+                } elseif ((int) $user->rol_id === 1) {
+                    \Log::debug("Admin - Contador total de notificaciones no vistas: {$unreadCount}");
+                } else {
+                    \Log::debug("Usuario {$user->id} - Notificaciones no vistas: {$unreadCount}");
+                }
+            } else {
+                \Log::debug("Usuario no autenticado");
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener contador de notificaciones: ' . $e->getMessage());
+            $unreadCount = 0;
+        }
+
+        $label = $unreadCount > 9 ? '9+' : $unreadCount;
+
+        return response()->json([
+            'count' => $unreadCount,
+            'label' => $label
+        ]);
     }
 
     public function roles()
@@ -282,12 +365,15 @@ class SistemaController extends Controller
 
     public function resetUserPassword(User $usuario)
     {
-        $dni = $usuario->dni;
-        
-        $usuario->update([
-            'password' => Hash::make($dni),
-        ]);
+        $this->restorePasswordToDni($usuario);
 
         return back()->with('success', 'Contraseña restaurada a DNI para el usuario ' . $usuario->names);
+    }
+
+    private function restorePasswordToDni(User $user): void
+    {
+        $user->update([
+            'password' => Hash::make($user->dni),
+        ]);
     }
 }

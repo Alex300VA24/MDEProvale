@@ -711,7 +711,7 @@ class DirectiveSeeder extends Seeder
         ]);
         DB::table('directives')->insert([
             'resolution_id' => 72,
-            'partner_id'    => 1993,
+            'partner_id'    => 74,
             'position_id'   => 1,
             'state_id'      => 1,
             'date_start'   => null,
@@ -731,7 +731,7 @@ class DirectiveSeeder extends Seeder
         ]);
         DB::table('directives')->insert([
             'resolution_id' => 87,
-            'partner_id'    => 844,
+            'partner_id'    => 2543,
             'position_id'   => 1,
             'state_id'      => 1,
             'date_start'   => null,
@@ -741,7 +741,7 @@ class DirectiveSeeder extends Seeder
         ]);
         DB::table('directives')->insert([
             'resolution_id' => 158,
-            'partner_id'    => 1901,
+            'partner_id'    => 160,
             'position_id'   => 1,
             'state_id'      => 1,
             'date_start'   => null,
@@ -782,6 +782,26 @@ class DirectiveSeeder extends Seeder
         DB::table('directives')->insert([
             'resolution_id' => 21,
             'partner_id'    => 347,
+            'position_id'   => 1,
+            'state_id'      => 1,
+            'date_start'   => null,
+            'date_end'     => null,
+            'created_at'    => now(),
+            'updated_at'    => now()
+        ]);
+        DB::table('directives')->insert([
+            'resolution_id' => 109,
+            'partner_id'    => 31,
+            'position_id'   => 1,
+            'state_id'      => 1,
+            'date_start'   => null,
+            'date_end'     => null,
+            'created_at'    => now(),
+            'updated_at'    => now()
+        ]);
+        DB::table('directives')->insert([
+            'resolution_id' => 94,
+            'partner_id'    => 844,
             'position_id'   => 1,
             'state_id'      => 1,
             'date_start'   => null,

@@ -35,8 +35,29 @@
                 <div class="flex-1">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o DNI..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
-                <button type="submit" class="btn-primary"><i class="fas fa-search mr-2"></i> Buscar</button>
-                <a href="{{ route('socios-beneficiarios.personas.index') }}" class="btn-secondary"><i class="fas fa-broom mr-2"></i> Limpiar</a>
+                <div>
+                    <select name="gender" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <option value="">Todos los géneros</option>
+                        <option value="M" {{ request('gender') == 'M' ? 'selected' : '' }}>Masculino</option>
+                        <option value="F" {{ request('gender') == 'F' ? 'selected' : '' }}>Femenino</option>
+                    </select>
+                </div>
+                <div>
+                    <select name="place_sector_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <option value="">Todos los sectores</option>
+                        @if(isset($placeSectors))
+                        @foreach($placeSectors as $ps)
+                        <option value="{{ $ps->id }}" {{ request('place_sector_id') == $ps->id ? 'selected' : '' }}>
+                            {{ $ps->place->title ?? 'N/A' }} - {{ $ps->sector->title ?? 'N/A' }}
+                        </option>
+                        @endforeach
+                        @endif
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn-primary"><i class="fas fa-search mr-2"></i> Buscar</button>
+                    <a href="{{ route('socios-beneficiarios.personas.index') }}" class="btn-secondary"><i class="fas fa-broom mr-2"></i> Limpiar</a>
+                </div>
             </div>
         </form>
 

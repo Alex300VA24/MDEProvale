@@ -227,7 +227,7 @@
                     <div class="sig-space"></div>
                     <div class="sig-line"></div>
                     <div class="sig-role">{{ $encargado_almacen ?? 'NOMBRE DE LA JEFA' }}</div>
-                    <div class="sig-area">SUBGERENCIA PROGRAMAS SOCIALES</div>
+                    <div class="sig-area">SUBGERENTE DE PROGRAMAS SOCIALES</div>
                     <div class="sig-area">PROGRAMA VASO DE LECHE</div>
                     <div class="sig-dni">DNI: {{ $dni_encargado ?? '' }}</div>
                 </div>
@@ -245,7 +245,7 @@
                     <div class="sig-space"></div>
                     <div class="sig-line"></div>
                     <div class="sig-role">{{ $control ?? 'NOMBRE RESPONSABLE' }}</div>
-                    <div class="sig-area">ALMACÉN PROVALE</div>
+                    <div class="sig-area">ENCARGADO DE PROVALE</div>
                     <div class="sig-dni">DNI: {{ $dni_control ?? '' }}</div>
                 </div>
             </td>

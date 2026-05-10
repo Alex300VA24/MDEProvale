@@ -211,19 +211,19 @@ class PlaceSectorSeeder extends Seeder
             'updated_at' => now(),
         ]);
         DB::table('place_sectors')->insert([
-            'place_id' => 7,
+            'place_id' => 6,
             'sector_id' => 33,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         DB::table('place_sectors')->insert([
-            'place_id' => 8,
+            'place_id' => 7,
             'sector_id' => 34,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         DB::table('place_sectors')->insert([
-            'place_id' => 9,
+            'place_id' => 8,
             'sector_id' => 35,
             'created_at' => now(),
             'updated_at' => now(),
@@ -241,7 +241,7 @@ class PlaceSectorSeeder extends Seeder
             'updated_at' => now(),
         ]);
         DB::table('place_sectors')->insert([
-            'place_id' => 10,
+            'place_id' => 9,
             'sector_id' => 38,
             'created_at' => now(),
             'updated_at' => now(),
@@ -252,12 +252,12 @@ class PlaceSectorSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
         DB::table('place_sectors')->insert([
-            'place_id' => 6,
+            'place_id' => 10,
             'sector_id' => 40,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
     }
 }

@@ -5,45 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'PROVALE - Sistema de Gestión Social')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'jakarta': ['"Plus Jakarta Sans"', 'sans-serif']
-                    },
-                    colors: {
-                        cream: '#F8FAFC',
-                        wheat: '#E2E8F0',
-                        earth: '#64748B',
-                        charcoal: '#1E293B',
-                        primary: {
-                            DEFAULT: '#0F766E',
-                            light: '#14B8A6',
-                            dark: '#0D5D56'
-                        },
-                        sun: {
-                            DEFAULT: '#F59E0B',
-                            light: '#FEF3C7'
-                        },
-                        clay: {
-                            DEFAULT: '#DC2626',
-                            light: '#FEE2E2'
-                        },
-                        sky: {
-                            DEFAULT: '#0EA5E9',
-                            light: '#E0F2FE'
-                        },
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="icon" href="{{ asset('img/logovaso.svg') }}" type="image/x-icon">
+    {{-- Assets locales compilados (sin CDN) --}}
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/400.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/500.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/600.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/700.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script src="{{ asset('js/app.js') }}" defer></script>
+
     <style>
         * {
             margin: 0;
@@ -53,8 +25,8 @@
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #F1F5F9;
-            color: #1E293B;
+            background: #EEF4FC;
+            color: #1A2E4A;
         }
 
         ::-webkit-scrollbar {
@@ -62,11 +34,11 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #E2E8F0;
+            background: #D4E4F7;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #64748B;
+            background: #5A7FA8;
             border-radius: 3px;
         }
 
@@ -169,7 +141,7 @@
         }
         .loader-progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #5EEAD4, #14B8A6);
+            background: linear-gradient(90deg, #4A90D9, #1E5799);
             border-radius: 999px;
             animation: progress 1.5s ease-in-out infinite;
         }
@@ -184,8 +156,8 @@
             left: 0;
             top: 0;
             height: 100vh;
-            width: 80px;
-            background: linear-gradient(180deg, #0F766E 0%, #0D5D56 100%);
+            width: 70px;
+            background: linear-gradient(180deg, #1E5799 0%, #0F1E30 100%);
             transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 50;
             overflow: hidden;
@@ -193,7 +165,7 @@
         }
 
         #sidebar.expanded {
-            width: 280px;
+            width: 240px;
         }
 
         #app-shell {
@@ -202,13 +174,13 @@
         }
 
         #sidebar-spacer {
-            width: 80px;
+            width: 70px;
             flex-shrink: 0;
             transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #sidebar-spacer.expanded {
-            width: 280px;
+            width: 240px;
         }
 
         #content-wrapper {
@@ -223,8 +195,8 @@
             top: 0;
             z-index: 40;
             background: #fff;
-            border-bottom: 2px solid #E2E8F0;
-            box-shadow: 0 2px 12px rgba(15, 118, 110, 0.08);
+            border-bottom: 2px solid #D4E4F7;
+            box-shadow: 0 2px 16px rgba(30,87,153,0.08);
         }
 
         .logo-text,
@@ -263,7 +235,7 @@
             transform: translateY(-50%);
             width: 3px;
             height: 0;
-            background: #F4A261;
+            background: #4A90D9;
             border-radius: 0 3px 3px 0;
             transition: height 0.3s ease;
         }
@@ -357,42 +329,42 @@
         }
 
         .data-table th {
-            background: #FDF8F3;
+            background: #EEF4FC;
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.07em;
-            color: #8B7355;
+            color: #5A7FA8;
         }
 
         .data-table tr {
-            border-bottom: 1px solid #F5E6D3;
+            border-bottom: 1px solid #D4E4F7;
             transition: background 0.2s;
         }
 
         .data-table tr:hover {
-            background: #FDF8F3;
+            background: #EEF4FC;
         }
 
         .data-table td {
             font-size: 14px;
-            color: #2C2420;
+            color: #1A2E4A;
             padding: 12px 16px;
         }
 
         .badge-active {
-            background: #E8F5E9;
-            color: #4A7C59;
+            background: #D4F2EE;
+            color: #0E8A7A;
         }
 
         .badge-pending {
-            background: #FEF3E2;
-            color: #D97706;
+            background: #FEF3DC;
+            color: #B87300;
         }
 
         .badge-inactive {
-            background: #FCE8E4;
-            color: #E76F51;
+            background: #FCEAE8;
+            color: #D94F3D;
         }
 
         @media (max-width: 768px) {
@@ -456,34 +428,34 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: rgba(244, 162, 97, 0);
+            background: rgba(74, 144, 217, 0);
             transition: background 0.2s;
         }
 
         .sub-item:hover::before,
         .sub-item.active::before {
-            background: #F4A261;
+            background: #4A90D9;
         }
 
         .btn-primary {
-            background: linear-gradient(to right, #0F766E, #0D5D56);
+            background: linear-gradient(to right, #4A90D9, #1E5799);
             color: white;
-            font-weight: 700;
+            font-weight: 600;
             padding: 0.625rem 1rem;
-            border-radius: 0.25rem;
+            border-radius: 0.5rem;
             font-size: 0.875rem;
-            box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);
+            box-shadow: 0 2px 8px rgba(74, 144, 217, 0.25);
             transition: all 0.2s;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 10px -1px rgba(15, 118, 110, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 144, 217, 0.35);
         }
 
         .btn-secondary {
-            background: #E2E8F0;
-            color: #64748B;
+            background: #D4E4F7;
+            color: #5A7FA8;
             font-weight: 700;
             padding: 0.625rem 1rem;
             border-radius: 0.25rem;
@@ -492,13 +464,13 @@
         }
 
         .btn-secondary:hover {
-            background: #64748B;
+            background: #5A7FA8;
             color: white;
         }
 
         .btn-danger {
-            background: #FEE2E2;
-            color: #DC2626;
+            background: #FCEAE8;
+            color: #D94F3D;
             font-weight: 700;
             padding: 0.625rem 1rem;
             border-radius: 0.25rem;
@@ -507,7 +479,7 @@
         }
 
         .btn-danger:hover {
-            background: #DC2626;
+            background: #D94F3D;
             color: white;
         }
 
@@ -546,12 +518,12 @@
     <div id="app-shell">
         <aside id="sidebar">
             <div class="flex items-center gap-4 px-5 py-6 border-b border-white/10 min-h-[88px]">
-                <div class="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+                <div class="w-12 h-12 bg-blue rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
                     <img src="{{ asset('img/muni2.png') }}" alt="PROVALE" class="w-9 h-9 object-contain">
                 </div>
                 <div class="logo-text">
                     <div class="text-white font-extrabold text-xl tracking-tight">MDE</div>
-                    <div class="text-primary-light text-[11px] font-semibold uppercase tracking-widest">Vaso de Leche</div>
+                    <div class="text-blue-light text-[11px] font-semibold uppercase tracking-widest">Vaso de Leche</div>
                 </div>
             </div>
 
@@ -605,7 +577,7 @@
 
                 <div class="pt-4 border-t border-white/10">
                     <div class="flex items-center gap-3 px-4 py-3">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sun to-clay flex items-center justify-center text-white font-bold flex-shrink-0">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold flex-shrink-0">
                             {{ substr(Auth::user()->username ?? 'A', 0, 1) }}
                         </div>
                         <div class="logo-text">
@@ -622,43 +594,41 @@
         <div id="content-wrapper">
             <div id="mobile-overlay" onclick="closeMobile()"></div>
 
-            <button id="mobile-toggle" onclick="openMobile()" class="fixed top-4 left-4 z-50 w-11 h-11 rounded-xl bg-white border-2 border-wheat shadow-md flex items-center justify-center text-earth hover:bg-wheat transition-all">
+            <button id="mobile-toggle" onclick="openMobile()" class="fixed top-4 left-4 z-50 w-11 h-11 rounded-xl bg-white border-2 border-mist shadow-md flex items-center justify-center text-slate hover:bg-mist transition-all">
                 <i class="fas fa-bars text-base"></i>
             </button>
 
             <header id="top-header" class="flex items-center justify-between px-8 h-[72px]">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white text-base overflow-hidden">
-                        <img src="{{ asset('img/vasoLecheSin.png') }}" alt="PROVALE" class="w-6 h-6 object-contain">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center text-white text-base overflow-hidden">
+                        <img src="{{ asset('img/logovaso.svg') }}" alt="PROVALE" class="w-6 h-6 object-contain">
                     </div>
-                    <h2 class="text-charcoal font-bold text-[15px] uppercase tracking-wider">Sistema de Gestión PROVALE</h2>
+                    <h2 class="text-navy font-bold text-[15px] uppercase tracking-wider">Sistema de Gestión PROVALE</h2>
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <button class="relative w-10 h-10 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all" onclick="openModal('modal-notifications'); markAllAsSeen();">
-                        <i class="fas fa-bell text-base"></i>
-                        @if($unreadNotifications > 0)
-                        <span class="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1">{{ $unreadNotificationsLabel }}</span>
-                        @endif
+                    <button class="relative w-10 h-10 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all" onclick="openModal('modal-notifications');">
+                        <i class="fas fa-bell text-base" style="color:#1A2E4A"></i>
+                        <span class="notification-badge absolute -top-1 -right-1 min-w-[20px] h-5 bg-coral text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1" style="display: {{ $unreadNotifications > 0 ? 'flex' : 'none' }};">{{ $unreadNotificationsLabel }}</span>
                     </button>
 
-                    <div class="flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-wheat bg-cream hover:bg-wheat transition-all cursor-pointer">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sun to-clay flex items-center justify-center text-white font-bold text-base">
+                    <div class="flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-mist bg-base hover:bg-mist transition-all cursor-pointer">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-base">
                             {{ substr(Auth::user()->username ?? 'A', 0, 1) }}
                         </div>
                         <div class="hidden sm:block">
-                            <div class="text-charcoal font-bold text-sm leading-none mb-1">{{ Auth::user()->username ?? 'Usuario' }}</div>
-                            <div class="text-earth text-[11px] font-semibold">{{ Auth::user()->rol->title ?? '' }}</div>
+                            <div class="text-navy font-bold text-sm leading-none mb-1">{{ Auth::user()->username ?? 'Usuario' }}</div>
+                            <div class="text-slate text-[11px] font-semibold">{{ Auth::user()->rol->title ?? '' }}</div>
                         </div>
                     </div>
 
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500-light text-red-500 font-bold text-sm border-2 border-transparent hover:bg-red-500 hover:text-white transition-all">
+                    <button type="button" onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-coral-light text-coral font-bold text-sm border-2 border-transparent hover:bg-coral hover:text-white transition-all">
                             <i class="fas fa-power-off"></i>
                             <span class="hidden sm:inline">Salir</span>
                         </button>
-                    </form>
+                        <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">
+                            @csrf
+                        </form>
                 </div>
             </header>
 
@@ -710,12 +680,12 @@
 
     <div id="modal-notifications" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50" style="display: none;">
         <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
-            <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
-                    <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
-                        <i class="fas fa-bell text-primary"></i> Bandeja de Notificaciones
+            <div class="bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-5 border-b-2 border-mist">
+                    <h3 class="font-extrabold text-navy text-lg flex items-center gap-2">
+                        <i class="fas fa-bell text-blue"></i> Bandeja de Notificaciones
                     </h3>
-                    <button onclick="closeModal('modal-notifications')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <button onclick="closeModal('modal-notifications')" class="w-8 h-8 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -730,24 +700,24 @@
                     @if($solicitudes->count() > 0)
                         <div class="space-y-4">
                             @foreach($solicitudes as $solicitud)
-                            <div class="p-4 rounded-xl border-2 border-wheat {{ $solicitud->is_seen ? 'bg-gray-50' : 'bg-cream' }}">
+                            <div class="p-4 rounded-xl border-2 border-mist {{ $solicitud->is_seen ? 'bg-gray-50' : 'bg-base' }}">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center gap-2 mb-1">
                                             @if($solicitud->type === 'password_reset')
                                             <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded">Contraseña</span>
                                             @else
-                                            <span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">{{ $solicitud->type }}</span>
+                                            <span class="px-2 py-1 bg-blue-light text-blue text-xs font-bold rounded">{{ $solicitud->type }}</span>
                                             @endif
                                             @if($solicitud->status === 'approved')
-                                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded"><i class="fas fa-check mr-1"></i> Aprobado</span>
+                                            <span class="px-2 py-1 bg-teal-light text-teal text-xs font-bold rounded"><i class="fas fa-check mr-1"></i> Aprobado</span>
                                             @elseif($solicitud->status === 'rejected')
-                                            <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded"><i class="fas fa-times mr-1"></i> Rechazado</span>
+                                            <span class="px-2 py-1 bg-coral-light text-coral text-xs font-bold rounded"><i class="fas fa-times mr-1"></i> Rechazado</span>
                                             @endif
                                         </div>
-                                        <p class="font-bold text-charcoal">{{ $solicitud->title }}</p>
-                                        <p class="text-sm text-earth mt-1">{{ $solicitud->description }}</p>
-                                        <p class="text-xs text-earth mt-2">
+                                        <p class="font-bold text-navy">{{ $solicitud->title }}</p>
+                                        <p class="text-sm text-slate mt-1">{{ $solicitud->description }}</p>
+                                        <p class="text-xs text-slate mt-2">
                                             Usuario: {{ $solicitud->user->names ?? 'N/A' }} | Fecha: {{ $solicitud->requested_at->format('d/m/Y H:i') }}
                                             @if($solicitud->processed_at)
                                             | Procesado: {{ $solicitud->processedByUser->names ?? 'Admin' }} ({{ $solicitud->processed_at->format('d/m/Y H:i') }})
@@ -758,7 +728,7 @@
                                         @if(Auth::user()->rol_id == 1 && $solicitud->status === 'pending')
                                         <form action="{{ route('sistema.notifications.approve', $solicitud->id) }}" method="POST" class="inline" onsubmit="document.getElementById('loading-screen').classList.add('active');">
                                             @csrf
-                                            <button type="submit" class="px-3 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:opacity-90">
+                                            <button type="submit" class="px-3 py-2 bg-blue text-white text-sm font-bold rounded-lg hover:opacity-90">
                                                 <i class="fas fa-check mr-1"></i> Aprobar
                                             </button>
                                         </form>
@@ -783,7 +753,7 @@
                             @endforeach
                         </div>
                     @else
-                        <div class="text-center py-8 text-earth">
+                        <div class="text-center py-8 text-slate">
                             <i class="fas fa-inbox text-4xl mb-3"></i>
                             <p>No hay notificaciones</p>
                         </div>
@@ -794,15 +764,56 @@
     </div>
 
     <script>
-    function markAllAsSeen() {
-        fetch('{{ route('sistema.notifications.mark-seen') }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
+        function showSwalWhenReady(config, retries = 20) {
+            if (window.Swal) {
+                window.Swal.fire(config);
+                return;
             }
-        });
+
+            if (retries > 0) {
+                setTimeout(() => showSwalWhenReady(config, retries - 1), 150);
+            }
+        }
+
+    let lastNotificationCount = {{ $unreadNotifications }};
+    
+    // Polling para actualizar el contador de notificaciones en tiempo real
+    function updateNotificationsBadge() {
+        fetch('{{ route('sistema.notifications.count') }}', {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('No se pudo actualizar el contador de notificaciones.');
+            }
+
+            return response.json();
+        })
+        .then(data => {
+            // Solo actualizar si el contador cambió
+            if (data.count !== lastNotificationCount) {
+                lastNotificationCount = data.count;
+                
+                const badge = document.querySelector('.notification-badge');
+                if (badge) {
+                    if (data.count > 0) {
+                        badge.style.display = 'flex';
+                        badge.textContent = data.label;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            }
+        })
+        .catch(error => console.log('Error al actualizar notificaciones:', error));
     }
+
+    // Actualizar cada 3 segundos (menos frecuente para evitar parpadeo)
+    setInterval(updateNotificationsBadge, 3000);
     </script>
     </div>
 
@@ -813,13 +824,41 @@
         function handleSessionExpired() {
             if (sessionExpiredHandled) return;
             sessionExpiredHandled = true;
-            alert('Tu sesión ha expirado. Serás redirigido al login.');
-            window.location.href = loginUrl;
+            // Intentar mostrar modal en login o redirigir
+            const modal = document.getElementById('session-expired-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+            } else {
+                alert('Tu sesión ha expirado. Serás redirigido al login.');
+                window.location.href = loginUrl;
+            }
         }
 
         @if(session('session_expired'))
-            document.addEventListener('DOMContentLoaded', handleSessionExpired);
+            var sessionExpired = true;
+        @else
+            var sessionExpired = false;
         @endif
+        
+        if (sessionExpired) {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(handleSessionExpired, 100);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const successMessage = @json(session('success'));
+
+            if (successMessage) {
+                showSwalWhenReady({
+                    icon: 'success',
+                    title: 'Proceso completado',
+                    text: successMessage,
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#1E5799'
+                });
+            }
+        });
 
         if (typeof window.fetch === 'function') {
             const originalFetch = window.fetch.bind(window);
@@ -871,17 +910,17 @@
         function confirmDelete(formId, message) {
             message = message || '¿Estás seguro de que deseas eliminar este registro?';
             Swal.fire({
-                title: '<span class="font-extrabold text-charcoal text-xl">¿Estás seguro?</span>',
+                title: '<span class="font-extrabold text-navy text-xl">¿Estás seguro?</span>',
                 text: message,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#DC2626',
-                cancelButtonColor: '#64748B',
+            confirmButtonColor: '#D94F3D',
+            cancelButtonColor: '#5A7FA8',
                 confirmButtonText: '<i class="fas fa-trash mr-1"></i> Sí, eliminar',
                 cancelButtonText: 'Cancelar',
                 reverseButtons: true,
                 customClass: {
-                    popup: 'rounded-2xl shadow-2xl border-2 border-wheat',
+                    popup: 'rounded-2xl shadow-2xl border-2 border-mist',
                     confirmButton: 'rounded-xl font-bold px-4 py-2',
                     cancelButton: 'rounded-xl font-bold px-4 py-2',
                 },
@@ -893,14 +932,38 @@
             });
         }
 
+        function confirmLogout() {
+            Swal.fire({
+                title: '<span class="font-extrabold text-navy text-xl">¿Cerrar sesión?</span>',
+                text: '¿Estás seguro de que deseas cerrar sesión?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#D94F3D',
+                cancelButtonColor: '#5A7FA8',
+                confirmButtonText: '<i class="fas fa-power-off mr-1"></i> Sí, cerrar sesión',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-2xl shadow-2xl border-2 border-mist',
+                    confirmButton: 'rounded-xl font-bold px-4 py-2',
+                    cancelButton: 'rounded-xl font-bold px-4 py-2',
+                },
+                backdrop: 'rgba(0,0,0,0.4)',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
+        }
+
         function confirmResetPassword(userId, userName, dni) {
             Swal.fire({
                 title: 'Restablecer Contraseña',
                 html: '¿Estás seguro de que deseas restablecer la contraseña del usuario <strong>' + userName + '</strong>?<br><br><span class="text-red-500 font-bold">La contraseña será su DNI: ' + dni + '</span>',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#DC2626',
-                cancelButtonColor: '#64748B',
+            confirmButtonColor: '#D94F3D',
+            cancelButtonColor: '#5A7FA8',
                 confirmButtonText: '<i class="fas fa-key mr-1"></i> Sí, restablecer',
                 cancelButtonText: 'Cancelar',
                 borderRadius: '1rem',

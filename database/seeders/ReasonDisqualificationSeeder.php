@@ -33,12 +33,6 @@ class ReasonDisqualificationSeeder extends Seeder
         ]);
 
         DB::table('reason_disqualifications')->insert([
-            'title' => 'Niño mayor de 6 años',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('reason_disqualifications')->insert([
             'title' => 'Niño mayor de 13 años',
             'created_at' => now(),
             'updated_at' => now(),

@@ -49,7 +49,11 @@ class Handler extends ExceptionHandler
                 ], 419);
             }
 
-            return redirect()->route('login')->with('session_expired', true);
+            $request->session()->flash('session_expired', true);
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login', ['expired' => 1]);
         });
     }
 

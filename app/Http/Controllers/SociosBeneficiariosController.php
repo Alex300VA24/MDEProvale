@@ -346,6 +346,50 @@ class SociosBeneficiariosController extends Controller
                 $razonBaja = $historialActivo && $historialActivo->reasonDisqualification ? $historialActivo->reasonDisqualification->id : '';
                 $tipoVisible = in_array($tipoBeneficio, ['LAC', 'GES']) ? $tipoBeneficio : '';
                 $parentescoTitulo = $beneficiario->relationship ? $beneficiario->relationship->title : '';
+                
+                $fechaInicio = $historialActivo && $historialActivo->date_begin ? $historialActivo->date_begin : null;
+                $observationFlag = false;
+                $bajaFlag = false;
+                
+                // Lógica para actualizar reason_disqualification y marcar observaciones
+                
+                // 1. Si tiene 14 años o más → reason_disqualification_id = 4 (BAJA)
+                if ($edadAnos >= 14) {
+                    if ($historialActivo && !$historialActivo->reason_disqualification_id) {
+                        $historialActivo->update(['reason_disqualification_id' => 4]);
+                        $razonBaja = 4;
+                        $bajaFlag = true;
+                    }
+                }
+                
+                // 2. Si el tipo es GES y ya está más de 9 meses o no tiene fecha de ingreso → reason_disqualification_id = 4 (BAJA)
+                if ($tipoBeneficio === 'GES') {
+                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) : 999;
+                    if (!$fechaInicio || $mesesTotales > 9) {
+                        if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
+                            $historialActivo->update(['reason_disqualification_id' => 4]);
+                            $razonBaja = 4;
+                            $bajaFlag = true;
+                        }
+                    }
+                }
+                
+                // 3. Si el tipo es LAC y ya está más de un año o no tiene fecha de ingreso → reason_disqualification_id = 4 (BAJA)
+                if ($tipoBeneficio === 'LAC') {
+                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) : 999;
+                    if (!$fechaInicio || $mesesTotales > 12) {
+                        if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
+                            $historialActivo->update(['reason_disqualification_id' => 4]);
+                            $razonBaja = 4;
+                            $bajaFlag = true;
+                        }
+                    }
+                }
+                
+                // 4. Si GES/LAC tiene 12 años o menos → solo observación (no se cambia reason_disqualification)
+                if (in_array($tipoBeneficio, ['GES', 'LAC']) && $edadAnos <= 12) {
+                    $observationFlag = true;
+                }
 
                 $beneficiariosSocia[] = [
                     'beneficiario_nombre' => strtoupper($persona->father_lastname . ' ' . $persona->mother_lastname . ' ' . $persona->names),
@@ -360,6 +404,8 @@ class SociosBeneficiariosController extends Controller
                     'beneficiario_edad_dias' => $edadDias,
                     'historial' => $historialActivo,
                     'es_baja' => (!empty($razonBaja) && $razonBaja != 1),
+                    'observation' => $observationFlag,
+                    'fecha_inicio' => $fechaInicio ? date('d/m/Y', strtotime($fechaInicio)) : '',
                 ];
 
                 // Resumen por prioridad y tipo, contado por beneficiario
@@ -483,12 +529,9 @@ class SociosBeneficiariosController extends Controller
          * - LAC. MAS DE UN AÑO / SIN FECHA INGRESO
          * 
          * Otras observaciones:
-         * - ANCIANO < DE 60 AÑOS
+         * - ANCIANO < DE 65 AÑOS
          * - GES / LAC <= DE 12 AÑOS
-         * - FEC. NAC EN BLANCO
-         * - BENEFICIARIO DUPLICADO (NOMBRE)
-         * - NO TIENE DNI
-         * - NRO DE DNI DUPLICADO
+
          */
         $observaciones = [];
         
@@ -513,19 +556,6 @@ class SociosBeneficiariosController extends Controller
             'cantidad' => $cantidadEdadBaja
         ];
 
-        // 2. ANCIANO < DE 60 AÑOS (contar beneficiarios entre 55 y 59 años)
-        $cantidadAnciano = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            $edad = $ben['beneficiario_edad_anos'] ?? null;
-            if ($edad !== null && $edad >= 55 && $edad < 60) {
-                $cantidadAnciano++;
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 2,
-            'descripcion' => 'ANCIANO < DE 60 AÑOS',
-            'cantidad' => $cantidadAnciano
-        ];
 
         // 3. GES / LAC <= DE 12 AÑOS (GES = abreviatura GES, LAC = abreviatura LAC)
         $cantidadGesLac = 0;
@@ -538,22 +568,9 @@ class SociosBeneficiariosController extends Controller
             }
         }
         $observaciones[] = [
-            'codigo' => 3,
+            'codigo' => 2,
             'descripcion' => 'GES / LAC <= DE 12 AÑOS',
             'cantidad' => $cantidadGesLac
-        ];
-
-        // 4. FEC. NAC EN BLANCO
-        $cantidadFechaBlanco = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            if (empty($ben['beneficiario_fecha_nacimiento'])) {
-                $cantidadFechaBlanco++;
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 4,
-            'descripcion' => 'FEC. NAC EN BLANCO',
-            'cantidad' => $cantidadFechaBlanco
         ];
 
         // 5. GES. MAS DE 9 MESES / SIN FECHA DE INGRESO (BAJA) (GES = abreviatura GES)
@@ -561,7 +578,7 @@ class SociosBeneficiariosController extends Controller
         foreach ($todosBeneficiarios as $ben) {
             $tipo = $ben['beneficiario_tipo'] ?? '';
             if ($tipo === 'GES') {
-                $fechaInicio = $ben['beneficiario_fecha_inicio'];
+                $fechaInicio = $ben['fecha_inicio'] ?? '';
                 if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) > 9)) {
                     if (!empty($ben['beneficiario_baja']) && $ben['beneficiario_baja'] != 1) {
                         $cantidadGesBaja++;
@@ -570,7 +587,7 @@ class SociosBeneficiariosController extends Controller
             }
         }
         $observaciones[] = [
-            'codigo' => 5,
+            'codigo' => 3,
             'descripcion' => 'GES. MAS DE 9 MESES / SIN FECHA DE INGRESO (BAJA)',
             'cantidad' => $cantidadGesBaja
         ];
@@ -580,7 +597,7 @@ class SociosBeneficiariosController extends Controller
         foreach ($todosBeneficiarios as $ben) {
             $tipo = $ben['beneficiario_tipo'] ?? '';
             if ($tipo === 'LAC') {
-                $fechaInicio = $ben['beneficiario_fecha_inicio'];
+                $fechaInicio = $ben['fecha_inicio'] ?? '';
                 if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) > 12)) {
                     if (!empty($ben['beneficiario_baja']) && $ben['beneficiario_baja'] != 1) {
                         $cantidadLacBaja++;
@@ -588,74 +605,12 @@ class SociosBeneficiariosController extends Controller
                 }
             }
         }
-        $observaciones[] = [
-            'codigo' => 6,
+$observaciones[] = [
+            'codigo' => 4,
             'descripcion' => 'LAC. MAS DE UN AÑO / SIN FECHA INGRESO (BAJA)',
             'cantidad' => $cantidadLacBaja
         ];
-
-        // 7. BENEFICIARIO DUPLICADO (NOMBRE)
-        $nombresDuplicados = [];
-        $cantidadDuplicado = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            $nombre = $ben['beneficiario_nombre'] ?? '';
-            if (!empty($nombre)) {
-                if (isset($nombresDuplicados[$nombre])) {
-                    $nombresDuplicados[$nombre]++;
-                } else {
-                    $nombresDuplicados[$nombre] = 1;
-                }
-            }
-        }
-        foreach ($nombresDuplicados as $count) {
-            if ($count > 1) {
-                $cantidadDuplicado += $count;
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 7,
-            'descripcion' => 'BENEFICIARIO DUPLICADO (NOMBRE)',
-            'cantidad' => $cantidadDuplicado
-        ];
-
-        // 8. NO TIENE DNI
-        $cantidadSinDni = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            $dni = $ben['beneficiario_dni'] ?? '';
-            if (empty(trim($dni))) {
-                $cantidadSinDni++;
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 8,
-            'descripcion' => 'NO TIENE DNI',
-            'cantidad' => $cantidadSinDni
-        ];
-
-        // 9. NRO DE DNI DUPLICADO
-        $dnisDuplicados = [];
-        $cantidadDniDuplicado = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            $dni = $ben['beneficiario_dni'] ?? '';
-            if (!empty(trim($dni))) {
-                if (isset($dnisDuplicados[$dni])) {
-                    $dnisDuplicados[$dni]++;
-                } else {
-                    $dnisDuplicados[$dni] = 1;
-                }
-            }
-        }
-        foreach ($dnisDuplicados as $count) {
-            if ($count > 1) {
-                $cantidadDniDuplicado += $count;
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 9,
-            'descripcion' => 'NRO DE DNI DUPLICADO',
-            'cantidad' => $cantidadDniDuplicado
-        ];
-
+           
         $parentescos = Relationship::orderBy('id')->get(['id', 'title'])->toArray();
         $bajas = ReasonDisqualification::orderBy('id')->get(['id', 'title'])->toArray();
         $tipoBeneficios = TypeBenefit::orderBy('id')->get(['id', 'title', 'abbreviation'])->toArray();
@@ -669,10 +624,13 @@ class SociosBeneficiariosController extends Controller
             'direccion' => $association->address ?? '',
             'ccpp' => $association->placeSector && $association->placeSector->sector ? $association->placeSector->sector->title : '',
             'presidenta' => $presidenta ?? 'SIN ASIGNAR',
-            'zona' => $association->placeSector && $association->placeSector->place ? $association->placeSector->place->title : '01',
+            'zona' => $association && $association->placeSector && $association->placeSector->place
+            ? ($association->placeSector->place->code ?? '01')
+            : '01',
             'comite' => $association->code ?? $association->id,
             'num_mes' => $mes,
             'periodo' => $periodo,
+            'semestre' => $mes <= 6 ? $anio . '-I' : $anio . '-II',
             'mes_nombre' => $meses[(int)$mes] ?? '',
             'anio' => $anio,
             'total_beneficiarios' => collect($beneficiarios)->sum('rowspan'),

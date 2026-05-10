@@ -34,6 +34,15 @@
                 @endforeach
             </select>
         </div>
+        <div class="min-w-32">
+            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">UOM</label>
+            <select name="uom_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                <option value="">Todos</option>
+                @foreach($uoms as $uom)
+                    <option value="{{ $uom->id }}" {{ request('uom_id') == $uom->id ? 'selected' : '' }}>{{ $uom->title }}</option>
+                @endforeach
+            </select>
+        </div>
         <div class="flex items-end gap-2">
             <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
             <a href="{{ route('productos-pecosas.productos.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
@@ -398,14 +407,10 @@
 </div>
 
 @endforeach
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-theme@0.1.0-beta.10/dist/select2-bootstrap.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="{{ asset('css/select2.min.css') }}" rel="stylesheet" />
 <script>
     $(document).ready(function() {
         $('.select2').select2({
-            theme: 'bootstrap',
             placeholder: 'Seleccione una opción',
             allowClear: true
         });

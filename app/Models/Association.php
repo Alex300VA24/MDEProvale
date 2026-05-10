@@ -66,13 +66,14 @@ class Association extends Model
 
     public function hasPresidenta(): bool
     {
+        if (!$this->resolution_id) {
+            return false;
+        }
+        
         $partnerIds = $this->partners()->pluck('id');
-        $resolutionIds = \DB::table('resolution_associations')
-            ->where('association_id', $this->id)
-            ->pluck('resolution_id');
         
         return Directive::whereIn('partner_id', $partnerIds)
-            ->whereIn('resolution_id', $resolutionIds)
+            ->where('resolution_id', $this->resolution_id)
             ->whereHas('position', fn($q) => $q->where('title', 'like', '%PRESIDENTA%'))
             ->whereHas('state', fn($q) => $q->where('abbreviation', 'A'))
             ->exists();
@@ -85,36 +86,31 @@ class Association extends Model
 
     public function getPresidenta(): ?Partner
     {
-        $partnerIds = $this->partners()
-            ->where('state_id', 1)
-            ->pluck('id');
-        
-        $resolutionIds = \DB::table('resolution_associations')
-            ->where('association_id', $this->id)
-            ->orderBy('resolution_id', 'desc')
-            ->pluck('resolution_id');
-
-        if ($resolutionIds->isEmpty()) {
+        $resolutionId = $this->resolution_id;
+        if (!$resolutionId || !is_numeric($resolutionId)) {
             return null;
         }
-
-        $directive = Directive::whereIn('partner_id', $partnerIds)
-            ->whereIn('resolution_id', $resolutionIds)
-            ->whereHas('position', fn($q) => $q->where('title', 'like', '%PRESIDENTA%'))
-            ->whereHas('state', fn($q) => $q->where('abbreviation', 'A'))
-            ->with('partner')
-            ->first();
-
-        if (!$directive) {
-            $directive = Directive::whereIn('partner_id', $partnerIds)
-                ->whereHas('position', fn($q) => $q->where('title', 'like', '%PRESIDENTA%'))
-                ->whereHas('state', fn($q) => $q->where('abbreviation', 'A'))
-                ->orderBy('resolution_id', 'desc')
-                ->with('partner')
-                ->first();
+        
+        $activeState = State::where('abbreviation', 'A')->first();
+        $presidentPosition = \App\Models\Position::where('title', 'like', '%PRESIDENTA%')->first();
+        
+        $query = Directive::where('resolution_id', (int)$resolutionId);
+        
+        if ($presidentPosition) {
+            $query = $query->where('position_id', $presidentPosition->id);
         }
-
-        return $directive ? $directive->partner : null;
+        
+        if ($activeState) {
+            $query = $query->where('state_id', $activeState->id);
+        }
+        
+        $directive = $query->first();
+            
+        if (!$directive) {
+            return null;
+        }
+        
+        return Partner::with('people')->find($directive->partner_id);
     }
 
     public function getPresidentName(): ?string
@@ -129,6 +125,23 @@ class Association extends Model
     public function resolutionsHistory()
     {
         return $this->belongsToMany(Resolution::class, 'resolution_associations');
+    }
+
+    public function getAllResolutions(): \Illuminate\Support\Collection
+    {
+        $resolutions = collect();
+        
+        if ($this->resolution) {
+            $resolutions->push($this->resolution);
+        }
+        
+        foreach ($this->resolutionsHistory as $res) {
+            if ($res->id !== $this->resolution_id) {
+                $resolutions->push($res);
+            }
+        }
+        
+        return $resolutions->sortBy('date_start')->values();
     }
 
 }

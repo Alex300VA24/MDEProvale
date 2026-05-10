@@ -17,31 +17,50 @@ class TransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Transaction::with(['detailProduct.product', 'typeTransaction']);
+        $query = Transaction::query()
+            ->select(['id', 'detail_product_id', 'type_transaction_id', 'quantity', 'unit_price', 'total_price', 'document_number', 'transaction_date', 'product_name', 'uom_title', 'created_at'])
+            ->with(['detailProduct:id,product_id,quantity,unit_price,start_date,end_date', 'detailProduct.product:id,title,abbreviation', 'typeTransaction:id,title']);
 
         if ($request->filled('search')) {
-            $query->where('product_name', 'like', '%' . $request->search . '%');
+            $search = $request->search;
+            $query->where('product_name', 'like', "{$search}%");
         }
 
         if ($request->filled('type_transaction_id')) {
             $query->where('type_transaction_id', $request->type_transaction_id);
         }
 
+        if ($request->filled('fecha_inicio')) {
+            $query->whereDate('transaction_date', '>=', $request->fecha_inicio);
+        }
+
+        if ($request->filled('fecha_fin')) {
+            $query->whereDate('transaction_date', '<=', $request->fecha_fin);
+        }
+
         $transactions = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        $types    = TypeTransaction::all();
-        $products = Product::all();
-        $pecosas  = Pecosa::with('association')->orderBy('created_at', 'desc')->get();
+        $types    = TypeTransaction::select(['id', 'title'])->get();
+        $products = Product::select(['id', 'title', 'abbreviation'])->get();
+        $pecosas  = Pecosa::select(['id', 'pecosa_number', 'association_id', 'delivery_date'])
+            ->with(['association:id,name,code'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return view('movimientos.index', compact('transactions', 'types', 'products', 'pecosas'));
     }
 
     public function create()
     {
-        $products = Product::with('detailProducts')->get();
-        $types = TypeTransaction::all();
-        $states = State::all();
-        $pecosas = Pecosa::with('association')->orderBy('created_at', 'desc')->get();
+        $products = Product::select(['id', 'title', 'abbreviation'])
+            ->with(['detailProducts:id,product_id,quantity,unit_price,start_date,end_date'])
+            ->get();
+        $types = TypeTransaction::select(['id', 'title'])->get();
+        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $pecosas = Pecosa::select(['id', 'pecosa_number', 'association_id', 'delivery_date'])
+            ->with(['association:id,name,code'])
+            ->orderBy('created_at', 'desc')
+            ->get();
         return view('movimientos.create', compact('products', 'types', 'states', 'pecosas'));
     }
 

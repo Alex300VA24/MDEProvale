@@ -45,7 +45,11 @@ class CheckSessionExpired
                 ], 401);
             }
 
-            return redirect()->route('login')->with('session_expired', true);
+            $request->session()->flash('session_expired', true);
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login', ['expired' => 1]);
         }
 
         // Guardar que el usuario estaba autenticado

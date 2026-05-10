@@ -10,7 +10,6 @@
     $totalAssociations = \App\Models\Association::count();
     $totalProducts = \App\Models\Product::count();
     
-    // Socios por club (top 10)
     $partnersByClub = \App\Models\Partner::selectRaw('associations.name as club, COUNT(partners.id) as total')
         ->join('associations', 'partners.association_id', '=', 'associations.id')
         ->groupBy('associations.name')
@@ -18,7 +17,6 @@
         ->limit(10)
         ->get();
     
-    // PECOSAs por mes del año actual
     $pecosasByMonth = \App\Models\Pecosa::selectRaw('MONTH(delivery_date) as month, COUNT(*) as total')
         ->whereNotNull('delivery_date')
         ->whereYear('delivery_date', date('Y'))
@@ -29,7 +27,6 @@
         $pecosaData[$item->month - 1] = $item->total;
     }
     
-    // Ingresos por mes (transactions tipo 1 = entrada)
     $ingresosByMonth = \App\Models\Transaction::selectRaw('MONTH(transaction_date) as month, SUM(quantity) as total')
         ->where('type_transaction_id', 1)
         ->whereNotNull('transaction_date')
@@ -41,7 +38,6 @@
         $ingresosData[$item->month - 1] = (int)$item->total;
     }
     
-    // Productos distribuidos (Leche y Hojuelas) por mes
     $productosByMonth = \App\Models\DetailPecosa::selectRaw('MONTH(pecosas.delivery_date) as month, SUM(detail_pecosas.quantity) as total, products.title as product')
         ->join('pecosas', 'detail_pecosas.pecosa_id', '=', 'pecosas.id')
         ->join('detail_products', 'detail_pecosas.detail_product_id', '=', 'detail_products.id')
@@ -61,202 +57,195 @@
         }
     }
     
-    // Clubes con más PECOSAs
-    $clubsWithPecosas = \App\Models\Pecosa::selectRaw('associations.name as club, COUNT(pecosas.id) as total')
-        ->join('associations', 'pecosas.association_id', '=', 'associations.id')
-        ->whereYear('pecosas.delivery_date', date('Y'))
-        ->groupBy('associations.name')
+    $clubsWithBeneficiarios = \App\Models\Association::selectRaw('associations.name as club, COUNT(beneficiaries.id) as total')
+        ->join('partners', 'partners.association_id', '=', 'associations.id')
+        ->join('beneficiaries', 'beneficiaries.partner_id', '=', 'partners.id')
+        ->groupBy('associations.id', 'associations.name')
         ->orderByDesc('total')
         ->limit(10)
         ->get();
     
-    // Total stock disponible
     $totalStock = \App\Models\DetailProduct::get()->sum(function($dp) {
         $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
         return $dp->quantity - $used;
     });
     
-    // Socios vs Beneficiarios
     $sociosActivos = $activePartners;
     $beneficiariosActivos = $totalBeneficiaries;
     
-    // Total PECOSAs año actual
     $totalPecosasAnio = \App\Models\Pecosa::whereYear('delivery_date', date('Y'))->count();
 @endphp
 
-    <div class="relative rounded-3xl overflow-hidden mb-8 shadow-xl">
-    <div class="absolute inset-0">
-        <img src="{{ asset('img/banner2.png') }}" alt="Banner" class="w-full h-full object-cover">
-    </div>
-    <div class="absolute inset-0 bg-gradient-to-r from-primary/40 to-primary-dark/30"></div>
-    <div class="absolute inset-0 opacity-10" style="background: radial-gradient(circle at 80% 50%, #F4A261 0%, transparent 60%);"></div>
-    <div class="absolute -right-8 -top-8 w-64 h-64 bg-white/5 rounded-full"></div>
-    <div class="absolute -right-4 bottom-0 w-40 h-40 bg-white/5 rounded-full"></div>
-    <div class="relative z-10 flex items-center justify-between p-10 gap-8">
-        <div>
-            <div class="flex items-center gap-2 mb-3">
-                <span class="w-2 h-2 rounded-full bg-sun pulse-dot"></span>
-                <span class="text-sun text-xs font-bold uppercase tracking-widest">Sistema activo</span>
-            </div>
-            <h1 class="text-white font-extrabold text-4xl leading-tight mb-3">Panel de Control<br><span class="text-sun">PROVALE</span></h1>
-            <p class="text-white/75 text-base font-medium max-w-md">Gestiona beneficiarios, club de madres y entregas de manera eficiente. Todo en un solo lugar.</p>
-            <div class="flex gap-3 mt-6">
-                <a href="" class="px-5 py-2.5 bg-white text-primary font-bold rounded-xl text-sm hover:bg-teal-50 transition-all shadow-lg">
-                    <i class="fas fa-plus mr-2"></i>Crear Pecosa
-                </a>
-                <a href="" class="px-5 py-2.5 bg-white/15 text-white font-bold rounded-xl text-sm hover:bg-white/25 transition-all backdrop-blur-sm border border-white/20">
-                    <i class="fas fa-file-alt mr-2"></i>Ver Movimientos
-                </a>
-            </div>
+    <div class="relative rounded-3xl overflow-hidden mb-8 shadow-lg">
+        <div class="absolute inset-0">
+            <img src="{{ asset('img/niños.jpg') }}" alt="Banner" class="w-full h-full object-cover">
         </div>
-    </div>
-</div>
-
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-    <div class="stat-card bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm relative overflow-hidden">
-        <div class="accent-bar absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-leaf to-leaf-dark rounded-t-2xl"></div>
-        <div class="flex items-center justify-between mb-5">
-            <div class="w-12 h-12 rounded-xl bg-leaf-light flex items-center justify-center text-leaf text-xl">
-                <i class="fas fa-users"></i>
-            </div>
-            <span class="text-[13px] font-bold text-leaf bg-leaf-light px-3 py-1 rounded-full"><i class="fas fa-arrow-up text-xs"></i> {{ $totalPartners > 0 ? round(($activePartners / $totalPartners) * 100) : 0 }}%</span>
-        </div>
-        <div class="text-4xl font-extrabold text-charcoal leading-none mb-2">{{ $totalPartners }}</div>
-        <div class="text-xs font-bold text-earth uppercase tracking-wider">Total Socios</div>
-    </div>
-
-    <div class="stat-card bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm relative overflow-hidden">
-        <div class="accent-bar absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky to-[#5ba3c5] rounded-t-2xl"></div>
-        <div class="flex items-center justify-between mb-5">
-            <div class="w-12 h-12 rounded-xl bg-sky-light flex items-center justify-center text-[#0284C7] text-xl">
-                <i class="fas fa-user-check"></i>
-            </div>
-            <span class="text-[13px] font-bold text-[#0284C7] bg-sky-light px-3 py-1 rounded-full"><i class="fas fa-arrow-up text-xs"></i> {{ $totalBeneficiaries > 0 ? round(($totalBeneficiaries / max($totalPartners, 1)) * 100) : 0 }}%</span>
-        </div>
-        <div class="text-4xl font-extrabold text-charcoal leading-none mb-2">{{ $totalBeneficiaries }}</div>
-        <div class="text-xs font-bold text-earth uppercase tracking-wider">Beneficiarios</div>
-    </div>
-
-    <div class="stat-card bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm relative overflow-hidden">
-        <div class="accent-bar absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sun to-[#e69553] rounded-t-2xl"></div>
-        <div class="flex items-center justify-between mb-5">
-            <div class="w-12 h-12 rounded-xl bg-sun-light flex items-center justify-center text-[#D97706] text-xl">
-                <i class="fas fa-heart"></i>
-            </div>
-            <span class="text-[13px] font-bold text-[#D97706] bg-sun-light px-3 py-1 rounded-full"><i class="fas fa-arrow-up text-xs"></i> {{ $totalAssociations }}</span>
-        </div>
-        <div class="text-4xl font-extrabold text-charcoal leading-none mb-2">{{ $totalAssociations }}</div>
-        <div class="text-xs font-bold text-earth uppercase tracking-wider">Club de Madres</div>
-    </div>
-
-    <div class="stat-card bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm relative overflow-hidden">
-        <div class="accent-bar absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-clay to-[#d55d3f] rounded-t-2xl"></div>
-        <div class="flex items-center justify-between mb-5">
-            <div class="w-12 h-12 rounded-xl bg-clay-light flex items-center justify-center text-clay text-xl">
-                <i class="fas fa-box"></i>
-            </div>
-            <span class="text-[13px] font-bold text-clay bg-clay-light px-3 py-1 rounded-full"><i class="fas fa-arrow-down text-xs"></i> {{ $totalStock > 500 ? 'Alto' : 'Normal' }}</span>
-        </div>
-        <div class="text-4xl font-extrabold text-charcoal leading-none mb-2">{{ $totalStock }}</div>
-        <div class="text-xs font-bold text-earth uppercase tracking-wider">Stock Total</div>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <div class="flex items-center justify-between mb-6">
+        <div class="absolute inset-0 bg-gradient-to-r from-blue/60 to-navy/40"></div>
+        <div class="relative z-10 flex items-center justify-between p-8 gap-8">
             <div>
-                <h3 class="text-charcoal font-bold text-lg">PECOSAs por Mes</h3>
-                <p class="text-earth text-sm font-medium">Salidas - {{ date('Y') }}</p>
-            </div>
-            <span class="px-3 py-1.5 text-xs font-bold bg-sun text-white rounded-lg">{{ $totalPecosasAnio }} total</span>
-        </div>
-        <div class="chart-wrap h-52">
-            <canvas id="pecosasChart"></canvas>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h3 class="text-charcoal font-bold text-lg">Productos Distribuidos</h3>
-                <p class="text-earth text-sm font-medium">Leche y Hojuelas - {{ date('Y') }}</p>
-            </div>
-            <div class="flex gap-2">
-                <span class="px-2 py-1 text-xs font-bold bg-blue-100 text-blue-700 rounded">Leche</span>
-                <span class="px-2 py-1 text-xs font-bold bg-amber-100 text-amber-700 rounded">Hojuelas</span>
-            </div>
-        </div>
-        <div class="chart-wrap h-52">
-            <canvas id="productosChart"></canvas>
-        </div>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <h3 class="text-charcoal font-bold text-lg mb-1">Socios vs Beneficiarios</h3>
-        <p class="text-earth text-sm font-medium mb-4">Comparativa total</p>
-        <div class="chart-wrap h-40">
-            <canvas id="sociosBenefChart"></canvas>
-        </div>
-        <div class="mt-4 grid grid-cols-2 gap-3">
-            <div class="text-center p-3 bg-leaf-light rounded-xl">
-                <div class="text-2xl font-extrabold text-leaf">{{ $sociosActivos }}</div>
-                <div class="text-xs font-bold text-leaf uppercase">Socios</div>
-            </div>
-            <div class="text-center p-3 bg-sky-light rounded-xl">
-                <div class="text-2xl font-extrabold text-[#0284C7]">{{ $beneficiariosActivos }}</div>
-                <div class="text-xs font-bold text-[#0284C7] uppercase">Beneficiarios</div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="w-2 h-2 rounded-full pulse-dot" style="background:#D6EAFC"></span>
+                    <span class="text-white/90 text-xs font-semibold uppercase tracking-widest">Sistema activo</span>
+                </div>
+                <h1 class="text-white font-extrabold text-3xl leading-tight mb-2">Panel de Control<br><span style="color:#FEF3DC">PROVALE</span></h1>
+                <p class="text-white/70 text-sm font-medium max-w-md">Gestiona beneficiarios, club de madres y entregas de manera eficiente.</p>
+                <div class="flex gap-3 mt-5">
+                    <a href="{{ route('productos-pecosas.pecosas.index') }}" class="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-sm hover:bg-white/30 transition-all border border-white/20">
+                        <i class="fas fa-plus mr-1"></i>Nueva Pecosa
+                    </a>
+                    <a href="{{ route('club-reconocimientos.index')}}" class="px-4 py-2 bg-white text-blue font-semibold rounded-lg text-sm hover:bg-blue-light transition-all shadow-sm">
+                        <i class="fas fa-file-alt mr-1"></i>Comites
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <h3 class="text-charcoal font-bold text-lg mb-1">Top Comités</h3>
-        <p class="text-earth text-sm font-medium mb-4">Con más PECOSAs - {{ date('Y') }}</p>
-        <div class="chart-wrap h-40">
-            <canvas id="topClubsChart"></canvas>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-2xl p-6 border-2 border-wheat shadow-sm">
-        <h3 class="text-charcoal font-bold text-lg mb-5">Acciones Rápidas</h3>
-        <div class="grid grid-cols-2 gap-3">
-            <a href="{{ route('socios-beneficiarios.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-green-100 hover:bg-green/20 transition-all group">
-                <div class="w-10 h-10 bg-[#2EE67B] rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue to-sky rounded-t-2xl"></div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-light flex items-center justify-center text-blue text-lg">
                     <i class="fas fa-users"></i>
                 </div>
-                <span class="text-xs font-bold text-[#2EE67B] text-center leading-tight">Socios y Beneficiarios</span>
-            </a>
-            <a href="{{ route('club-reconocimientos.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-sky-light hover:bg-sky/20 transition-all group">
-                <div class="w-10 h-10 bg-[#0284C7] rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
+                <span class="text-[11px] font-bold text-blue bg-blue-light px-2 py-0.5 rounded-full">+12%</span>
+            </div>
+            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalPartners }}</div>
+            <div class="text-xs font-medium text-slate">Total Socios</div>
+        </div>
+
+        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky to-[#7ec3e8] rounded-t-2xl"></div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-sky-light flex items-center justify-center text-sky text-lg">
                     <i class="fas fa-user-check"></i>
                 </div>
-                <span class="text-xs font-bold text-[#0284C7] text-center leading-tight">Club de Madres</span>
-            </a>
-            <a href="{{ route('productos-pecosas.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-sun-light hover:bg-sun/20 transition-all group">
-                <div class="w-10 h-10 bg-sun rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
-                    <i class="fas fa-truck"></i>
+                <span class="text-[11px] font-bold text-sky bg-sky-light px-2 py-0.5 rounded-full">+8%</span>
+            </div>
+            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalBeneficiaries }}</div>
+            <div class="text-xs font-medium text-slate">Beneficiarios</div>
+        </div>
+
+        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber to-[#f0c567] rounded-t-2xl"></div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-light flex items-center justify-center text-amber text-lg">
+                    <i class="fas fa-heart"></i>
                 </div>
-                <span class="text-xs font-bold text-[#D97706] text-center leading-tight">Productos y Pecosas</span>
-            </a>
-            <a href="{{ route('movimientos.index') }}" class="quick-btn flex flex-col items-center gap-2 p-4 rounded-xl bg-clay-light hover:bg-clay/20 transition-all group">
-                <div class="w-10 h-10 bg-clay rounded-xl flex items-center justify-center text-white text-base group-hover:scale-110 transition-all">
-                    <i class="fas fa-exchange-alt"></i>
+                <span class="text-[11px] font-bold text-amber bg-amber-light px-2 py-0.5 rounded-full">+5%</span>
+            </div>
+            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalAssociations }}</div>
+            <div class="text-xs font-medium text-slate">Club de Madres</div>
+        </div>
+
+        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal to-[#5ec4b3] rounded-t-2xl"></div>
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center text-teal text-lg">
+                    <i class="fas fa-box"></i>
                 </div>
-                <span class="text-xs font-bold text-clay text-center leading-tight">Movimientos</span>
-            </a>
+                <span class="text-[11px] font-bold text-teal bg-teal-light px-2 py-0.5 rounded-full">-3%</span>
+            </div>
+            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalStock }}</div>
+            <div class="text-xs font-medium text-slate">Stock Total</div>
         </div>
     </div>
-</div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-6 border border-mist shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-navy font-bold text-base">PECOSAs por Mes</h3>
+                    <p class="text-slate text-sm">Salidas {{ date('Y') }}</p>
+                </div>
+                <span class="px-2 py-1 text-xs font-bold bg-blue-light text-blue rounded-lg">{{ $totalPecosasAnio }} total</span>
+            </div>
+            <div class="chart-wrap h-48">
+                <canvas id="pecosasChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-mist shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-navy font-bold text-base">Productos Distribuidos</h3>
+                    <p class="text-slate text-sm">Leche y Hojuelas - {{ date('Y') }}</p>
+                </div>
+                <div class="flex gap-2">
+                    <span class="px-2 py-1 text-xs font-semibold bg-blue-light text-blue rounded">Leche</span>
+                    <span class="px-2 py-1 text-xs font-semibold bg-amber-light text-amber rounded">Hojuelas</span>
+                </div>
+            </div>
+            <div class="chart-wrap h-48">
+                <canvas id="productosChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-2xl p-5 border border-mist shadow-sm">
+            <h3 class="text-navy font-bold text-base mb-1">Socios vs Beneficiarios</h3>
+            <p class="text-slate text-sm mb-3">Comparativa total</p>
+            <div class="chart-wrap h-36">
+                <canvas id="sociosBenefChart"></canvas>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+                <div class="text-center p-2 bg-blue-light rounded-lg">
+                    <div class="text-xl font-bold text-blue">{{ $sociosActivos }}</div>
+                    <div class="text-[10px] font-medium text-slate uppercase">Socios</div>
+                </div>
+                <div class="text-center p-2 bg-sky-light rounded-lg">
+                    <div class="text-xl font-bold text-sky">{{ $beneficiariosActivos }}</div>
+                    <div class="text-[10px] font-medium text-slate uppercase">Beneficiarios</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-mist shadow-sm">
+            <h3 class="text-navy font-bold text-base mb-1">Top Comités</h3>
+            <p class="text-slate text-sm mb-3">Con más beneficiarios</p>
+            <div class="chart-wrap h-44">
+                <canvas id="topClubsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 border border-mist shadow-sm">
+            <h3 class="text-navy font-bold text-base mb-4">Reportes Rápidos</h3>
+            <div class="grid grid-cols-2 gap-2">
+                <a href="{{ route('socios-beneficiarios.beneficiarios.padron') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-light hover:bg-blue/10 transition-all group">
+                    <div class="w-8 h-8 bg-blue rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold text-blue text-center leading-tight">Padrón Beneficiarios</span>
+                </a>
+                <a href="{{ route('club-reconocimientos.club.padron') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-amber-light hover:bg-amber/10 transition-all group">
+                    <div class="w-8 h-8 bg-amber rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold text-amber text-center leading-tight">Padrón Club</span>
+                </a>
+                <a href="{{ route('productos-pecosas.pecosas.generar-reporte', 'reparticion') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-teal-light hover:bg-teal/10 transition-all group">
+                    <div class="w-8 h-8 bg-teal rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold text-teal text-center leading-tight">Repartición</span>
+                </a>
+                <a href="{{ route('productos-pecosas.pecosas.index') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-sky-light hover:bg-sky/10 transition-all group">
+                    <div class="w-8 h-8 bg-sky rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <span class="text-[10px] font-semibold text-sky text-center leading-tight">Pecosas</span>
+                </a>
+            </div>
+        </div>
+    </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     const chartFont = { family: 'Plus Jakarta Sans', size: 11 };
-    const gridColor = '#F5E6D3';
-    const tickColor = '#8B7355';
+    const gridColor = '#D4E4F7';
+    const tickColor = '#5A7FA8';
 
-    // Chart: PECOSAs por mes (Salidas)
     new Chart(document.getElementById('pecosasChart'), {
         type: 'bar',
         data: {
@@ -264,8 +253,8 @@
             datasets: [{
                 label: 'PECOSAs',
                 data: [{{ implode(',', $pecosaData) }}],
-                backgroundColor: '#F59E0B',
-                borderRadius: 6,
+                backgroundColor: '#4A90D9',
+                borderRadius: 4,
                 borderSkipped: false
             }]
         },
@@ -274,12 +263,11 @@
             plugins: { legend: { display: false } },
             scales: {
                 x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
-                y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor, stepSize: 5 } }
+                y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor } }
             }
         }
     });
 
-    // Chart: Productos distribuidos (Leche y Hojuelas)
     new Chart(document.getElementById('productosChart'), {
         type: 'line',
         data: {
@@ -288,22 +276,22 @@
                 {
                     label: 'Leche',
                     data: [{{ implode(',', $lecheData) }}],
-                    borderColor: '#3B82F6',
-                    backgroundColor: 'rgba(59,130,246,0.1)',
-                    borderWidth: 2.5,
-                    pointBackgroundColor: '#3B82F6',
-                    pointRadius: 4,
+                    borderColor: '#1E5799',
+                    backgroundColor: 'rgba(30,87,153,0.08)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#1E5799',
+                    pointRadius: 3,
                     fill: true,
                     tension: 0.4
                 },
                 {
                     label: 'Hojuelas',
                     data: [{{ implode(',', $hojuelasData) }}],
-                    borderColor: '#F59E0B',
-                    backgroundColor: 'rgba(245,158,11,0.1)',
-                    borderWidth: 2.5,
-                    pointBackgroundColor: '#F59E0B',
-                    pointRadius: 4,
+                    borderColor: '#E5930A',
+                    backgroundColor: 'rgba(229,147,10,0.08)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#E5930A',
+                    pointRadius: 3,
                     fill: true,
                     tension: 0.4
                 }
@@ -311,7 +299,7 @@
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: true, position: 'top', labels: { font: chartFont } } },
+            plugins: { legend: { display: true, position: 'top', labels: { font: chartFont, boxWidth: 12 } } },
             scales: {
                 x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
                 y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor } }
@@ -319,36 +307,34 @@
         }
     });
 
-    // Chart: Socios vs Beneficiarios
     new Chart(document.getElementById('sociosBenefChart'), {
         type: 'doughnut',
         data: {
             labels: ['Socios', 'Beneficiarios'],
             datasets: [{
                 data: [{{ $sociosActivos }}, {{ $beneficiariosActivos }}],
-                backgroundColor: ['#4A7C59', '#0EA5E9'],
+                backgroundColor: ['#4A90D9', '#0E8A7A'],
                 borderWidth: 0,
-                hoverOffset: 8
+                hoverOffset: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%',
+            cutout: '70%',
             plugins: { legend: { display: false } }
         }
     });
 
-    // Chart: Top Comités con más PECOSAs
     new Chart(document.getElementById('topClubsChart'), {
         type: 'bar',
         data: {
-            labels: [@foreach($clubsWithPecosas as $club)'{{ substr($club->club, 0, 15) }}'@if(!$loop->last),@endif @endforeach],
+            labels: [@foreach($clubsWithBeneficiarios as $club)'{{ substr($club->club, 0, 12) }}'@if(!$loop->last),@endif @endforeach],
             datasets: [{
-                label: 'PECOSAs',
-                data: [@foreach($clubsWithPecosas as $club){{ $club->total }}@if(!$loop->last),@endif @endforeach],
-                backgroundColor: '#4A7C59',
-                borderRadius: 4,
+                label: 'Beneficiarios',
+                data: [@foreach($clubsWithBeneficiarios as $club){{ $club->total }}@if(!$loop->last),@endif @endforeach],
+                backgroundColor: '#4A90D9',
+                borderRadius: 3,
                 borderSkipped: false
             }]
         },
@@ -363,5 +349,6 @@
             }
         }
     });
+});
 </script>
 @endsection

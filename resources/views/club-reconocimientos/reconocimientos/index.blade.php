@@ -48,35 +48,27 @@
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Vigencia</label>
                     <select name="vigencia" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                        <option value="">Todas</option>
                         <option value="vigentes" {{ request('vigencia') == 'vigentes' ? 'selected' : '' }}>Vigentes</option>
                         <option value="vencidas" {{ request('vigencia') == 'vencidas' ? 'selected' : '' }}>Vencidas</option>
+                        <option value="" {{ request('vigencia') == '' ? 'selected' : '' }}>Todas</option>
                     </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Año</label>
-                    <select name="anio" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                        <option value="">Todos los años</option>
-                        @for($year = date('Y'); $year >= 2020; $year--)
-                            <option value="{{ $year }}" {{ request('anio') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                        @endfor
-                    </select>
+                </div> 
+                <div class="flex gap-2 mt-4">
+                    <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
+                    <a href="{{ route('club-reconocimientos.reconocimientos.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
                 </div>
             </div>
-            <div class="flex gap-2 mt-4">
-                <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
-                <a href="{{ route('club-reconocimientos.reconocimientos.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
-            </div>
+            
         </form>
 
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead>
                     <tr class="bg-wheat/30 border-b-2 border-wheat">
+                        <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Comités</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Documento</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Fecha Emisión</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Vigencia</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Comités</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Estado</th>
                         <th class="px-4 py-3 text-center text-xs font-bold text-earth uppercase tracking-wider">Acciones</th>
                     </tr>
@@ -84,6 +76,17 @@
                 <tbody class="divide-y divide-wheat">
                     @forelse($resolutions as $resolution)
                     <tr class="hover:bg-wheat/10 transition-colors">
+                        <td class="px-4 py-3 text-sm text-charcoal">
+                            @if($resolution->associations->count() > 0)
+                                <div class="flex flex-col gap-1">
+                                    @foreach($resolution->associations as $association)
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold"><i class="fas fa-users mr-1"></i>{{ $association->name }}</span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-gray-400 text-xs">Sin comités</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-sm font-semibold text-charcoal">{{ $resolution->document }}</td>
                         <td class="px-4 py-3 text-sm text-charcoal">{{ \Carbon\Carbon::parse($resolution->date_document)->format('d/m/Y') }}</td>
                         <td class="px-4 py-3 text-sm text-charcoal">
@@ -95,13 +98,6 @@
                                 <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700"><i class="fas fa-check-circle mr-1"></i>Vigente</span>
                             @else
                                 <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-700"><i class="fas fa-clock mr-1"></i>Vencida</span>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3 text-sm text-charcoal">
-                            @if($resolution->associations->count() > 0)
-                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold"><i class="fas fa-users mr-1"></i>{{ $resolution->associations->count() }} comité(s)</span>
-                            @else
-                                <span class="text-gray-400 text-xs">Sin comités</span>
                             @endif
                         </td>
                         <td class="px-4 py-3">
