@@ -22,9 +22,21 @@ class SociosBeneficiariosController extends Controller
 
     public function index(Request $request)
     {
-        $query = Partner::with(['people', 'association', 'state']);
+        $query = Partner::query()
+            ->select(['partners.id', 'partners.person_id', 'partners.association_id', 'partners.state_id', 'partners.date_begin', 'partners.date_end', 'partners.observations'])
+            ->with([
+                'people:id,names,father_lastname,mother_lastname,dni,address',
+                'association:id,name,code',
+                'state:id,title',
+                'beneficiaries' => function ($q) {
+                    $q->select(['id', 'partner_id', 'person_id', 'relationship_id']);
+                },
+                'beneficiaries.person:id,names,father_lastname,mother_lastname,dni',
+                'beneficiaries.relationship:id,title'
+            ])
+            ->withCount('beneficiaries');
 
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('people', function ($q) use ($search) {
                 $q->where('names', 'like', "%{$search}%")
@@ -34,25 +46,29 @@ class SociosBeneficiariosController extends Controller
             });
         }
 
-        if ($request->has('association_id') && $request->association_id != '') {
+        if ($request->filled('association_id')) {
             $query->where('association_id', $request->association_id);
         }
 
-        if ($request->has('state_id') && $request->state_id != '') {
+        if ($request->filled('state_id')) {
             $query->where('state_id', $request->state_id);
         }
 
-        $partners = $query->with('beneficiaries.person', 'beneficiaries.relationship', 'beneficiaries.histories')->orderBy('id', 'desc')->paginate(10);
-        $associations = Association::all();
-        $states = State::all();
-        $people = People::whereDoesntHave('partners')->get();
-        $allPeople = People::all();
-        $relationships = Relationship::all();
-        $placeSectors = PlaceSector::with(['place', 'sector'])->get();
-        $typeBenefits = \App\Models\TypeBenefit::all();
-        $reasonDisqualifications = \App\Models\ReasonDisqualification::all();
+        $partners = $query->orderBy('id', 'desc')->paginate(10);
+        $associations = Association::select(['id', 'name'])->get();
+        $states = State::select(['id', 'title'])->get();
+        
+        $partnerIdsWithPartners = Partner::distinct()->pluck('person_id');
+        $people = People::whereNotIn('id', $partnerIdsWithPartners)
+            ->select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
+            ->get();
+        
+        $relationships = Relationship::select(['id', 'title'])->get();
+        $placeSectors = PlaceSector::with(['place:id,code,title', 'sector:id,title'])->get();
+        $typeBenefits = TypeBenefit::select(['id', 'title', 'abbreviation'])->get();
+        $reasonDisqualifications = ReasonDisqualification::select(['id', 'title'])->get();
 
-        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states', 'people', 'allPeople', 'relationships', 'placeSectors', 'typeBenefits', 'reasonDisqualifications'));
+        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states', 'people', 'relationships', 'placeSectors', 'typeBenefits', 'reasonDisqualifications'));
     }
 
     // ==================== PERSONAS ====================

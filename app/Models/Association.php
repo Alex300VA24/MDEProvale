@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class Association extends Model
 {
@@ -21,6 +22,8 @@ class Association extends Model
         'type_premises_id',
         'resolution_id',
     ];
+
+    protected $cachedAttributes = [];
 
     public function placeSector()
     {
@@ -42,7 +45,6 @@ class Association extends Model
         return $this->belongsTo(Resolution::class);
     }
 
-    // Backward compatibility for existing code that still uses the plural name.
     public function resolutions()
     {
         return $this->resolution();
@@ -60,28 +62,26 @@ class Association extends Model
 
     public function directives()
     {
-        // Directivas del comité a través de los socios que pertenecen a él
         return Directive::whereIn('partner_id', $this->partners()->pluck('id'));
     }
 
     public function hasPresidenta(): bool
     {
-        if (!$this->resolution_id) {
-            return false;
-        }
-        
-        $partnerIds = $this->partners()->pluck('id');
-        
-        return Directive::whereIn('partner_id', $partnerIds)
-            ->where('resolution_id', $this->resolution_id)
-            ->whereHas('position', fn($q) => $q->where('title', 'like', '%PRESIDENTA%'))
-            ->whereHas('state', fn($q) => $q->where('abbreviation', 'A'))
-            ->exists();
+        return $this->getPresidentaCached() !== null;
     }
 
     public function isHabilitado(): bool
     {
         return $this->state && $this->state->abbreviation === 'A';
+    }
+
+    public function getPresidentaCached(): ?Partner
+    {
+        $cacheKey = 'association_presidenta_' . $this->id;
+        
+        return Cache::remember($cacheKey, 300, function () {
+            return $this->getPresidenta();
+        });
     }
 
     public function getPresidenta(): ?Partner
@@ -92,19 +92,16 @@ class Association extends Model
         }
         
         $activeState = State::where('abbreviation', 'A')->first();
-        $presidentPosition = \App\Models\Position::where('title', 'like', '%PRESIDENTA%')->first();
+        $presidentPosition = Position::where('title', 'like', '%PRESIDENTA%')->first();
         
-        $query = Directive::where('resolution_id', (int)$resolutionId);
-        
-        if ($presidentPosition) {
-            $query = $query->where('position_id', $presidentPosition->id);
+        if (!$activeState || !$presidentPosition) {
+            return null;
         }
         
-        if ($activeState) {
-            $query = $query->where('state_id', $activeState->id);
-        }
-        
-        $directive = $query->first();
+        $directive = Directive::where('resolution_id', (int)$resolutionId)
+            ->where('position_id', $presidentPosition->id)
+            ->where('state_id', $activeState->id)
+            ->first();
             
         if (!$directive) {
             return null;
@@ -115,7 +112,7 @@ class Association extends Model
 
     public function getPresidentName(): ?string
     {
-        $presidenta = $this->getPresidenta();
+        $presidenta = $this->getPresidentaCached();
         if ($presidenta && $presidenta->people) {
             return $presidenta->people->names . ' ' . $presidenta->people->father_lastname;
         }
@@ -144,4 +141,8 @@ class Association extends Model
         return $resolutions->sortBy('date_start')->values();
     }
 
+    public static function clearPresidentaCache($associationId)
+    {
+        Cache::forget('association_presidenta_' . $associationId);
+    }
 }

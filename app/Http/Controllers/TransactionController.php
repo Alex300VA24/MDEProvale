@@ -312,11 +312,16 @@ class TransactionController extends Controller
 
         $activeState = State::whereRaw('LOWER(title) = ?', ['activo'])->first();
         
+        if (!$activeState) {
+            return redirect()->route('movimientos.index')->with('error', 'No se encontró estado ACTIVO. Configure los estados en Mantenimiento.');
+        }
+        
         $startDate = "$currentYear-$currentMonth-01";
         $endDate = "$currentYear-$currentMonth-" . $daysInMonth;
 
         $associations = \App\Models\Association::with(['placeSector.sector', 'partners' => function($query) use ($activeState, $startDate, $endDate) {
-            $query->where('state_id', $activeState->id ?? 0)
+            $query->select(['id', 'association_id', 'state_id', 'date_begin', 'date_end'])
+                  ->where('state_id', $activeState->id)
                   ->where(function($q) use ($startDate, $endDate) {
                       $q->whereNull('date_begin')
                         ->orWhere('date_begin', '')
@@ -327,27 +332,26 @@ class TransactionController extends Controller
                         ->orWhere('date_end', '')
                         ->orWhere('date_end', '>=', $startDate);
                   });
-        }, 'partners.beneficiaries', 'partners.beneficiaries.histories' => function($q) use ($startDate, $endDate) {
-            $q->where(function($q) use ($endDate) {
-                  $q->whereNull('date_begin')
-                    ->orWhere('date_begin', '')
-                    ->orWhere('date_begin', '<=', $endDate);
-              })
-              ->where(function($q) use ($startDate) {
-                  $q->whereNull('date_end')
-                    ->orWhere('date_end', '')
-                    ->orWhere('date_end', '>=', $startDate);
+        }, 'partners.beneficiaries' => function($q) use ($activeState, $startDate, $endDate) {
+            $q->select(['id', 'partner_id'])
+              ->whereHas('histories', function($hq) use ($activeState, $startDate, $endDate) {
+                  $hq->where('state_id', $activeState->id)
+                     ->where(function($q) use ($endDate) {
+                         $q->whereNull('date_begin')
+                           ->orWhere('date_begin', '')
+                           ->orWhere('date_begin', '<=', $endDate);
+                     })
+                     ->where(function($q) use ($startDate) {
+                         $q->whereNull('date_end')
+                           ->orWhere('date_end', '')
+                           ->orWhere('date_end', '>=', $startDate);
+                     });
               });
         }])->get()->map(function($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth, $activeState, $startDate, $endDate) {
             $totalBeneficiaries = 0;
 
             foreach ($association->partners as $partner) {
-                foreach ($partner->beneficiaries as $beneficiary) {
-                    $isActive = $beneficiary->histories->where('state_id', $activeState->id)->count() > 0;
-                    if ($isActive) {
-                        $totalBeneficiaries++;
-                    }
-                }
+                $totalBeneficiaries += $partner->beneficiaries->count();
             }
 
             $presidenta = $association->getPresidentName() ?? '';

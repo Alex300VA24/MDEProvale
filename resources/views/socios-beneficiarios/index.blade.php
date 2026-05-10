@@ -107,7 +107,7 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-center">
-                            <span class="font-bold text-leaf">{{ $partner->beneficiaries->count() }}</span>
+                            <span class="font-bold text-leaf">{{ $partner->beneficiaries_count }}</span>
                         </td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">

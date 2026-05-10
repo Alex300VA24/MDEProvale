@@ -48,22 +48,16 @@ class ProductosPecosasController extends Controller
         $uoms = Uom::select(['id', 'title'])->get();
         
         $estadoActivo = State::where('abbreviation', 'A')->first();
-        $associationsForModal = $estadoActivo ? Association::where('state_id', $estadoActivo->id)->get() : Association::all();
-        
-        foreach ($associationsForModal as $association) {
-            $presidentPartner = $association->getPresidenta();
-            $association->president_partner_id = $presidentPartner ? $presidentPartner->id : null;
-            $association->president_name = $presidentPartner && $presidentPartner->people 
-                ? $presidentPartner->people->names . ' ' . $presidentPartner->people->father_lastname 
-                : 'SIN ASIGNAR';
-        }
+        $associationsForModal = $estadoActivo 
+            ? Association::select(['id', 'name', 'code', 'state_id', 'resolution_id'])->where('state_id', $estadoActivo->id)->get() 
+            : Association::select(['id', 'name', 'code', 'state_id', 'resolution_id'])->get();
         
         $pecosas = Pecosa::select(['id', 'pecosa_number', 'delivery_date', 'managing_partner_id', 'state_id', 'association_id', 'chief_name', 'storekeeper_name', 'created_at'])
             ->with(['association:id,name,code', 'state:id,title,abbreviation', 'managingPartner.people:id,names,father_lastname,mother_lastname', 'detailPecosas:id,pecosa_id,detail_product_id,quantity'])
             ->orderBy('id', 'desc')
             ->paginate(10);
         
-        $detailProductIds = DetailProduct::orderBy('id')->pluck('id');
+        $detailProductIds = DetailProduct::pluck('id');
         $usedQuantities = DetailPecosa::whereIn('detail_product_id', $detailProductIds)
             ->groupBy('detail_product_id')
             ->select('detail_product_id', DB::raw('SUM(quantity) as total_used'))
@@ -79,21 +73,12 @@ class ProductosPecosasController extends Controller
                 return $dp;
             });
 
-        $detailProductsListForPecosa = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
-            ->with(['product:id,title,abbreviation'])
-            ->orderBy('start_date', 'asc')
-            ->get()
-            ->map(function($dp) use ($usedQuantities) {
-                $dp->available_stock = $dp->quantity - ($usedQuantities[$dp->id] ?? 0);
-                return $dp;
-            });
-
         $responsibles = Responsible::select(['id', 'person_id', 'type', 'active'])
             ->with(['person:id,names,father_lastname,mother_lastname,dni'])
             ->where('active', true)
             ->get();
 
-        return view('productos-pecosas.index', compact('products', 'states', 'uoms', 'pecosas', 'associationsForModal', 'responsibles', 'detailProductsList', 'detailProductsListForPecosa'));
+        return view('productos-pecosas.index', compact('products', 'states', 'uoms', 'pecosas', 'associationsForModal', 'responsibles', 'detailProductsList'));
     }
 
     // ==================== PRODUCTOS ====================

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Http\Middleware\TrustProxies;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Notification;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,7 +32,10 @@ class AppServiceProvider extends ServiceProvider
             
             try {
                 if (auth()->check()) {
-                    $unreadNotifications = Notification::unreadCountForUser(auth()->user());
+                    $cacheKey = 'unread_notifications_user_' . auth()->id();
+                    $unreadNotifications = Cache::remember($cacheKey, 30, function () {
+                        return Notification::unreadCountForUser(auth()->user());
+                    });
                 }
             } catch (\Exception $e) {
                 \Log::error('Error al contar notificaciones: ' . $e->getMessage());
