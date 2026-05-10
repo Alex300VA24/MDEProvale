@@ -290,6 +290,14 @@ class SociosBeneficiariosController extends Controller
         return view('socios-beneficiarios.beneficiarios.index', compact('beneficiaries', 'partners', 'relationships', 'people'));
     }
 
+    public function imprimirFichaBeneficiario()
+    {
+        $logoPath = public_path('img/muni2.png');
+        $pdf = \PDF::loadView('ficha_beneficiario', compact('logoPath'));
+        $pdf->setPaper('a4', 'portrait');
+        return $pdf->stream('ficha-beneficiario-' . date('Y-m-d-His') . '.pdf');
+    }
+
 
     // ==================== REPORTES ====================
 

@@ -701,13 +701,20 @@
 
     <script>
         function loadNotifications() {
-            fetch('{{ route('sistema.notifications.partial') }}')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('notifications-container').innerHTML = html;
+            var container = document.getElementById('notifications-container');
+            if (!container) return;
+            
+            fetch('/sistema/notifications/partial')
+            .then(function(response) {
+                if (!response.ok) throw new Error('Error HTTP: ' + response.status);
+                return response.text();
             })
-            .catch(error => {
-                document.getElementById('notifications-container').innerHTML = '<div class="text-center py-8 text-slate"><i class="fas fa-exclamation-circle text-3xl mb-3"></i><p>Error al cargar notificaciones</p></div>';
+            .then(function(html) {
+                container.innerHTML = html;
+            })
+            .catch(function(error) {
+                console.error('Error notifications:', error);
+                container.innerHTML = '<div class="text-center py-8 text-slate"><i class="fas fa-exclamation-circle text-3xl mb-3"></i><p>Error al cargar notificaciones</p></div>';
             });
         }
 
@@ -866,6 +873,10 @@
             element.classList.add('hidden');
             element.style.display = 'none';
             document.body.style.overflow = '';
+            
+            if (id === 'modal-notifications') {
+                modalOpened = false;
+            }
         }
 
         function confirmDelete(formId, message) {
