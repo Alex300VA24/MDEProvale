@@ -14,11 +14,8 @@
                 @csrf
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Persona *</label>
-                    <select name="person_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                        <option value="">Seleccionar persona...</option>
-                        @foreach($people as $person)
-                        <option value="{{ $person->id }}">{{ $person->names }} {{ $person->father_lastname }} ({{ $person->dni }})</option>
-                        @endforeach
+                    <select name="person_id" id="select-person-crear-socio" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        <option value="">Buscar persona por nombre o DNI...</option>
                     </select>
                 </div>
                 <div>

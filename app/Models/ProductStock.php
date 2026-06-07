@@ -44,12 +44,13 @@ class ProductStock extends Model
         $detailProducts = DetailProduct::where('product_id', $productId)
             ->where('start_date', '<=', now()->toDateString())
             ->where('end_date', '>=', now()->toDateString())
+            ->withSum('stocks as used_quantity', 'quantity')
             ->get();
 
         $totalStock = 0;
         foreach ($detailProducts as $detail) {
             $in = $detail->quantity;
-            $out = self::where('detail_product_id', $detail->id)->sum('quantity');
+            $out = $detail->used_quantity ?? 0;
             $totalStock += ($in - $out);
         }
 

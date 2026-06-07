@@ -25,10 +25,20 @@ class Pecosa extends Model
         'president_name',
         'association_name',
         'association_code',
+        'chief_dni',
+        'storekeeper_dni',
+        'managing_partner_dni',
+        'president_dni',
+        'association_address',
+        'association_zone_code',
+        'association_zone_name',
+        'association_sector_name',
+        'beneficiaries_count',
     ];
 
     protected $casts = [
         'delivery_date' => 'date:Y-m-d',
+        'beneficiaries_count' => 'integer',
     ];
 
     public function state()

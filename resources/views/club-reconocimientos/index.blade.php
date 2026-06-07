@@ -24,7 +24,7 @@
     </div>
 
     <div class="p-6">
-        <!-- @if(session('success'))
+        @if(session('success'))
             <div class="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
                 <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
             </div>
@@ -33,7 +33,7 @@
             <div class="mb-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700">
                 <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
             </div>
-        @endif -->
+        @endif
 
         <form method="GET" class="mb-6">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -53,7 +53,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Celular</label>
-                        <input type="text" name="phone_number" value="{{ $person->phone_number }}" maxlength="9" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <input type="text" name="phone_number" value="{{ $person->phone_number }}" maxlength="9" placeholder="XXXXXXXXX" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Sector *</label>

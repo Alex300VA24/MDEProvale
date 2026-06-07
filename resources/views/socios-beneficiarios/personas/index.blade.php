@@ -33,11 +33,11 @@
         <form method="GET" class="mb-6">
             <div class="flex gap-4">
                 <div class="flex-1">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o DNI..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o DNI" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
                 <div>
-                    <select name="gender" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                        <option value="">Todos los géneros</option>
+                    <select name="gender" class="w-full px-8 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                        <option value="">Género</option>
                         <option value="M" {{ request('gender') == 'M' ? 'selected' : '' }}>Masculino</option>
                         <option value="F" {{ request('gender') == 'F' ? 'selected' : '' }}>Femenino</option>
                     </select>
@@ -65,7 +65,6 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left font-bold text-earth">ID</th>
                         <th class="px-4 py-3 text-left font-bold text-earth">DNI</th>
                         <th class="px-4 py-3 text-left font-bold text-earth">Nombres</th>
                         <th class="px-4 py-3 text-left font-bold text-earth">Apellidos</th>
@@ -78,13 +77,12 @@
                 <tbody class="divide-y divide-gray-200">
                     @forelse($people as $person)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">#{{ $person->id }}</td>
                         <td class="px-4 py-3 font-mono">{{ $person->dni }}</td>
                         <td class="px-4 py-3 font-medium">{{ $person->names }}</td>
                         <td class="px-4 py-3">{{ $person->father_lastname }} {{ $person->mother_lastname }}</td>
                         <td class="px-4 py-3 text-leaf font-semibold">{{ $person->age_formatted }}</td>
-                        <td class="px-4 py-3">{{ $person->phone_number ?? '-' }}</td>
-                        <td class="px-4 py-3 text-xs">{{ $person->placeSector->place->title ?? 'N/A' }} - {{ $person->placeSector->sector->title ?? 'N/A' }}</td>
+                        <td class="px-4 py-3">{{ $person->phone_number ?? 'Sin número' }}</td>
+                        <td class="px-4 py-3 text-xs">{{ $person->placeSector->sector->title ?? 'N/A' }}</td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openModal('modal-ver-persona-{{ $person->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">

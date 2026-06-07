@@ -16,11 +16,8 @@ class AuthenticatedSessionController extends Controller
      *
      * @return \Illuminate\View\View
      */
-public function create(Request $request)
+    public function create(Request $request)
     {
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
         return response()
             ->view('auth.login')
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
@@ -34,20 +31,21 @@ public function create(Request $request)
      * @param  \App\Http\Requests\Auth\LoginRequest  $request
      * @return \Illuminate\Http\RedirectResponse
      */
-public function store(LoginRequest $request)
+    public function store(LoginRequest $request)
     {
         $request->authenticate();
 
         $request->session()->regenerate();
 
+        if ($request->get('expired') == 1) {
+            return redirect()->route('dashboard');
+        }
+
+        $request->session()->forget('session_just_expired');
+
         $intendedUrl = $request->session()->get('url.intended');
         if ($intendedUrl && $this->shouldIgnoreIntendedUrl($intendedUrl)) {
             $request->session()->forget('url.intended');
-        }
-
-        if ($request->session()->has('session_just_expired') || $request->get('expired') == 1) {
-            $request->session()->forget('session_just_expired');
-            return redirect()->route('dashboard');
         }
 
         return redirect()->intended(RouteServiceProvider::HOME);

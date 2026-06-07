@@ -14,7 +14,10 @@ use App\Models\TypeBenefit;
 use App\Models\ReasonDisqualification;
 use App\Models\PlaceSector;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\PDF;
+
 
 class SociosBeneficiariosController extends Controller
 {
@@ -27,12 +30,7 @@ class SociosBeneficiariosController extends Controller
             ->with([
                 'people:id,names,father_lastname,mother_lastname,dni,address',
                 'association:id,name,code',
-                'state:id,title',
-                'beneficiaries' => function ($q) {
-                    $q->select(['id', 'partner_id', 'person_id', 'relationship_id']);
-                },
-                'beneficiaries.person:id,names,father_lastname,mother_lastname,dni',
-                'beneficiaries.relationship:id,title'
+                'state:id,title'
             ])
             ->withCount('beneficiaries');
 
@@ -58,12 +56,17 @@ class SociosBeneficiariosController extends Controller
         $associations = Association::select(['id', 'name'])->get();
         $states = State::select(['id', 'title'])->get();
         
-        $people = People::whereDoesntHave('partners')
-            ->select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
-            ->limit(500)
+        // Get a sample of people for the dropdown - limit to avoid query timeout
+        // Note: Since we have too many partners, it's not practical to exclude all of them
+        // Instead, we'll load recently added people and let JS handle the filtering if needed
+        $people = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
+            ->orderBy('id', 'desc')
+            ->limit(100)
             ->get();
         
+        // Get all people for the edit modal (to allow changing person)
         $allPeople = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
+            ->orderBy('names')
             ->limit(1000)
             ->get();
         
@@ -79,7 +82,10 @@ class SociosBeneficiariosController extends Controller
 
     public function indexPersonas(Request $request)
     {
-        $query = People::query();
+        $query = People::select('id', 'names', 'father_lastname', 
+                                'mother_lastname', 'dni', 'gender', 
+                                'telephone_number', 'phone_number', 'birthdate', 'place_sector_id',
+                                'address');
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
@@ -89,8 +95,32 @@ class SociosBeneficiariosController extends Controller
                 ->orWhere('dni', 'like', "%{$search}%");
         }
 
-        $people = $query->orderBy('id', 'desc')->paginate(15);
-        $placeSectors = PlaceSector::with(['place', 'sector'])->get();
+        if ($request->has('gender') && $request->gender != '') {
+            $query->where('gender', $request->gender);
+        }
+
+        if ($request->has('place_sector_id') && $request->place_sector_id != '') {
+            $query->where('place_sector_id', $request->place_sector_id);
+        }
+
+        $people = $query->orderBy('id')->paginate(15);
+        /*$placeSectors = PlaceSector::with([
+            //'id',
+            'place' => function ($query) {
+                $query->select(['id', 'title']);
+            }, 
+            'sector' => function ($query) {
+                $query->select(['id', 'title']);
+            }
+        ])->get();*/
+
+        $placeSectors = PlaceSector::select('id', 'place_id', 'sector_id')
+            ->with([
+                    'place:id,title',   // solo id y title de places
+                    'sector:id,title'   // solo id y title de sectors
+                    ])
+            ->get();
+
         return view('socios-beneficiarios.personas.index', compact('people', 'placeSectors'));
     }
 
@@ -283,17 +313,16 @@ class SociosBeneficiariosController extends Controller
         }
 
         $beneficiaries = $query->orderBy('id', 'desc')->paginate(10);
-        $partners = Partner::with('people')->get();
+        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         $relationships = Relationship::all();
-        $people = People::all();
 
-        return view('socios-beneficiarios.beneficiarios.index', compact('beneficiaries', 'partners', 'relationships', 'people'));
+        return view('socios-beneficiarios.beneficiarios.index', compact('beneficiaries', 'partners', 'relationships'));
     }
 
     public function imprimirFichaBeneficiario()
     {
         $logoPath = public_path('img/muni2.png');
-        $pdf = \PDF::loadView('ficha_beneficiario', compact('logoPath'));
+        $pdf = PDF::loadView('ficha_beneficiario', compact('logoPath'));
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('ficha-beneficiario-' . date('Y-m-d-His') . '.pdf');
     }
@@ -303,8 +332,8 @@ class SociosBeneficiariosController extends Controller
 
     /**
      * Reporte Padrón de Beneficiarios del Club de Madres PVL
-     * Filtrado por comité, mes y año.
-     * Basado en reporte_beneficiario.blade.php
+     * Filtrado por comité, mes y año — HISTÓRICO.
+     * Socios y beneficiarios vigentes en el periodo consultado.
      */
     public function reportePadronBeneficiarios(Request $request)
     {
@@ -318,25 +347,40 @@ class SociosBeneficiariosController extends Controller
         }
 
         $association = Association::with(['placeSector.place', 'placeSector.sector'])->findOrFail($associationId);
-        $presidenta = $association->getPresidentName();
-        
-        $startDate = "$anio-$mes-01";
-        $endDate = "$anio-$mes-" . date('t', strtotime($startDate));
 
-        $partners = Partner::with(['people', 'beneficiaries.person', 'beneficiaries.relationship', 'beneficiaries.histories.typeBenefit', 'beneficiaries.histories.reasonDisqualification'])
+        // Fecha de corte: último día del mes consultado
+        $startDate = Carbon::createFromDate($anio, $mes, 1)->startOfMonth();
+        $endDate   = Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
+        $cutoffDate = $endDate; // referencia para cálculo de edades
+
+        // Presidenta vigente en el periodo (histórica)
+        $presidenta = $association->getPresidentNameAt($endDate->toDateString())
+            ?? $association->getPresidentName();
+
+        // Socios vigentes en el periodo: date_begin <= fin_mes AND (date_end IS NULL OR date_end >= inicio_mes)
+        $partners = Partner::with([
+                'people',
+                'beneficiaries.person',
+                'beneficiaries.relationship',
+                'beneficiaries.histories.typeBenefit',
+                'beneficiaries.histories.reasonDisqualification',
+            ])
             ->where('association_id', $associationId)
+            ->where('date_begin', '<=', $endDate->toDateString())
+            ->where(function ($q) use ($startDate) {
+                $q->whereNull('date_end')
+                  ->orWhere('date_end', '>=', $startDate->toDateString());
+            })
             ->get();
 
-        // Debug: ver si hay datos
         if ($partners->isEmpty()) {
-            dd('No hay partners para association_id: ' . $associationId);
+            return redirect()->back()->with('error', 'No hay socios vigentes para el comité y periodo seleccionado.');
         }
 
-        // Obtener PECOSA del periodo (mes/año) para este comité
+        // PECOSA del periodo para este comité
         $pecosa = Pecosa::with('detailPecosas.detailProduct.product')
             ->where('association_id', $associationId)
-            ->whereMonth('delivery_date', $mes)
-            ->whereYear('delivery_date', $anio)
+            ->whereBetween('delivery_date', [$startDate->toDateString(), $endDate->toDateString()])
             ->first();
 
         // Construir array de beneficiarios para la vista
@@ -351,70 +395,72 @@ class SociosBeneficiariosController extends Controller
             $socia = $partner->people;
             if (!$socia) continue;
 
-            $sociaEdad = $socia->birthdate ? Carbon::parse($socia->birthdate)->age : 0;
-            $sociaEdadMeses = $socia->birthdate ? Carbon::parse($socia->birthdate)->diff(Carbon::now())->m : 0;
-
             $beneficiariosSocia = [];
 
             foreach ($partner->beneficiaries as $beneficiario) {
                 $persona = $beneficiario->person;
                 if (!$persona) continue;
 
-                $edadAnos = $persona->birthdate ? Carbon::parse($persona->birthdate)->age : 0;
-                $edadMeses = $persona->birthdate ? Carbon::parse($persona->birthdate)->diff(Carbon::now())->m : 0;
-                $edadDias = $persona->birthdate ? Carbon::parse($persona->birthdate)->diff(Carbon::now())->d : 0;
+                // Edades calculadas contra el último día del mes consultado (histórico)
+                $edadAnos  = $persona->birthdate ? Carbon::parse($persona->birthdate)->diffInYears($cutoffDate) : 0;
+                $edadMeses = $persona->birthdate ? Carbon::parse($persona->birthdate)->diff($cutoffDate)->m : 0;
+                $edadDias  = $persona->birthdate ? Carbon::parse($persona->birthdate)->diff($cutoffDate)->d : 0;
 
-                // Obtener el historial activo (más reciente)
-                $historialActivo = $beneficiario->histories()
+                // Historial vigente en el periodo consultado (no el más reciente actual)
+                $historialActivo = $beneficiario->histories
                     ->whereNotNull('state_id')
-                    ->orderByDesc('date_begin')
+                    ->filter(function ($h) use ($startDate, $endDate) {
+                        $hBegin = $h->date_begin ? Carbon::parse($h->date_begin) : null;
+                        $hEnd   = $h->date_end   ? Carbon::parse($h->date_end)   : null;
+                        if (!$hBegin) return false;
+                        // Vigente si comenzó antes o durante el fin del mes
+                        // y terminó después o durante el inicio del mes (o no terminó)
+                        return $hBegin->lte($endDate) && ($hEnd === null || $hEnd->gte($startDate));
+                    })
+                    ->sortByDesc('date_begin')
                     ->first();
 
-                $tipoBeneficio = $historialActivo && $historialActivo->typeBenefit ? $historialActivo->typeBenefit->abbreviation : '';
-                $razonBaja = $historialActivo && $historialActivo->reasonDisqualification ? $historialActivo->reasonDisqualification->id : '';
-                $tipoVisible = in_array($tipoBeneficio, ['LAC', 'GES']) ? $tipoBeneficio : '';
+                $tipoBeneficio  = $historialActivo && $historialActivo->typeBenefit ? $historialActivo->typeBenefit->abbreviation : '';
+                $razonBaja      = $historialActivo && $historialActivo->reasonDisqualification ? $historialActivo->reasonDisqualification->id : '';
+                $tipoVisible    = in_array($tipoBeneficio, ['LAC', 'GES']) ? $tipoBeneficio : '';
                 $parentescoTitulo = $beneficiario->relationship ? $beneficiario->relationship->title : '';
-                
-                $fechaInicio = $historialActivo && $historialActivo->date_begin ? $historialActivo->date_begin : null;
+                $fechaInicio    = $historialActivo && $historialActivo->date_begin ? $historialActivo->date_begin : null;
+
+                // Evaluación de bajas y observaciones — SOLO LECTURA, sin escribir en BD
                 $observationFlag = false;
                 $bajaFlag = false;
-                
-                // Lógica para actualizar reason_disqualification y marcar observaciones
-                
-                // 1. Si tiene 14 años o más → reason_disqualification_id = 4 (BAJA)
+
+                // 1. Edad >= 14 años al corte del mes → baja
                 if ($edadAnos >= 14) {
                     if ($historialActivo && !$historialActivo->reason_disqualification_id) {
-                        $historialActivo->update(['reason_disqualification_id' => 4]);
                         $razonBaja = 4;
                         $bajaFlag = true;
                     }
                 }
-                
-                // 2. Si el tipo es GES y ya está más de 9 meses o no tiene fecha de ingreso → reason_disqualification_id = 4 (BAJA)
+
+                // 2. GES más de 9 meses desde fecha de inicio al corte del mes → baja
                 if ($tipoBeneficio === 'GES') {
-                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) : 999;
+                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) : 999;
                     if (!$fechaInicio || $mesesTotales > 9) {
                         if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
-                            $historialActivo->update(['reason_disqualification_id' => 4]);
                             $razonBaja = 4;
                             $bajaFlag = true;
                         }
                     }
                 }
-                
-                // 3. Si el tipo es LAC y ya está más de un año o no tiene fecha de ingreso → reason_disqualification_id = 4 (BAJA)
+
+                // 3. LAC más de 12 meses desde fecha de inicio al corte del mes → baja
                 if ($tipoBeneficio === 'LAC') {
-                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) : 999;
+                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) : 999;
                     if (!$fechaInicio || $mesesTotales > 12) {
                         if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
-                            $historialActivo->update(['reason_disqualification_id' => 4]);
                             $razonBaja = 4;
                             $bajaFlag = true;
                         }
                     }
                 }
-                
-                // 4. Si GES/LAC tiene 12 años o menos → solo observación (no se cambia reason_disqualification)
+
+                // 4. GES/LAC con edad <= 12 años → observación
                 if (in_array($tipoBeneficio, ['GES', 'LAC']) && $edadAnos <= 12) {
                     $observationFlag = true;
                 }
@@ -601,13 +647,13 @@ class SociosBeneficiariosController extends Controller
             'cantidad' => $cantidadGesLac
         ];
 
-        // 5. GES. MAS DE 9 MESES / SIN FECHA DE INGRESO (BAJA) (GES = abreviatura GES)
+        // 5. GES. MAS DE 9 MESES / SIN FECHA DE INGRESO (BAJA)
         $cantidadGesBaja = 0;
         foreach ($todosBeneficiarios as $ben) {
             $tipo = $ben['beneficiario_tipo'] ?? '';
             if ($tipo === 'GES') {
                 $fechaInicio = $ben['fecha_inicio'] ?? '';
-                if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) > 9)) {
+                if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) > 9)) {
                     if (!empty($ben['beneficiario_baja']) && $ben['beneficiario_baja'] != 1) {
                         $cantidadGesBaja++;
                     }
@@ -620,13 +666,13 @@ class SociosBeneficiariosController extends Controller
             'cantidad' => $cantidadGesBaja
         ];
 
-        // 6. LAC. MAS DE UN AÑO / SIN FECHA INGRESO (BAJA) (LAC = abreviatura LAC)
+        // 6. LAC. MAS DE UN AÑO / SIN FECHA INGRESO (BAJA)
         $cantidadLacBaja = 0;
         foreach ($todosBeneficiarios as $ben) {
             $tipo = $ben['beneficiario_tipo'] ?? '';
             if ($tipo === 'LAC') {
                 $fechaInicio = $ben['fecha_inicio'] ?? '';
-                if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths(Carbon::now()) > 12)) {
+                if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) > 12)) {
                     if (!empty($ben['beneficiario_baja']) && $ben['beneficiario_baja'] != 1) {
                         $cantidadLacBaja++;
                     }
@@ -670,7 +716,7 @@ $observaciones[] = [
             'bajas' => $bajas,
         ];
 
-        $pdf = \PDF::loadView('reporte_beneficiario', $data);
+        $pdf = PDF::loadView('reporte_beneficiario', $data);
         $pdf->setPaper('a4', 'landscape');
         return $pdf->stream('padron-beneficiarios-' . $association->code . '-' . $mes . '-' . $anio . '.pdf');
     }

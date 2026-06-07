@@ -1,10 +1,10 @@
 <script>
 let beneficiaryCountCreate = 0;
-let allPeople = @json($allPeople);
 let allRelationships = @json($relationships);
 let allTypeBenefits = @json($typeBenefits);
 let allStates = @json($states);
 let allReasonDisqualifications = @json($reasonDisqualifications);
+let peopleSearchUrl = '{{ route("api.search.people") }}';
 
 function buildOpts(items, placeholder, labelKey) {
     let html = `<option value="">${placeholder}</option>`;
@@ -23,9 +23,6 @@ function addBeneficiaryCreate() {
     const ic = 'w-full px-3 py-2 border-2 border-wheat rounded-lg text-sm font-semibold bg-white';
     const lc = 'block text-[10px] font-bold text-earth uppercase mb-1';
 
-    let personOpts = '<option value="">Seleccionar persona...</option>';
-    allPeople.forEach(p => { personOpts += `<option value="${p.id}">${p.names} ${p.father_lastname} (${p.dni})</option>`; });
-
     div.innerHTML = `
         <div class="flex items-center justify-between border-b border-wheat pb-2 mb-3">
             <span class="text-xs font-bold text-leaf uppercase">Beneficiario #${idx + 1}</span>
@@ -36,7 +33,7 @@ function addBeneficiaryCreate() {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
                 <label class="${lc}">Persona *</label>
-                <select name="beneficiaries[${idx}][person_id]" class="${sc}" required>${personOpts}</select>
+                <select name="beneficiaries[${idx}][person_id]" class="select2-person-ajax ${sc}" required><option value="">Buscar persona...</option></select>
             </div>
             <div>
                 <label class="${lc}">Parentesco *</label>
@@ -85,6 +82,11 @@ function addBeneficiaryCreate() {
     `;
 
     container.appendChild(div);
+    // Initialize Select2 AJAX on the newly added person select
+    $(div).find('.select2-person-ajax').select2({
+        ajax: { url: peopleSearchUrl, dataType: 'json', delay: 300, data: function(p) { return { q: p.term || '', limit: 30 }; }, processResults: function(d) { return d; }, cache: true },
+        minimumInputLength: 2, placeholder: 'Buscar por nombre o DNI...', allowClear: true, width: '100%'
+    });
     beneficiaryCountCreate++;
 }
 
@@ -105,9 +107,6 @@ function addBeneficiaryEdit(partnerId) {
     const ic = 'w-full px-3 py-2 border-2 border-wheat rounded-lg text-sm font-semibold bg-white';
     const lc = 'block text-[10px] font-bold text-earth uppercase mb-1';
 
-    let personOpts = '<option value="">Seleccionar persona...</option>';
-    allPeople.forEach(p => { personOpts += `<option value="${p.id}">${p.names} ${p.father_lastname} (${p.dni})</option>`; });
-
     div.innerHTML = `
         <div class="flex items-center justify-between border-b border-wheat pb-2 mb-3">
             <span class="text-xs font-bold text-leaf uppercase">Beneficiario #${existingCount + 1}</span>
@@ -118,7 +117,7 @@ function addBeneficiaryEdit(partnerId) {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
                 <label class="${lc}">Persona *</label>
-                <select name="beneficiaries[${existingCount}][person_id]" class="${sc}" required>${personOpts}</select>
+                <select name="beneficiaries[${existingCount}][person_id]" class="select2-person-ajax ${sc}" required><option value="">Buscar persona...</option></select>
             </div>
             <div>
                 <label class="${lc}">Parentesco *</label>
@@ -167,9 +166,27 @@ function addBeneficiaryEdit(partnerId) {
     `;
 
     container.appendChild(div);
+    // Initialize Select2 AJAX on the newly added person select
+    $(div).find('.select2-person-ajax').select2({
+        ajax: { url: peopleSearchUrl, dataType: 'json', delay: 300, data: function(p) { return { q: p.term || '', limit: 30 }; }, processResults: function(d) { return d; }, cache: true },
+        minimumInputLength: 2, placeholder: 'Buscar por nombre o DNI...', allowClear: true, width: '100%'
+    });
 }
 
 function removeBeneficiaryEdit(partnerId, index) {
     document.getElementById('beneficiary-row-edit-' + partnerId + '-' + index).remove();
 }
+
+// Initialize Select2 AJAX for the crear-socio modal person dropdown
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        var s2opts = {
+            ajax: { url: peopleSearchUrl, dataType: 'json', delay: 300, data: function(p) { return { q: p.term || '', limit: 30 }; }, processResults: function(d) { return d; }, cache: true },
+            minimumInputLength: 2, placeholder: 'Buscar por nombre o DNI...', allowClear: true, width: '100%'
+        };
+        if (document.getElementById('select-person-crear-socio')) {
+            $('#select-person-crear-socio').select2(s2opts);
+        }
+    }
+});
 </script>

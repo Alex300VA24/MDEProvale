@@ -75,6 +75,26 @@ class Association extends Model
         return $this->state && $this->state->abbreviation === 'A';
     }
 
+    /**
+     * Static cache for frequently-looked-up singleton records.
+     * These values don't change during a request, so we load them once.
+     */
+    protected static $cachedActiveState = null;
+    protected static $cachedPresidentPosition = null;
+    protected static $staticCacheLoaded = false;
+
+    /**
+     * Load State(A) and Position(PRESIDENTA) once per request.
+     */
+    protected static function loadStaticLookups(): void
+    {
+        if (static::$staticCacheLoaded) return;
+
+        static::$cachedActiveState = State::where('abbreviation', 'A')->first();
+        static::$cachedPresidentPosition = Position::where('title', 'PRESIDENTA')->first();
+        static::$staticCacheLoaded = true;
+    }
+
     public function getPresidentaCached(): ?Partner
     {
         $cacheKey = 'association_presidenta_' . $this->id;
@@ -91,8 +111,10 @@ class Association extends Model
             return null;
         }
         
-        $activeState = State::where('abbreviation', 'A')->first();
-        $presidentPosition = Position::where('title', 'like', '%PRESIDENTA%')->first();
+        static::loadStaticLookups();
+
+        $activeState = static::$cachedActiveState;
+        $presidentPosition = static::$cachedPresidentPosition;
         
         if (!$activeState || !$presidentPosition) {
             return null;
@@ -115,6 +137,37 @@ class Association extends Model
         $presidenta = $this->getPresidentaCached();
         if ($presidenta && $presidenta->people) {
             return $presidenta->people->names . ' ' . $presidenta->people->father_lastname;
+        }
+        return null;
+    }
+
+    /**
+     * Obtiene el nombre de la presidenta vigente en una fecha específica.
+     * Usa directives.date_start / date_end para consulta histórica.
+     */
+    public function getPresidentNameAt(string $date): ?string
+    {
+        $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
+        if (!$presidentPosition) return null;
+
+        $partnerIds = $this->partners()->pluck('id');
+
+        $directive = Directive::whereIn('partner_id', $partnerIds)
+            ->where('position_id', $presidentPosition->id)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('date_start')->orWhere('date_start', '<=', $date);
+            })
+            ->where(function ($q) use ($date) {
+                $q->whereNull('date_end')->orWhere('date_end', '>=', $date);
+            })
+            ->latest('date_start')
+            ->first();
+
+        if (!$directive) return null;
+
+        $partner = Partner::with('people')->find($directive->partner_id);
+        if ($partner && $partner->people) {
+            return $partner->people->names . ' ' . $partner->people->father_lastname;
         }
         return null;
     }

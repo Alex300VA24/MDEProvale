@@ -27,5 +27,12 @@ class ProductSeeder extends Seeder
             'state_id' => 1,
             'uom_id' => 1,
         ]);
+
+        DB::table('products')->insert([
+            'title' => 'AZUCAR',
+            'abbreviation' => 'AZU',
+            'state_id' => 1,
+            'uom_id' => 1,
+        ]);
     }
 }

@@ -134,11 +134,8 @@
                 @csrf
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Persona *</label>
-                    <select name="person_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                        <option value="">Seleccionar persona...</option>
-                        @foreach($people as $person)
-                        <option value="{{ $person->id }}">{{ $person->names }} {{ $person->father_lastname }} ({{ $person->dni }})</option>
-                        @endforeach
+                    <select name="person_id" id="select-person-create" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        <option value="">Buscar persona por nombre o DNI...</option>
                     </select>
                 </div>
                 <div>
@@ -223,10 +220,10 @@
                 @method('PUT')
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Persona *</label>
-                    <select name="person_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                        @foreach($people as $person)
-                        <option value="{{ $person->id }}" {{ $beneficiarie->person_id == $person->id ? 'selected' : '' }}>{{ $person->names }} {{ $person->father_lastname }} ({{ $person->dni }})</option>
-                        @endforeach
+                    <select name="person_id" class="select-person-edit w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                        @if($beneficiarie->person)
+                        <option value="{{ $beneficiarie->person->id }}" selected>{{ $beneficiarie->person->names }} {{ $beneficiarie->person->father_lastname }} ({{ $beneficiarie->person->dni }})</option>
+                        @endif
                     </select>
                 </div>
                 <div>
@@ -255,4 +252,31 @@
 </div>
 
 @endforeach
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function initSelect2Ajax(selector, url) {
+        $(selector).select2({
+            ajax: {
+                url: url,
+                dataType: 'json',
+                delay: 300,
+                data: function(params) { return { q: params.term || '', limit: 30 }; },
+                processResults: function(data) { return data; },
+                cache: true,
+            },
+            minimumInputLength: 2,
+            placeholder: 'Buscar por nombre o DNI...',
+            allowClear: true,
+            width: '100%',
+        });
+    }
+
+    var peopleUrl = '{{ route("api.search.people") }}';
+    initSelect2Ajax('#select-person-create', peopleUrl);
+    initSelect2Ajax('.select-person-edit', peopleUrl);
+});
+</script>
+@endpush
 @endsection

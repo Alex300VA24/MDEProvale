@@ -7,6 +7,7 @@ use App\Models\Association;
 use App\Models\State;
 use App\Models\People;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class PartnerController extends Controller
 {
@@ -148,7 +149,7 @@ $people = People::select(['id', 'names', 'father_lastname', 'mother_lastname', '
         }
 
         $orientacion = $request->get('orientacion', 'portrait');
-        $pdf = \PDF::loadView('reportes.socios', compact('partners', 'titulo', 'tipo'));
+        $pdf = PDF::loadView('reportes.socios', compact('partners', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
         return $pdf->download('reporte-socios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }

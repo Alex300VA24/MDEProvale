@@ -16,24 +16,24 @@ class CheckSessionExpired
      */
     public function handle(Request $request, Closure $next)
     {
-        // No verificar si ya estamos en la ruta de login
         if ($request->routeIs('login') || $request->is('login')) {
             return $next($request);
         }
 
-        // Si el usuario tenía un remember_token activo, no expirar la sesión
-        if ($request->session()->has('had_remember_token') && auth()->check() && auth()->user()->remember_token) {
+        $isAuthenticated = auth()->check();
+
+        if ($isAuthenticated) {
+            $user = auth()->user();
+
+            if ($user->remember_token) {
+                $request->session()->put('had_remember_token', true);
+            }
+
             $request->session()->put('user_was_authenticated', true);
             return $next($request);
         }
 
-        // Guardar si el usuario tenía remember_token la primera vez
-        if (auth()->check() && auth()->user()->remember_token) {
-            $request->session()->put('had_remember_token', true);
-        }
-
-        // Si el usuario estaba autenticado antes y ahora no lo está, la sesión expiró.
-        if ($request->session()->has('user_was_authenticated') && !auth()->check()) {
+        if ($request->session()->has('user_was_authenticated')) {
             $request->session()->forget('user_was_authenticated');
             $request->session()->put('session_just_expired', true);
 
@@ -50,11 +50,6 @@ class CheckSessionExpired
             $request->session()->regenerateToken();
 
             return redirect()->route('login', ['expired' => 1]);
-        }
-
-        // Guardar que el usuario estaba autenticado
-        if (auth()->check()) {
-            $request->session()->put('user_was_authenticated', true);
         }
 
         return $next($request);

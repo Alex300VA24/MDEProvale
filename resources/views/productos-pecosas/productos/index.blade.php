@@ -170,7 +170,7 @@
                     @forelse($detailProducts as $detail)
                     @php
                         $stockInicial = $detail->quantity;
-                        $stockUsado = $detail->stocks()->sum('quantity');
+                        $stockUsado = $detail->used_quantity ?? 0;
                         $stockActual = $stockInicial - $stockUsado;
                         $totalEntrada = $stockInicial * $detail->unit_price;
                         

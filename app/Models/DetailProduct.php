@@ -35,7 +35,14 @@ class DetailProduct extends Model
 
     public function getAvailableStockAttribute()
     {
-        $totalOut = $this->stocks()->sum('quantity');
+        if (array_key_exists('used_quantity', $this->attributes)) {
+            $totalOut = $this->attributes['used_quantity'] ?? 0;
+        } elseif ($this->relationLoaded('stocks')) {
+            $totalOut = $this->stocks->sum('quantity');
+        } else {
+            $totalOut = $this->stocks()->sum('quantity');
+        }
+
         return $this->quantity - $totalOut;
     }
 

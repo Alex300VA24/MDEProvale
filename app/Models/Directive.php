@@ -14,6 +14,8 @@ class Directive extends Model
         'partner_id',
         'position_id',
         'state_id',
+        'date_start',
+        'date_end',
     ];
 
     public function resolution()

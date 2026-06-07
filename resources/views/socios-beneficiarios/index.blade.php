@@ -42,7 +42,7 @@
             <div class="flex gap-4">
                 <div class="flex-1">
                     <input type="text" name="search" value="{{ request('search') }}" 
-                        placeholder="Buscar por nombre o DNI..." 
+                        placeholder="Buscar por nombre o DNI" 
                         class="w-full px-10 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
 

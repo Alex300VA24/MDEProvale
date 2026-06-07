@@ -80,68 +80,69 @@ class User extends Authenticatable
         return $this->rol_id === 3;
     }
 
+    /**
+     * Per-request cache of module permissions.
+     * Loaded once via a single JOIN query, then reused for all permission checks.
+     * Key: module slug, Value: object with can_view, can_create, can_edit, can_delete
+     */
+    protected $modulePermissionsCache = null;
+
+    /**
+     * Load all module permissions for this user's role in a single query.
+     * Caches the result per-request so subsequent calls are free.
+     */
+    protected function getModulePermissions()
+    {
+        if ($this->modulePermissionsCache !== null) {
+            return $this->modulePermissionsCache;
+        }
+
+        $permissions = DB::table('module_rol')
+            ->join('modules', 'modules.id', '=', 'module_rol.module_id')
+            ->where('module_rol.rol_id', $this->rol_id)
+            ->select('modules.slug', 'module_rol.can_view', 'module_rol.can_create', 'module_rol.can_edit', 'module_rol.can_delete')
+            ->get()
+            ->keyBy('slug');
+
+        $this->modulePermissionsCache = $permissions;
+        return $permissions;
+    }
+
+    /**
+     * Clear the cached permissions (useful after role changes).
+     */
+    public function clearModulePermissionsCache()
+    {
+        $this->modulePermissionsCache = null;
+    }
+
     public function hasModuleAccess($moduleSlug)
     {
-        $module = Module::where('slug', $moduleSlug)->first();
-        if (!$module) return false;
-        
-        $rolModule = DB::table('module_rol')
-            ->where('module_id', $module->id)
-            ->where('rol_id', $this->rol_id)
-            ->first();
-        
-        return $rolModule && $rolModule->can_view;
+        $perms = $this->getModulePermissions();
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view;
     }
 
     public function canAccessModule($moduleSlug)
     {
-        $module = Module::where('slug', $moduleSlug)->first();
-        if (!$module) return false;
-        
-        $rolModule = DB::table('module_rol')
-            ->where('module_id', $module->id)
-            ->where('rol_id', $this->rol_id)
-            ->first();
-        
-        return $rolModule && $rolModule->can_view;
+        $perms = $this->getModulePermissions();
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view;
     }
 
     public function canCreateModule($moduleSlug)
     {
-        $module = Module::where('slug', $moduleSlug)->first();
-        if (!$module) return false;
-        
-        $rolModule = DB::table('module_rol')
-            ->where('module_id', $module->id)
-            ->where('rol_id', $this->rol_id)
-            ->first();
-        
-        return $rolModule && $rolModule->can_create;
+        $perms = $this->getModulePermissions();
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_create;
     }
 
     public function canEditModule($moduleSlug)
     {
-        $module = Module::where('slug', $moduleSlug)->first();
-        if (!$module) return false;
-        
-        $rolModule = DB::table('module_rol')
-            ->where('module_id', $module->id)
-            ->where('rol_id', $this->rol_id)
-            ->first();
-        
-        return $rolModule && $rolModule->can_edit;
+        $perms = $this->getModulePermissions();
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_edit;
     }
 
     public function canDeleteModule($moduleSlug)
     {
-        $module = Module::where('slug', $moduleSlug)->first();
-        if (!$module) return false;
-        
-        $rolModule = DB::table('module_rol')
-            ->where('module_id', $module->id)
-            ->where('rol_id', $this->rol_id)
-            ->first();
-        
-        return $rolModule && $rolModule->can_delete;
+        $perms = $this->getModulePermissions();
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_delete;
     }
 }

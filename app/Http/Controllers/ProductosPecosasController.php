@@ -20,6 +20,7 @@ use App\Models\People;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class ProductosPecosasController extends Controller
 {
@@ -29,7 +30,10 @@ class ProductosPecosasController extends Controller
     {
         $query = Product::query()
             ->select(['id', 'title', 'abbreviation', 'state_id', 'uom_id', 'created_at', 'updated_at'])
-            ->with(['state:id,title,abbreviation', 'uom:id,title', 'detailProducts:id,product_id,quantity,unit_price,start_date,end_date']);
+            ->with(['state:id,title,abbreviation', 'uom:id,title', 'detailProducts' => function ($q) {
+                $q->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
+                    ->withSum('stocks as used_quantity', 'quantity');
+            }]);
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
@@ -57,19 +61,13 @@ class ProductosPecosasController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(10);
         
-        $detailProductIds = DetailProduct::pluck('id');
-        $usedQuantities = DetailPecosa::whereIn('detail_product_id', $detailProductIds)
-            ->groupBy('detail_product_id')
-            ->select('detail_product_id', DB::raw('SUM(quantity) as total_used'))
-            ->pluck('total_used', 'detail_product_id')
-            ->toArray();
-            
         $detailProductsList = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
             ->with(['product:id,title,abbreviation'])
+            ->withSum('stocks as used_quantity', 'quantity')
             ->orderBy('start_date', 'asc')
             ->get()
-            ->map(function($dp) use ($usedQuantities) {
-                $dp->available_stock = $dp->quantity - ($usedQuantities[$dp->id] ?? 0);
+            ->map(function($dp) {
+                $dp->available_stock = $dp->quantity - ($dp->used_quantity ?? 0);
                 return $dp;
             });
 
@@ -87,7 +85,10 @@ class ProductosPecosasController extends Controller
     {
         $query = Product::query()
             ->select(['id', 'title', 'abbreviation', 'state_id', 'uom_id', 'created_at', 'updated_at'])
-            ->with(['state:id,title,abbreviation', 'uom:id,title', 'detailProducts:id,product_id,quantity,unit_price,start_date,end_date']);
+            ->with(['state:id,title,abbreviation', 'uom:id,title', 'detailProducts' => function ($q) {
+                $q->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
+                    ->withSum('stocks as used_quantity', 'quantity');
+            }]);
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
@@ -111,7 +112,8 @@ class ProductosPecosasController extends Controller
 
         $detailQuery = DetailProduct::query()
             ->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date', 'created_at'])
-            ->with(['product:id,title,abbreviation,state_id,uom_id', 'stocks:id,detail_product_id,pecosa_id,quantity']);
+            ->with(['product:id,title,abbreviation,state_id,uom_id'])
+            ->withSum('stocks as used_quantity', 'quantity');
 
         if ($request->filled('product_id')) {
             $detailQuery->where('product_id', $request->product_id);
@@ -267,7 +269,7 @@ class ProductosPecosasController extends Controller
         
         $associationIds = $associationsForModal->pluck('id');
         $activeState = State::where('abbreviation', 'A')->first();
-        $presidentPosition = Position::where('title', 'like', '%PRESIDENTA%')->first();
+        $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
         
         $directives = Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id']);
         
@@ -301,27 +303,21 @@ class ProductosPecosasController extends Controller
                 : null;
         }
         
-        $partners = Partner::select(['id', 'person_id', 'association_id', 'state_id'])
-            ->with(['people:id,names,father_lastname,mother_lastname,dni'])
+        $partners = Partner::select(['id', 'person_id', 'association_id'])
+            ->with(['people:id,names,father_lastname,dni'])
             ->get();
         $responsibles = Responsible::select(['id', 'person_id', 'type', 'active'])
             ->with(['person:id,names,father_lastname,mother_lastname,dni'])
             ->where('active', true)
             ->get();
         
-        $detailProductIds = DetailProduct::orderBy('id')->pluck('id');
-        $usedQuantities = DetailPecosa::whereIn('detail_product_id', $detailProductIds)
-            ->groupBy('detail_product_id')
-            ->select('detail_product_id', DB::raw('SUM(quantity) as total_used'))
-            ->pluck('total_used', 'detail_product_id')
-            ->toArray();
-            
         $detailProductsList = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
             ->with(['product:id,title,abbreviation'])
+            ->withSum('stocks as used_quantity', 'quantity')
             ->orderBy('start_date', 'asc')
             ->get()
-            ->map(function($dp) use ($usedQuantities) {
-                $dp->available_stock = $dp->quantity - ($usedQuantities[$dp->id] ?? 0);
+            ->map(function($dp) {
+                $dp->available_stock = $dp->quantity - ($dp->used_quantity ?? 0);
                 return $dp;
             });
 
@@ -335,30 +331,51 @@ class ProductosPecosasController extends Controller
             ? Association::where('state_id', $estadoActivo->id)->get()
             : Association::all();
         
-        // Agregar president_partner_id y president_name a cada asociación
-        foreach ($associations as $association) {
-            $president = $association->getPresidenta();
-            $association->president_partner_id = $president ? $president->id : null;
-            $association->president_name = $president && $president->people 
-                ? $president->people->names . ' ' . $president->people->father_lastname 
-                : null;
+        // Batch-load presidentas for all associations in ONE query instead of N loops
+        if ($estadoActivo) {
+            $presidentPosition = \App\Models\Position::where('title', 'PRESIDENTA')->first();
+            if ($presidentPosition) {
+                $resolutionIds = $associations->pluck('resolution_id')->filter()->unique()->values();
+                $directives = \App\Models\Directive::whereIn('resolution_id', $resolutionIds)
+                    ->where('position_id', $presidentPosition->id)
+                    ->where('state_id', $estadoActivo->id)
+                    ->with('partner.people')
+                    ->get()
+                    ->keyBy('resolution_id');
+                
+                foreach ($associations as $association) {
+                    $directive = $directives->get($association->resolution_id);
+                    $president = $directive ? $directive->partner : null;
+                    $association->president_partner_id = $president ? $president->id : null;
+                    $association->president_name = $president && $president->people 
+                        ? $president->people->names . ' ' . $president->people->father_lastname 
+                        : null;
+                }
+            }
         }
 
-        $states = State::all();
-        $partners = Partner::with('people')->get();
-        $products = Product::with(['detailProducts', 'uom'])->get();
+        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
+        $products = Product::with(['uom', 'detailProducts' => function ($q) {
+            $q->withSum('stocks as used_quantity', 'quantity');
+        }])->get();
         $uoms = Uom::all();
         $responsibles = \App\Models\Responsible::with('person')->where('active', true)->get();
         
+        // Batch-load stock usage in ONE query instead of N+1
         $detailProductsList = DetailProduct::with('product')
             ->where('end_date', '>=', now()->toDateString())
             ->orderBy('start_date', 'asc')
-            ->get()
-            ->map(function($dp) {
-                $used = \App\Models\ProductStock::where('detail_product_id', $dp->id)->sum('quantity');
-                $dp->available_stock = $dp->quantity - $used;
-                return $dp;
-            });
+            ->get();
+        
+        $usedQuantities = \App\Models\ProductStock::selectRaw('detail_product_id, SUM(quantity) as total_used')
+            ->whereIn('detail_product_id', $detailProductsList->pluck('id'))
+            ->groupBy('detail_product_id')
+            ->pluck('total_used', 'detail_product_id');
+        
+        $detailProductsList->each(function($dp) use ($usedQuantities) {
+            $dp->available_stock = $dp->quantity - ($usedQuantities[$dp->id] ?? 0);
+        });
 
         return view('productos-pecosas.pecosas.create', 
             compact('associations', 'states', 'partners', 'products', 'uoms', 'responsibles', 'detailProductsList'));
@@ -390,66 +407,35 @@ class ProductosPecosasController extends Controller
             return back()->withInput()->with('error', 'No se permiten productos duplicados en la misma PECOSA.');
         }
 
+        $detailProductsById = DetailProduct::with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
+            ->withSum('stocks as used_quantity', 'quantity')
+            ->whereIn('id', $detailProductIds)
+            ->get()
+            ->keyBy('id');
+
         foreach ($request->details as $detail) {
-            $detailProduct = DetailProduct::find($detail['detail_product_id']);
+            $detailProduct = $detailProductsById->get($detail['detail_product_id']);
             if (!$detailProduct) {
                 return back()->withInput()->with('error', 'Detalle de producto no encontrado.');
             }
-            $availableStock = $detailProduct->quantity - ProductStock::where('detail_product_id', $detailProduct->id)->sum('quantity');
+            $availableStock = $detailProduct->quantity - ($detailProduct->used_quantity ?? 0);
             if ($availableStock < $detail['quantity']) {
                 $product = $detailProduct->product;
                 return back()->withInput()->with('error', 
-                    "Stock insuficiente para {$product->title}. Disponible: {$availableStock}, Solicitado: {$detail['quantity']}");
+                    "Stock insuficiente para " . ($product->title ?? 'producto') . ". Disponible: {$availableStock}, Solicitado: {$detail['quantity']}");
             }
         }
 
         try {
             DB::beginTransaction();
 
-            $chiefName = null;
-            if ($request->filled('chief_id')) {
-                $chief = \App\Models\Responsible::with('person')->find($request->chief_id);
-                if ($chief && $chief->person) {
-                    $chiefName = $chief->person->names . ' ' . $chief->person->father_lastname;
-                }
-            }
-
-            $storekeeperName = null;
-            if ($request->filled('storekeeper_id')) {
-                $storekeeper = \App\Models\Responsible::with('person')->find($request->storekeeper_id);
-                if ($storekeeper && $storekeeper->person) {
-                    $storekeeperName = $storekeeper->person->names . ' ' . $storekeeper->person->father_lastname;
-                }
-            }
-
-            $managingPartnerName = null;
-            if ($request->filled('managing_partner_id')) {
-                $managingPartner = Partner::with('people')->find($request->managing_partner_id);
-                if ($managingPartner && $managingPartner->people) {
-                    $managingPartnerName = $managingPartner->people->names . ' ' . $managingPartner->people->father_lastname;
-                }
-            }
-
-            $presidentName = null;
-            $association = Association::find($request->association_id);
-            if ($association) {
-                $presidentName = $association->getPresidentName();
-            }
-
-            $pecosaData = array_merge($validated, [
-                'chief_name'            => $chiefName,
-                'storekeeper_name'      => $storekeeperName,
-                'managing_partner_name' => $managingPartnerName,
-                'president_name'        => $presidentName,
-                'association_name'      => $association ? $association->name : null,
-                'association_code'      => $association ? $association->code : null,
-            ]);
+            $pecosaData = array_merge($validated, $this->buildPecosaSnapshot($request));
 
             $pecosa = Pecosa::create($pecosaData);
             $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
 
             foreach ($request->details as $index => $detail) {
-                $detailProduct = DetailProduct::with('product.uom')->find($detail['detail_product_id']);
+                $detailProduct = $detailProductsById->get($detail['detail_product_id']);
                 
                 $unitPrice = $detailProduct ? $detailProduct->unit_price : ($detail['unit_price'] ?? 0);
                 $subtotal  = $detail['quantity'] * $unitPrice;
@@ -498,12 +484,13 @@ class ProductosPecosasController extends Controller
         $detailProducts = DetailProduct::where('product_id', $productId)
             ->where('start_date', '<=', now()->toDateString())
             ->where('end_date', '>=', now()->toDateString())
+            ->withSum('stocks as used_quantity', 'quantity')
             ->get();
 
         $totalStock = 0;
         foreach ($detailProducts as $detail) {
             $in = $detail->quantity;
-            $out = ProductStock::where('detail_product_id', $detail->id)->sum('quantity');
+            $out = $detail->used_quantity ?? 0;
             $totalStock += ($in - $out);
         }
 
@@ -515,6 +502,7 @@ class ProductosPecosasController extends Controller
         $detailProducts = DetailProduct::where('product_id', $productId)
             ->where('start_date', '<=', now()->toDateString())
             ->where('end_date', '>=', now()->toDateString())
+            ->withSum('stocks as used_quantity', 'quantity')
             ->orderBy('start_date', 'asc')
             ->get();
 
@@ -525,7 +513,7 @@ class ProductosPecosasController extends Controller
                 break;
             }
 
-            $available = $detail->quantity - ProductStock::where('detail_product_id', $detail->id)->sum('quantity');
+            $available = $detail->quantity - ($detail->used_quantity ?? 0);
 
             if ($available > 0) {
                 $deduct = min($remainingToDeduct, $available);
@@ -550,13 +538,13 @@ class ProductosPecosasController extends Controller
 
     private function deductStockByDetailProduct($detailProductId, $quantity, $pecosaId = null)
     {
-        $detailProduct = DetailProduct::find($detailProductId);
+        $detailProduct = DetailProduct::withSum('stocks as used_quantity', 'quantity')->find($detailProductId);
         
         if (!$detailProduct) {
             throw new \Exception('Detalle de producto no encontrado.');
         }
 
-        $available = $detailProduct->quantity - ProductStock::where('detail_product_id', $detailProductId)->sum('quantity');
+        $available = $detailProduct->quantity - ($detailProduct->used_quantity ?? 0);
 
         if ($quantity > $available) {
             throw new \Exception('Stock insuficiente. Disponible: ' . $available . ', Solicitado: ' . $quantity);
@@ -577,6 +565,7 @@ class ProductosPecosasController extends Controller
         $detailProducts = DetailProduct::where('product_id', $productId)
             ->where('start_date', '<=', now()->toDateString())
             ->where('end_date', '>=', now()->toDateString())
+            ->withSum('stocks as used_quantity', 'quantity')
             ->get();
 
         $totalStock = 0;
@@ -584,7 +573,7 @@ class ProductosPecosasController extends Controller
 
         foreach ($detailProducts as $detail) {
             $in = $detail->quantity;
-            $out = ProductStock::where('detail_product_id', $detail->id)->sum('quantity');
+            $out = $detail->used_quantity ?? 0;
             $available = $in - $out;
             
             $totalStock += $available;
@@ -602,6 +591,98 @@ class ProductosPecosasController extends Controller
     {
         $pecosa->load(['detailPecosas.detailProduct.product', 'association', 'managingPartner.people']);
         return view('productos-pecosas.pecosas.show', compact('pecosa'));
+    }
+
+    private function buildPecosaSnapshot(Request $request): array
+    {
+        $chief = $request->filled('chief_id')
+            ? Responsible::with('person')->find($request->chief_id)
+            : null;
+        $storekeeper = $request->filled('storekeeper_id')
+            ? Responsible::with('person')->find($request->storekeeper_id)
+            : null;
+        $managingPartner = $request->filled('managing_partner_id')
+            ? Partner::with('people')->find($request->managing_partner_id)
+            : null;
+        $association = Association::with(['placeSector.place', 'placeSector.sector'])
+            ->find($request->association_id);
+        $president = $association ? $association->getPresidenta() : null;
+
+        return [
+            'chief_name' => $chief && $chief->person ? $this->formatPersonName($chief->person) : null,
+            'chief_dni' => $chief && $chief->person ? $chief->person->dni : null,
+            'storekeeper_name' => $storekeeper && $storekeeper->person ? $this->formatPersonName($storekeeper->person) : null,
+            'storekeeper_dni' => $storekeeper && $storekeeper->person ? $storekeeper->person->dni : null,
+            'managing_partner_name' => $managingPartner && $managingPartner->people ? $this->formatPersonName($managingPartner->people) : null,
+            'managing_partner_dni' => $managingPartner && $managingPartner->people ? $managingPartner->people->dni : null,
+            'president_name' => $president && $president->people ? $this->formatPersonName($president->people) : null,
+            'president_dni' => $president && $president->people ? $president->people->dni : null,
+            'association_name' => $association ? $association->name : null,
+            'association_code' => $association ? $association->code : null,
+            'association_address' => $association ? $association->address : null,
+            'association_zone_code' => $association && $association->placeSector && $association->placeSector->place
+                ? $association->placeSector->place->code
+                : null,
+            'association_zone_name' => $association && $association->placeSector && $association->placeSector->place
+                ? $association->placeSector->place->title
+                : null,
+            'association_sector_name' => $association && $association->placeSector && $association->placeSector->sector
+                ? $association->placeSector->sector->title
+                : null,
+            'beneficiaries_count' => $association
+                ? $this->countBeneficiariesForAssociationAtDate($association->id, $request->delivery_date)
+                : 0,
+        ];
+    }
+
+    private function formatPersonName($person): string
+    {
+        return trim(collect([
+            $person->names ?? '',
+            $person->father_lastname ?? '',
+            $person->mother_lastname ?? '',
+        ])->filter()->implode(' '));
+    }
+
+    private function countBeneficiariesForAssociationAtDate($associationId, $date): int
+    {
+        $targetDate = Carbon::parse($date)->toDateString();
+        $activeStateIds = State::whereIn('abbreviation', ['A', 'ACTI'])
+            ->orWhereRaw('LOWER(title) = ?', ['activo'])
+            ->pluck('id');
+
+        return Partner::where('association_id', $associationId)
+            ->when($activeStateIds->isNotEmpty(), function ($query) use ($activeStateIds) {
+                $query->whereIn('state_id', $activeStateIds);
+            })
+            ->where(function ($query) use ($targetDate) {
+                $query->whereNull('date_begin')
+                    ->orWhere('date_begin', '<=', $targetDate);
+            })
+            ->where(function ($query) use ($targetDate) {
+                $query->whereNull('date_end')
+                    ->orWhere('date_end', '>=', $targetDate);
+            })
+            ->withCount(['beneficiaries as historical_beneficiaries_count' => function ($query) use ($activeStateIds, $targetDate) {
+                $query->where(function ($query) use ($activeStateIds, $targetDate) {
+                    $query->whereDoesntHave('histories')
+                        ->orWhereHas('histories', function ($history) use ($activeStateIds, $targetDate) {
+                            $history->when($activeStateIds->isNotEmpty(), function ($query) use ($activeStateIds) {
+                                $query->whereIn('state_id', $activeStateIds);
+                            })
+                            ->where(function ($query) use ($targetDate) {
+                                $query->whereNull('date_begin')
+                                    ->orWhere('date_begin', '<=', $targetDate);
+                            })
+                            ->where(function ($query) use ($targetDate) {
+                                $query->whereNull('date_end')
+                                    ->orWhere('date_end', '>=', $targetDate);
+                            });
+                        });
+                });
+            }])
+            ->get()
+            ->sum('historical_beneficiaries_count');
     }
 
     public function generarComprobante(Pecosa $pecosa)
@@ -623,12 +704,14 @@ class ProductosPecosasController extends Controller
         $articulos = [];
         foreach ($pecosa->detailPecosas as $index => $detail) {
             $product = $detail->detailProduct->product ?? null;
+            $productName = $detail->product_name ?? ($product ? $product->title : '-');
+            $productAbbreviation = $detail->product_abbreviation ?? ($product ? $product->abbreviation : null);
             $articulos[] = [
                 'numero' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'cantidad_solicitado' => $formatCantidad($detail->quantity),
-                'descripcion' => $product ? $product->title . ' (' . $product->abbreviation . ')' : '-',
+                'descripcion' => $productAbbreviation ? $productName . ' (' . $productAbbreviation . ')' : $productName,
                 'cantidad_despachado' => $formatCantidad($detail->quantity),
-                'unidad' => $product && $product->uom ? $product->uom->title : 'UNIDAD',
+                'unidad' => $detail->uom_title ?? ($product && $product->uom ? $product->uom->title : 'UNIDAD'),
                 'unitary' => number_format($detail->unit_price, 2),
                 'unitario' => number_format($detail->unit_price, 2),
                 'total' => number_format($detail->quantity * $detail->unit_price, 2),
@@ -644,44 +727,44 @@ class ProductosPecosasController extends Controller
         $jefeName = $pecosa->chief_name ?? ($jefePerson ? trim($jefePerson->names . ' ' . $jefePerson->father_lastname . ' ' . $jefePerson->mother_lastname) : 'ENCARGADO DE PROVALE');
         $storekeeperName = $pecosa->storekeeper_name ?? ($storekeeperPerson ? trim($storekeeperPerson->names . ' ' . $storekeeperPerson->father_lastname . ' ' . $storekeeperPerson->mother_lastname) : 'JEFA DE ALMACÉN PROVALE');
         $association = $pecosa->association;
-        $zonaCode = $association && $association->placeSector && $association->placeSector->place
+        $zonaCode = $pecosa->association_zone_code ?: ($association && $association->placeSector && $association->placeSector->place
             ? ($association->placeSector->place->code ?? '01')
-            : '01';
-        $totalBeneficiarios = $association
+            : '01');
+        $totalBeneficiarios = $pecosa->beneficiaries_count ?? ($association
             ? $association->partners->sum(function ($partner) {
                 return $partner->beneficiaries->count();
             })
-            : 0;
+            : 0);
         $fechaLarga = Carbon::parse($pecosa->delivery_date)
             ->locale('es')
             ->translatedFormat('l, j \d\e F \d\e Y');
 
         $data = [
             'zona' => $zonaCode,
-            'comite' => $association ? $association->code : 'N/A',
+            'comite' => $pecosa->association_code ?? ($association ? $association->code : 'N/A'),
             'num_mes' => $totalBeneficiarios,
             'racion' => 'N/A',
             'numero_orden' => $pecosa->pecosa_number,
             'solicitante_nombre' => $pecosa->managing_partner_name ?? 'N/A',
-            'domicilio' => $association ? $association->name : 'N/A',
+            'domicilio' => $pecosa->association_name ?? ($association ? $association->name : 'N/A'),
             'fecha' => $fechaLarga,
             'articulos' => $articulos,
             'total_general' => 'S/. ' . $total_general,
             'encargado_almacen' => $jefeName,
-            'dni_encargado' => $jefePerson->dni ?? '',
+            'dni_encargado' => $pecosa->chief_dni ?? ($jefePerson->dni ?? ''),
             'control' => $storekeeperName,
-            'dni_control' => $storekeeperPerson->dni ?? '',
+            'dni_control' => $pecosa->storekeeper_dni ?? ($storekeeperPerson->dni ?? ''),
         ];
 
-        $pdf = \PDF::loadView('comprobante_salida', $data);
+        $pdf = PDF::loadView('comprobante_salida', $data);
         return $pdf->setPaper('A4', 'landscape')->stream('comprobante-salida-' . $pecosa->pecosa_number . '.pdf');
     }
 
     public function editPecosa(Pecosa $pecosa)
     {
-        $associations = Association::all();
-        $states = State::all();
-        $partners = Partner::with('people')->get();
+        $associations = Association::select(['id', 'name', 'code'])->get();
+        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         return view('productos-pecosas.pecosas.edit', compact('pecosa', 'associations', 'states', 'partners'));
     }
 
@@ -714,7 +797,7 @@ class ProductosPecosasController extends Controller
             Transaction::where('document_number', $pecosa->pecosa_number)->delete();
             DetailPecosa::where('pecosa_id', $pecosa->id)->delete();
 
-            $pecosa->update($validated);
+            $pecosa->update(array_merge($validated, $this->buildPecosaSnapshot($request)));
 
             $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
 
@@ -775,7 +858,9 @@ class ProductosPecosasController extends Controller
 
     public function generarReporteProductos($tipo, Request $request)
     {
-        $query = Product::with(['state', 'uom', 'detailProducts']);
+        $query = Product::with(['state', 'uom', 'detailProducts' => function ($q) {
+            $q->withSum('stocks as used_quantity', 'quantity');
+        }]);
 
         switch ($tipo) {
             case 'general':
@@ -863,26 +948,67 @@ class ProductosPecosasController extends Controller
         $anio = $request->get('year', date('Y'));
         $sector = $request->get('sector', '');
 
+        $startDate = Carbon::create((int) $anio, (int) $mes, 1)->startOfMonth()->toDateString();
+        $endDate = Carbon::create((int) $anio, (int) $mes, 1)->endOfMonth()->toDateString();
         $estadoActivo = State::where('abbreviation', 'ACTI')->first();
-        $associations = Association::with(['placeSector.place', 'partners.beneficiaries'])
+        $associations = Association::with(['placeSector.place', 'partners.beneficiaries.person:id,birthdate'])
             ->when($estadoActivo, function ($q) use ($estadoActivo) {
                 $q->where('state_id', $estadoActivo->id);
             })
             ->get();
 
+        $associationIds = $associations->pluck('id');
+        $resolutionRows = DB::table('resolution_associations')
+            ->whereIn('association_id', $associationIds)
+            ->select('association_id', 'resolution_id')
+            ->get();
+        $resolutionIdsByAssociation = $resolutionRows->mapToGroups(function ($row) {
+            return [$row->association_id => $row->resolution_id];
+        });
+
+        foreach ($associations as $association) {
+            if ($association->resolution_id) {
+                $resolutionIdsByAssociation->put(
+                    $association->id,
+                    ($resolutionIdsByAssociation->get($association->id, collect()))
+                        ->push($association->resolution_id)
+                        ->unique()
+                        ->values()
+                );
+            }
+        }
+
+        $allResolutionIds = $resolutionIdsByAssociation->flatten()->unique()->values();
+        $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
+        $directivesByResolution = collect();
+
+        if ($presidentPosition && $estadoActivo && $allResolutionIds->isNotEmpty()) {
+            $directivesByResolution = Directive::whereIn('resolution_id', $allResolutionIds)
+                ->where('position_id', $presidentPosition->id)
+                ->where('state_id', $estadoActivo->id)
+                ->with(['partner.people:id,names,father_lastname,dni'])
+                ->get()
+                ->keyBy('resolution_id');
+        }
+
+        $pecosasByAssociation = Pecosa::with('detailPecosas:id,pecosa_id,quantity')
+            ->whereIn('association_id', $associationIds)
+            ->whereBetween('delivery_date', [$startDate, $endDate])
+            ->get()
+            ->keyBy('association_id');
+
         $clubes = [];
         foreach ($associations as $association) {
             $presidenta = '';
-            $resolutionIds = DB::table('resolution_associations')
-                ->where('association_id', $association->id)
-                ->pluck('resolution_id');
-            
-            $directiva = \App\Models\Directive::whereIn('resolution_id', $resolutionIds)
-                ->whereHas('position', function ($q) {
-                    $q->where('title', 'like', '%PRESIDENTA%');
-                })->whereHas('state', function ($q) {
-                    $q->where('abbreviation', 'ACTI');
-                })->with('partner.people')->first();
+            $directiva = null;
+            $resolutionIds = $resolutionIdsByAssociation->get($association->id, collect());
+
+            foreach ($resolutionIds as $resolutionId) {
+                if ($directivesByResolution->has($resolutionId)) {
+                    $directiva = $directivesByResolution->get($resolutionId);
+                    break;
+                }
+            }
 
             if ($directiva && $directiva->partner && $directiva->partner->people) {
                 $p = $directiva->partner->people;
@@ -910,11 +1036,7 @@ class ProductosPecosasController extends Controller
                 }
             }
 
-            $pecosa = Pecosa::with('detailPecosas.detailProduct.product')
-                ->where('association_id', $association->id)
-                ->whereMonth('delivery_date', $mes)
-                ->whereYear('delivery_date', $anio)
-                ->first();
+            $pecosa = $pecosasByAssociation->get($association->id);
 
             $bolsas = 0;
             $kilos = 0;
@@ -947,7 +1069,7 @@ class ProductosPecosasController extends Controller
             'anio' => $anio,
         ];
 
-        $pdf = \PDF::loadView('programacion_entrega', $data);
+        $pdf = PDF::loadView('programacion_entrega', $data);
         return $pdf->setPaper('A4', 'landscape')->stream('programacion-entrega-' . $anio . '-' . sprintf('%02d', $mes) . '.pdf');
     }
 
@@ -957,7 +1079,8 @@ class ProductosPecosasController extends Controller
     {
         $query = DetailProduct::query()
             ->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date', 'created_at'])
-            ->with(['product:id,title,abbreviation,state_id,uom_id', 'stocks:id,detail_product_id,pecosa_id,quantity']);
+            ->with(['product:id,title,abbreviation,state_id,uom_id'])
+            ->withSum('stocks as used_quantity', 'quantity');
 
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->product_id);
@@ -1009,7 +1132,8 @@ class ProductosPecosasController extends Controller
     {
         $query = DetailProduct::query()
             ->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date', 'created_at'])
-            ->with(['product:id,title,abbreviation,state_id,uom_id', 'stocks:id,detail_product_id,pecosa_id,quantity']);
+            ->with(['product:id,title,abbreviation,state_id,uom_id'])
+            ->withSum('stocks as used_quantity', 'quantity');
 
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->product_id);

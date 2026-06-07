@@ -6,6 +6,7 @@ use App\Models\Beneficiarie;
 use App\Models\Partner;
 use App\Models\Relationship;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class BeneficiarieController extends Controller
 {
@@ -32,7 +33,7 @@ class BeneficiarieController extends Controller
         }
 
         $beneficiaries = $query->orderBy('id', 'desc')->paginate(10);
-        $partners = Partner::with('people')->get();
+        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         $relationships = Relationship::all();
 
         return view('beneficiarios.index', compact('beneficiaries', 'partners', 'relationships'));
@@ -40,7 +41,7 @@ class BeneficiarieController extends Controller
 
     public function create()
     {
-        $partners = Partner::with('people')->get();
+        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         $relationships = Relationship::all();
         return view('beneficiarios.create', compact('partners', 'relationships'));
     }
@@ -65,7 +66,7 @@ class BeneficiarieController extends Controller
 
     public function edit(Beneficiarie $beneficiarie)
     {
-        $partners = Partner::with('people')->get();
+        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         $relationships = Relationship::all();
         return view('beneficiarios.edit', compact('beneficiarie', 'partners', 'relationships'));
     }
@@ -111,7 +112,7 @@ class BeneficiarieController extends Controller
             case 'relacion':
                 $relationshipId = $request->get('relationship_id');
                 $beneficiaries = $query->where('relationship_id', $relationshipId)->get();
-                $relationship = \App\Models\Relationship::find($relationshipId);
+                $relationship = Relationship::find($relationshipId);
                 $titulo = 'Beneficiarios - Relación: ' . ($relationship->title ?? 'N/A');
                 break;
             case 'estadistico':
@@ -124,7 +125,7 @@ class BeneficiarieController extends Controller
         }
 
         $orientacion = $request->get('orientacion', 'portrait');
-        $pdf = \PDF::loadView('reportes.beneficiarios', compact('beneficiaries', 'titulo', 'tipo'));
+        $pdf = PDF::loadView('reportes.beneficiarios', compact('beneficiaries', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
         return $pdf->download('reporte-beneficiarios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }
@@ -132,7 +133,7 @@ class BeneficiarieController extends Controller
     public function imprimir()
     {
         $logoPath = public_path('img/muni2.png');
-        $pdf = \PDF::loadView('ficha_beneficiario', compact('logoPath'));
+        $pdf = PDF::loadView('ficha_beneficiario', compact('logoPath'));
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('ficha-beneficiario-' . date('Y-m-d-His') . '.pdf');
     }

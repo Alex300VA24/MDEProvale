@@ -234,6 +234,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
 let detailCountModal = 0;
 let detailProductsListModal = @json($detailProductsList ?? []);
@@ -399,7 +400,44 @@ function updateDetailPriceEdit(select, pecosaId, idx) {
     const priceInput = document.getElementById('price_edit_' + pecosaId + '_' + idx);
     if (priceInput && price) priceInput.value = price;
 }
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof $ !== 'undefined' && $.fn.select2) {
+        var s2ProductsData = detailProductsListModal.filter(function(dp) {
+            return dp.available_stock > 0;
+        }).map(function(dp) {
+            var productName = dp.product ? dp.product.title + ' (' + dp.product.abbreviation.trim() + ')' : 'Sin nombre';
+            var period = fmtDate(dp.start_date) + ' al ' + fmtDate(dp.end_date);
+            return {
+                id: dp.id,
+                text: productName + ' - Stock: ' + dp.available_stock + ' (' + period + ')',
+                product_id: dp.product_id,
+                price: dp.unit_price,
+                stock: dp.available_stock
+            };
+        });
+
+        // Initialize Select2 on existing edit dropdowns
+        $('.select2-product-edit').select2({
+            data: s2ProductsData,
+            width: '100%',
+            placeholder: 'Seleccionar producto...',
+            templateSelection: function(data) {
+                if (!data.id) { return data.text; }
+                if ($(data.element).length > 0 && data.element.selected) {
+                    return data.text; // Es la opcion original (que ya tiene el texto completo)
+                }
+                return data.text;
+            }
+        });
+        
+        // Asignamos data a la creación dinámica
+        window.s2ProductsData = s2ProductsData;
+    }
+});
 </script>
+@endpush
 
 @foreach($pecosas as $pecosa)
 
@@ -546,30 +584,21 @@ function updateDetailPriceEdit(select, pecosaId, idx) {
                                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <div class="md:col-span-2">
                                         <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto (Detalle)</label>
-                                        <select name="details[{{ $i }}][detail_product_id]" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required onchange="updateDetailPriceEdit(this, {{ $pecosa->id }}, {{ $i }})">
+                                        <select name="details[{{ $i }}][detail_product_id]" class="select2-product-edit w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required onchange="updateDetailPriceEdit(this, {{ $pecosa->id }}, {{ $i }})">
                                             <option value="">Seleccionar producto...</option>
                                             @php
                                                 $currentDpInList = $detailProductsList->firstWhere('id', $detail->detail_product_id);
                                             @endphp
-                                            @if(!$currentDpInList && $detail->detailProduct)
+                                            @if($detail->detailProduct)
                                                 @php $dp = $detail->detailProduct; @endphp
                                                 <option value="{{ $dp->id }}"
                                                     data-product-id="{{ $dp->product_id }}"
                                                     data-price="{{ $dp->unit_price }}"
-                                                    data-stock="0"
+                                                    data-stock="{{ $currentDpInList ? $currentDpInList->available_stock : 0 }}"
                                                     selected>
-                                                    {{ $dp->product ? $dp->product->title . ' (' . $dp->product->abbreviation . ')' : 'Sin nombre' }} - Stock: 0 ({{ \Carbon\Carbon::parse($dp->start_date)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($dp->end_date)->format('d/m/Y') }})
+                                                    {{ $dp->product ? $dp->product->title . ' (' . $dp->product->abbreviation . ')' : 'Sin nombre' }} - Stock: {{ $currentDpInList ? $currentDpInList->available_stock : 0 }} ({{ \Carbon\Carbon::parse($dp->start_date)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($dp->end_date)->format('d/m/Y') }})
                                                 </option>
                                             @endif
-                                            @foreach($detailProductsList as $dp)
-                                                <option value="{{ $dp->id }}"
-                                                    data-product-id="{{ $dp->product_id }}"
-                                                    data-price="{{ $dp->unit_price }}"
-                                                    data-stock="{{ $dp->available_stock }}"
-                                                    {{ $detail->detail_product_id == $dp->id ? 'selected' : '' }}>
-                                                    {{ $dp->product ? $dp->product->title . ' (' . $dp->product->abbreviation . ')' : 'Sin nombre' }} - Stock: {{ $dp->available_stock }} ({{ \Carbon\Carbon::parse($dp->start_date)->format('d/m/Y') }} al {{ \Carbon\Carbon::parse($dp->end_date)->format('d/m/Y') }})
-                                                </option>
-                                            @endforeach
                                         </select>
                                         <input type="hidden" name="details[{{ $i }}][product_id]" id="product_id_edit_{{ $pecosa->id }}_{{ $i }}" value="{{ $detail->detailProduct->product_id ?? '' }}">
                                     </div>

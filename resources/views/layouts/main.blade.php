@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/select2.min.css') }}">
     <script src="{{ asset('js/app.js') }}" defer></script>
 
     <style>
@@ -704,7 +705,7 @@
             var container = document.getElementById('notifications-container');
             if (!container) return;
             
-            fetch('/sistema/notifications/partial')
+            fetch('{{ route('sistema.notifications.partial') }}')
             .then(function(response) {
                 if (!response.ok) throw new Error('Error HTTP: ' + response.status);
                 return response.text();
@@ -857,7 +858,7 @@
             );
         }
 
-        function openModal(id) {
+        function openModalSecond(id) {
             document.querySelectorAll('.fixed.z-40, .fixed.z-50, .fixed.z-60, .fixed.z-\\[70\\]').forEach(el => {
                 el.classList.add('hidden');
                 el.style.display = 'none';
@@ -866,6 +867,11 @@
             element.classList.remove('hidden');
             element.style.display = 'block';
             document.body.style.overflow = 'hidden';
+            
+            if (id === 'modal-notifications' && !modalOpened) {
+                modalOpened = true;
+                loadNotifications();
+            }
         }
 
         function closeModal(id) {
@@ -1039,6 +1045,11 @@
         // Ocultar al restaurar desde caché (back/forward)
         window.addEventListener('pageshow', function() { hideLoading(); });
     </script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="{{ asset('js/select2.min.js') }}"></script>
+
+    @stack('scripts')
 
 </body>
 

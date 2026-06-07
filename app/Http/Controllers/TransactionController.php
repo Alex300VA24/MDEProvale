@@ -12,6 +12,7 @@ use App\Models\State;
 use App\Models\Association;
 use App\Models\Directive;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class TransactionController extends Controller
 {
@@ -138,12 +139,13 @@ class TransactionController extends Controller
         $detailProducts = DetailProduct::where('product_id', $productId)
             ->where('start_date', '<=', now()->toDateString())
             ->where('end_date', '>=', now()->toDateString())
+            ->withSum('stocks as used_quantity', 'quantity')
             ->get();
 
         $totalStock = 0;
         foreach ($detailProducts as $detail) {
             $in = $detail->quantity;
-            $out = ProductStock::where('detail_product_id', $detail->id)->sum('quantity');
+            $out = $detail->used_quantity ?? 0;
             $totalStock += ($in - $out);
         }
 
@@ -155,6 +157,7 @@ class TransactionController extends Controller
         $detailProducts = DetailProduct::where('product_id', $productId)
             ->where('start_date', '<=', now()->toDateString())
             ->where('end_date', '>=', now()->toDateString())
+            ->withSum('stocks as used_quantity', 'quantity')
             ->orderBy('start_date', 'asc')
             ->get();
 
@@ -165,7 +168,7 @@ class TransactionController extends Controller
                 break;
             }
 
-            $available = $detail->quantity - ProductStock::where('detail_product_id', $detail->id)->sum('quantity');
+            $available = $detail->quantity - ($detail->used_quantity ?? 0);
 
             if ($available > 0) {
                 $deduct = min($remainingToDeduct, $available);
@@ -290,7 +293,7 @@ class TransactionController extends Controller
             ];
         }
 
-        $pdf = \PDF::loadView('comprobante_salida', $data);
+        $pdf = PDF::loadView('comprobante_salida', $data);
         return $pdf->setPaper('A4', 'landscape')->stream('comprobante-salida-' . date('Ymd') . '.pdf');
     }
 
@@ -385,7 +388,7 @@ class TransactionController extends Controller
             return $club['beneficiarios'] > 0;
         })->values();
 
-        $pdf = \PDF::loadView('movimientos.reparticion', [
+        $pdf = PDF::loadView('movimientos.reparticion', [
             'clubs' => $associations,
             'currentYear' => $currentYear,
             'currentMonth' => $currentMonth,

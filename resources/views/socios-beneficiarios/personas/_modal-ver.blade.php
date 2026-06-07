@@ -20,9 +20,9 @@
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Edad</span><p class="font-bold text-leaf">{{ $person->age_formatted }}</p></div>
-                    <div><span class="text-[11px] font-bold text-earth uppercase">Celular</span><p>{{ $person->phone_number ?? '-' }}</p></div>
+                    <div><span class="text-[11px] font-bold text-earth uppercase">Celular</span><p>{{ $person->phone_number ?? 'Sin número' }}</p></div>
                 </div>
-                <div><span class="text-[11px] font-bold text-earth uppercase">Dirección</span><p>{{ $person->address ?? '-' }}</p></div>
+                <div><span class="text-[11px] font-bold text-earth uppercase">Dirección</span><p>{{ $person->address ?? 'Sin dirección' }}</p></div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Sector</span>
                     <p>{{ $person->placeSector->place->title ?? 'N/A' }} - {{ $person->placeSector->sector->title ?? 'N/A' }}</p>
                 </div>

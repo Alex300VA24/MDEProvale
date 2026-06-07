@@ -49,15 +49,31 @@ class Product extends Model
 
     public function getAvailableStock()
     {
-        $detailProducts = $this->detailProducts()
-            ->where('start_date', '<=', now()->toDateString())
-            ->where('end_date', '>=', now()->toDateString())
-            ->get();
+        $today = now()->toDateString();
+        $detailProducts = $this->relationLoaded('detailProducts')
+            ? $this->detailProducts
+                ->filter(function ($detail) use ($today) {
+                    $startDate = $detail->start_date ? $detail->start_date->toDateString() : null;
+                    $endDate = $detail->end_date ? $detail->end_date->toDateString() : null;
+
+                    return $startDate && $endDate && $startDate <= $today && $endDate >= $today;
+                })
+            : $this->detailProducts()
+                ->where('start_date', '<=', $today)
+                ->where('end_date', '>=', $today)
+                ->withSum('stocks as used_quantity', 'quantity')
+                ->get();
 
         $totalStock = 0;
         foreach ($detailProducts as $detail) {
             $in = $detail->quantity;
-            $out = $detail->stocks()->sum('quantity');
+            if (array_key_exists('used_quantity', $detail->getAttributes())) {
+                $out = $detail->used_quantity ?? 0;
+            } elseif ($detail->relationLoaded('stocks')) {
+                $out = $detail->stocks->sum('quantity');
+            } else {
+                $out = $detail->stocks()->sum('quantity');
+            }
             $totalStock += ($in - $out);
         }
 
@@ -72,10 +88,22 @@ class Product extends Model
 
     public function getUnitPriceAttribute()
     {
-        $detailProduct = DetailProduct::where('product_id', $this->id)
-            ->where('start_date', '<=', now()->toDateString())
-            ->where('end_date', '>=', now()->toDateString())
-            ->first();
+        $today = now()->toDateString();
+        $detailProduct = $this->relationLoaded('detailProducts')
+            ? $this->detailProducts
+                ->filter(function ($detail) use ($today) {
+                    $startDate = $detail->start_date ? $detail->start_date->toDateString() : null;
+                    $endDate = $detail->end_date ? $detail->end_date->toDateString() : null;
+
+                    return $startDate && $endDate && $startDate <= $today && $endDate >= $today;
+                })
+                ->sortBy('start_date')
+                ->first()
+            : DetailProduct::where('product_id', $this->id)
+                ->where('start_date', '<=', $today)
+                ->where('end_date', '>=', $today)
+                ->orderBy('start_date')
+                ->first();
         return $detailProduct ? $detailProduct->unit_price : 0;
     }
 }

@@ -32,9 +32,17 @@ class AppServiceProvider extends ServiceProvider
             
             try {
                 if (auth()->check()) {
-                    $cacheKey = 'unread_notifications_user_' . auth()->id();
-                    $unreadNotifications = Cache::remember($cacheKey, 30, function () {
-                        return Notification::unreadCountForUser(auth()->user());
+                    $user = auth()->user();
+                    
+                    // Eager-load 'rol' to prevent a lazy-load query
+                    // every time the layout accesses Auth::user()->rol->title
+                    if (!$user->relationLoaded('rol')) {
+                        $user->load('rol:id,title');
+                    }
+
+                    $cacheKey = 'unread_notifications_user_' . $user->id;
+                    $unreadNotifications = Cache::remember($cacheKey, 30, function () use ($user) {
+                        return Notification::unreadCountForUser($user);
                     });
                 }
             } catch (\Exception $e) {

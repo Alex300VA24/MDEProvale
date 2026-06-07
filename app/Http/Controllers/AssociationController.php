@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Association;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class AssociationController extends Controller
 {
@@ -98,7 +99,7 @@ class AssociationController extends Controller
         }
 
         $orientacion = $request->get('orientacion', 'portrait');
-        $pdf = \PDF::loadView('reportes.club-de-madres', compact('associations', 'titulo', 'tipo'));
+        $pdf = PDF::loadView('reportes.club-de-madres', compact('associations', 'titulo', 'tipo'));
         $pdf->setPaper('a4', $orientacion);
         return $pdf->download('reporte-club-de-madres-' . $tipo . '-' . date('Y-m-d') . '.pdf');
     }
