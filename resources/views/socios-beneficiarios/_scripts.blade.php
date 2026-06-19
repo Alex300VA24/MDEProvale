@@ -114,7 +114,7 @@ function addBeneficiaryEdit(partnerId) {
                 <i class="fas fa-times-circle"></i>
             </button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
                 <label class="${lc}">Persona *</label>
                 <select name="beneficiaries[${existingCount}][person_id]" class="select2-person-ajax ${sc}" required><option value="">Buscar persona...</option></select>
@@ -125,7 +125,7 @@ function addBeneficiaryEdit(partnerId) {
             </div>
         </div>
         <p class="text-[10px] font-bold text-earth uppercase mb-2 border-t border-wheat pt-2">Datos Clínicos <span class="font-normal normal-case text-gray-400">(opcional)</span></p>
-        <div class="grid grid-cols-3 gap-3 mb-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>
                 <label class="${lc}">Peso (kg)</label>
                 <input type="number" step="0.01" min="0" name="beneficiaries[${existingCount}][weight]" class="${ic}" placeholder="65.50">
@@ -139,7 +139,7 @@ function addBeneficiaryEdit(partnerId) {
                 <input type="number" step="0.01" min="0" name="beneficiaries[${existingCount}][hmg]" class="${ic}" placeholder="12.50">
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
                 <label class="${lc}">F. Inicio Beneficio</label>
                 <input type="date" name="beneficiaries[${existingCount}][date_begin]" class="${ic}">
@@ -149,7 +149,7 @@ function addBeneficiaryEdit(partnerId) {
                 <input type="date" name="beneficiaries[${existingCount}][date_end]" class="${ic}">
             </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
                 <label class="${lc}">Tipo de Beneficio</label>
                 <select name="beneficiaries[${existingCount}][type_benefit_id]" class="${sc}">${buildOpts(allTypeBenefits, 'Seleccionar...', 'title')}</select>

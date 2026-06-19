@@ -4,30 +4,30 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat flex-wrap gap-4">
+    <div class="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat flex-wrap gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-exchange-alt text-leaf"></i> Gestión de Movimientos
         </h3>
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-3">
             @if(Auth::user()->canCreateModule('movimientos'))
-            <button onclick="openModal('modal-crear-ingreso')" class="btn-primary flex items-center gap-2">
+            <button onclick="openModal('modal-crear-ingreso')" class="btn-primary flex items-center gap-2 text-xs sm:text-sm">
                 <i class="fas fa-plus"></i> Nuevo Ingreso
             </button>
             @endif
-            <a href="{{ route('movimientos.reparticion-tabla') }}" class="btn-secondary flex items-center gap-2">
+            <a href="{{ route('movimientos.reparticion-tabla') }}" class="btn-secondary flex items-center gap-2 text-xs sm:text-sm">
                 <i class="fas fa-clipboard-list"></i> Repartición
             </a>
         </div>
     </div>
 
-    <form method="GET" action="{{ route('movimientos.index') }}" class="flex gap-4 px-6 py-4 flex-wrap border-b border-wheat bg-cream">
+    <form method="GET" action="{{ route('movimientos.index') }}" class="flex flex-col sm:flex-row gap-2 sm:gap-4 px-6 py-4 flex-wrap border-b border-wheat bg-cream">
         <div class="flex-1 min-w-48">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Buscar Producto</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por producto..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por producto..." class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
         <div class="min-w-40">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Tipo de Movimiento</label>
-            <select name="type_transaction_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <select name="type_transaction_id" class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
                 @foreach($types as $type)
                 <option value="{{ $type->id }}" {{ request('type_transaction_id') == $type->id ? 'selected' : '' }}>{{ $type->title }}</option>
@@ -36,11 +36,11 @@
         </div>
         <div class="min-w-36">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Desde</label>
-            <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}" class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
         <div class="min-w-36">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Hasta</label>
-            <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
         <div class="flex items-end gap-2">
             <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
@@ -48,26 +48,26 @@
         </div>
     </form>
 
-    <div class="overflow-x-auto">
-        <table class="data-table w-full">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
+        <table class="data-table w-full min-w-[700px] text-xs sm:text-sm">
             <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left">ID</th>
-                    <th class="px-6 py-4 text-left">Producto</th>
-                    <th class="px-6 py-4 text-left">Tipo</th>
-                    <th class="px-6 py-4 text-left">Cantidad</th>
-                    <th class="px-6 py-4 text-left">Precio Unit.</th>
-                    <th class="px-6 py-4 text-left">Total</th>
-                    <th class="px-6 py-4 text-left">Fecha</th>
-                    <th class="px-6 py-4 text-left">Acciones</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">ID</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Producto</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Tipo</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Cantidad</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Precio Unit.</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Total</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Fecha</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($transactions as $transaction)
                 <tr>
-                    <td class="px-6 text-earth font-mono text-sm">#{{ $transaction->id }}</td>
-                    <td class="px-6 font-semibold">{{ $transaction->product->title ?? 'Sin producto' }}</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-earth font-mono text-sm">#{{ $transaction->id }}</td>
+                    <td class="px-3 sm:px-4 font-semibold">{{ $transaction->product->title ?? 'Sin producto' }}</td>
+                    <td class="px-3 sm:px-4">
                         @if($transaction->typeTransaction)
                             @if($transaction->typeTransaction->title == 'Ingreso')
                                 <span class="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold"><i class="fas fa-arrow-down mr-1"></i>{{ $transaction->typeTransaction->title }}</span>
@@ -76,12 +76,12 @@
                             @endif
                         @else - @endif
                     </td>
-                    <td class="px-6 text-earth font-mono">{{ $transaction->quantity }}</td>
-                    <td class="px-6 text-earth font-mono">S/ {{ number_format($transaction->unit_price, 2) }}</td>
-                    <td class="px-6 font-bold text-charcoal">S/ {{ number_format($transaction->total_price, 2) }}</td>
-                    <td class="px-6 text-earth text-sm">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y') }}</td>
-                    <td class="px-6">
-                        <div class="flex gap-2">
+                    <td class="px-3 sm:px-4 text-earth font-mono">{{ $transaction->quantity }}</td>
+                    <td class="px-3 sm:px-4 text-earth font-mono">S/ {{ number_format($transaction->unit_price, 2) }}</td>
+                    <td class="px-3 sm:px-4 font-bold text-charcoal">S/ {{ number_format($transaction->total_price, 2) }}</td>
+                    <td class="px-3 sm:px-4 text-earth text-sm">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y') }}</td>
+                    <td class="px-3 sm:px-4">
+                        <div class="flex gap-1 sm:gap-2">
                             <button onclick="openModal('modal-ver-movimiento-{{ $transaction->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -104,13 +104,13 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="px-6 py-8 text-center text-earth">No hay registros</td></tr>
+                <tr><td colspan="8" class="px-3 sm:px-4 py-8 text-center text-earth">No hay registros</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    <div class="flex items-center justify-between px-6 py-4 border-t-2 border-wheat">
+    <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-t-2 border-wheat">
         <span class="text-sm text-earth font-medium">Mostrando {{ $transactions->firstItem() ?? 0 }} - {{ $transactions->lastItem() ?? 0 }} de {{ $transactions->total() }} registros</span>
         {{ $transactions->appends(request()->query())->links() }}
     </div>
@@ -118,7 +118,7 @@
 
 {{-- Modal Crear Ingreso --}}
 <div id="modal-crear-ingreso" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -131,7 +131,7 @@
             <form action="{{ route('movimientos.store') }}" method="POST" class="p-6">
                 @csrf
                 <input type="hidden" name="type_transaction_id" value="{{ $types->firstWhere('title', 'Ingreso')->id ?? '' }}">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto</label>
                         <select name="product_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
@@ -180,7 +180,7 @@
 
 {{-- Modal Ver --}}
 <div id="modal-ver-movimiento-{{ $transaction->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-lg mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -190,7 +190,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="p-6 grid grid-cols-2 gap-4">
+            <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">ID</p>
                     <p class="font-semibold text-charcoal">#{{ $transaction->id }}</p>
@@ -232,7 +232,7 @@
 
 {{-- Modal Editar --}}
 <div id="modal-editar-movimiento-{{ $transaction->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -246,7 +246,7 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="type_transaction_id" value="{{ $transaction->type_transaction_id }}">
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto</label>
                         <select name="product_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>

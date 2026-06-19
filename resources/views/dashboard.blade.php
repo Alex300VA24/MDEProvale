@@ -9,24 +9,24 @@
      lecheData, hojuelasData, clubsWithBeneficiarios, sociosActivos,
      beneficiariosActivos, totalPecosasAnio --}}
 
-    <div class="relative rounded-3xl overflow-hidden mb-8 shadow-lg">
+    <div class="relative rounded-2xl sm:rounded-3xl overflow-hidden mb-6 sm:mb-8 shadow-lg">
         <div class="absolute inset-0">
             <img src="{{ asset('img/niños.jpg') }}" alt="Banner" class="w-full h-full object-cover">
         </div>
         <div class="absolute inset-0 bg-gradient-to-r from-blue/60 to-navy/40"></div>
-        <div class="relative z-10 flex items-center justify-between p-8 gap-8">
+        <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 sm:p-8 gap-4 sm:gap-8">
             <div>
-                <div class="flex items-center gap-2 mb-3">
+                <div class="flex items-center gap-2 mb-2 sm:mb-3">
                     <span class="w-2 h-2 rounded-full pulse-dot" style="background:#D6EAFC"></span>
-                    <span class="text-white/90 text-xs font-semibold uppercase tracking-widest">Sistema activo</span>
+                    <span class="text-white/90 text-[10px] sm:text-xs font-semibold uppercase tracking-widest">Sistema activo</span>
                 </div>
-                <h1 class="text-white font-extrabold text-3xl leading-tight mb-2">Panel de Control<br><span style="color:#FEF3DC">PROVALE</span></h1>
-                <p class="text-white/70 text-sm font-medium max-w-md">Gestiona beneficiarios, club de madres y entregas de manera eficiente.</p>
-                <div class="flex gap-3 mt-5">
-                    <a href="{{ route('productos-pecosas.pecosas.index') }}" class="px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-sm hover:bg-white/30 transition-all border border-white/20">
+                <h1 class="text-white font-extrabold text-xl sm:text-3xl leading-tight mb-2">Panel de Control<br><span style="color:#FEF3DC">PROVALE</span></h1>
+                <p class="text-white/70 text-xs sm:text-sm font-medium max-w-md">Gestiona beneficiarios, club de madres y entregas de manera eficiente.</p>
+                <div class="flex flex-wrap gap-2 sm:gap-3 mt-4 sm:mt-5">
+                    <a href="{{ route('productos-pecosas.pecosas.index') }}" class="px-3 sm:px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-xs sm:text-sm hover:bg-white/30 transition-all border border-white/20">
                         <i class="fas fa-plus mr-1"></i>Nueva Pecosa
                     </a>
-                    <a href="{{ route('club-reconocimientos.index')}}" class="px-4 py-2 bg-white text-blue font-semibold rounded-lg text-sm hover:bg-blue-light transition-all shadow-sm">
+                    <a href="{{ route('club-reconocimientos.index')}}" class="px-3 sm:px-4 py-2 bg-white text-blue font-semibold rounded-lg text-xs sm:text-sm hover:bg-blue-light transition-all shadow-sm">
                         <i class="fas fa-file-alt mr-1"></i>Comites
                     </a>
                 </div>
@@ -34,140 +34,140 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div class="stat-card bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue to-sky rounded-t-2xl"></div>
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-10 h-10 rounded-xl bg-blue-light flex items-center justify-center text-blue text-lg">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-blue-light flex items-center justify-center text-blue text-sm sm:text-lg">
                     <i class="fas fa-users"></i>
                 </div>
-                <span class="text-[11px] font-bold text-blue bg-blue-light px-2 py-0.5 rounded-full">+12%</span>
+                <span class="text-[9px] sm:text-[11px] font-bold text-blue bg-blue-light px-1.5 sm:px-2 py-0.5 rounded-full">+12%</span>
             </div>
-            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalPartners }}</div>
-            <div class="text-xs font-medium text-slate">Total Socios</div>
+            <div class="text-xl sm:text-3xl font-bold text-navy leading-none mb-1">{{ $totalPartners }}</div>
+            <div class="text-[10px] sm:text-xs font-medium text-slate">Total Socios</div>
         </div>
 
-        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+        <div class="stat-card bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky to-[#7ec3e8] rounded-t-2xl"></div>
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-10 h-10 rounded-xl bg-sky-light flex items-center justify-center text-sky text-lg">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-sky-light flex items-center justify-center text-sky text-sm sm:text-lg">
                     <i class="fas fa-user-check"></i>
                 </div>
-                <span class="text-[11px] font-bold text-sky bg-sky-light px-2 py-0.5 rounded-full">+8%</span>
+                <span class="text-[9px] sm:text-[11px] font-bold text-sky bg-sky-light px-1.5 sm:px-2 py-0.5 rounded-full">+8%</span>
             </div>
-            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalBeneficiaries }}</div>
-            <div class="text-xs font-medium text-slate">Beneficiarios</div>
+            <div class="text-xl sm:text-3xl font-bold text-navy leading-none mb-1">{{ $totalBeneficiaries }}</div>
+            <div class="text-[10px] sm:text-xs font-medium text-slate">Beneficiarios</div>
         </div>
 
-        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+        <div class="stat-card bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber to-[#f0c567] rounded-t-2xl"></div>
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-10 h-10 rounded-xl bg-amber-light flex items-center justify-center text-amber text-lg">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-amber-light flex items-center justify-center text-amber text-sm sm:text-lg">
                     <i class="fas fa-heart"></i>
                 </div>
-                <span class="text-[11px] font-bold text-amber bg-amber-light px-2 py-0.5 rounded-full">+5%</span>
+                <span class="text-[9px] sm:text-[11px] font-bold text-amber bg-amber-light px-1.5 sm:px-2 py-0.5 rounded-full">+5%</span>
             </div>
-            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalAssociations }}</div>
-            <div class="text-xs font-medium text-slate">Club de Madres</div>
+            <div class="text-xl sm:text-3xl font-bold text-navy leading-none mb-1">{{ $totalAssociations }}</div>
+            <div class="text-[10px] sm:text-xs font-medium text-slate">Club de Madres</div>
         </div>
 
-        <div class="stat-card bg-white rounded-2xl p-5 border border-mist shadow-sm relative overflow-hidden">
+        <div class="stat-card bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal to-[#5ec4b3] rounded-t-2xl"></div>
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center text-teal text-lg">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-teal-light flex items-center justify-center text-teal text-sm sm:text-lg">
                     <i class="fas fa-box"></i>
                 </div>
-                <span class="text-[11px] font-bold text-teal bg-teal-light px-2 py-0.5 rounded-full">-3%</span>
+                <span class="text-[9px] sm:text-[11px] font-bold text-teal bg-teal-light px-1.5 sm:px-2 py-0.5 rounded-full">-3%</span>
             </div>
-            <div class="text-3xl font-bold text-navy leading-none mb-1">{{ $totalStock }}</div>
-            <div class="text-xs font-medium text-slate">Stock Total</div>
+            <div class="text-xl sm:text-3xl font-bold text-navy leading-none mb-1">{{ $totalStock }}</div>
+            <div class="text-[10px] sm:text-xs font-medium text-slate">Stock Total</div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <div class="bg-white rounded-2xl p-6 border border-mist shadow-sm">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-navy font-bold text-base">PECOSAs por Mes</h3>
-                    <p class="text-slate text-sm">Salidas {{ date('Y') }}</p>
+                    <h3 class="text-navy font-bold text-sm sm:text-base">PECOSAs por Mes</h3>
+                    <p class="text-slate text-xs sm:text-sm">Salidas {{ date('Y') }}</p>
                 </div>
-                <span class="px-2 py-1 text-xs font-bold bg-blue-light text-blue rounded-lg">{{ $totalPecosasAnio }} total</span>
+                <span class="px-2 py-1 text-[10px] sm:text-xs font-bold bg-blue-light text-blue rounded-lg">{{ $totalPecosasAnio }} total</span>
             </div>
-            <div class="chart-wrap h-48">
+            <div class="chart-wrap h-40 sm:h-48">
                 <canvas id="pecosasChart"></canvas>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-6 border border-mist shadow-sm">
+        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-navy font-bold text-base">Productos Distribuidos</h3>
-                    <p class="text-slate text-sm">Leche y Hojuelas - {{ date('Y') }}</p>
+                    <h3 class="text-navy font-bold text-sm sm:text-base">Productos Distribuidos</h3>
+                    <p class="text-slate text-xs sm:text-sm">Leche y Hojuelas - {{ date('Y') }}</p>
                 </div>
-                <div class="flex gap-2">
-                    <span class="px-2 py-1 text-xs font-semibold bg-blue-light text-blue rounded">Leche</span>
-                    <span class="px-2 py-1 text-xs font-semibold bg-amber-light text-amber rounded">Hojuelas</span>
+                <div class="flex gap-1 sm:gap-2">
+                    <span class="px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-semibold bg-blue-light text-blue rounded">Leche</span>
+                    <span class="px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-semibold bg-amber-light text-amber rounded">Hojuelas</span>
                 </div>
             </div>
-            <div class="chart-wrap h-48">
+            <div class="chart-wrap h-40 sm:h-48">
                 <canvas id="productosChart"></canvas>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-2xl p-5 border border-mist shadow-sm">
-            <h3 class="text-navy font-bold text-base mb-1">Socios vs Beneficiarios</h3>
-            <p class="text-slate text-sm mb-3">Comparativa total</p>
-            <div class="chart-wrap h-36">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
+            <h3 class="text-navy font-bold text-sm sm:text-base mb-1">Socios vs Beneficiarios</h3>
+            <p class="text-slate text-xs sm:text-sm mb-3">Comparativa total</p>
+            <div class="chart-wrap h-32 sm:h-36">
                 <canvas id="sociosBenefChart"></canvas>
             </div>
             <div class="mt-3 grid grid-cols-2 gap-2">
                 <div class="text-center p-2 bg-blue-light rounded-lg">
-                    <div class="text-xl font-bold text-blue">{{ $sociosActivos }}</div>
-                    <div class="text-[10px] font-medium text-slate uppercase">Socios</div>
+                    <div class="text-lg sm:text-xl font-bold text-blue">{{ $sociosActivos }}</div>
+                    <div class="text-[9px] sm:text-[10px] font-medium text-slate uppercase">Socios</div>
                 </div>
                 <div class="text-center p-2 bg-sky-light rounded-lg">
-                    <div class="text-xl font-bold text-sky">{{ $beneficiariosActivos }}</div>
-                    <div class="text-[10px] font-medium text-slate uppercase">Beneficiarios</div>
+                    <div class="text-lg sm:text-xl font-bold text-sky">{{ $beneficiariosActivos }}</div>
+                    <div class="text-[9px] sm:text-[10px] font-medium text-slate uppercase">Beneficiarios</div>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-mist shadow-sm">
-            <h3 class="text-navy font-bold text-base mb-1">Top Comités</h3>
-            <p class="text-slate text-sm mb-3">Con más beneficiarios</p>
-            <div class="chart-wrap h-44">
+        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
+            <h3 class="text-navy font-bold text-sm sm:text-base mb-1">Top Comités</h3>
+            <p class="text-slate text-xs sm:text-sm mb-3">Con más beneficiarios</p>
+            <div class="chart-wrap h-36 sm:h-44">
                 <canvas id="topClubsChart"></canvas>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 border border-mist shadow-sm">
-            <h3 class="text-navy font-bold text-base mb-4">Reportes Rápidos</h3>
+        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
+            <h3 class="text-navy font-bold text-sm sm:text-base mb-4">Reportes Rápidos</h3>
             <div class="grid grid-cols-2 gap-2">
-                <a href="{{ route('socios-beneficiarios.beneficiarios.padron') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-blue-light hover:bg-blue/10 transition-all group">
-                    <div class="w-8 h-8 bg-blue rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                <a href="{{ route('socios-beneficiarios.beneficiarios.padron') }}" class="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-blue-light hover:bg-blue/10 transition-all group">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 bg-blue rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
                         <i class="fas fa-file-pdf"></i>
                     </div>
-                    <span class="text-[10px] font-semibold text-blue text-center leading-tight">Padrón Beneficiarios</span>
+                    <span class="text-[8px] sm:text-[10px] font-semibold text-blue text-center leading-tight">Padrón Beneficiarios</span>
                 </a>
-                <a href="{{ route('club-reconocimientos.club.padron') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-amber-light hover:bg-amber/10 transition-all group">
-                    <div class="w-8 h-8 bg-amber rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                <a href="{{ route('club-reconocimientos.club.padron') }}" class="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-amber-light hover:bg-amber/10 transition-all group">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 bg-amber rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
                         <i class="fas fa-file-pdf"></i>
                     </div>
-                    <span class="text-[10px] font-semibold text-amber text-center leading-tight">Padrón Club</span>
+                    <span class="text-[8px] sm:text-[10px] font-semibold text-amber text-center leading-tight">Padrón Club</span>
                 </a>
-                <a href="{{ route('productos-pecosas.pecosas.generar-reporte', 'reparticion') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-teal-light hover:bg-teal/10 transition-all group">
-                    <div class="w-8 h-8 bg-teal rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                <a href="{{ route('productos-pecosas.pecosas.generar-reporte', 'reparticion') }}" class="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-teal-light hover:bg-teal/10 transition-all group">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 bg-teal rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
                         <i class="fas fa-file-pdf"></i>
                     </div>
-                    <span class="text-[10px] font-semibold text-teal text-center leading-tight">Repartición</span>
+                    <span class="text-[8px] sm:text-[10px] font-semibold text-teal text-center leading-tight">Repartición</span>
                 </a>
-                <a href="{{ route('productos-pecosas.pecosas.index') }}" class="quick-btn flex flex-col items-center gap-1 p-3 rounded-xl bg-sky-light hover:bg-sky/10 transition-all group">
-                    <div class="w-8 h-8 bg-sky rounded-lg flex items-center justify-center text-white text-sm group-hover:scale-105 transition-all">
+                <a href="{{ route('productos-pecosas.pecosas.index') }}" class="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-sky-light hover:bg-sky/10 transition-all group">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 bg-sky rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
                         <i class="fas fa-box"></i>
                     </div>
-                    <span class="text-[10px] font-semibold text-sky text-center leading-tight">Pecosas</span>
+                    <span class="text-[8px] sm:text-[10px] font-semibold text-sky text-center leading-tight">Pecosas</span>
                 </a>
             </div>
         </div>

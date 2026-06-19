@@ -1,8 +1,8 @@
 {{-- Modal Ver Socio --}}
 <div id="modal-ver-socio-{{ $partner->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-4xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-4xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+            <div class="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-user text-leaf"></i> Detalle del Socio
                 </h3>
@@ -10,18 +10,18 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="p-6 space-y-3 text-sm">
+            <div class="p-4 sm:p-6 space-y-3 text-sm">
                 <div><span class="text-[11px] font-bold text-earth uppercase">Nombre</span>
                     <p class="font-semibold text-charcoal">{{ $partner->people ? $partner->people->names . ' ' . $partner->people->father_lastname . ' ' . $partner->people->mother_lastname : 'Sin nombre' }}</p>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">DNI</span><p>{{ $partner->people->dni ?? '-' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Estado</span>
                         <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $partner->state && $partner->state->title == 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $partner->state->title ?? 'N/A' }}</span></p>
                     </div>
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Club</span><p>{{ $partner->association->name ?? '-' }}</p></div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Inicio</span><p>{{ $partner->date_begin ? \Carbon\Carbon::parse($partner->date_begin)->format('d/m/Y') : '-' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Fin</span><p>{{ $partner->date_end ? \Carbon\Carbon::parse($partner->date_end)->format('d/m/Y') : '-' }}</p></div>
                 </div>
@@ -46,7 +46,7 @@
                                     <p>{{ $beneficiary->person->dni ?? '-' }}</p>
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                                 <div>
                                     <span class="text-[10px] font-bold text-earth uppercase">Parentesco</span>
                                     <p>{{ $beneficiary->relationship->title ?? '-' }}</p>
@@ -54,16 +54,16 @@
                             </div>
                             <div class="border-t border-wheat pt-2 mt-2">
                                 <span class="text-[10px] font-bold text-earth uppercase">Datos Clínicos</span>
-                                <div class="grid grid-cols-3 gap-2 mt-1">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                                     <div><span class="text-[9px] text-earth uppercase">Peso</span><p class="text-xs">{{ $latestHistory->weight ?? '-' }}</p></div>
                                     <div><span class="text-[9px] text-earth uppercase">Talla</span><p class="text-xs">{{ $latestHistory->height ?? '-' }}</p></div>
                                     <div><span class="text-[9px] text-earth uppercase">HMG</span><p class="text-xs">{{ $latestHistory->hmg ?? '-' }}</p></div>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2 mt-1">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                                     <div><span class="text-[9px] text-earth uppercase">F. Inicio</span><p class="text-xs">{{ $latestHistory && $latestHistory->date_begin ? \Carbon\Carbon::parse($latestHistory->date_begin)->format('d/m/Y') : '-' }}</p></div>
                                     <div><span class="text-[9px] text-earth uppercase">F. Fin</span><p class="text-xs">{{ $latestHistory && $latestHistory->date_end ? \Carbon\Carbon::parse($latestHistory->date_end)->format('d/m/Y') : '-' }}</p></div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-1">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
                                     <div><span class="text-[9px] text-earth uppercase">Tipo Beneficio</span><p class="text-xs">{{ $latestHistory->typeBenefit->title ?? '-' }}</p></div>
                                     <div><span class="text-[9px] text-earth uppercase">Estado</span><p class="text-xs">{{ $latestHistory->state->title ?? '-' }}</p></div>
                                     <div><span class="text-[9px] text-earth uppercase">Motivo Descalif.</span><p class="text-xs">{{ $latestHistory->reasonDisqualification->title ?? 'Ninguno' }}</p></div>
@@ -79,7 +79,7 @@
                 @endif
             </div>
             <div class="px-6 pb-6">
-                <button onclick="closeModal('modal-ver-socio-{{ $partner->id }}')" class="btn-secondary w-full">Cerrar</button>
+                <button onclick="closeModal('modal-ver-socio-{{ $partner->id }}')" class="btn-secondary w-full text-xs sm:text-sm">Cerrar</button>
             </div>
         </div>
     </div>

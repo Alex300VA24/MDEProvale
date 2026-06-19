@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-user-tag text-purple-600"></i> Gestión de Roles
         </h3>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('sistema.index') }}" class="btn-secondary">
                 <i class="fas fa-arrow-left mr-2"></i> Volver
             </a>
@@ -20,27 +20,27 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="data-table w-full">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
+        <table class="data-table w-full min-w-[600px] text-xs sm:text-sm">
             <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left">Rol</th>
-                    <th class="px-6 py-4 text-left">Descripción</th>
-                    <th class="px-6 py-4 text-left">Módulos Asignados</th>
-                    <th class="px-6 py-4 text-left">Usuarios</th>
-                    <th class="px-6 py-4 text-left">Acciones</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Rol</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Descripción</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Módulos Asignados</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Usuarios</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($roles as $rol)
                 <tr>
-                    <td class="px-6 font-semibold text-charcoal">{{ $rol->title }}</td>
-                    <td class="px-6 text-earth text-sm">{{ $rol->description ?? 'Sin descripción' }}</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 font-semibold text-charcoal">{{ $rol->title }}</td>
+                    <td class="px-3 sm:px-4 text-earth text-sm">{{ $rol->description ?? 'Sin descripción' }}</td>
+                    <td class="px-3 sm:px-4">
                         <span class="px-2 py-1 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold">{{ $rol->modules->count() }} módulos</span>
                     </td>
-                    <td class="px-6 text-earth text-sm">{{ $rol->users->count() }} usuarios</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-earth text-sm">{{ $rol->users->count() }} usuarios</td>
+                    <td class="px-3 sm:px-4">
                         <div class="flex gap-2">
                             @if(Auth::user()->canEditModule('sistema'))
                             <button onclick="openModal('modal-editar-rol-{{ $rol->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
@@ -68,7 +68,7 @@
 
 {{-- Modal Crear Rol --}}
 <div id="modal-crear-rol" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-4xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-4xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -127,7 +127,7 @@
 {{-- Modales Editar Rol --}}
 @foreach($roles as $rol)
 <div id="modal-editar-rol-{{ $rol->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-4xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-4xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">

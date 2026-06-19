@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-users text-leaf"></i> Personas Registradas
         </h3>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center flex-wrap gap-2">
             <a href="{{ route('socios-beneficiarios.index') }}" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i> Volver
             </a>
@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <div class="p-6">
+    <div class="p-4 sm:p-6">
         @if(session('success'))
             <div class="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
                 <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
@@ -31,18 +31,18 @@
         @endif
 
         <form method="GET" class="mb-6">
-            <div class="flex gap-4">
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
                 <div class="flex-1">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o DNI" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
-                <div>
+                <div class="w-full sm:w-auto">
                     <select name="gender" class="w-full px-8 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Género</option>
                         <option value="M" {{ request('gender') == 'M' ? 'selected' : '' }}>Masculino</option>
                         <option value="F" {{ request('gender') == 'F' ? 'selected' : '' }}>Femenino</option>
                     </select>
                 </div>
-                <div>
+                <div class="w-full sm:w-auto">
                     <select name="place_sector_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todos los sectores</option>
                         @if(isset($placeSectors))
@@ -61,29 +61,29 @@
             </div>
         </form>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+        <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <table class="w-full text-xs sm:text-sm min-w-[700px]">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left font-bold text-earth">DNI</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Nombres</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Apellidos</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Edad</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Celular</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Sector</th>
-                        <th class="px-4 py-3 text-center font-bold text-earth">Acciones</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">DNI</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Nombres</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Apellidos</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Edad</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Celular</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Sector</th>
+                        <th class="px-3 sm:px-4 py-3 text-center font-bold text-earth">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @forelse($people as $person)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-mono">{{ $person->dni }}</td>
-                        <td class="px-4 py-3 font-medium">{{ $person->names }}</td>
-                        <td class="px-4 py-3">{{ $person->father_lastname }} {{ $person->mother_lastname }}</td>
-                        <td class="px-4 py-3 text-leaf font-semibold">{{ $person->age_formatted }}</td>
-                        <td class="px-4 py-3">{{ $person->phone_number ?? 'Sin número' }}</td>
-                        <td class="px-4 py-3 text-xs">{{ $person->placeSector->sector->title ?? 'N/A' }}</td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-3 sm:px-4 py-3 font-mono">{{ $person->dni }}</td>
+                        <td class="px-3 sm:px-4 py-3 font-medium">{{ $person->names }}</td>
+                        <td class="px-3 sm:px-4 py-3">{{ $person->father_lastname }} {{ $person->mother_lastname }}</td>
+                        <td class="px-3 sm:px-4 py-3 text-leaf font-semibold">{{ $person->age_formatted }}</td>
+                        <td class="px-3 sm:px-4 py-3">{{ $person->phone_number ?? 'Sin número' }}</td>
+                        <td class="px-3 sm:px-4 py-3 text-xs">{{ $person->placeSector->sector->title ?? 'N/A' }}</td>
+                        <td class="px-3 sm:px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openModal('modal-ver-persona-{{ $person->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
                                     <i class="fas fa-eye"></i>

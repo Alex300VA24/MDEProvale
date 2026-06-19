@@ -4,13 +4,13 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-tools text-leaf"></i> Mantenimiento
         </h3>
     </div>
 
-    <div class="p-6 space-y-8">
+    <div class="p-4 sm:p-6 space-y-8">
 
         @if(session('success'))
             <div class="p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
@@ -85,29 +85,29 @@
                     <i class="fas fa-plus mr-2"></i> Nueva Ración
                 </button>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
+            <div class="overflow-x-auto -mx-4 sm:mx-0">
+                <table class="w-full text-xs sm:text-sm min-w-[500px]">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2 text-left font-bold text-earth">Año</th>
-                            <th class="px-4 py-2 text-left font-bold text-earth">Ración Hojuelas (g)</th>
-                            <th class="px-4 py-2 text-left font-bold text-earth">Ración Leche (ml)</th>
-                            <th class="px-4 py-2 text-center font-bold text-earth">Estado</th>
-                            <th class="px-4 py-2 text-center font-bold text-earth">Acciones</th>
+                            <th class="px-3 sm:px-4 py-2 text-left font-bold text-earth">Año</th>
+                            <th class="px-3 sm:px-4 py-2 text-left font-bold text-earth">Ración Hojuelas (g)</th>
+                            <th class="px-3 sm:px-4 py-2 text-left font-bold text-earth">Ración Leche (ml)</th>
+                            <th class="px-3 sm:px-4 py-2 text-center font-bold text-earth">Estado</th>
+                            <th class="px-3 sm:px-4 py-2 text-center font-bold text-earth">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         @forelse($raciones as $racion)
                         <tr>
-                            <td class="px-4 py-3 font-bold">{{ $racion->year }}</td>
-                            <td class="px-4 py-3">{{ $racion->racion_hojuelas_gramos }} g</td>
-                            <td class="px-4 py-3">{{ $racion->racion_leche_militros }} ml</td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-3 sm:px-4 py-3 font-bold">{{ $racion->year }}</td>
+                            <td class="px-3 sm:px-4 py-3">{{ $racion->racion_hojuelas_gramos }} g</td>
+                            <td class="px-3 sm:px-4 py-3">{{ $racion->racion_leche_militros }} ml</td>
+                            <td class="px-3 sm:px-4 py-3 text-center">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $racion->active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                                     {{ $racion->active ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-center">
+                            <td class="px-3 sm:px-4 py-3 text-center">
                                 <button onclick="openModal('modal-editar-racion-{{ $racion->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -123,7 +123,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                            <td colspan="5" class="px-3 sm:px-4 py-8 text-center text-gray-500">
                                 No hay raciones registradas
                             </td>
                         </tr>
@@ -137,7 +137,7 @@
 
 {{-- Modal Cambiar Jefe de Almacén --}}
 <div id="modal-chief" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-md mt-32 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-md mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -171,7 +171,7 @@
 
 {{-- Modal Cambiar Almacenero --}}
 <div id="modal-storekeeper" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-md mt-32 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-md mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -205,7 +205,7 @@
 
 {{-- Modal Crear Ración --}}
 <div id="modal-crear-racion" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-md mt-32 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-md mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -241,7 +241,7 @@
 {{-- Modales Editar Ración --}}
 @foreach($raciones as $racion)
 <div id="modal-editar-racion-{{ $racion->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-md mt-32 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-md mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">

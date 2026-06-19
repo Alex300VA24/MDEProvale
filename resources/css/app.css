@@ -2,3 +2,17 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+/* Responsive utilities */
+@layer utilities {
+    .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #D4E4F7; border-radius: 2px; }
+}
+
+/* Touch-friendly tap targets on mobile */
+@media (max-width: 640px) {
+    button, a, [role="button"] {
+        min-height: 32px;
+    }
+}

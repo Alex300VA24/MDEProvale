@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-building text-leaf"></i> Comités y Resoluciones
         </h3>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center flex-wrap gap-2">
             <a href="{{ route('club-reconocimientos.reconocimientos.index') }}" class="btn-primary flex items-center gap-2">
                 <i class="fas fa-file-contract"></i> Resoluciones
             </a>
@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <div class="p-6">
+    <div class="p-4 sm:p-6">
         @if(session('success'))
             <div class="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
                 <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
@@ -36,7 +36,7 @@
         @endif
 
         <form method="GET" class="mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o código..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
@@ -70,28 +70,28 @@
             </div>
         </form>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+        <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <table class="w-full text-xs sm:text-sm min-w-[700px]">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Código</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Nombre del Comité</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Última Resolución</th>
-                        <th class="px-4 py-3 text-left font-bold text-earth">Vigencia</th>
-                        <th class="px-4 py-3 text-center font-bold text-earth">Estado</th>
-                        <th class="px-4 py-3 text-center font-bold text-earth">Acciones</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Código</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Nombre del Comité</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Última Resolución</th>
+                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Vigencia</th>
+                        <th class="px-3 sm:px-4 py-3 text-center font-bold text-earth">Estado</th>
+                        <th class="px-3 sm:px-4 py-3 text-center font-bold text-earth">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     @forelse($associations as $association)
                     @php $latestResolution = $association->latestResolution; @endphp
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-mono text-xs">{{ $association->code ?? 'S/C' }}</td>
-                        <td class="px-4 py-3">
+                        <td class="px-3 sm:px-4 py-3 font-mono text-xs">{{ $association->code ?? 'S/C' }}</td>
+                        <td class="px-3 sm:px-4 py-3">
                             <div class="font-bold text-charcoal">{{ $association->name }}</div>
                             <div class="text-[12px] text-earth uppercase">{{ $association->address }}</div>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="px-3 sm:px-4 py-3">
                             @if($latestResolution)
                             <span class="px-2 py-1 bg-leaf-light text-leaf rounded text-[11px] font-bold border-2 border-leaf">
                                 <i class="fas fa-star mr-1"></i> {{ $latestResolution->document }}
@@ -100,21 +100,14 @@
                             <span class="text-gray-400">-</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-xs">
+                        <td class="px-3 sm:px-4 py-3 text-xs">
                             @if($latestResolution)
                             <div>{{ \Carbon\Carbon::parse($latestResolution->date_start)->format('d/m/Y') }}</div>
                             <div class="text-earth font-bold">al {{ \Carbon\Carbon::parse($latestResolution->date_end)->format('d/m/Y') }}</div>
                             @else -
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-center">
-                            <span class="px-2 py-1 text-[10px] font-bold rounded-full 
-                                @if($association->state && $association->state->title == 'Activo') bg-green-100 text-green-800
-                                @else bg-red-100 text-red-800 @endif">
-                                {{ $association->state->title ?? 'N/A' }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="px-3 sm:px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openModal('modal-ver-comite-{{ $association->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver Detalles">
                                     <i class="fas fa-eye"></i>
@@ -159,7 +152,7 @@
 
 {{-- Modal Crear Comité --}}
 <div id="modal-crear-comite" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-40" style="display: none;">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -231,7 +224,7 @@
 
 {{-- Modal Ver Comité --}}
 <div id="modal-ver-comite-{{ $association->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-40" style="display: none;">
-    <div class="relative mx-auto w-full max-w-lg mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -280,7 +273,7 @@
 
 {{-- Modal Editar Comité --}}
 <div id="modal-editar-comite-{{ $association->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-40" style="display: none;">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">

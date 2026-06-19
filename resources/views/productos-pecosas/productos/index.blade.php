@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat flex-wrap gap-4">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat flex-wrap gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-box text-leaf"></i> Gestión de Productos
         </h3>
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-3">
             <a href="{{ route('productos-pecosas.pecosas.index') }}" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i> Volver
             </a>
@@ -20,12 +20,12 @@
         </div>
     </div>
 
-    <form method="GET" action="{{ route('productos-pecosas.productos.index') }}" class="flex gap-4 px-6 py-4 flex-wrap border-b border-wheat bg-cream">
-        <div class="flex-1 min-w-48">
+    <form method="GET" action="{{ route('productos-pecosas.productos.index') }}" class="flex flex-col sm:flex-row gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 flex-wrap border-b border-wheat bg-cream">
+        <div class="flex-1 min-w-0 sm:min-w-48">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Buscar</label>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o abreviatura..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
-        <div class="min-w-32">
+        <div class="min-w-0 sm:min-w-32">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
             <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
@@ -34,7 +34,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="min-w-32">
+        <div class="min-w-0 sm:min-w-32">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">UOM</label>
             <select name="uom_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
@@ -49,31 +49,31 @@
         </div>
     </form>
 
-    <div class="overflow-x-auto">
-        <table class="data-table w-full">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
+        <table class="data-table w-full min-w-[600px] text-xs sm:text-sm">
             <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left">ID</th>
-                    <th class="px-6 py-4 text-left">Nombre</th>
-                    <th class="px-6 py-4 text-left">Abreviatura</th>
-                    <th class="px-6 py-4 text-left">Estado</th>
-                    <th class="px-6 py-4 text-left">Acciones</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">ID</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Nombre</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Abreviatura</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Estado</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($products as $product)
                 <tr>
-                    <td class="px-6 text-earth font-mono text-sm">#{{ $product->id }}</td>
-                    <td class="px-6 font-semibold">{{ $product->title ?? 'Sin nombre' }}</td>
-                    <td class="px-6 text-earth">{{ $product->abbreviation ?? '-' }}</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-earth font-mono text-sm">#{{ $product->id }}</td>
+                    <td class="px-3 sm:px-4 font-semibold">{{ $product->title ?? 'Sin nombre' }}</td>
+                    <td class="px-3 sm:px-4 text-earth">{{ $product->abbreviation ?? '-' }}</td>
+                    <td class="px-3 sm:px-4">
                         @if($product->state)
                             <span class="px-3 py-1 rounded-full text-xs font-bold {{ $product->state->title == 'Activo' ? 'badge-active' : 'badge-inactive' }}">{{ $product->state->title }}</span>
                         @else
                             <span class="badge-inactive px-3 py-1 rounded-full text-xs font-bold">Sin estado</span>
                         @endif
                     </td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4">
                         <div class="flex gap-2">
                             <button onclick="openModal('modal-ver-producto-{{ $product->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
                                 <i class="fas fa-eye"></i>
@@ -97,14 +97,14 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="7" class="px-6 py-8 text-center text-earth">No hay registros</td></tr>
+                <tr><td colspan="7" class="px-3 sm:px-4 py-8 text-center text-earth">No hay registros</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    <div class="flex items-center justify-between px-6 py-4 border-t-2 border-wheat">
-        <span class="text-sm text-earth font-medium">Mostrando {{ $products->firstItem() ?? 0 }} - {{ $products->lastItem() ?? 0 }} de {{ $products->total() }} registros</span>
+    <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-t-2 border-wheat">
+        <span class="text-xs sm:text-sm text-earth font-medium">Mostrando {{ $products->firstItem() ?? 0 }} - {{ $products->lastItem() ?? 0 }} de {{ $products->total() }} registros</span>
         {{ $products->appends(request()->query())->links() }}
     </div>
 </div>
@@ -236,7 +236,7 @@
 
 {{-- Modal Crear Producto --}}
 <div id="modal-crear-producto" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -294,7 +294,7 @@
 
 {{-- Modal Ver --}}
 <div id="modal-ver-producto-{{ $product->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-lg mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -352,7 +352,7 @@
 
 {{-- Modal Editar --}}
 <div id="modal-editar-producto-{{ $product->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">

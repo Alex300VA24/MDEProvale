@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-th-large text-green-600"></i> Gestión de Módulos
         </h3>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('sistema.index') }}" class="btn-secondary">
                 <i class="fas fa-arrow-left mr-2"></i> Volver
             </a>
@@ -20,40 +20,40 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="data-table w-full">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
+        <table class="data-table w-full min-w-[700px] text-xs sm:text-sm">
             <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left">Orden</th>
-                    <th class="px-6 py-4 text-left">Módulo</th>
-                    <th class="px-6 py-4 text-left">Slug</th>
-                    <th class="px-6 py-4 text-left">Ruta</th>
-                    <th class="px-6 py-4 text-left">Roles Asignados</th>
-                    <th class="px-6 py-4 text-left">Estado</th>
-                    <th class="px-6 py-4 text-left">Acciones</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Orden</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Módulo</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Slug</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Ruta</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Roles Asignados</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Estado</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($modulos as $modulo)
                 <tr>
-                    <td class="px-6 text-earth font-mono text-sm">{{ $modulo->order }}</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-earth font-mono text-sm">{{ $modulo->order }}</td>
+                    <td class="px-3 sm:px-4">
                         <div class="font-semibold text-charcoal flex items-center gap-2">
                             @if($modulo->icon)<i class="fas {{ $modulo->icon }} text-green-600"></i>@endif
                             {{ $modulo->name }}
                         </div>
                     </td>
-                    <td class="px-6 text-earth text-sm font-mono">{{ $modulo->slug }}</td>
-                    <td class="px-6 text-earth text-sm">{{ $modulo->route ?? 'Sin ruta' }}</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-earth text-sm font-mono">{{ $modulo->slug }}</td>
+                    <td class="px-3 sm:px-4 text-earth text-sm">{{ $modulo->route ?? 'Sin ruta' }}</td>
+                    <td class="px-3 sm:px-4">
                         <span class="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-bold">{{ $modulo->rols->count() }} roles</span>
                     </td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4">
                         <span class="px-3 py-1 rounded-full text-xs font-bold {{ $modulo->is_active ? 'badge-active' : 'badge-inactive' }}">
                             {{ $modulo->is_active ? 'Activo' : 'Inactivo' }}
                         </span>
                     </td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4">
                         <div class="flex gap-2">
                             @if(Auth::user()->canEditModule('sistema'))
                             <button onclick="openModal('modal-editar-modulo-{{ $modulo->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
@@ -81,7 +81,7 @@
 
 {{-- Modal Crear Módulo --}}
 <div id="modal-crear-modulo" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -138,7 +138,7 @@
 {{-- Modales Editar Módulo --}}
 @foreach($modulos as $modulo)
 <div id="modal-editar-modulo-{{ $modulo->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">

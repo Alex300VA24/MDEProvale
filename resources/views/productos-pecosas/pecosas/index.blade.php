@@ -4,31 +4,31 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat flex-wrap gap-4">
+    <div class="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat flex-wrap gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-file-alt text-leaf"></i> Gestión de Pecosas
         </h3>
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-3">
 
             @if(Auth::user()->canCreateModule('pecosas'))
-            <button onclick="openModal('modal-crear-pecosa')" class="btn-primary flex items-center gap-2">
+            <button onclick="openModal('modal-crear-pecosa')" class="btn-primary flex items-center gap-2 text-xs sm:text-sm">
                 <i class="fas fa-plus"></i> Nueva Pecosa
             </button>
             @endif
-            <a href="{{ route('productos-pecosas.productos.index') }}" class="btn-secondary flex items-center gap-2">
+            <a href="{{ route('productos-pecosas.productos.index') }}" class="btn-secondary flex items-center gap-2 text-xs sm:text-sm">
                 <i class="fas fa-clipboard-list"></i> Detalle Productos
             </a>
         </div>
     </div>
 
-    <form method="GET" action="{{ route('productos-pecosas.pecosas.index') }}" class="flex gap-4 px-6 py-4 flex-wrap border-b border-wheat bg-cream">
+    <form method="GET" action="{{ route('productos-pecosas.pecosas.index') }}" class="flex flex-col sm:flex-row gap-2 sm:gap-4 px-4 sm:px-6 py-4 flex-wrap border-b border-wheat bg-cream">
         <div class="flex-1 min-w-48">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Buscar Número</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por número de pecosa..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por número de pecosa..." class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
         <div class="min-w-40">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Club de Madres</label>
-            <select name="association_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <select name="association_id" class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
                 @foreach($associations as $association)
                     <option value="{{ $association->id }}" {{ request('association_id') == $association->id ? 'selected' : '' }}>{{ $association->name }}</option>
@@ -37,7 +37,7 @@
         </div>
         <div class="min-w-32">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
-            <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <select name="state_id" class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
                 @foreach($states as $state)
                     <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
@@ -56,37 +56,37 @@
         </div>
     @endif --}}
 
-    <div class="overflow-x-auto">
-        <table class="data-table w-full">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
+        <table class="data-table w-full min-w-[800px]">
             <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left">ID</th>
-                    <th class="px-6 py-4 text-left">Número Pecosa</th>
-                    <th class="px-6 py-4 text-left">Club de Madres</th>
-                    <th class="px-6 py-4 text-left">Fecha Entrega</th>
-                    <th class="px-6 py-4 text-left">Responsable</th>
-                    <th class="px-6 py-4 text-left">Estado</th>
-                    <th class="px-6 py-4 text-left">Acciones</th>
+                    <th class="px-3 sm:px-4 py-4 text-left text-xs sm:text-sm">ID</th>
+                    <th class="px-3 sm:px-4 py-4 text-left text-xs sm:text-sm">Número Pecosa</th>
+                    <th class="px-3 sm:px-4 py-4 text-left text-xs sm:text-sm">Club de Madres</th>
+                    <th class="px-3 sm:px-4 py-4 text-left text-xs sm:text-sm">Fecha Entrega</th>
+                    <th class="px-3 sm:px-4 py-4 text-left text-xs sm:text-sm">Responsable</th>
+                    <th class="px-3 sm:px-4 py-4 text-left text-xs sm:text-sm">Estado</th>
+                    <th class="px-3 sm:px-4 py-4 text-left text-xs sm:text-sm">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($pecosas as $pecosa)
                 <tr>
-                    <td class="px-6 text-earth font-mono text-sm">#{{ $pecosa->id }}</td>
-                    <td class="px-6 font-semibold">{{ $pecosa->pecosa_number ?? 'Sin número' }}</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-earth font-mono text-xs sm:text-sm">#{{ $pecosa->id }}</td>
+                    <td class="px-3 sm:px-4 font-semibold text-xs sm:text-sm">{{ $pecosa->pecosa_number ?? 'Sin número' }}</td>
+                    <td class="px-3 sm:px-4 text-xs sm:text-sm">
                         @if($pecosa->association)
                             <span class="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">{{ $pecosa->association->name }}</span>
                         @else -
                         @endif
                     </td>
-                    <td class="px-6 text-earth text-sm">
+                    <td class="px-3 sm:px-4 text-earth text-xs sm:text-sm">
                         {{ $pecosa->delivery_date ? \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') : '-' }}
                     </td>
-                    <td class="px-6 text-sm">
+                    <td class="px-3 sm:px-4 text-xs sm:text-sm">
                         {{ $pecosa->president_name ?? '-' }}
                     </td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-xs sm:text-sm">
                         @if($pecosa->state)
                             @if($pecosa->state->title == 'Activo')
                                 <span class="badge-active px-3 py-1 rounded-full text-xs font-bold">Activo</span>
@@ -97,7 +97,7 @@
                             <span class="badge-inactive px-3 py-1 rounded-full text-xs font-bold">Sin estado</span>
                         @endif
                     </td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-xs sm:text-sm">
                         <div class="flex gap-2">
                             <a href="{{ route('productos-pecosas.pecosas.comprobante', $pecosa) }}" target="_blank" class="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white" title="Generar Comprobante">
                                 <i class="fas fa-file-pdf"></i>
@@ -125,14 +125,14 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-8 text-center text-earth">No hay registros</td>
+                    <td colspan="7" class="px-3 sm:px-4 py-8 text-center text-earth">No hay registros</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 
-    <div class="flex items-center justify-between px-6 py-4 border-t-2 border-wheat">
+    <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-t-2 border-wheat">
         <span class="text-sm text-earth font-medium">Mostrando {{ $pecosas->firstItem() ?? 0 }} - {{ $pecosas->lastItem() ?? 0 }} de {{ $pecosas->total() }} registros</span>
         {{ $pecosas->appends(request()->query())->links() }}
     </div>
@@ -140,7 +140,7 @@
 
 {{-- Modal Crear Pecosa --}}
 <div id="modal-crear-pecosa" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-4xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-4xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -152,12 +152,12 @@
             </div>
             <form action="{{ route('productos-pecosas.pecosas.store') }}" method="POST" id="pecosa-form-modal" onsubmit="document.getElementById('loading-screen').classList.add('active');">
                 @csrf
-                <div class="p-6">
+                <div class="p-4 sm:p-6">
                     <h4 class="font-extrabold text-charcoal text-lg mb-4 flex items-center gap-2">
                         <i class="fas fa-file-invoice text-leaf"></i> Información de la Pecosa
                     </h4>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                         <div>
                             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Número de Pecosa</label>
                             <input type="text" name="pecosa_number" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required placeholder="000-000">
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {{-- Modal Ver Pecosa --}}
 <div id="modal-ver-pecosa-{{ $pecosa->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-lg mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -453,15 +453,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="p-6 space-y-3 text-sm">
-                <div class="grid grid-cols-2 gap-3">
+            <div class="p-4 sm:p-6 space-y-3 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Número</span><p class="font-semibold text-charcoal">{{ $pecosa->pecosa_number ?? '-' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Estado</span>
                         <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $pecosa->state && $pecosa->state->title == 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $pecosa->state->title ?? 'N/A' }}</span></p>
                     </div>
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Club de Madres</span><p>{{ $pecosa->association->name ?? '-' }}</p></div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Entrega</span>
                         <p>{{ $pecosa->delivery_date ? \Carbon\Carbon::parse($pecosa->delivery_date)->format('d/m/Y') : '-' }}</p>
                     </div>
@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {{-- Modal Editar Pecosa --}}
 <div id="modal-editar-pecosa-{{ $pecosa->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-4xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-4xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -499,12 +499,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <form action="{{ route('productos-pecosas.pecosas.update', $pecosa) }}" method="POST" id="pecosa-edit-form-{{ $pecosa->id }}" onsubmit="document.getElementById('loading-screen').classList.add('active');">
                 @csrf
                 @method('PUT')
-                <div class="p-6">
+                <div class="p-4 sm:p-6">
                     <h4 class="font-extrabold text-charcoal text-lg mb-4 flex items-center gap-2">
                         <i class="fas fa-file-invoice text-leaf"></i> Información de la Pecosa
                     </h4>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                         <div>
                             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Número de Pecosa</label>
                             <input type="text" name="pecosa_number" value="{{ $pecosa->pecosa_number }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>

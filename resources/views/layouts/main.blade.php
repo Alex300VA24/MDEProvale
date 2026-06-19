@@ -372,10 +372,19 @@
             #sidebar {
                 position: fixed;
                 z-index: 60;
+                width: 0;
+            }
+
+            #sidebar.expanded {
+                width: 260px;
             }
 
             #sidebar-spacer {
                 display: none !important;
+            }
+
+            #top-header {
+                padding-left: 56px !important;
             }
 
             #mobile-overlay {
@@ -494,12 +503,29 @@
             font-size: 0.875rem;
             transition: all 0.2s;
         }
+
+        @media (max-width: 640px) {
+            .btn-action {
+                width: 2.25rem;
+                height: 2.25rem;
+            }
+
+            .data-table td {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            .data-table th {
+                font-size: 10px;
+                padding: 8px 10px;
+            }
+        }
     </style>
 </head>
 
-<body class="font-jakarta">
+<body class="font-jakarta" x-data="appShell()" x-init="init()">
 
-    <div id="loading-screen">
+    <div id="loading-screen" :class="{ 'active': loading }">
         <div class="loader-container">
             <div class="loader-icon">
                 <div class="loader-spin"></div>
@@ -517,7 +543,7 @@
     </div>
 
     <div id="app-shell">
-        <aside id="sidebar">
+        <aside id="sidebar" :class="{ 'expanded': sidebarExpanded }">
             <div class="flex items-center gap-4 px-5 py-6 border-b border-white/10 min-h-[88px]">
                 <div class="w-12 h-12 bg-blue rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
                     <img src="{{ asset('img/muni2.png') }}" alt="PROVALE" class="w-9 h-9 object-contain">
@@ -590,42 +616,42 @@
             </nav>
         </aside>
 
-        <div id="sidebar-spacer"></div>
+        <div id="sidebar-spacer" :class="{ 'expanded': sidebarExpanded }"></div>
 
         <div id="content-wrapper">
-            <div id="mobile-overlay" onclick="closeMobile()"></div>
+            <div id="mobile-overlay" :class="{ 'visible': mobileOpen }" @click="closeMobile()"></div>
 
-            <button id="mobile-toggle" onclick="openMobile()" class="fixed top-4 left-4 z-50 w-11 h-11 rounded-xl bg-white border-2 border-mist shadow-md flex items-center justify-center text-slate hover:bg-mist transition-all">
-                <i class="fas fa-bars text-base"></i>
+            <button id="mobile-toggle" @click="openMobile()" class="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border-2 border-mist shadow-md flex items-center justify-center text-slate hover:bg-mist transition-all">
+                <i class="fas fa-bars text-sm sm:text-base"></i>
             </button>
 
-            <header id="top-header" class="flex items-center justify-between px-8 h-[72px]">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center text-white text-base overflow-hidden">
+            <header id="top-header" class="flex items-center justify-between px-4 sm:px-8 h-14 sm:h-[72px]">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center text-white text-base overflow-hidden flex-shrink-0">
                         <img src="{{ asset('img/logovaso.svg') }}" alt="PROVALE" class="w-6 h-6 object-contain">
                     </div>
-                    <h2 class="text-navy font-bold text-[15px] uppercase tracking-wider">Sistema de Gestión PROVALE</h2>
+                    <h2 class="text-navy font-bold text-[13px] sm:text-[15px] uppercase tracking-wider truncate">Sistema de Gestión PROVALE</h2>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <button class="relative w-10 h-10 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all" onclick="openModal('modal-notifications');">
-                        <i class="fas fa-bell text-base" style="color:#1A2E4A"></i>
-                        <span class="notification-badge absolute -top-1 -right-1 min-w-[20px] h-5 bg-coral text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1" style="display: {{ $unreadNotifications > 0 ? 'flex' : 'none' }};">{{ $unreadNotificationsLabel }}</span>
+                <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <button class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all" @click="openNotifications()">
+                        <i class="fas fa-bell text-sm sm:text-base" style="color:#1A2E4A"></i>
+                        <span class="notification-badge absolute -top-1 -right-1 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1" :style="notifCount > 0 ? 'display:flex' : 'display:none'" x-text="notifCount > 0 ? notifCount : ''">{{ $unreadNotificationsLabel }}</span>
                     </button>
 
-                    <div class="flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-mist bg-base hover:bg-mist transition-all cursor-pointer">
+                    <div class="hidden sm:flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-mist bg-base hover:bg-mist transition-all cursor-pointer">
                         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-base">
                             {{ substr(Auth::user()->username ?? 'A', 0, 1) }}
                         </div>
-                        <div class="hidden sm:block">
+                        <div>
                             <div class="text-navy font-bold text-sm leading-none mb-1">{{ Auth::user()->username ?? 'Usuario' }}</div>
                             <div class="text-slate text-[11px] font-semibold">{{ Auth::user()->rol->title ?? '' }}</div>
                         </div>
                     </div>
 
-                    <button type="button" onclick="confirmLogout()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-coral-light text-coral font-bold text-sm border-2 border-transparent hover:bg-coral hover:text-white transition-all">
+                    <button type="button" onclick="confirmLogout()" class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-coral-light text-coral font-bold text-sm border-2 border-transparent hover:bg-coral hover:text-white transition-all">
                             <i class="fas fa-power-off"></i>
-                            <span class="hidden sm:inline">Salir</span>
+                            <span class="hidden md:inline">Salir</span>
                         </button>
                         <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">
                             @csrf
@@ -633,34 +659,34 @@
                 </div>
             </header>
 
-            <main class="flex-1 p-8">
+            <main class="flex-1 p-4 sm:p-6 lg:p-8">
                 @if(session('success') || session('error') || $errors->any())
                 @if(session('success'))
-                <div id="flash-alert" class="mb-6 px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 1px solid #34d399;">
-                    <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-check text-white text-sm"></i>
+                <div id="flash-alert" class="mb-4 sm:mb-6 px-3 sm:px-5 py-3 sm:py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 1px solid #34d399;">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-check text-white text-xs sm:text-sm"></i>
                     </div>
-                    <div class="text-sm font-medium text-emerald-800">{{ session('success') }}</div>
+                    <div class="text-xs sm:text-sm font-medium text-emerald-800">{{ session('success') }}</div>
                     <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-emerald-600 hover:text-emerald-800 transition-colors">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 @elseif(session('error'))
-                <div id="flash-alert" class="mb-6 px-5 py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 1px solid #f87171;">
-                    <div class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-times text-white text-sm"></i>
+                <div id="flash-alert" class="mb-4 sm:mb-6 px-3 sm:px-5 py-3 sm:py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 1px solid #f87171;">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-times text-white text-xs sm:text-sm"></i>
                     </div>
-                    <div class="text-sm font-medium text-red-800">{{ session('error') }}</div>
+                    <div class="text-xs sm:text-sm font-medium text-red-800">{{ session('error') }}</div>
                     <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-red-600 hover:text-red-800 transition-colors">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 @elseif($errors->any())
-                <div id="flash-alert" class="mb-6 px-5 py-4 rounded-xl flex items-start gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #fbbf24;">
-                    <div class="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-exclamation-triangle text-white text-sm"></i>
+                <div id="flash-alert" class="mb-4 sm:mb-6 px-3 sm:px-5 py-3 sm:py-4 rounded-xl flex items-start gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #fbbf24;">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-white text-xs sm:text-sm"></i>
                     </div>
-                    <div class="text-sm text-amber-800">
+                    <div class="text-xs sm:text-sm text-amber-800">
                         <ul class="list-disc list-inside space-y-0.5">
                             @foreach($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -679,111 +705,139 @@
         </div>
     </div>
 
-    <div id="modal-notifications" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50" style="display: none;">
-        <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div id="modal-notifications" x-show="notifOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50" style="display: none;" @keydown.escape.window="if(notifOpen) closeNotifications()">
+        <div class="relative mx-auto w-full max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4" @click.outside="closeNotifications()">
             <div class="bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-5 border-b-2 border-mist">
-                    <h3 class="font-extrabold text-navy text-lg flex items-center gap-2">
-                        <i class="fas fa-bell text-blue"></i> Bandeja de Notificaciones
+                <div class="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-mist">
+                    <h3 class="font-extrabold text-navy text-base sm:text-lg flex items-center gap-2">
+                        <i class="fas fa-bell text-blue"></i> <span class="hidden sm:inline">Bandeja de </span>Notificaciones
                     </h3>
-                    <button onclick="closeModal('modal-notifications')" class="w-8 h-8 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all">
+                    <button @click="closeNotifications()" class="w-8 h-8 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div class="p-6 max-h-96 overflow-y-auto" id="notifications-container">
-                    <div class="text-center py-8">
-                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
-                        <p>Cargando...</p>
-                    </div>
+                <div class="p-4 sm:p-6 max-h-96 overflow-y-auto" id="notifications-container">
+                    <template x-if="notifLoading">
+                        <div class="text-center py-8">
+                            <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                            <p>Cargando...</p>
+                        </div>
+                    </template>
+                    <template x-if="!notifLoading && notifHtml">
+                        <div x-html="notifHtml"></div>
+                    </template>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function loadNotifications() {
-            var container = document.getElementById('notifications-container');
-            if (!container) return;
-            
-            fetch('{{ route('sistema.notifications.partial') }}')
-            .then(function(response) {
-                if (!response.ok) throw new Error('Error HTTP: ' + response.status);
-                return response.text();
-            })
-            .then(function(html) {
-                container.innerHTML = html;
-            })
-            .catch(function(error) {
-                console.error('Error notifications:', error);
-                container.innerHTML = '<div class="text-center py-8 text-slate"><i class="fas fa-exclamation-circle text-3xl mb-3"></i><p>Error al cargar notificaciones</p></div>';
-            });
-        }
+        function appShell() {
+            return {
+                sidebarExpanded: false,
+                mobileOpen: false,
+                loading: false,
+                notifOpen: false,
+                notifLoading: false,
+                notifHtml: '',
+                notifLoaded: false,
+                notifCount: {{ $unreadNotifications }},
+                loadingTimer: null,
 
-        let modalOpened = false;
-        function openModal(id) {
-            document.querySelectorAll('.fixed.z-40, .fixed.z-50, .fixed.z-60, .fixed.z-\\[70\\]').forEach(el => {
-                el.classList.add('hidden');
-                el.style.display = 'none';
-            });
-            var element = document.getElementById(id);
-            element.classList.remove('hidden');
-            element.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            
-            if (id === 'modal-notifications' && !modalOpened) {
-                modalOpened = true;
-                loadNotifications();
-            }
-        }
-        
-        function showSwalWhenReady(config, retries = 20) {
-            if (window.Swal) {
-                window.Swal.fire(config);
-                return;
-            }
-            if (retries > 0) {
-                setTimeout(() => showSwalWhenReady(config, retries - 1), 150);
-            }
+                init() {
+                    this.isMobile = () => window.innerWidth <= 768;
+
+                    const sidebar = document.getElementById('sidebar');
+                    const spacer = document.getElementById('sidebar-spacer');
+                    let hoverTimeout;
+
+                    sidebar.addEventListener('mouseenter', () => {
+                        if (this.isMobile()) return;
+                        clearTimeout(hoverTimeout);
+                        this.sidebarExpanded = true;
+                    });
+                    sidebar.addEventListener('mouseleave', () => {
+                        if (this.isMobile()) return;
+                        hoverTimeout = setTimeout(() => {
+                            this.sidebarExpanded = false;
+                        }, 200);
+                    });
+
+                    setInterval(() => this.updateNotifBadge(), 30000);
+
+                    window.addEventListener('pageshow', () => this.hideLoading());
+                },
+
+                openMobile() {
+                    this.sidebarExpanded = true;
+                    this.mobileOpen = true;
+                },
+
+                closeMobile() {
+                    this.sidebarExpanded = false;
+                    this.mobileOpen = false;
+                },
+
+                openNotifications() {
+                    this.notifOpen = true;
+                    document.body.style.overflow = 'hidden';
+                    if (!this.notifLoaded) {
+                        this.loadNotifications();
+                    }
+                },
+
+                closeNotifications() {
+                    this.notifOpen = false;
+                    document.body.style.overflow = '';
+                },
+
+                loadNotifications() {
+                    this.notifLoading = true;
+                    fetch('{{ route("sistema.notifications.partial") }}')
+                        .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+                        .then(html => { this.notifHtml = html; this.notifLoaded = true; this.notifLoading = false; })
+                        .catch(() => {
+                            this.notifHtml = '<div class="text-center py-8 text-slate"><i class="fas fa-exclamation-circle text-3xl mb-3"></i><p>Error al cargar notificaciones</p></div>';
+                            this.notifLoading = false;
+                        });
+                },
+
+                updateNotifBadge() {
+                    fetch('{{ route("sistema.notifications.count") }}', {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.count !== this.notifCount) {
+                            this.notifCount = data.count;
+                            const badge = document.querySelector('.notification-badge');
+                            if (badge) {
+                                badge.style.display = data.count > 0 ? 'flex' : 'none';
+                                badge.textContent = data.label;
+                            }
+                        }
+                    })
+                    .catch(() => {});
+                },
+
+                showLoadingDelayed(delay) {
+                    clearTimeout(this.loadingTimer);
+                    this.loadingTimer = setTimeout(() => { this.loading = true; }, delay);
+                },
+
+                hideLoading() {
+                    clearTimeout(this.loadingTimer);
+                    this.loading = false;
+                }
+            };
         }
 
         let lastNotificationCount = {{ $unreadNotifications }};
-        
-        function updateNotificationsBadge() {
-            fetch('{{ route('sistema.notifications.count') }}', {
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('No se pudo actualizar el contador de notificaciones.');
-            }
 
-            return response.json();
-        })
-        .then(data => {
-            // Solo actualizar si el contador cambió
-            if (data.count !== lastNotificationCount) {
-                lastNotificationCount = data.count;
-                
-                const badge = document.querySelector('.notification-badge');
-                if (badge) {
-                    if (data.count > 0) {
-                        badge.style.display = 'flex';
-                        badge.textContent = data.label;
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                }
-            }
-        })
-        .catch(error => console.log('Error al actualizar notificaciones:', error));
-    }
-
-    // Actualizar cada 30 segundos
-    setInterval(updateNotificationsBadge, 30000);
+        function showSwalWhenReady(config, retries = 20) {
+            if (window.Swal) { window.Swal.fire(config); return; }
+            if (retries > 0) setTimeout(() => showSwalWhenReady(config, retries - 1), 150);
+        }
     </script>
 
     <script>
@@ -793,14 +847,9 @@
         function handleSessionExpired() {
             if (sessionExpiredHandled) return;
             sessionExpiredHandled = true;
-            // Intentar mostrar modal en login o redirigir
             const modal = document.getElementById('session-expired-modal');
-            if (modal) {
-                modal.style.display = 'flex';
-            } else {
-                alert('Tu sesión ha expirado. Serás redirigido al login.');
-                window.location.href = loginUrl;
-            }
+            if (modal) { modal.style.display = 'flex'; }
+            else { alert('Tu sesion ha expirado. Seras redirigido al login.'); window.location.href = loginUrl; }
         }
 
         @if(session('session_expired'))
@@ -808,24 +857,15 @@
         @else
             var sessionExpired = false;
         @endif
-        
+
         if (sessionExpired) {
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(handleSessionExpired, 100);
-            });
+            document.addEventListener('DOMContentLoaded', function() { setTimeout(handleSessionExpired, 100); });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             const successMessage = @json(session('success'));
-
             if (successMessage) {
-                showSwalWhenReady({
-                    icon: 'success',
-                    title: 'Proceso completado',
-                    text: successMessage,
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#1E5799'
-                });
+                showSwalWhenReady({ icon: 'success', title: 'Proceso completado', text: successMessage, confirmButtonText: 'Aceptar', confirmButtonColor: '#1E5799' });
             }
         });
 
@@ -833,13 +873,7 @@
             const originalFetch = window.fetch.bind(window);
             window.fetch = async function(...args) {
                 const response = await originalFetch(...args);
-                const isAuthError = response.status === 401 || response.status === 419;
-                const redirectedToLogin = response.redirected && response.url.includes('/login');
-
-                if (isAuthError || redirectedToLogin) {
-                    handleSessionExpired();
-                }
-
+                if (response.status === 401 || response.status === 419 || (response.redirected && response.url.includes('/login'))) handleSessionExpired();
                 return response;
             };
         }
@@ -847,15 +881,25 @@
         if (window.axios && window.axios.interceptors) {
             window.axios.interceptors.response.use(
                 response => response,
-                error => {
-                    const status = error?.response?.status;
-                    if (status === 401 || status === 419) {
-                        handleSessionExpired();
-                    }
-
-                    return Promise.reject(error);
-                }
+                error => { if (error?.response?.status === 401 || error?.response?.status === 419) handleSessionExpired(); return Promise.reject(error); }
             );
+        }
+
+        function openModal(id) {
+            document.querySelectorAll('.fixed.z-40, .fixed.z-50, .fixed.z-60, .fixed.z-\\[70\\]').forEach(el => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+            var el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hidden');
+                el.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+            if (id === 'modal-notifications') {
+                const shell = document.querySelector('[x-data]').__x;
+                if (shell) { shell.$data.notifOpen = true; shell.$data.openNotifications(); }
+            }
         }
 
         function openModalSecond(id) {
@@ -863,25 +907,26 @@
                 el.classList.add('hidden');
                 el.style.display = 'none';
             });
-            var element = document.getElementById(id);
-            element.classList.remove('hidden');
-            element.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            
-            if (id === 'modal-notifications' && !modalOpened) {
-                modalOpened = true;
-                loadNotifications();
+            var el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hidden');
+                el.style.display = 'block';
+                document.body.style.overflow = 'hidden';
             }
         }
 
         function closeModal(id) {
-            var element = document.getElementById(id);
-            element.classList.add('hidden');
-            element.style.display = 'none';
-            document.body.style.overflow = '';
-            
+            var el = document.getElementById(id);
+            if (el) {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+                document.body.style.overflow = '';
+            }
             if (id === 'modal-notifications') {
-                modalOpened = false;
+                try {
+                    const shell = document.querySelector('[x-data]').__x;
+                    if (shell) shell.$data.notifOpen = false;
+                } catch(e) {}
             }
         }
 
@@ -889,160 +934,76 @@
             message = message || '¿Estás seguro de que deseas eliminar este registro?';
             Swal.fire({
                 title: '<span class="font-extrabold text-navy text-xl">¿Estás seguro?</span>',
-                text: message,
-                icon: 'warning',
-                showCancelButton: true,
-            confirmButtonColor: '#D94F3D',
-            cancelButtonColor: '#5A7FA8',
+                text: message, icon: 'warning', showCancelButton: true,
+                confirmButtonColor: '#D94F3D', cancelButtonColor: '#5A7FA8',
                 confirmButtonText: '<i class="fas fa-trash mr-1"></i> Sí, eliminar',
-                cancelButtonText: 'Cancelar',
-                reverseButtons: true,
-                customClass: {
-                    popup: 'rounded-2xl shadow-2xl border-2 border-mist',
-                    confirmButton: 'rounded-xl font-bold px-4 py-2',
-                    cancelButton: 'rounded-xl font-bold px-4 py-2',
-                },
+                cancelButtonText: 'Cancelar', reverseButtons: true,
+                customClass: { popup: 'rounded-2xl shadow-2xl border-2 border-mist', confirmButton: 'rounded-xl font-bold px-4 py-2', cancelButton: 'rounded-xl font-bold px-4 py-2' },
                 backdrop: 'rgba(0,0,0,0.4)',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById(formId).submit();
-                }
-            });
+            }).then((result) => { if (result.isConfirmed) document.getElementById(formId).submit(); });
         }
 
         function confirmLogout() {
             Swal.fire({
                 title: '<span class="font-extrabold text-navy text-xl">¿Cerrar sesión?</span>',
-                text: '¿Estás seguro de que deseas cerrar sesión?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#D94F3D',
-                cancelButtonColor: '#5A7FA8',
+                text: '¿Estás seguro de que deseas cerrar sesión?', icon: 'question', showCancelButton: true,
+                confirmButtonColor: '#D94F3D', cancelButtonColor: '#5A7FA8',
                 confirmButtonText: '<i class="fas fa-power-off mr-1"></i> Sí, cerrar sesión',
-                cancelButtonText: 'Cancelar',
-                reverseButtons: true,
-                customClass: {
-                    popup: 'rounded-2xl shadow-2xl border-2 border-mist',
-                    confirmButton: 'rounded-xl font-bold px-4 py-2',
-                    cancelButton: 'rounded-xl font-bold px-4 py-2',
-                },
+                cancelButtonText: 'Cancelar', reverseButtons: true,
+                customClass: { popup: 'rounded-2xl shadow-2xl border-2 border-mist', confirmButton: 'rounded-xl font-bold px-4 py-2', cancelButton: 'rounded-xl font-bold px-4 py-2' },
                 backdrop: 'rgba(0,0,0,0.4)',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('logout-form').submit();
-                }
-            });
+            }).then((result) => { if (result.isConfirmed) document.getElementById('logout-form').submit(); });
         }
 
         function confirmResetPassword(userId, userName, dni) {
             Swal.fire({
                 title: 'Restablecer Contraseña',
                 html: '¿Estás seguro de que deseas restablecer la contraseña del usuario <strong>' + userName + '</strong>?<br><br><span class="text-red-500 font-bold">La contraseña será su DNI: ' + dni + '</span>',
-                icon: 'warning',
-                showCancelButton: true,
-            confirmButtonColor: '#D94F3D',
-            cancelButtonColor: '#5A7FA8',
+                icon: 'warning', showCancelButton: true,
+                confirmButtonColor: '#D94F3D', cancelButtonColor: '#5A7FA8',
                 confirmButtonText: '<i class="fas fa-key mr-1"></i> Sí, restablecer',
-                cancelButtonText: 'Cancelar',
-                borderRadius: '1rem',
-                customClass: {
-                    popup: 'rounded-2xl',
-                    confirmButton: 'rounded-xl font-bold',
-                    cancelButton: 'rounded-xl font-bold',
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('form-reset-password-' + userId).submit();
-                }
-            });
-        }
-
-        const sidebar = document.getElementById('sidebar');
-        const spacer = document.getElementById('sidebar-spacer');
-        const overlay = document.getElementById('mobile-overlay');
-        let hoverTimeout;
-        const isMobile = () => window.innerWidth <= 768;
-
-        sidebar.addEventListener('mouseenter', () => {
-            if (isMobile()) return;
-            clearTimeout(hoverTimeout);
-            sidebar.classList.add('expanded');
-            spacer.classList.add('expanded');
-        });
-        sidebar.addEventListener('mouseleave', () => {
-            if (isMobile()) return;
-            hoverTimeout = setTimeout(() => {
-                sidebar.classList.remove('expanded');
-                spacer.classList.remove('expanded');
-            }, 200);
-        });
-
-        function openMobile() {
-            sidebar.classList.add('expanded');
-            overlay.classList.add('visible');
-        }
-
-        function closeMobile() {
-            sidebar.classList.remove('expanded');
-            overlay.classList.remove('visible');
+                cancelButtonText: 'Cancelar', borderRadius: '1rem',
+                customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl font-bold', cancelButton: 'rounded-xl font-bold' }
+            }).then((result) => { if (result.isConfirmed) document.getElementById('form-reset-password-' + userId).submit(); });
         }
 
         function toggleGroup(btn) {
-            if (!sidebar.classList.contains('expanded')) {
-                sidebar.classList.add('expanded');
-                spacer.classList.add('expanded');
-            }
+            const shell = document.querySelector('[x-data]').__x;
+            if (shell && !shell.$data.sidebarExpanded) shell.$data.sidebarExpanded = true;
             const groupItem = btn.closest('.group-item');
             const submenu = groupItem.querySelector('.submenu');
             const isOpen = groupItem.classList.contains('open');
-            document.querySelectorAll('.group-item').forEach(g => {
-                g.classList.remove('open');
-                g.querySelector('.submenu').classList.remove('open');
-            });
-            if (!isOpen) {
-                groupItem.classList.add('open');
-                submenu.classList.add('open');
-            }
+            document.querySelectorAll('.group-item').forEach(g => { g.classList.remove('open'); g.querySelector('.submenu').classList.remove('open'); });
+            if (!isOpen) { groupItem.classList.add('open'); submenu.classList.add('open'); }
         }
 
-        // Loading screen: solo al navegar si tarda más de 300ms, logout y formularios de sesión
         const loadingScreen = document.getElementById('loading-screen');
         let loadingTimer = null;
-
         function showLoadingDelayed(delay) {
             clearTimeout(loadingTimer);
             loadingTimer = setTimeout(() => loadingScreen.classList.add('active'), delay);
         }
-
         function hideLoading() {
             clearTimeout(loadingTimer);
             loadingScreen.classList.remove('active');
         }
 
-        // Links de navegación: mostrar solo si tarda más de 300ms
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a[href]');
             if (!link) return;
             const href = link.getAttribute('href');
             if (!href || href === '#' || href.startsWith('javascript') || href.startsWith('mailto')) return;
-            if (link.target === '_blank') return;
-            if (link.hasAttribute('data-no-loading')) return;
+            if (link.target === '_blank' || link.hasAttribute('data-no-loading')) return;
             showLoadingDelayed(300);
         });
 
-        // Formulario de logout: mostrar inmediatamente
         document.addEventListener('submit', function(e) {
             const form = e.target;
             const action = form.getAttribute('action') || '';
-            if (action.includes('logout')) {
-                loadingScreen.classList.add('active');
-                return;
-            }
-            if (form.hasAttribute('data-no-loading')) return;
-            if (form.closest('[id$="-modal"]') || form.closest('.modal')) return;
+            if (action.includes('logout')) { loadingScreen.classList.add('active'); return; }
+            if (form.hasAttribute('data-no-loading') || form.closest('[id$="-modal"]') || form.closest('.modal')) return;
         });
 
-        // Ocultar al restaurar desde caché (back/forward)
         window.addEventListener('pageshow', function() { hideLoading(); });
     </script>
 

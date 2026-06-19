@@ -16,6 +16,22 @@ module.exports = {
                 base:  '#EEF4FC',
                 mist:  '#D4E4F7',
                 slate: '#5A7FA8',
+                wheat: '#E8DCC8',
+                charcoal: '#2D3748',
+                earth: '#6B7280',
+                leaf: {
+                    DEFAULT: '#16A34A',
+                    light: '#DCFCE7',
+                },
+                cream: '#FDF8F0',
+                clay: {
+                    DEFAULT: '#DC2626',
+                    light: '#FEE2E2',
+                },
+                sun: {
+                    DEFAULT: '#D97706',
+                    light: '#FEF3C7',
+                },
                 navy: {
                     DEFAULT: '#1A2E4A',
                     dark:    '#0F1E30',
@@ -41,6 +57,8 @@ module.exports = {
                     DEFAULT: '#D94F3D',
                     light:   '#FCEAE8',
                 },
+                'purple-light': '#F3E8FF',
+                'green-light': '#DCFCE7',
             },
         },
     },

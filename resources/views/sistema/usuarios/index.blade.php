@@ -4,11 +4,11 @@
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-    <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
         <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
             <i class="fas fa-users-cog text-[#0284C7]"></i> Gestión de Usuarios
         </h3>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <a href="{{ route('sistema.index') }}" class="btn-secondary">
                 <i class="fas fa-arrow-left mr-2"></i> Volver
             </a>
@@ -20,38 +20,38 @@
         </div>
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="data-table w-full">
+    <div class="overflow-x-auto -mx-4 sm:mx-0">
+        <table class="data-table w-full min-w-[700px] text-xs sm:text-sm">
             <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left">Usuario</th>
-                    <th class="px-6 py-4 text-left">Email</th>
-                    <th class="px-6 py-4 text-left">DNI</th>
-                    <th class="px-6 py-4 text-left">Rol</th>
-                    <th class="px-6 py-4 text-left">Estado</th>
-                    <th class="px-6 py-4 text-left">Acciones</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Usuario</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Email</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">DNI</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Rol</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Estado</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($usuarios as $usuario)
                 <tr>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4">
                         <div class="font-semibold text-charcoal">{{ $usuario->names }} {{ $usuario->father_surname }} {{ $usuario->mother_surname }}</div>
                         <div class="text-xs text-earth">{{ $usuario->username }}</div>
                     </td>
-                    <td class="px-6 text-earth text-sm">{{ $usuario->email }}</td>
-                    <td class="px-6 text-earth text-sm">{{ $usuario->dni }}</td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4 text-earth text-sm">{{ $usuario->email }}</td>
+                    <td class="px-3 sm:px-4 text-earth text-sm">{{ $usuario->dni }}</td>
+                    <td class="px-3 sm:px-4">
                         <span class="px-2 py-1 rounded-lg bg-sky-light text-[#0284C7] text-xs font-bold">
                             {{ $usuario->rol->title ?? 'Sin rol' }}
                         </span>
                     </td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4">
                         <span class="px-3 py-1 rounded-full text-xs font-bold {{ $usuario->state_id == 1 ? 'badge-active' : 'badge-inactive' }}">
                             {{ $usuario->state->title ?? 'Sin estado' }}
                         </span>
                     </td>
-                    <td class="px-6">
+                    <td class="px-3 sm:px-4">
                         <div class="flex gap-2">
                             @if(Auth::user()->canEditModule('sistema'))
                             <button onclick="openModal('modal-editar-usuario-{{ $usuario->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
@@ -87,7 +87,7 @@
 
 {{-- Modal Crear Usuario --}}
 <div id="modal-crear-usuario" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
@@ -162,7 +162,7 @@
 {{-- Modales Editar Usuario --}}
 @foreach($usuarios as $usuario)
 <div id="modal-editar-usuario-{{ $usuario->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
         <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
             <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
