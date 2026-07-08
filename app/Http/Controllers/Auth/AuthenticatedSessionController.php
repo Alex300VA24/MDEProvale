@@ -72,6 +72,6 @@ class AuthenticatedSessionController extends Controller
     {
         $path = parse_url($url, PHP_URL_PATH) ?? '';
 
-        return str_contains($path, '/sistema/notifications/count/unread');
+        return strpos($path, '/sistema/notifications/count/unread') !== false;
     }
 }

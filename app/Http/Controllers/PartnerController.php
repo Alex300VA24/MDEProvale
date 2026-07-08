@@ -2,155 +2,136 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePartnerRequest;
+use App\Http\Requests\UpdatePartnerRequest;
 use App\Models\Partner;
 use App\Models\Association;
-use App\Models\State;
 use App\Models\People;
-use Illuminate\Http\Request;
+use App\Models\Relationship;
+use App\Models\TypeBenefit;
+use App\Models\ReasonDisqualification;
+use App\Models\PlaceSector;
+use App\Models\State;
+use App\Services\PartnerService;
+use App\Services\BeneficiaryReportService;
 use Barryvdh\DomPDF\Facade\PDF;
+use Illuminate\Http\Request;
 
 class PartnerController extends Controller
 {
+    private PartnerService $partnerService;
+    private BeneficiaryReportService $beneficiaryReportService;
+
+    public function __construct(PartnerService $partnerService, BeneficiaryReportService $beneficiaryReportService)
+    {
+        $this->partnerService = $partnerService;
+        $this->beneficiaryReportService = $beneficiaryReportService;
+    }
+
     public function index(Request $request)
     {
         $query = Partner::query()
-            ->select(['id', 'date_begin', 'date_end', 'observations', 'state_id', 'person_id', 'association_id', 'created_at', 'updated_at'])
-            ->with(['people:id,names,father_lastname,mother_lastname,dni', 'association:id,name,code', 'state:id,title']);
+            ->select(['partners.id', 'partners.person_id', 'partners.association_id', 'partners.state_id', 'partners.date_begin', 'partners.date_end', 'partners.observations'])
+            ->with([
+                'people:id,names,father_lastname,mother_lastname,dni,address',
+                'association:id,name,code',
+                'state:id,title'
+            ])
+            ->withCount('beneficiaries');
 
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('people', function ($q) use ($search) {
-                $q->where('dni', $search)
-                  ->orWhere('names', 'like', "{$search}%")
-                  ->orWhere('father_lastname', 'like', "{$search}%")
-                  ->orWhere('mother_lastname', 'like', "{$search}%");
+                $q->where('names', 'like', "%{$search}%")
+                    ->orWhere('father_lastname', 'like', "%{$search}%")
+                    ->orWhere('mother_lastname', 'like', "%{$search}%")
+                    ->orWhere('dni', 'like', "%{$search}%");
             });
         }
 
-        if ($request->has('association_id') && $request->association_id != '') {
+        if ($request->filled('association_id')) {
             $query->where('association_id', $request->association_id);
         }
 
-        if ($request->has('state_id') && $request->state_id != '') {
+        if ($request->filled('state_id')) {
             $query->where('state_id', $request->state_id);
         }
 
         $partners = $query->orderBy('id', 'desc')->paginate(10);
-        $associations = Association::select(['id', 'name', 'code'])->get();
+        $associations = Association::select(['id', 'name'])->get();
         $states = State::select(['id', 'title'])->get();
-
-        return view('socios.index', compact('partners', 'associations', 'states'));
-    }
-
-    public function create()
-    {
         $people = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
-            ->whereDoesntHave('partners')
+            ->orderBy('id', 'desc')
+            ->limit(100)
             ->get();
+        $allPeople = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
+            ->orderBy('names')
+            ->limit(1000)
+            ->get();
+        $relationships = Relationship::select(['id', 'title'])->get();
+        $placeSectors = PlaceSector::with(['place:id,code,title', 'sector:id,title'])->get();
+        $typeBenefits = TypeBenefit::select(['id', 'title', 'abbreviation'])->get();
+        $reasonDisqualifications = ReasonDisqualification::select(['id', 'title'])->get();
 
-        $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::select(['id', 'title'])->get();
-        return view('socios.create', compact('people', 'associations', 'states'));
+        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states', 'people', 'allPeople', 'relationships', 'placeSectors', 'typeBenefits', 'reasonDisqualifications'));
     }
 
-    public function store(Request $request)
+    public function store(StorePartnerRequest $request)
     {
-        $validated = $request->validate([
-            'date_begin' => 'required|date',
-            'date_end' => 'required|date',
-            'observations' => 'nullable|string',
-            'state_id' => 'required|exists:states,id',
-            'person_id' => 'required|exists:people,id',
-            'association_id' => 'required|exists:associations,id',
-        ]);
-
-        Partner::create($validated);
-        return redirect()->route('socios.index')->with('success', 'Socio creado exitosamente');
+        try {
+            $this->partnerService->storeWithBeneficiaries(
+                $request->validated(),
+                $request->input('beneficiaries')
+            );
+            return redirect()->route('partners.index')->with('success', 'Socio y beneficiarios creados exitosamente');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Error al crear socio: ' . $e->getMessage());
+        }
     }
 
-    public function show(Partner $partner)
+    public function update(UpdatePartnerRequest $request, Partner $partner)
     {
-        $partner->load(['people', 'association', 'state', 'beneficiaries', 'directives']);
-        return view('socios.show', compact('partner'));
-    }
-
-    public function edit(Partner $partner)
-    {
-$people = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])->get();
-        $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::select(['id', 'title'])->get();
-        return view('socios.edit', compact('partner', 'people', 'associations', 'states'));
-    }
-
-    public function update(Request $request, Partner $partner)
-    {
-        $validated = $request->validate([
-            'date_begin' => 'required|date',
-            'date_end' => 'required|date',
-            'observations' => 'nullable|string',
-            'state_id' => 'required|exists:states,id',
-            'person_id' => 'required|exists:people,id',
-            'association_id' => 'required|exists:associations,id',
-        ]);
-
-        $partner->update($validated);
-        return redirect()->route('socios.index')->with('success', 'Socio actualizado exitosamente');
+        try {
+            $this->partnerService->updateWithBeneficiaries(
+                $partner,
+                $request->validated(),
+                $request->input('beneficiaries')
+            );
+            return redirect()->route('partners.index')->with('success', 'Socio y beneficiarios actualizados exitosamente');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Error al actualizar socio: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Partner $partner)
     {
-        $partner->delete();
-        return redirect()->route('socios.index')->with('success', 'Socio eliminado exitosamente');
+        try {
+            $this->partnerService->deleteWithRelations($partner);
+            return redirect()->route('partners.index')->with('success', 'Socio y beneficiarios eliminados exitosamente');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al eliminar socio: ' . $e->getMessage());
+        }
     }
 
-    public function reportes()
+    public function reportePadronBeneficiarios(Request $request)
     {
-        return view('socios.reportes');
-    }
+        $associations = Association::all();
+        $associationId = $request->get('association_id');
+        $mes = $request->get('month', date('n'));
+        $anio = $request->get('year', date('Y'));
 
-    public function generarReporte($tipo, Request $request)
-    {
-        $query = Partner::with(['people', 'association', 'state']);
-
-        switch ($tipo) {
-            case 'general':
-                $partners = $query->get();
-                $titulo = 'Listado General de Socios';
-                break;
-            case 'club':
-                $associationId = $request->get('association_id');
-                $partners = $query->where('association_id', $associationId)->get();
-                $association = Association::find($associationId);
-                $titulo = 'Socios del Club: ' . ($association->name ?? 'N/A');
-                break;
-            case 'estado':
-                $stateId = $request->get('state_id');
-                $partners = $query->where('state_id', $stateId)->get();
-                $state = \App\Models\State::find($stateId);
-                $titulo = 'Socios - Estado: ' . ($state->title ?? 'N/A');
-                break;
-            case 'fecha':
-                $fechaInicio = $request->get('fecha_inicio');
-                $fechaFin = $request->get('fecha_fin');
-                $partners = $query->whereBetween('date_begin', [$fechaInicio, $fechaFin])->get();
-                $titulo = 'Socios del ' . date('d/m/Y', strtotime($fechaInicio)) . ' al ' . date('d/m/Y', strtotime($fechaFin));
-                break;
-            case 'estadistico':
-                $partners = $query->get();
-                $titulo = 'Reporte Estadístico de Socios';
-                break;
-            case 'beneficiarios':
-                $partners = $query->with('beneficiaries')->get();
-                $titulo = 'Socios con Beneficiarios';
-                break;
-            default:
-                $partners = $query->get();
-                $titulo = 'Reporte de Socios';
+        if (!$associationId) {
+            return view('socios-beneficiarios.beneficiarios.padron-filtros', compact('associations', 'mes', 'anio'));
         }
 
-        $orientacion = $request->get('orientacion', 'portrait');
-        $pdf = PDF::loadView('reportes.socios', compact('partners', 'titulo', 'tipo'));
-        $pdf->setPaper('a4', $orientacion);
-        return $pdf->download('reporte-socios-' . $tipo . '-' . date('Y-m-d') . '.pdf');
+        try {
+            $data = $this->beneficiaryReportService->generatePadronReport($associationId, (int)$mes, (int)$anio);
+
+            $pdf = PDF::loadView('reporte_beneficiario', $data);
+            $pdf->setPaper('a4', 'landscape');
+            return $pdf->stream('padron-beneficiarios-' . $data['comite'] . '-' . $mes . '-' . $anio . '.pdf');
+        } catch (\DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

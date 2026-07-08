@@ -157,7 +157,7 @@
                     </div>
                     <span class="text-[8px] sm:text-[10px] font-semibold text-amber text-center leading-tight">Padrón Club</span>
                 </a>
-                <a href="{{ route('productos-pecosas.pecosas.generar-reporte', 'reparticion') }}" class="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-teal-light hover:bg-teal/10 transition-all group">
+                <a href="{{ route('productos-pecosas.productos.generar-reporte', 'reparticion') }}" class="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-teal-light hover:bg-teal/10 transition-all group">
                     <div class="w-7 h-7 sm:w-8 sm:h-8 bg-teal rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
                         <i class="fas fa-file-pdf"></i>
                     </div>
