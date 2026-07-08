@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Association;
 use App\Models\Racion;
-use App\Models\State;
 use Barryvdh\DomPDF\Facade\PDF;
 use Illuminate\Http\Request;
 
@@ -26,46 +25,32 @@ class ReparticionController extends Controller
         $racionLecheMl = $racion->racion_leche_militros;
         $racionHojuelasGr = $racion->racion_hojuelas_gramos;
 
-        $activeState = State::where('abbreviation', 'A')->first();
-
-        if (!$activeState) {
-            return redirect()->route('movimientos.index')
-                ->with('error', 'No se encontró estado ACTIVO. Configure los estados en Mantenimiento.');
-        }
-
-        $startDate = "$currentYear-$currentMonth-01";
         $endDate = "$currentYear-$currentMonth-" . $daysInMonth;
 
         $associations = Association::with([
             'placeSector.sector',
-            'partners' => function ($query) use ($activeState, $startDate, $endDate) {
-                $query->select(['id', 'association_id', 'state_id', 'date_begin', 'date_end'])
-                    ->where('state_id', $activeState->id)
-                    ->where(function ($q) use ($startDate, $endDate) {
+            'partners' => function ($query) use ($endDate) {
+                $query->select(['id', 'association_id', 'date_begin', 'date_end'])
+                    ->where(function ($q) use ($endDate) {
                         $q->whereNull('date_begin')
-                            ->orWhere('date_begin', '')
                             ->orWhere('date_begin', '<=', $endDate);
                     })
-                    ->where(function ($q) use ($startDate) {
+                    ->where(function ($q) use ($endDate) {
                         $q->whereNull('date_end')
-                            ->orWhere('date_end', '')
-                            ->orWhere('date_end', '>=', $startDate);
+                            ->orWhere('date_end', '>=', $endDate);
                     });
             },
-            'partners.beneficiaries' => function ($q) use ($activeState, $startDate, $endDate) {
+            'partners.beneficiaries' => function ($q) use ($endDate) {
                 $q->select(['id', 'partner_id'])
-                    ->whereHas('histories', function ($hq) use ($activeState, $startDate, $endDate) {
-                        $hq->where('state_id', $activeState->id)
-                            ->where(function ($q) use ($endDate) {
-                                $q->whereNull('date_begin')
-                                    ->orWhere('date_begin', '')
-                                    ->orWhere('date_begin', '<=', $endDate);
-                            })
-                            ->where(function ($q) use ($startDate) {
-                                $q->whereNull('date_end')
-                                    ->orWhere('date_end', '')
-                                    ->orWhere('date_end', '>=', $startDate);
-                            });
+                    ->whereHas('histories', function ($hq) use ($endDate) {
+                        $hq->where(function ($q) use ($endDate) {
+                            $q->whereNull('date_begin')
+                                ->orWhere('date_begin', '<=', $endDate);
+                        })
+                        ->where(function ($q) use ($endDate) {
+                            $q->whereNull('date_end')
+                                ->orWhere('date_end', '>=', $endDate);
+                        });
                     });
             }
         ])->get()->map(function ($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth) {
@@ -139,46 +124,32 @@ class ReparticionController extends Controller
         $racionLecheMl = $racion->racion_leche_militros;
         $racionHojuelasGr = $racion->racion_hojuelas_gramos;
 
-        $activeState = State::where('abbreviation', 'A')->first();
-
-        if (!$activeState) {
-            return redirect()->route('movimientos.index')
-                ->with('error', 'No se encontró estado ACTIVO. Configure los estados en Mantenimiento.');
-        }
-
-        $startDate = "$currentYear-$currentMonth-01";
         $endDate = "$currentYear-$currentMonth-" . $daysInMonth;
 
         $associations = Association::with([
             'placeSector.sector',
-            'partners' => function ($query) use ($activeState, $startDate, $endDate) {
-                $query->select(['id', 'association_id', 'state_id', 'date_begin', 'date_end'])
-                    ->where('state_id', $activeState->id)
-                    ->where(function ($q) use ($startDate, $endDate) {
+            'partners' => function ($query) use ($endDate) {
+                $query->select(['id', 'association_id', 'date_begin', 'date_end'])
+                    ->where(function ($q) use ($endDate) {
                         $q->whereNull('date_begin')
-                            ->orWhere('date_begin', '')
                             ->orWhere('date_begin', '<=', $endDate);
                     })
-                    ->where(function ($q) use ($startDate) {
+                    ->where(function ($q) use ($endDate) {
                         $q->whereNull('date_end')
-                            ->orWhere('date_end', '')
-                            ->orWhere('date_end', '>=', $startDate);
+                            ->orWhere('date_end', '>=', $endDate);
                     });
             },
-            'partners.beneficiaries' => function ($q) use ($activeState, $startDate, $endDate) {
+            'partners.beneficiaries' => function ($q) use ($endDate) {
                 $q->select(['id', 'partner_id'])
-                    ->whereHas('histories', function ($hq) use ($activeState, $startDate, $endDate) {
-                        $hq->where('state_id', $activeState->id)
-                            ->where(function ($q) use ($endDate) {
-                                $q->whereNull('date_begin')
-                                    ->orWhere('date_begin', '')
-                                    ->orWhere('date_begin', '<=', $endDate);
-                            })
-                            ->where(function ($q) use ($startDate) {
-                                $q->whereNull('date_end')
-                                    ->orWhere('date_end', '')
-                                    ->orWhere('date_end', '>=', $startDate);
-                            });
+                    ->whereHas('histories', function ($hq) use ($endDate) {
+                        $hq->where(function ($q) use ($endDate) {
+                            $q->whereNull('date_begin')
+                                ->orWhere('date_begin', '<=', $endDate);
+                        })
+                        ->where(function ($q) use ($endDate) {
+                            $q->whereNull('date_end')
+                                ->orWhere('date_end', '>=', $endDate);
+                        });
                     });
             }
         ])->get()->map(function ($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth) {
@@ -219,7 +190,7 @@ class ReparticionController extends Controller
             return $club['beneficiarios'] > 0;
         })->values();
 
-        $monthName = date('F', strtotime($startDate));
+        $monthName = date('F', strtotime($endDate));
 
         $pdf = PDF::loadView('movimientos.reparticion', [
             'clubs' => $associations,

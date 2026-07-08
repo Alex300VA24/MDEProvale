@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Models\DetailProduct;
 use App\Models\Product;
 use App\Models\State;
 use App\Models\Uom;
@@ -29,7 +30,37 @@ class ProductController extends Controller
         $states = State::select(['id', 'title', 'abbreviation'])->get();
         $uoms = Uom::select(['id', 'title'])->get();
 
-        return view('productos-pecosas.productos.index', compact('products', 'states', 'uoms'));
+        $detailQuery = DetailProduct::query()
+            ->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date', 'created_at'])
+            ->with(['product:id,title,abbreviation,state_id,uom_id'])
+            ->withSum('stocks as used_quantity', 'quantity');
+
+        if ($request->filled('product_id')) {
+            $detailQuery->where('product_id', $request->product_id);
+        }
+
+        if ($request->filled('periodo')) {
+            $periodo = $request->periodo;
+            $today = now()->toDateString();
+            if ($periodo === 'vigente') {
+                $detailQuery->where('start_date', '<=', $today)
+                    ->where('end_date', '>=', $today);
+            } elseif ($periodo === 'vencido') {
+                $detailQuery->where('end_date', '<', $today);
+            }
+        }
+
+        if ($request->filled('search_detalle')) {
+            $searchDetalle = $request->search_detalle;
+            $detailQuery->whereHas('product', function ($q) use ($searchDetalle) {
+                $q->where('title', 'like', "{$searchDetalle}%")
+                  ->orWhere('abbreviation', 'like', "{$searchDetalle}%");
+            });
+        }
+
+        $detailProducts = $detailQuery->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('productos-pecosas.productos.index', compact('products', 'states', 'uoms', 'detailProducts'));
     }
 
     public function create()

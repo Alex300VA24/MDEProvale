@@ -5,22 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Partner;
 use App\Models\Beneficiarie;
 use App\Models\Association;
-use App\Models\Pecosa;
-use App\Models\Directive;
-use App\Models\State;
 use App\Models\People;
 use App\Models\Relationship;
-use App\Models\TypeBenefit;
-use App\Models\ReasonDisqualification;
+use App\Models\State;
 use App\Models\PlaceSector;
+use App\Services\BeneficiaryReportService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\PDF;
 
 
 class SociosBeneficiariosController extends Controller
 {
+    private BeneficiaryReportService $beneficiaryReportService;
+
+    public function __construct(BeneficiaryReportService $beneficiaryReportService)
+    {
+        $this->beneficiaryReportService = $beneficiaryReportService;
+    }
+
     // ==================== ÍNDICE PRINCIPAL ====================
 
     public function index(Request $request)
@@ -333,7 +335,7 @@ class SociosBeneficiariosController extends Controller
     /**
      * Reporte Padrón de Beneficiarios del Club de Madres PVL
      * Filtrado por comité, mes y año — HISTÓRICO.
-     * Socios y beneficiarios vigentes en el periodo consultado.
+     * Delega la lógica a BeneficiaryReportService para evitar código duplicado.
      */
     public function reportePadronBeneficiarios(Request $request)
     {
@@ -346,378 +348,14 @@ class SociosBeneficiariosController extends Controller
             return view('socios-beneficiarios.beneficiarios.padron-filtros', compact('associations', 'mes', 'anio'));
         }
 
-        $association = Association::with(['placeSector.place', 'placeSector.sector'])->findOrFail($associationId);
+        try {
+            $data = $this->beneficiaryReportService->generatePadronReport($associationId, (int)$mes, (int)$anio);
 
-        // Fecha de corte: último día del mes consultado
-        $startDate = Carbon::createFromDate($anio, $mes, 1)->startOfMonth();
-        $endDate   = Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
-        $cutoffDate = $endDate; // referencia para cálculo de edades
-
-        // Presidenta vigente en el periodo (histórica)
-        $presidenta = $association->getPresidentNameAt($endDate->toDateString())
-            ?? $association->getPresidentName();
-
-        // Socios vigentes en el periodo: date_begin <= fin_mes AND (date_end IS NULL OR date_end >= inicio_mes)
-        $partners = Partner::with([
-                'people',
-                'beneficiaries.person',
-                'beneficiaries.relationship',
-                'beneficiaries.histories.typeBenefit',
-                'beneficiaries.histories.reasonDisqualification',
-            ])
-            ->where('association_id', $associationId)
-            ->where('date_begin', '<=', $endDate->toDateString())
-            ->where(function ($q) use ($startDate) {
-                $q->whereNull('date_end')
-                  ->orWhere('date_end', '>=', $startDate->toDateString());
-            })
-            ->get();
-
-        if ($partners->isEmpty()) {
-            return redirect()->back()->with('error', 'No hay socios vigentes para el comité y periodo seleccionado.');
+            $pdf = PDF::loadView('reporte_beneficiario', $data);
+            $pdf->setPaper('a4', 'landscape');
+            return $pdf->stream('padron-beneficiarios-' . $data['comite'] . '-' . $mes . '-' . $anio . '.pdf');
+        } catch (\DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
-
-        // PECOSA del periodo para este comité
-        $pecosa = Pecosa::with('detailPecosas.detailProduct.product')
-            ->where('association_id', $associationId)
-            ->whereBetween('delivery_date', [$startDate->toDateString(), $endDate->toDateString()])
-            ->first();
-
-        // Construir array de beneficiarios para la vista
-        $beneficiarios = [];
-        $resumen = [
-            'total' => array_fill_keys(['0_anos', '1_ano', '2_anos', '3_anos', '4_anos', '5_anos', '6_anos', 'total', 'madres_gestantes', 'madres_lactantes', 'ninos_7_13', 'ancianos', 'tuberculosos', 'discapacitados', 'gap', 'total_general'], 0),
-            'masculino' => array_fill_keys(['0_anos', '1_ano', '2_anos', '3_anos', '4_anos', '5_anos', '6_anos', 'total', 'madres_gestantes', 'madres_lactantes', 'ninos_7_13', 'ancianos', 'tuberculosos', 'discapacitados', 'gap', 'total_general'], 0),
-            'femenino' => array_fill_keys(['0_anos', '1_ano', '2_anos', '3_anos', '4_anos', '5_anos', '6_anos', 'total', 'madres_gestantes', 'madres_lactantes', 'ninos_7_13', 'ancianos', 'tuberculosos', 'discapacitados', 'gap', 'total_general'], 0),
-        ];
-
-        foreach ($partners as $partner) {
-            $socia = $partner->people;
-            if (!$socia) continue;
-
-            $beneficiariosSocia = [];
-
-            foreach ($partner->beneficiaries as $beneficiario) {
-                $persona = $beneficiario->person;
-                if (!$persona) continue;
-
-                // Edades calculadas contra el último día del mes consultado (histórico)
-                $edadAnos  = $persona->birthdate ? Carbon::parse($persona->birthdate)->diffInYears($cutoffDate) : 0;
-                $edadMeses = $persona->birthdate ? Carbon::parse($persona->birthdate)->diff($cutoffDate)->m : 0;
-                $edadDias  = $persona->birthdate ? Carbon::parse($persona->birthdate)->diff($cutoffDate)->d : 0;
-
-                // Historial vigente en el periodo consultado (no el más reciente actual)
-                $historialActivo = $beneficiario->histories
-                    ->whereNotNull('state_id')
-                    ->filter(function ($h) use ($startDate, $endDate) {
-                        $hBegin = $h->date_begin ? Carbon::parse($h->date_begin) : null;
-                        $hEnd   = $h->date_end   ? Carbon::parse($h->date_end)   : null;
-                        if (!$hBegin) return false;
-                        // Vigente si comenzó antes o durante el fin del mes
-                        // y terminó después o durante el inicio del mes (o no terminó)
-                        return $hBegin->lte($endDate) && ($hEnd === null || $hEnd->gte($startDate));
-                    })
-                    ->sortByDesc('date_begin')
-                    ->first();
-
-                $tipoBeneficio  = $historialActivo && $historialActivo->typeBenefit ? $historialActivo->typeBenefit->abbreviation : '';
-                $razonBaja      = $historialActivo && $historialActivo->reasonDisqualification ? $historialActivo->reasonDisqualification->id : '';
-                $tipoVisible    = in_array($tipoBeneficio, ['LAC', 'GES']) ? $tipoBeneficio : '';
-                $parentescoTitulo = $beneficiario->relationship ? $beneficiario->relationship->title : '';
-                $fechaInicio    = $historialActivo && $historialActivo->date_begin ? $historialActivo->date_begin : null;
-
-                // Evaluación de bajas y observaciones — SOLO LECTURA, sin escribir en BD
-                $observationFlag = false;
-                $bajaFlag = false;
-
-                // 1. Edad >= 14 años al corte del mes → baja
-                if ($edadAnos >= 14) {
-                    if ($historialActivo && !$historialActivo->reason_disqualification_id) {
-                        $razonBaja = 4;
-                        $bajaFlag = true;
-                    }
-                }
-
-                // 2. GES más de 9 meses desde fecha de inicio al corte del mes → baja
-                if ($tipoBeneficio === 'GES') {
-                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) : 999;
-                    if (!$fechaInicio || $mesesTotales > 9) {
-                        if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
-                            $razonBaja = 4;
-                            $bajaFlag = true;
-                        }
-                    }
-                }
-
-                // 3. LAC más de 12 meses desde fecha de inicio al corte del mes → baja
-                if ($tipoBeneficio === 'LAC') {
-                    $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) : 999;
-                    if (!$fechaInicio || $mesesTotales > 12) {
-                        if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
-                            $razonBaja = 4;
-                            $bajaFlag = true;
-                        }
-                    }
-                }
-
-                // 4. GES/LAC con edad <= 12 años → observación
-                if (in_array($tipoBeneficio, ['GES', 'LAC']) && $edadAnos <= 12) {
-                    $observationFlag = true;
-                }
-
-                $beneficiariosSocia[] = [
-                    'beneficiario_nombre' => strtoupper($persona->father_lastname . ' ' . $persona->mother_lastname . ' ' . $persona->names),
-                    'beneficiario_dni' => $persona->dni ?? '',
-                    'beneficiario_baja' => (!empty($razonBaja) && $razonBaja != 1) ? '1' : '',
-                    'beneficiario_tipo' => $tipoVisible,
-                    'beneficiario_fecha_nacimiento' => $persona->birthdate ? date('d/m/Y', strtotime($persona->birthdate)) : '',
-                    'beneficiario_sexo' => $persona->gender === 'M' ? 'M' : 'F',
-                    'beneficiario_parentesco' => $parentescoTitulo,
-                    'beneficiario_edad_anos' => $edadAnos,
-                    'beneficiario_edad_meses' => $edadMeses,
-                    'beneficiario_edad_dias' => $edadDias,
-                    'historial' => $historialActivo,
-                    'es_baja' => (!empty($razonBaja) && $razonBaja != 1),
-                    'observation' => $observationFlag,
-                    'fecha_inicio' => $fechaInicio ? date('d/m/Y', strtotime($fechaInicio)) : '',
-                ];
-
-                // Resumen por prioridad y tipo, contado por beneficiario
-                if ($edadAnos <= 6) {
-                    $key = $edadAnos == 1 ? '1_ano' : $edadAnos . '_anos';
-                    $resumen['total'][$key]++;
-                    $resumen['total']['total']++;
-
-                    if ($persona->gender === 'M') {
-                        $resumen['masculino'][$key]++;
-                        $resumen['masculino']['total']++;
-                    } else {
-                        $resumen['femenino'][$key]++;
-                        $resumen['femenino']['total']++;
-                    }
-                }
-
-                if ($edadAnos >= 7 && $edadAnos <= 13) {
-                    $resumen['total']['ninos_7_13']++;
-
-                    if ($persona->gender === 'M') {
-                        $resumen['masculino']['ninos_7_13']++;
-                    } else {
-                        $resumen['femenino']['ninos_7_13']++;
-                    }
-                }
-
-                if ($tipoBeneficio === 'GES') {
-                    $resumen['total']['madres_gestantes']++;
-
-                    if ($persona->gender === 'M') {
-                        $resumen['masculino']['madres_gestantes']++;
-                    } else {
-                        $resumen['femenino']['madres_gestantes']++;
-                    }
-                }
-
-                if ($tipoBeneficio === 'LAC') {
-                    $resumen['total']['madres_lactantes']++;
-
-                    if ($persona->gender === 'M') {
-                        $resumen['masculino']['madres_lactantes']++;
-                    } else {
-                        $resumen['femenino']['madres_lactantes']++;
-                    }
-                }
-
-                if ($tipoBeneficio === 'ADU') {
-                    $resumen['total']['ancianos']++;
-
-                    if ($persona->gender === 'M') {
-                        $resumen['masculino']['ancianos']++;
-                    } else {
-                        $resumen['femenino']['ancianos']++;
-                    }
-                }
-
-                if ($tipoBeneficio === 'TBC') {
-                    $resumen['total']['tuberculosos']++;
-
-                    if ($persona->gender === 'M') {
-                        $resumen['masculino']['tuberculosos']++;
-                    } else {
-                        $resumen['femenino']['tuberculosos']++;
-                    }
-                }
-
-                // Contar bajas (reason_disqualification_id != 1)
-                if (!empty($razonBaja) && $razonBaja != 1) {
-                    $resumen['total']['gap']++;
-                    if ($persona->gender === 'M') {
-                        $resumen['masculino']['gap']++;
-                    } else {
-                        $resumen['femenino']['gap']++;
-                    }
-                }
-
-                // Total general (todos los beneficiarios únicos)
-                $resumen['total']['total_general']++;
-                if ($persona->gender === 'M') {
-                    $resumen['masculino']['total_general']++;
-                } else {
-                    $resumen['femenino']['total_general']++;
-                }
-            }
-
-            if (!empty($beneficiariosSocia)) {
-                $beneficiarios[] = [
-                    'socia_nombre' => strtoupper($socia->father_lastname . ' ' . $socia->mother_lastname . ' ' . $socia->names),
-                    'socia_direccion' => $socia->address ?? '',
-                    'socia_dni' => $socia->dni ?? '',
-                    'rowspan' => count($beneficiariosSocia),
-                    'items' => $beneficiariosSocia,
-                ];
-            }
-        }
-
-        $meses = ['', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-        $periodo = $anio . '-' . ($mes <= 6 ? 'I' : 'II');
-        $resumenFilas = [
-            [
-                'label' => 'MASCULINO',
-                'data' => $resumen['masculino'],
-            ],
-            [
-                'label' => 'FEMENINO',
-                'data' => $resumen['femenino'],
-            ],
-            [
-                'label' => 'TOTAL',
-                'data' => $resumen['total'],
-            ],
-        ];
-
-        /**
-         * Cálculo de observaciones para el resumen de auditoría
-         * 
-         * Observaciones BAJA (reason_disqualification_id != 1):
-         * - EDAD >= 14 años
-         * - GES. MAS DE 9 MESES / SIN FECHA DE INGRESO
-         * - LAC. MAS DE UN AÑO / SIN FECHA INGRESO
-         * 
-         * Otras observaciones:
-         * - ANCIANO < DE 65 AÑOS
-         * - GES / LAC <= DE 12 AÑOS
-
-         */
-        $observaciones = [];
-        
-        // Obtener todos los beneficiarios aplanados para análisis
-        $todosBeneficiarios = [];
-        foreach ($beneficiarios as $grupo) {
-            foreach ($grupo['items'] as $item) {
-                $todosBeneficiarios[] = $item;
-            }
-        }
-
-        // 1. EDAD >= 14 años (BAJA) - cuenta todos con reason_disqualification_id != 1
-        $cantidadEdadBaja = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            if (!empty($ben['beneficiario_baja']) && $ben['beneficiario_baja'] != 1) {
-                $cantidadEdadBaja++;
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 1,
-            'descripcion' => 'EDAD >= 14 años (BAJA)',
-            'cantidad' => $cantidadEdadBaja
-        ];
-
-
-        // 3. GES / LAC <= DE 12 AÑOS (GES = abreviatura GES, LAC = abreviatura LAC)
-        $cantidadGesLac = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            $tipo = $ben['beneficiario_tipo'] ?? '';
-            if (!empty($tipo) && in_array($tipo, ['GES', 'LAC'])) {
-                if ($ben['beneficiario_edad_anos'] <= 12) {
-                    $cantidadGesLac++;
-                }
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 2,
-            'descripcion' => 'GES / LAC <= DE 12 AÑOS',
-            'cantidad' => $cantidadGesLac
-        ];
-
-        // 5. GES. MAS DE 9 MESES / SIN FECHA DE INGRESO (BAJA)
-        $cantidadGesBaja = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            $tipo = $ben['beneficiario_tipo'] ?? '';
-            if ($tipo === 'GES') {
-                $fechaInicio = $ben['fecha_inicio'] ?? '';
-                if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) > 9)) {
-                    if (!empty($ben['beneficiario_baja']) && $ben['beneficiario_baja'] != 1) {
-                        $cantidadGesBaja++;
-                    }
-                }
-            }
-        }
-        $observaciones[] = [
-            'codigo' => 3,
-            'descripcion' => 'GES. MAS DE 9 MESES / SIN FECHA DE INGRESO (BAJA)',
-            'cantidad' => $cantidadGesBaja
-        ];
-
-        // 6. LAC. MAS DE UN AÑO / SIN FECHA INGRESO (BAJA)
-        $cantidadLacBaja = 0;
-        foreach ($todosBeneficiarios as $ben) {
-            $tipo = $ben['beneficiario_tipo'] ?? '';
-            if ($tipo === 'LAC') {
-                $fechaInicio = $ben['fecha_inicio'] ?? '';
-                if (empty($fechaInicio) || (strtotime($fechaInicio) && Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) > 12)) {
-                    if (!empty($ben['beneficiario_baja']) && $ben['beneficiario_baja'] != 1) {
-                        $cantidadLacBaja++;
-                    }
-                }
-            }
-        }
-$observaciones[] = [
-            'codigo' => 4,
-            'descripcion' => 'LAC. MAS DE UN AÑO / SIN FECHA INGRESO (BAJA)',
-            'cantidad' => $cantidadLacBaja
-        ];
-           
-        $parentescos = Relationship::orderBy('id')->get(['id', 'title'])->toArray();
-        $bajas = ReasonDisqualification::orderBy('id')->get(['id', 'title'])->toArray();
-        $tipoBeneficios = TypeBenefit::orderBy('id')->get(['id', 'title', 'abbreviation'])->toArray();
-
-        $data = [
-            'beneficiarios' => $beneficiarios,
-            'resumen' => $resumen,
-            'resumen_filas' => $resumenFilas,
-            'observaciones' => $observaciones,
-            'club_nombre' => strtoupper($association->name),
-            'direccion' => $association->address ?? '',
-            'ccpp' => $association->placeSector && $association->placeSector->sector ? $association->placeSector->sector->title : '',
-            'presidenta' => $presidenta ?? 'SIN ASIGNAR',
-            'zona' => $association && $association->placeSector && $association->placeSector->place
-            ? ($association->placeSector->place->code ?? '01')
-            : '01',
-            'comite' => $association->code ?? $association->id,
-            'num_mes' => $mes,
-            'periodo' => $periodo,
-            'semestre' => $mes <= 6 ? $anio . '-I' : $anio . '-II',
-            'mes_nombre' => $meses[(int)$mes] ?? '',
-            'anio' => $anio,
-            'total_beneficiarios' => collect($beneficiarios)->sum('rowspan'),
-            'fecha' => date('d/m/Y'),
-            'hora' => date('H:i:s'),
-            'productos_pecosa' => $pecosa ? $pecosa->detailPecosas : collect([]),
-            'parentescos' => $parentescos,
-            'tipo_beneficios' => $tipoBeneficios,
-            'bajas' => $bajas,
-        ];
-
-        $pdf = PDF::loadView('reporte_beneficiario', $data);
-        $pdf->setPaper('a4', 'landscape');
-        return $pdf->stream('padron-beneficiarios-' . $association->code . '-' . $mes . '-' . $anio . '.pdf');
     }
 }
