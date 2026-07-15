@@ -131,6 +131,9 @@ class PartnerController extends Controller
             $pdf->setPaper('a4', 'landscape');
             return $pdf->stream('padron-beneficiarios-' . $data['comite'] . '-' . $mes . '-' . $anio . '.pdf');
         } catch (\DomainException $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

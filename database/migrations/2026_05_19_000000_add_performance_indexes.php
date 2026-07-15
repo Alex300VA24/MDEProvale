@@ -22,8 +22,10 @@ return new class extends Migration
         $columns = (array) $columns;
         $indexName = $indexName ?: $table . '_' . implode('_', $columns) . '_index';
 
-        // SQL Server compatible check
-        $exists = DB::select("SELECT 1 FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)", [$indexName, $table]);
+        $exists = DB::select(
+            "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
+            [$table, $indexName]
+        );
 
         if (empty($exists)) {
             Schema::table($table, function (Blueprint $table) use ($columns, $indexName) {
@@ -160,7 +162,10 @@ return new class extends Migration
         ];
 
         foreach ($indexes as [$table, $indexName]) {
-            $exists = DB::select("SELECT 1 FROM sys.indexes WHERE name = ? AND object_id = OBJECT_ID(?)", [$indexName, $table]);
+            $exists = DB::select(
+                "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
+                [$table, $indexName]
+            );
             if (!empty($exists)) {
                 Schema::table($table, function (Blueprint $tbl) use ($indexName) {
                     $tbl->dropIndex($indexName);

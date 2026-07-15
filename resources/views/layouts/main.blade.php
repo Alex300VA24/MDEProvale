@@ -13,9 +13,9 @@
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/700.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <link rel="stylesheet" href="{{ asset('css/select2.min.css') }}">
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
+    <script src="{{ mix('js/app.js') }}" defer></script>
 
     <style>
         * {
@@ -41,115 +41,6 @@
         ::-webkit-scrollbar-thumb {
             background: #5A7FA8;
             border-radius: 3px;
-        }
-
-        #loading-screen {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.85);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            opacity: 0;
-            backdrop-filter: blur(4px);
-        }
-        #loading-screen.active {
-            display: flex;
-            opacity: 1;
-        }
-        .loader-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        .loader-icon {
-            position: relative;
-            width: 100px;
-            height: 100px;
-        }
-        .loader-icon::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(255,255,255,0.1);
-            border-radius: 24px;
-            backdrop-filter: blur(10px);
-        }
-        .loader-icon img {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-        }
-        .loader-spin {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            width: 120px;
-            height: 120px;
-            border: 3px solid rgba(255,255,255,0.15);
-            border-top: 3px solid #5EEAD4;
-            border-radius: 50%;
-            animation: spin 1.2s linear infinite;
-        }
-        .loader-ring {
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            right: -5px;
-            bottom: -5px;
-            width: 110px;
-            height: 110px;
-            border: 2px solid transparent;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            animation: spin 1.8s linear infinite reverse;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .loader-text {
-            text-align: center;
-        }
-        .loader-title {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: white;
-            letter-spacing: 0.05em;
-        }
-        .loader-subtitle {
-            font-size: 0.875rem;
-            color: rgba(255,255,255,0.6);
-            margin-top: 0.25rem;
-        }
-        .loader-progress {
-            width: 180px;
-            height: 4px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-        .loader-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #4A90D9, #1E5799);
-            border-radius: 999px;
-            animation: progress 1.5s ease-in-out infinite;
-        }
-        @keyframes progress {
-            0% { width: 0%; margin-left: 0; }
-            50% { width: 70%; margin-left: 15%; }
-            100% { width: 0%; margin-left: 100%; }
         }
 
         #sidebar {
@@ -329,45 +220,6 @@
             animation: fade-in 0.3s ease-out;
         }
 
-        .data-table th {
-            background: #EEF4FC;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: #5A7FA8;
-        }
-
-        .data-table tr {
-            border-bottom: 1px solid #D4E4F7;
-            transition: background 0.2s;
-        }
-
-        .data-table tr:hover {
-            background: #EEF4FC;
-        }
-
-        .data-table td {
-            font-size: 14px;
-            color: #1A2E4A;
-            padding: 12px 16px;
-        }
-
-        .badge-active {
-            background: #D4F2EE;
-            color: #0E8A7A;
-        }
-
-        .badge-pending {
-            background: #FEF3DC;
-            color: #B87300;
-        }
-
-        .badge-inactive {
-            background: #FCEAE8;
-            color: #D94F3D;
-        }
-
         @media (max-width: 768px) {
             #sidebar {
                 position: fixed;
@@ -447,100 +299,12 @@
             background: #4A90D9;
         }
 
-        .btn-primary {
-            background: linear-gradient(to right, #4A90D9, #1E5799);
-            color: white;
-            font-weight: 600;
-            padding: 0.625rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            box-shadow: 0 2px 8px rgba(74, 144, 217, 0.25);
-            transition: all 0.2s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(74, 144, 217, 0.35);
-        }
-
-        .btn-secondary {
-            background: #D4E4F7;
-            color: #5A7FA8;
-            font-weight: 700;
-            padding: 0.625rem 1rem;
-            border-radius: 0.25rem;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-        }
-
-        .btn-secondary:hover {
-            background: #5A7FA8;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #FCEAE8;
-            color: #D94F3D;
-            font-weight: 700;
-            padding: 0.625rem 1rem;
-            border-radius: 0.25rem;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-        }
-
-        .btn-danger:hover {
-            background: #D94F3D;
-            color: white;
-        }
-
-        .btn-action {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 0.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-        }
-
-        @media (max-width: 640px) {
-            .btn-action {
-                width: 2.25rem;
-                height: 2.25rem;
-            }
-
-            .data-table td {
-                padding: 8px 10px;
-                font-size: 12px;
-            }
-
-            .data-table th {
-                font-size: 10px;
-                padding: 8px 10px;
-            }
-        }
     </style>
 </head>
 
 <body class="font-jakarta" x-data="appShell()" x-init="init()">
 
-    <div id="loading-screen" :class="{ 'active': loading }">
-        <div class="loader-container">
-            <div class="loader-icon">
-                <div class="loader-spin"></div>
-                <div class="loader-ring"></div>
-                <img src="{{ asset('img/muni2.png') }}" alt="PROVALE">
-            </div>
-            <div class="loader-text">
-                <div class="loader-title">PROVALE</div>
-                <div class="loader-subtitle">Cargando sistema...</div>
-            </div>
-            <div class="loader-progress">
-                <div class="loader-progress-bar"></div>
-            </div>
-        </div>
-    </div>
+    <x-loading-screen x-bind:class="{ 'active': loading }" />
 
     <div id="app-shell">
         <aside id="sidebar" :class="{ 'expanded': sidebarExpanded }">
@@ -660,46 +424,6 @@
             </header>
 
             <main class="flex-1 p-4 sm:p-6 lg:p-8">
-                @if(session('success') || session('error') || $errors->any())
-                @if(session('success'))
-                <div id="flash-alert" class="mb-4 sm:mb-6 px-3 sm:px-5 py-3 sm:py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 1px solid #34d399;">
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-check text-white text-xs sm:text-sm"></i>
-                    </div>
-                    <div class="text-xs sm:text-sm font-medium text-emerald-800">{{ session('success') }}</div>
-                    <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-emerald-600 hover:text-emerald-800 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                @elseif(session('error'))
-                <div id="flash-alert" class="mb-4 sm:mb-6 px-3 sm:px-5 py-3 sm:py-4 rounded-xl flex items-center gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border: 1px solid #f87171;">
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-times text-white text-xs sm:text-sm"></i>
-                    </div>
-                    <div class="text-xs sm:text-sm font-medium text-red-800">{{ session('error') }}</div>
-                    <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-red-600 hover:text-red-800 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                @elseif($errors->any())
-                <div id="flash-alert" class="mb-4 sm:mb-6 px-3 sm:px-5 py-3 sm:py-4 rounded-xl flex items-start gap-3 animate-fade-in shadow-lg" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #fbbf24;">
-                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-exclamation-triangle text-white text-xs sm:text-sm"></i>
-                    </div>
-                    <div class="text-xs sm:text-sm text-amber-800">
-                        <ul class="list-disc list-inside space-y-0.5">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                    <button onclick="document.getElementById('flash-alert').remove()" class="ml-auto text-amber-600 hover:text-amber-800 transition-colors">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                @endif
-                @endif
-
                 @yield('content')
             </main>
         </div>
@@ -833,11 +557,6 @@
         }
 
         let lastNotificationCount = {{ $unreadNotifications }};
-
-        function showSwalWhenReady(config, retries = 20) {
-            if (window.Swal) { window.Swal.fire(config); return; }
-            if (retries > 0) setTimeout(() => showSwalWhenReady(config, retries - 1), 150);
-        }
     </script>
 
     <script>
@@ -863,10 +582,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const successMessage = @json(session('success'));
-            if (successMessage) {
-                showSwalWhenReady({ icon: 'success', title: 'Proceso completado', text: successMessage, confirmButtonText: 'Aceptar', confirmButtonColor: '#1E5799' });
-            }
+            @if(session('success'))
+                window.Toast.fire({ icon: 'success', title: @json(session('success')) });
+            @elseif(session('error'))
+                window.Toast.fire({ icon: 'error', title: @json(session('error')) });
+            @elseif($errors->any())
+                window.Toast.fire({ icon: 'warning', title: @json($errors->first()) });
+            @endif
         });
 
         if (typeof window.fetch === 'function') {
@@ -902,19 +624,6 @@
             }
         }
 
-        function openModalSecond(id) {
-            document.querySelectorAll('.fixed.z-40, .fixed.z-50, .fixed.z-60, .fixed.z-\\[70\\]').forEach(el => {
-                el.classList.add('hidden');
-                el.style.display = 'none';
-            });
-            var el = document.getElementById(id);
-            if (el) {
-                el.classList.remove('hidden');
-                el.style.display = 'block';
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
         function closeModal(id) {
             var el = document.getElementById(id);
             if (el) {
@@ -932,38 +641,27 @@
 
         function confirmDelete(formId, message) {
             message = message || '¿Estás seguro de que deseas eliminar este registro?';
-            Swal.fire({
+            window.ConfirmDialog.fire({
                 title: '<span class="font-extrabold text-navy text-xl">¿Estás seguro?</span>',
-                text: message, icon: 'warning', showCancelButton: true,
-                confirmButtonColor: '#D94F3D', cancelButtonColor: '#5A7FA8',
+                text: message, icon: 'warning',
                 confirmButtonText: '<i class="fas fa-trash mr-1"></i> Sí, eliminar',
-                cancelButtonText: 'Cancelar', reverseButtons: true,
-                customClass: { popup: 'rounded-2xl shadow-2xl border-2 border-mist', confirmButton: 'rounded-xl font-bold px-4 py-2', cancelButton: 'rounded-xl font-bold px-4 py-2' },
-                backdrop: 'rgba(0,0,0,0.4)',
             }).then((result) => { if (result.isConfirmed) document.getElementById(formId).submit(); });
         }
 
         function confirmLogout() {
-            Swal.fire({
+            window.ConfirmDialog.fire({
                 title: '<span class="font-extrabold text-navy text-xl">¿Cerrar sesión?</span>',
-                text: '¿Estás seguro de que deseas cerrar sesión?', icon: 'question', showCancelButton: true,
-                confirmButtonColor: '#D94F3D', cancelButtonColor: '#5A7FA8',
+                text: '¿Estás seguro de que deseas cerrar sesión?', icon: 'question',
                 confirmButtonText: '<i class="fas fa-power-off mr-1"></i> Sí, cerrar sesión',
-                cancelButtonText: 'Cancelar', reverseButtons: true,
-                customClass: { popup: 'rounded-2xl shadow-2xl border-2 border-mist', confirmButton: 'rounded-xl font-bold px-4 py-2', cancelButton: 'rounded-xl font-bold px-4 py-2' },
-                backdrop: 'rgba(0,0,0,0.4)',
             }).then((result) => { if (result.isConfirmed) document.getElementById('logout-form').submit(); });
         }
 
         function confirmResetPassword(userId, userName, dni) {
-            Swal.fire({
+            window.ConfirmDialog.fire({
                 title: 'Restablecer Contraseña',
                 html: '¿Estás seguro de que deseas restablecer la contraseña del usuario <strong>' + userName + '</strong>?<br><br><span class="text-red-500 font-bold">La contraseña será su DNI: ' + dni + '</span>',
-                icon: 'warning', showCancelButton: true,
-                confirmButtonColor: '#D94F3D', cancelButtonColor: '#5A7FA8',
+                icon: 'warning',
                 confirmButtonText: '<i class="fas fa-key mr-1"></i> Sí, restablecer',
-                cancelButtonText: 'Cancelar', borderRadius: '1rem',
-                customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-xl font-bold', cancelButton: 'rounded-xl font-bold' }
             }).then((result) => { if (result.isConfirmed) document.getElementById('form-reset-password-' + userId).submit(); });
         }
 
@@ -1007,7 +705,6 @@
         window.addEventListener('pageshow', function() { hideLoading(); });
     </script>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ asset('js/select2.min.js') }}"></script>
 
     @stack('scripts')

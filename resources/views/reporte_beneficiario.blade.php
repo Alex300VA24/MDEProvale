@@ -122,16 +122,16 @@
                             <td class="text-left" rowspan="{{ $grupo['rowspan'] ?? 1 }}">{{ $grupo['socia_direccion'] ?? '' }}</td>
                             <td class="text-center" rowspan="{{ $grupo['rowspan'] ?? 1 }}">{{ $grupo['socia_dni'] ?? '' }}</td>
                         @endif
-                        <td class="text-left">{{ $b['beneficiario_nombre'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_dni'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_baja'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_tipo'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_fecha_nacimiento'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_sexo'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_edad_anos'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_edad_meses'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_edad_dias'] ?? '' }}</td>
-                        <td class="text-center">{{ $b['beneficiario_parentesco'] ?? '' }}</td>
+                        <td class="text-left">{{ $b->nombre ?? '' }}</td>
+                        <td class="text-center">{{ $b->dni ?? '' }}</td>
+                        <td class="text-center">{{ ($b->esBaja ?? false) ? 'X' : '' }}</td>
+                        <td class="text-center">{{ $b->tipo ?? '' }}</td>
+                        <td class="text-center">{{ $b->fechaNacimiento ?? '' }}</td>
+                        <td class="text-center">{{ $b->sexo ?? '' }}</td>
+                        <td class="text-center">{{ $b->edadAnos ?? '' }}</td>
+                        <td class="text-center">{{ $b->edadMeses ?? '' }}</td>
+                        <td class="text-center">{{ $b->edadDias ?? '' }}</td>
+                        <td class="text-center">{{ $b->parentesco ?? '' }}</td>
                         <td style="width: 2px; border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white;">&nbsp;</td>
                     </tr>
                     @endforeach

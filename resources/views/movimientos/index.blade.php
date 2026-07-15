@@ -20,14 +20,14 @@
         </div>
     </div>
 
-    <form method="GET" action="{{ route('movimientos.index') }}" class="flex flex-col sm:flex-row gap-2 sm:gap-4 px-6 py-4 flex-wrap border-b border-wheat bg-cream">
-        <div class="flex-1 min-w-48">
+    <form id="filtro-movimientos" method="GET" action="{{ route('movimientos.index') }}" class="flex flex-col sm:flex-row gap-2 sm:gap-4 px-6 py-4 flex-wrap border-b border-wheat bg-cream">
+        <div class="w-full sm:w-72">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Buscar Producto</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por producto..." class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por producto..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
-        <div class="min-w-40">
+        <div class="flex-1 min-w-44">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Tipo de Movimiento</label>
-            <select name="type_transaction_id" class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <select name="type_transaction_id" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
                 @foreach($types as $type)
                 <option value="{{ $type->id }}" {{ request('type_transaction_id') == $type->id ? 'selected' : '' }}>{{ $type->title }}</option>
@@ -43,11 +43,11 @@
             <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}" class="w-full sm:w-auto px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
         <div class="flex items-end gap-2">
-            <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
-            <a href="{{ route('movimientos.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
+            <a href="{{ route('movimientos.index') }}" class="btn-secondary"><i class="fas fa-broom mr-1"></i> Limpiar</a>
         </div>
     </form>
 
+    <div id="movimientos-results">
     <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="data-table w-full min-w-[700px] text-xs sm:text-sm">
             <thead>
@@ -113,69 +113,6 @@
     <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-t-2 border-wheat">
         <span class="text-sm text-earth font-medium">Mostrando {{ $transactions->firstItem() ?? 0 }} - {{ $transactions->lastItem() ?? 0 }} de {{ $transactions->total() }} registros</span>
         {{ $transactions->appends(request()->query())->links() }}
-    </div>
-</div>
-
-{{-- Modal Crear Ingreso --}}
-<div id="modal-crear-ingreso" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
-        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
-                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
-                    <i class="fas fa-plus-circle text-leaf"></i> Nuevo Ingreso
-                </h3>
-                <button onclick="closeModal('modal-crear-ingreso')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form action="{{ route('movimientos.store') }}" method="POST" class="p-6">
-                @csrf
-                <input type="hidden" name="type_transaction_id" value="{{ $types->firstWhere('title', 'Ingreso')->id ?? '' }}">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto</label>
-                        <select name="product_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                            <option value="">Seleccionar producto</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->title }} ({{ $product->abbreviation }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Precio Unitario</label>
-                        <input type="number" name="unit_price" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Cantidad</label>
-                        <input type="number" name="quantity" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Número de Documento</label>
-                        <input type="text" name="document_number" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha de Movimiento</label>
-                        <input type="date" name="transaction_date" value="{{ date('Y-m-d') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Inicio (Período)</label>
-                        <input type="date" name="start_date" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Fin (Período)</label>
-                        <input type="date" name="end_date" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                    </div>
-                </div>
-                <div class="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onclick="closeModal('modal-crear-ingreso')" class="btn-secondary">Cancelar</button>
-                    <button type="submit" class="btn-primary"><i class="fas fa-save mr-2"></i> Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-{{-- Modales Ver / Editar por movimiento --}}
 @foreach($transactions as $transaction)
 
 {{-- Modal Ver --}}
@@ -290,8 +227,80 @@
 </div>
 
 @endforeach
+    </div>
+    </div>
+</div>
+
+{{-- Modal Crear Ingreso --}}
+<div id="modal-crear-ingreso" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-plus-circle text-leaf"></i> Nuevo Ingreso
+                </h3>
+                <button onclick="closeModal('modal-crear-ingreso')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('movimientos.store') }}" method="POST" class="p-6">
+                @csrf
+                <input type="hidden" name="type_transaction_id" value="{{ $types->firstWhere('title', 'Ingreso')->id ?? '' }}">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Producto</label>
+                        <select name="product_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                            <option value="">Seleccionar producto</option>
+                            @foreach($products as $product)
+                                <option value="{{ $product->id }}">{{ $product->title }} ({{ $product->abbreviation }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Precio Unitario</label>
+                        <input type="number" name="unit_price" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Cantidad</label>
+                        <input type="number" name="quantity" step="0.01" min="0" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Número de Documento</label>
+                        <input type="text" name="document_number" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha de Movimiento</label>
+                        <input type="date" name="transaction_date" value="{{ date('Y-m-d') }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Inicio (Período)</label>
+                        <input type="date" name="start_date" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Fecha Fin (Período)</label>
+                        <input type="date" name="end_date" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                    <button type="button" onclick="closeModal('modal-crear-ingreso')" class="btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save mr-2"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Modales Ver / Editar por movimiento --}}
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.initLiveFilter({
+        formEl: document.getElementById('filtro-movimientos'),
+        resultsSelector: '#movimientos-results',
+        url: '{{ route("movimientos.index") }}',
+    });
+});
+
 function toggleCreateFields() {
     const sel = document.getElementById('create_type_id');
     const title = sel.options[sel.selectedIndex]?.getAttribute('data-title') || '';

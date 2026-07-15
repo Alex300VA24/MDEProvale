@@ -18,7 +18,7 @@
             </button>
             @endif
             <a href="{{ route('socios-beneficiarios.beneficiarios.imprimir') }}" target="_blank" class="btn-secondary flex items-center gap-2 text-xs sm:text-sm">
-                <i class="fas fa-id-card"></i> <span class="hidden sm:inline">Ficha</span>
+                <i class="fas fa-print"></i> <span class="hidden sm:inline">Ficha</span>
             </a>
             <a href="{{ route('socios-beneficiarios.beneficiarios.padron') }}" class="btn-secondary flex items-center gap-2 text-xs sm:text-sm">
                 <i class="fas fa-clipboard-list"></i> <span class="hidden sm:inline">Padrón</span>
@@ -27,28 +27,17 @@
     </div>
 
     <div class="p-4 sm:p-6">
-        @if(session('success'))
-            <div class="mb-4 p-3 sm:p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700 text-xs sm:text-sm">
-                <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 p-3 sm:p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-xs sm:text-sm">
-                <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-            </div>
-        @endif
-
-        <form method="GET" class="mb-4 sm:mb-6">
+        <form id="filtro-socios" method="GET" class="mb-4 sm:mb-6">
             <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                <div class="flex-1">
-                    <input type="text" name="search" value="{{ request('search') }}" 
-                        placeholder="Buscar por nombre o DNI" 
+                <div class="w-full sm:w-72">
+                    <input type="text" name="search" value="{{ request('search') }}"
+                        placeholder="Buscar por nombre o DNI"
                         class="w-full px-4 sm:px-10 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
 
-                <div class="w-full sm:w-auto">
-                    <select name="association_id" 
-                        class="w-full sm:w-32 px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                <div class="flex-1 sm:min-w-40">
+                    <select name="association_id"
+                        class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todos los Clubes</option>
                         @foreach($associations as $association)
                             <option value="{{ $association->id }}" {{ request('association_id') == $association->id ? 'selected' : '' }}>
@@ -58,9 +47,9 @@
                     </select>
                 </div>
 
-                <div class="w-full sm:w-auto">
-                    <select name="state_id" 
-                        class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                <div class="flex-1 sm:min-w-36">
+                    <select name="state_id"
+                        class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todos los Estados</option>
                         @foreach($states as $state)
                             <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>
@@ -70,29 +59,29 @@
                     </select>
                 </div>
                 <div class="flex gap-2">
-                    <button type="submit" class="btn-primary text-xs sm:text-sm"><i class="fas fa-search mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Buscar</span><span class="sm:hidden"><i class="fas fa-search"></i></span></button>
                     <a href="{{ route('socios-beneficiarios.index') }}" class="btn-secondary text-xs sm:text-sm"><i class="fas fa-broom mr-1 sm:mr-2"></i> <span class="hidden sm:inline">Limpiar</span></a>
                 </div>
-                
+
             </div>
         </form>
 
+        <div id="socios-results">
         <div class="overflow-x-auto -mx-4 sm:mx-0">
-            <table class="w-full text-xs sm:text-sm min-w-[600px]">
-                <thead class="bg-gray-50">
+            <table class="data-table w-full text-xs sm:text-sm min-w-[600px]">
+                <thead>
                     <tr>
-                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">ID</th>
-                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Socio</th>
-                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">DNI</th>
-                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Club</th>
-                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Estado</th>
-                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Benef.</th>
-                        <th class="px-3 sm:px-4 py-3 text-center font-bold text-earth">Acciones</th>
+                        <th class="px-3 sm:px-4 py-3 text-left">ID</th>
+                        <th class="px-3 sm:px-4 py-3 text-left">Socio</th>
+                        <th class="px-3 sm:px-4 py-3 text-left">DNI</th>
+                        <th class="px-3 sm:px-4 py-3 text-left">Club</th>
+                        <th class="px-3 sm:px-4 py-3 text-left">Estado</th>
+                        <th class="px-3 sm:px-4 py-3 text-left">Benef.</th>
+                        <th class="px-3 sm:px-4 py-3 text-center">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody>
                     @forelse($partners as $partner)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="row-enter">
                         <td class="px-3 sm:px-4 py-3">#{{ $partner->id }}</td>
                         <td class="px-3 sm:px-4 py-3 font-medium">
                             {{ $partner->people ? $partner->people->names . ' ' . $partner->people->father_lastname : 'Sin nombre' }}
@@ -100,9 +89,7 @@
                         <td class="px-3 sm:px-4 py-3">{{ $partner->people->dni ?? 'Sin DNI' }}</td>
                         <td class="px-3 sm:px-4 py-3">{{ $partner->association->name ?? 'Sin club' }}</td>
                         <td class="px-3 sm:px-4 py-3">
-                            <span class="px-2 py-1 text-[10px] sm:text-xs font-semibold rounded-full 
-                                @if($partner->state && $partner->state->title == 'Activo') bg-green-100 text-green-800
-                                @else bg-red-100 text-red-800 @endif">
+                            <span class="badge {{ $partner->state && $partner->state->title == 'Activo' ? 'badge-active' : 'badge-inactive' }}">
                                 {{ $partner->state->title ?? 'Sin estado' }}
                             </span>
                         </td>
@@ -134,25 +121,40 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                            <i class="fas fa-users text-4xl mb-3"></i>
-                            <p>No hay socios registrados</p>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>No hay socios registrados</p>
+                            </div>
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $partners->links() }}</div>
+        <div class="mt-4">{{ $partners->appends(request()->query())->links() }}</div>
+@foreach($partners as $partner)
+    @include('socios-beneficiarios._modal-ver', ['partner' => $partner])
+    @include('socios-beneficiarios._modal-editar', ['partner' => $partner])
+@endforeach
+        </div>
     </div>
 </div>
 
 @include('socios-beneficiarios._modal-crear')
 
-@foreach($partners as $partner)
-    @include('socios-beneficiarios._modal-ver', ['partner' => $partner])
-    @include('socios-beneficiarios._modal-editar', ['partner' => $partner])
-@endforeach
 
 @include('socios-beneficiarios._scripts')
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.initLiveFilter({
+        formEl: document.getElementById('filtro-socios'),
+        resultsSelector: '#socios-results',
+        url: '{{ route("socios-beneficiarios.index") }}',
+    });
+});
+</script>
+@endpush
 @endsection

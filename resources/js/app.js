@@ -18,3 +18,9 @@ window.$ = window.jQuery = $;
 
 // Select2 (requiere jQuery)
 import 'select2';
+
+// Avisos flotantes, modal de confirmación y filtros dinámicos (ver docs en cada archivo)
+import './toast';
+import './confirm';
+import './filter-loading';
+import './live-filter';

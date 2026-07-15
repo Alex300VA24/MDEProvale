@@ -3,6 +3,366 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* ==================== Pantalla de carga (components/loading-screen.blade.php) ====================
+   Antes había 3 copias divergentes (main.blade.php, auth/login.blade.php,
+   layouts/guest.blade.php). Ahora es un solo componente Blade con un solo
+   set de estilos, usado por las 3 páginas. */
+#loading-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.85);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    opacity: 0;
+    backdrop-filter: blur(4px);
+}
+#loading-screen.active {
+    display: flex;
+    opacity: 1;
+}
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+.loader-icon {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+.loader-icon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    backdrop-filter: blur(10px);
+}
+.loader-icon img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+.loader-spin {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    width: 120px;
+    height: 120px;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-top: 3px solid #5EEAD4;
+    border-radius: 50%;
+    animation: loader-spin 1.2s linear infinite;
+}
+.loader-ring {
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    width: 110px;
+    height: 110px;
+    border: 2px solid transparent;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: loader-spin 1.8s linear infinite reverse;
+}
+@keyframes loader-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.loader-text {
+    text-align: center;
+}
+.loader-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: 0.05em;
+}
+.loader-subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 0.25rem;
+}
+.loader-progress {
+    width: 180px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+.loader-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4A90D9, #1E5799);
+    border-radius: 999px;
+    animation: loader-progress 1.5s ease-in-out infinite;
+}
+@keyframes loader-progress {
+    0% { width: 0%; margin-left: 0; }
+    50% { width: 70%; margin-left: 15%; }
+    100% { width: 0%; margin-left: 100%; }
+}
+
+/* ==================== Componentes compartidos ====================
+   Antes vivían hardcodeados con hex crudo dentro de un <style> en
+   layouts/main.blade.php. Viven aquí y referencian los tokens de
+   tailwind.config.js, así que un cambio de color se hace en un solo lugar. */
+@layer components {
+    .btn-primary {
+        @apply bg-gradient-to-r from-sky to-blue text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+        box-shadow: 0 2px 8px rgba(74, 144, 217, 0.25);
+    }
+    .btn-primary:hover {
+        @apply -translate-y-px;
+        box-shadow: 0 4px 12px rgba(74, 144, 217, 0.35);
+    }
+
+    .btn-secondary {
+        @apply bg-mist text-slate font-bold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+    }
+    .btn-secondary:hover {
+        @apply bg-slate text-white;
+    }
+
+    .btn-danger {
+        @apply bg-clay-light text-clay font-bold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+    }
+    .btn-danger:hover {
+        @apply bg-clay text-white;
+    }
+
+    .btn-action {
+        @apply w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all duration-200;
+    }
+
+    .btn-primary:focus-visible,
+    .btn-secondary:focus-visible,
+    .btn-danger:focus-visible,
+    .btn-action:focus-visible {
+        @apply outline-none ring-2 ring-sky ring-offset-2;
+    }
+
+    .dashboard-section-title {
+        color: #1E5799 !important;
+        opacity: 1 !important;
+    }
+
+    @media (max-width: 640px) {
+        .btn-action { width: 2.25rem; height: 2.25rem; }
+    }
+
+    /* Tabla de datos */
+    .data-table th {
+        @apply bg-base text-[11px] font-bold uppercase tracking-wider text-slate;
+    }
+    .data-table tr {
+        @apply border-b border-mist transition-colors duration-200;
+    }
+    .data-table tr:hover {
+        @apply bg-base;
+    }
+    .data-table td {
+        @apply text-sm text-navy px-4 py-3;
+    }
+    @media (max-width: 640px) {
+        .data-table td { padding: 8px 10px; font-size: 12px; }
+        .data-table th { font-size: 10px; padding: 8px 10px; }
+    }
+
+    /* Badges de estado — antes cada módulo inventaba su propio verde/rojo ad hoc */
+    .badge-active {
+        @apply bg-teal-light text-teal;
+    }
+    .badge-pending {
+        @apply bg-amber-light text-amber-dark;
+    }
+    .badge-inactive {
+        @apply bg-clay-light text-clay;
+    }
+    .badge {
+        @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold;
+    }
+
+    /* Cascarón de modal reutilizable — reemplaza el wrapper copiado en ~18 archivos */
+    .modal-overlay {
+        @apply fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+    .modal-overlay:not(.hidden) {
+        opacity: 1;
+    }
+    .modal-panel {
+        @apply relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4;
+    }
+    .modal-card {
+        @apply bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden;
+    }
+    .modal-header {
+        @apply flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat;
+    }
+    .modal-close-btn {
+        @apply w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth transition-all duration-200;
+    }
+    .modal-close-btn:hover {
+        @apply bg-wheat;
+    }
+
+    /* Estado vacío ("sin registros") — antes cada tabla lo escribía a mano distinto */
+    .empty-state {
+        @apply flex flex-col items-center justify-center py-10 sm:py-12 text-earth text-center;
+    }
+    .empty-state i {
+        @apply text-3xl sm:text-4xl mb-3 text-mist;
+    }
+
+    /* Filas "esqueleto" mientras un filtro dinámico está cargando */
+    .skeleton-row td {
+        @apply py-3 px-4;
+    }
+
+    /* Barra de progreso indeterminada dentro del modal "Aplicando filtro..."
+       (resources/js/filter-loading.js) — reutiliza la animación @keyframes
+       loader-progress ya definida arriba, con colores para fondo claro. */
+    .filter-progress-track {
+        @apply w-40 h-1 bg-mist rounded-full overflow-hidden mt-1;
+    }
+    .filter-progress-bar {
+        @apply h-full rounded-full;
+        background: linear-gradient(90deg, #4A90D9, #1E5799);
+        animation: loader-progress 1.5s ease-in-out infinite;
+    }
+    .skeleton-bar {
+        @apply h-4 bg-mist rounded-full;
+    }
+
+    /* Transición de entrada de filas (reutiliza @keyframes fade-in de main.blade.php) */
+    .row-enter {
+        animation: fade-in 0.25s ease-out;
+    }
+}
+
+/* ==================== Select2 — piel propia ====================
+   Select2 trae su propio azul genérico y esquinas cuadradas que no combinan
+   con el resto del sistema (bordes redondeados, wheat, acento leaf al enfocar).
+   Este bloque se carga después de select2.min.css (ver el orden de los <link>
+   en layouts/main.blade.php) para poder pisar sus reglas sin necesitar !important. */
+.select2-container--default .select2-selection--single {
+    height: auto;
+    border: 2px solid #E8DCC8; /* wheat */
+    border-radius: 0.75rem;
+    padding: 0.625rem 2.25rem 0.625rem 1rem;
+    background: #fff;
+    transition: border-color 0.2s ease;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    padding: 0;
+    line-height: 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2D3748; /* charcoal */
+}
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: #6B7280; /* earth */
+    font-weight: 600;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 100%;
+    right: 0.75rem;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+    border-color: #6B7280 transparent transparent transparent; /* earth */
+}
+.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b {
+    border-color: transparent transparent #16A34A transparent; /* leaf */
+}
+.select2-container--default.select2-container--open .select2-selection--single,
+.select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: #16A34A; /* leaf */
+}
+.select2-container--default .select2-selection--single .select2-selection__clear {
+    color: #6B7280;
+    margin-right: 0.5rem;
+}
+.select2-container--default .select2-selection--single .select2-selection__clear:hover {
+    color: #DC2626; /* clay */
+}
+
+.select2-dropdown {
+    border: 2px solid #E8DCC8;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(45, 55, 72, 0.12), 0 4px 6px -2px rgba(45, 55, 72, 0.05);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.select2-search--dropdown {
+    padding: 0.5rem;
+    border-bottom: 1px solid #E8DCC8;
+}
+.select2-search--dropdown .select2-search__field {
+    border: 2px solid #E8DCC8;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2D3748;
+    outline: none;
+}
+.select2-search--dropdown .select2-search__field:focus {
+    border-color: #16A34A;
+}
+.select2-results__option {
+    padding: 0.55rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2D3748;
+}
+.select2-results__option--highlighted[aria-selected] {
+    background: #DCFCE7 !important; /* leaf-light */
+    color: #16A34A !important; /* leaf */
+}
+.select2-results__option[aria-selected=true] {
+    background: #FDF8F0; /* cream */
+    color: #2D3748;
+    font-weight: 700;
+}
+.select2-results__group {
+    font-weight: 700;
+    color: #6B7280;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+}
+.select2-container--default .select2-results > .select2-results__options {
+    max-height: 15rem;
+}
+.select2-container--default .select2-results__option .select2-results__option--highlighted {
+    color: #16A34A;
+}
+
+/* Respeta la preferencia del sistema operativo de reducir animaciones */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* Responsive utilities */
 @layer utilities {
     .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }

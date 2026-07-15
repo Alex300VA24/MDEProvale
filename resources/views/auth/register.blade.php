@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/700.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>

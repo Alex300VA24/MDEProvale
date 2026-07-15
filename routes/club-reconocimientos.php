@@ -22,4 +22,9 @@ Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->middleware
 
     // Asignar presidenta al comité
     Route::post('club/{association}/asignar-presidenta', [ClubReconocimientosController::class, 'asignarPresidenta'])->name('club.asignar-presidenta');
+
+    // Resolución externa (portal de transparencia de la Municipalidad)
+    Route::get('resoluciones/{resolution}/externa/buscar', [ClubReconocimientosController::class, 'buscarResolucionExterna'])->name('reconocimientos.externa.buscar');
+    Route::get('resoluciones/{resolution}/externa/preview', [ClubReconocimientosController::class, 'previewResolucionExterna'])->name('reconocimientos.externa.preview');
+    Route::get('resoluciones/{resolution}/externa/descargar', [ClubReconocimientosController::class, 'descargarResolucionExterna'])->name('reconocimientos.externa.descargar');
 });

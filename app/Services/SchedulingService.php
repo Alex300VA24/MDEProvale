@@ -94,7 +94,9 @@ class SchedulingService
     {
         $partners = $association->partners()
             ->with(['beneficiaries.person'])
-            ->where('date_begin', '<=', $endDate)
+            ->where(function ($q) use ($endDate) {
+                $q->whereNull('date_begin')->orWhere('date_begin', '<=', $endDate);
+            })
             ->where(function ($q) use ($endDate) {
                 $q->whereNull('date_end')->orWhere('date_end', '>=', $endDate);
             })

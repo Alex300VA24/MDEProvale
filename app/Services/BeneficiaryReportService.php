@@ -48,6 +48,11 @@ class BeneficiaryReportService
             ->first();
 
         [$beneficiarios, $resumen] = $this->buildReportData($partners, $cutoffDate, $startDate, $endDate);
+
+        if (empty($beneficiarios)) {
+            throw new \DomainException('No se encontraron beneficiarios vigentes para el comité y periodo seleccionados.');
+        }
+
         $observaciones = $this->buildObservaciones($beneficiarios, $cutoffDate);
 
         $meses = ['', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SETIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
@@ -114,6 +119,13 @@ class BeneficiaryReportService
                         && (!$h->date_end || Carbon::parse($h->date_end)->gte($startDate)))
                     ->sortByDesc('date_begin')
                     ->first();
+
+                // Solo se incluyen beneficiarios con un historial vigente en el periodo
+                // consultado; sin esto, el padrón mostraría siempre a todos los
+                // beneficiarios sin importar el mes/año elegido.
+                if (!$historialActivo) {
+                    continue;
+                }
 
                 $tipoBeneficio = $historialActivo ? ($historialActivo->typeBenefit ? $historialActivo->typeBenefit->abbreviation : '') : '';
                 $razonBaja = $historialActivo ? ($historialActivo->reasonDisqualification ? $historialActivo->reasonDisqualification->id : '') : '';
@@ -224,7 +236,7 @@ class BeneficiaryReportService
             [
                 'codigo' => 1,
                 'descripcion' => 'EDAD >= 14 años (BAJA)',
-                'cantidad' => $todos->filter(fn($b) => !empty($b->beneficiario_baja))->count(),
+                'cantidad' => $todos->filter(fn($b) => $b->esBaja)->count(),
             ],
             [
                 'codigo' => 2,

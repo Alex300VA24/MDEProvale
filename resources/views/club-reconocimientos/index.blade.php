@@ -24,24 +24,13 @@
     </div>
 
     <div class="p-4 sm:p-6">
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
-                <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700">
-                <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-            </div>
-        @endif
-
-        <form method="GET" class="mb-6">
+        <form id="filtro-comites" method="GET" class="mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o código..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
                 <div>
-                    <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    <select name="state_id" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todos los Estados</option>
                         @foreach($states as $state)
                         <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
@@ -49,14 +38,14 @@
                     </select>
                 </div>
                 <div>
-                    <select name="vigencia" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    <select name="vigencia" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todas las Vigencias</option>
                         <option value="vigente" {{ request('vigencia') == 'vigente' ? 'selected' : '' }}>Vigente</option>
                         <option value="vencido" {{ request('vigencia') == 'vencido' ? 'selected' : '' }}>Vencido</option>
                     </select>
                 </div>
                 <div>
-                    <select name="resolution_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    <select name="resolution_id" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todas las Resoluciones</option>
                         @foreach($resolutions as $resolution)
                         <option value="{{ $resolution->id }}" {{ request('resolution_id') == $resolution->id ? 'selected' : '' }}>{{ $resolution->document }}</option>
@@ -65,11 +54,11 @@
                 </div>
             </div>
             <div class="flex gap-2 mt-4">
-                <button type="submit" class="btn-primary"><i class="fas fa-search mr-2"></i> Buscar</button>
                 <a href="{{ route('club-reconocimientos.index') }}" class="btn-secondary"><i class="fas fa-broom mr-2"></i> Limpiar</a>
             </div>
         </form>
 
+        <div id="comites-results">
         <div class="overflow-x-auto -mx-4 sm:mx-0">
             <table class="w-full text-xs sm:text-sm min-w-[700px]">
                 <thead class="bg-gray-50">
@@ -108,10 +97,18 @@
                             @endif
                         </td>
                         <td class="px-3 sm:px-4 py-3 text-center">
+                            <span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $association->state && $association->state->title == 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $association->state->title ?? 'N/A' }}</span>
+                        </td>
+                        <td class="px-3 sm:px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 <button onclick="openModal('modal-ver-comite-{{ $association->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver Detalles">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                @if($latestResolution)
+                                <button type="button" onclick="abrirResolucionExterna({{ $association->id }}, '{{ route('club-reconocimientos.reconocimientos.externa.buscar', $latestResolution) }}')" class="btn-action bg-teal-light text-teal hover:bg-teal hover:text-white" title="Descargar Resolución (Portal Municipal)">
+                                    <i class="fas fa-file-pdf"></i>
+                                </button>
+                                @endif
                                 @if(Auth::user()->canEditModule('club-madres'))
                                 <button onclick="openModal('modal-editar-comite-{{ $association->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
                                     <i class="fas fa-edit"></i>
@@ -146,80 +143,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-4">{{ $associations->links() }}</div>
-    </div>
-</div>
-
-{{-- Modal Crear Comité --}}
-<div id="modal-crear-comite" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-40" style="display: none;">
-    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
-        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
-                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
-                    <i class="fas fa-building text-leaf"></i> Nuevo Comité
-                </h3>
-                <button onclick="closeModal('modal-crear-comite')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form action="{{ route('club-reconocimientos.store') }}" method="POST" class="p-6 space-y-4">
-                @csrf
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Resolución *</label>
-                        <select name="resolution_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                            <option value="">Seleccionar...</option>
-                            @foreach($resolutions as $resolution)
-                            <option value="{{ $resolution->id }}">{{ $resolution->document }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Código</label>
-                        <input type="text" name="code" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" placeholder="Ej: CDM-001">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Nombre del Comité *</label>
-                    <input type="text" name="name" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Dirección *</label>
-                    <input type="text" name="address" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Sector *</label>
-                        <select name="place_sector_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                            <option value="">Seleccionar...</option>
-                            @foreach($placeSectors as $ps)
-                            <option value="{{ $ps->id }}">{{ $ps->place->title ?? '' }} - {{ $ps->sector->title ?? '' }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Tipo de Local</label>
-                        <select name="type_premises_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                            <option value="">Seleccionar...</option>
-                            @foreach($typePremises as $tp)
-                            <option value="{{ $tp->id }}">{{ $tp->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Observación</label>
-                    <textarea name="observation" rows="2" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"></textarea>
-                </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
-                    <button type="button" onclick="closeModal('modal-crear-comite')" class="btn-secondary flex-1">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
+        <div class="mt-4">{{ $associations->appends(request()->query())->links() }}</div>
 @foreach($associations as $association)
 
 {{-- Modal Ver Comité --}}
@@ -396,9 +320,168 @@
     </div>
 </div>
 
+@if($association->latestResolution)
+{{-- Modal Descargar Resolución Externa --}}
+<div id="modal-resolucion-{{ $association->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-40" style="display: none;">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-3xl mt-4 sm:mt-10 mb-8 px-2 sm:px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-file-pdf text-teal"></i> Resolución {{ $association->latestResolution->document }}
+                </h3>
+                <button onclick="cerrarModalResolucion({{ $association->id }})" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 sm:p-6">
+                <div id="loading-resolucion-{{ $association->id }}" class="py-16 text-center text-earth">
+                    <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                    <p class="font-semibold">Buscando la resolución en el portal de la Municipalidad...</p>
+                </div>
+                <div id="error-resolucion-{{ $association->id }}" class="hidden py-10 text-center text-clay bg-clay-light rounded-xl border-2 border-clay px-4">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p class="font-semibold" id="error-resolucion-msg-{{ $association->id }}"></p>
+                </div>
+                <iframe id="iframe-resolucion-{{ $association->id }}" class="hidden w-full rounded-xl border-2 border-wheat" style="height: 65vh;"></iframe>
+            </div>
+            <div class="px-6 pb-6 flex justify-end gap-3">
+                <button type="button" onclick="cerrarModalResolucion({{ $association->id }})" class="btn-secondary">Cerrar</button>
+                <a id="btn-descargar-resolucion-{{ $association->id }}" href="#" target="_blank" class="btn-primary opacity-50 pointer-events-none">
+                    <i class="fas fa-download mr-2"></i> Descargar PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @endforeach
+        </div>
+    </div>
+</div>
+
+{{-- Modal Crear Comité --}}
+<div id="modal-crear-comite" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-40" style="display: none;">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-building text-leaf"></i> Nuevo Comité
+                </h3>
+                <button onclick="closeModal('modal-crear-comite')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('club-reconocimientos.store') }}" method="POST" class="p-6 space-y-4">
+                @csrf
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Resolución *</label>
+                        <select name="resolution_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                            <option value="">Seleccionar...</option>
+                            @foreach($resolutions as $resolution)
+                            <option value="{{ $resolution->id }}">{{ $resolution->document }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Código</label>
+                        <input type="text" name="code" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" placeholder="Ej: CDM-001">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Nombre del Comité *</label>
+                    <input type="text" name="name" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Dirección *</label>
+                    <input type="text" name="address" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Sector *</label>
+                        <select name="place_sector_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                            <option value="">Seleccionar...</option>
+                            @foreach($placeSectors as $ps)
+                            <option value="{{ $ps->id }}">{{ $ps->place->title ?? '' }} - {{ $ps->sector->title ?? '' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Tipo de Local</label>
+                        <select name="type_premises_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                            <option value="">Seleccionar...</option>
+                            @foreach($typePremises as $tp)
+                            <option value="{{ $tp->id }}">{{ $tp->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Observación</label>
+                    <textarea name="observation" rows="2" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"></textarea>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
+                    <button type="button" onclick="closeModal('modal-crear-comite')" class="btn-secondary flex-1">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.initLiveFilter({
+        formEl: document.getElementById('filtro-comites'),
+        resultsSelector: '#comites-results',
+        url: '{{ route("club-reconocimientos.index") }}',
+    });
+});
+
+function abrirResolucionExterna(associationId, buscarUrl) {
+    const loading = document.getElementById('loading-resolucion-' + associationId);
+    const errorBox = document.getElementById('error-resolucion-' + associationId);
+    const errorMsg = document.getElementById('error-resolucion-msg-' + associationId);
+    const frame = document.getElementById('iframe-resolucion-' + associationId);
+    const downloadBtn = document.getElementById('btn-descargar-resolucion-' + associationId);
+
+    openModal('modal-resolucion-' + associationId);
+    loading.classList.remove('hidden');
+    errorBox.classList.add('hidden');
+    frame.classList.add('hidden');
+    frame.src = 'about:blank';
+    downloadBtn.classList.add('opacity-50', 'pointer-events-none');
+    downloadBtn.href = '#';
+
+    fetch(buscarUrl)
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            loading.classList.add('hidden');
+            if (ok && data.success) {
+                frame.src = data.preview_url;
+                frame.classList.remove('hidden');
+                downloadBtn.href = data.download_url;
+                downloadBtn.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                errorMsg.textContent = data.message || 'No se encontró la resolución en el portal municipal.';
+                errorBox.classList.remove('hidden');
+            }
+        })
+        .catch(() => {
+            loading.classList.add('hidden');
+            errorMsg.textContent = 'Error de conexión al buscar la resolución en el portal municipal.';
+            errorBox.classList.remove('hidden');
+        });
+}
+
+function cerrarModalResolucion(associationId) {
+    closeModal('modal-resolucion-' + associationId);
+    const frame = document.getElementById('iframe-resolucion-' + associationId);
+    if (frame) frame.src = 'about:blank';
+}
+
 function confirmPresidenta(associationId, associationName) {
     Swal.fire({
         title: '¿Estás seguro?',

@@ -88,20 +88,24 @@
         <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-navy font-bold text-sm sm:text-base">PECOSAs por Mes</h3>
+                    <h3 class="dashboard-section-title font-extrabold text-sm sm:text-base">PECOSAs por Mes</h3>
                     <p class="text-slate text-xs sm:text-sm">Salidas {{ date('Y') }}</p>
                 </div>
                 <span class="px-2 py-1 text-[10px] sm:text-xs font-bold bg-blue-light text-blue rounded-lg">{{ $totalPecosasAnio }} total</span>
             </div>
-            <div class="chart-wrap h-40 sm:h-48">
+            <div class="chart-wrap h-40 sm:h-48 relative">
                 <canvas id="pecosasChart"></canvas>
+                <div id="pecosasChart-empty" class="empty-state absolute inset-0 hidden">
+                    <i class="fas fa-file-invoice"></i>
+                    <p class="text-xs sm:text-sm">Aún no hay PECOSAs registradas en {{ date('Y') }}</p>
+                </div>
             </div>
         </div>
 
         <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-navy font-bold text-sm sm:text-base">Productos Distribuidos</h3>
+                    <h3 class="dashboard-section-title font-extrabold text-sm sm:text-base">Productos Distribuidos</h3>
                     <p class="text-slate text-xs sm:text-sm">Leche y Hojuelas - {{ date('Y') }}</p>
                 </div>
                 <div class="flex gap-1 sm:gap-2">
@@ -109,15 +113,19 @@
                     <span class="px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-semibold bg-amber-light text-amber rounded">Hojuelas</span>
                 </div>
             </div>
-            <div class="chart-wrap h-40 sm:h-48">
+            <div class="chart-wrap h-40 sm:h-48 relative">
                 <canvas id="productosChart"></canvas>
+                <div id="productosChart-empty" class="empty-state absolute inset-0 hidden">
+                    <i class="fas fa-boxes-stacked"></i>
+                    <p class="text-xs sm:text-sm">Aún no hay movimientos de productos en {{ date('Y') }}</p>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
-            <h3 class="text-navy font-bold text-sm sm:text-base mb-1">Socios vs Beneficiarios</h3>
+            <h3 class="dashboard-section-title font-extrabold text-sm sm:text-base mb-1">Socios vs Beneficiarios</h3>
             <p class="text-slate text-xs sm:text-sm mb-3">Comparativa total</p>
             <div class="chart-wrap h-32 sm:h-36">
                 <canvas id="sociosBenefChart"></canvas>
@@ -135,7 +143,7 @@
         </div>
 
         <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
-            <h3 class="text-navy font-bold text-sm sm:text-base mb-1">Top Comités</h3>
+            <h3 class="dashboard-section-title font-extrabold text-sm sm:text-base mb-1">Top Comités</h3>
             <p class="text-slate text-xs sm:text-sm mb-3">Con más beneficiarios</p>
             <div class="chart-wrap h-36 sm:h-44">
                 <canvas id="topClubsChart"></canvas>
@@ -143,7 +151,7 @@
         </div>
 
         <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
-            <h3 class="text-navy font-bold text-sm sm:text-base mb-4">Reportes Rápidos</h3>
+            <h3 class="dashboard-section-title font-extrabold text-sm sm:text-base mb-4">Reportes Rápidos</h3>
             <div class="grid grid-cols-2 gap-2">
                 <a href="{{ route('socios-beneficiarios.beneficiarios.padron') }}" class="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-blue-light hover:bg-blue/10 transition-all group">
                     <div class="w-7 h-7 sm:w-8 sm:h-8 bg-blue rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
@@ -179,66 +187,92 @@ document.addEventListener('DOMContentLoaded', function() {
     const gridColor = '#D4E4F7';
     const tickColor = '#5A7FA8';
 
-    new Chart(document.getElementById('pecosasChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
-            datasets: [{
-                label: 'PECOSAs',
-                data: [{{ implode(',', $pecosaData) }}],
-                backgroundColor: '#4A90D9',
-                borderRadius: 4,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
-                y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor } }
-            }
-        }
-    });
-
-    new Chart(document.getElementById('productosChart'), {
-        type: 'line',
-        data: {
-            labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
-            datasets: [
-                {
-                    label: 'Leche',
-                    data: [{{ implode(',', $lecheData) }}],
-                    borderColor: '#1E5799',
-                    backgroundColor: 'rgba(30,87,153,0.08)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#1E5799',
-                    pointRadius: 3,
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: 'Hojuelas',
-                    data: [{{ implode(',', $hojuelasData) }}],
-                    borderColor: '#E5930A',
-                    backgroundColor: 'rgba(229,147,10,0.08)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#E5930A',
-                    pointRadius: 3,
-                    fill: true,
-                    tension: 0.4
+    // Si todo el año está en cero, el dato real es "no hay nada que mostrar" —
+    // se muestra un estado vacío explícito en vez de una línea plana en 0,
+    // que se ve como un gráfico roto en vez de "sin datos todavía".
+    const pecosaData = [{{ implode(',', $pecosaData) }}];
+    if (pecosaData.every(v => v === 0)) {
+        document.getElementById('pecosasChart').style.display = 'none';
+        document.getElementById('pecosasChart-empty').classList.remove('hidden');
+    } else {
+        new Chart(document.getElementById('pecosasChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+                datasets: [{
+                    label: 'PECOSAs',
+                    data: pecosaData,
+                    backgroundColor: '#4A90D9',
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
+                    y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor }, beginAtZero: true }
                 }
-            ]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: true, position: 'top', labels: { font: chartFont, boxWidth: 12 } } },
-            scales: {
-                x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
-                y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor } }
             }
-        }
-    });
+        });
+    }
+
+    const lecheData = [{{ implode(',', $lecheData) }}];
+    const hojuelasData = [{{ implode(',', $hojuelasData) }}];
+    if (lecheData.every(v => v === 0) && hojuelasData.every(v => v === 0)) {
+        document.getElementById('productosChart').style.display = 'none';
+        document.getElementById('productosChart-empty').classList.remove('hidden');
+    } else {
+        new Chart(document.getElementById('productosChart'), {
+            type: 'line',
+            data: {
+                labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+                datasets: [
+                    {
+                        label: 'Leche',
+                        data: lecheData,
+                        borderColor: '#1E5799',
+                        backgroundColor: 'rgba(30,87,153,0.10)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#1E5799',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.35
+                    },
+                    {
+                        label: 'Hojuelas',
+                        data: hojuelasData,
+                        borderColor: '#B87300',
+                        backgroundColor: 'rgba(184,115,0,0.10)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#B87300',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.35
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: true, position: 'top', align: 'end', labels: { font: chartFont, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: chartFont, color: tickColor } },
+                    y: { grid: { color: gridColor }, ticks: { font: chartFont, color: tickColor }, beginAtZero: true }
+                }
+            }
+        });
+    }
 
     new Chart(document.getElementById('sociosBenefChart'), {
         type: 'doughnut',

@@ -1,12 +1,12 @@
 {{-- Modal Crear Persona --}}
-<div id="modal-crear-persona" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-2xl mt-16 mb-8 px-4">
-        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+<div id="modal-crear-persona" class="modal-overlay">
+    <div class="modal-panel sm:max-w-2xl">
+        <div class="modal-card">
+            <div class="modal-header">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-user-plus text-leaf"></i> Nueva Persona
                 </h3>
-                <button onclick="closeModal('modal-crear-persona')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button onclick="closeModal('modal-crear-persona')" class="modal-close-btn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>

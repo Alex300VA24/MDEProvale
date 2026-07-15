@@ -18,14 +18,14 @@
         </div>
     </div>
 
-    <form method="GET" action="{{ route('socios-beneficiarios.beneficiarios.index') }}" class="flex flex-col sm:flex-row gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 flex-wrap border-b border-wheat bg-cream">
-        <div class="flex-1 min-w-0 sm:min-w-48">
+    <form id="filtro-beneficiarios" method="GET" action="{{ route('socios-beneficiarios.beneficiarios.index') }}" class="flex flex-col sm:flex-row gap-2 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4 flex-wrap border-b border-wheat bg-cream">
+        <div class="w-full sm:w-72">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Buscar (Nombre/DNI)</label>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o DNI..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
         </div>
-        <div class="min-w-0 sm:min-w-40">
+        <div class="flex-1 min-w-0 sm:min-w-48">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Socio</label>
-            <select name="partner_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <select name="partner_id" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos los socios</option>
                 @foreach($partners as $partner)
                     <option value="{{ $partner->id }}" {{ request('partner_id') == $partner->id ? 'selected' : '' }}>
@@ -34,9 +34,9 @@
                 @endforeach
             </select>
         </div>
-        <div class="min-w-0 sm:min-w-32">
+        <div class="flex-1 min-w-0 sm:min-w-36">
             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Parentesco</label>
-            <select name="relationship_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+            <select name="relationship_id" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 <option value="">Todos</option>
                 @foreach($relationships as $relationship)
                     <option value="{{ $relationship->id }}" {{ request('relationship_id') == $relationship->id ? 'selected' : '' }}>{{ $relationship->title }}</option>
@@ -44,89 +44,103 @@
             </select>
         </div>
         <div class="flex items-end gap-2">
-            <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
-            <a href="{{ route('socios-beneficiarios.beneficiarios.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
+            <a href="{{ route('socios-beneficiarios.beneficiarios.index') }}" class="btn-secondary"><i class="fas fa-broom mr-1"></i> Limpiar</a>
         </div>
     </form>
 
-    @if(session('success'))
-        <div class="mx-6 mt-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
-            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-        </div>
-    @endif
-
-    <div class="overflow-x-auto -mx-4 sm:mx-0">
-        <table class="data-table w-full min-w-[600px] text-xs sm:text-sm">
-            <thead>
-                <tr>
-                    <th class="px-3 sm:px-4 py-4 text-left">ID</th>
-                    <th class="px-3 sm:px-4 py-4 text-left">Beneficiario</th>
-                    <th class="px-3 sm:px-4 py-4 text-left">DNI</th>
-                    <th class="px-3 sm:px-4 py-4 text-left">Socio</th>
-                    <th class="px-3 sm:px-4 py-4 text-left">Parentesco</th>
-                    <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($beneficiaries as $beneficiarie)
-                <tr>
-                    <td class="px-3 sm:px-4 text-earth font-mono text-sm">#{{ $beneficiarie->id }}</td>
-                    <td class="px-3 sm:px-4 font-semibold">
-                        {{ $beneficiarie->person ? $beneficiarie->person->names . ' ' . $beneficiarie->person->father_lastname . ' ' . $beneficiarie->person->mother_lastname : 'Sin nombre' }}
-                    </td>
-                    <td class="px-3 sm:px-4 text-earth font-mono text-sm">{{ $beneficiarie->person->dni ?? '-' }}</td>
-                    <td class="px-3 sm:px-4">
-                        @if($beneficiarie->partner && $beneficiarie->partner->people)
-                            <span class="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">
-                                {{ $beneficiarie->partner->people->names }} {{ $beneficiarie->partner->people->father_lastname }}
-                            </span>
-                        @else -
-                        @endif
-                    </td>
-                    <td class="px-3 sm:px-4 text-earth text-sm">{{ $beneficiarie->relationship->title ?? '-' }}</td>
-                    <td class="px-3 sm:px-4">
-                        <div class="flex gap-2">
-                            <button onclick="openModal('modal-ver-beneficiario-{{ $beneficiarie->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button onclick="openModal('modal-editar-beneficiario-{{ $beneficiarie->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <form id="form-delete-benef-{{ $beneficiarie->id }}" action="{{ route('socios-beneficiarios.beneficiarios.destroy', $beneficiarie) }}" method="POST" class="inline">
-                                @csrf
-                                @method('DELETE')
-                                <button type="button" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
-                                    onclick="confirmDelete('form-delete-benef-{{ $beneficiarie->id }}', 'Se eliminará este beneficiario de forma permanente.')">
-                                    <i class="fas fa-trash"></i>
+    <div id="beneficiarios-results">
+        <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <table class="data-table w-full min-w-[600px] text-xs sm:text-sm">
+                <thead>
+                    <tr>
+                        <th class="px-3 sm:px-4 py-4 text-left">ID</th>
+                        <th class="px-3 sm:px-4 py-4 text-left">Beneficiario</th>
+                        <th class="px-3 sm:px-4 py-4 text-left">DNI</th>
+                        <th class="px-3 sm:px-4 py-4 text-left">Socio</th>
+                        <th class="px-3 sm:px-4 py-4 text-left">Parentesco</th>
+                        <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($beneficiaries as $beneficiarie)
+                    <tr class="row-enter">
+                        <td class="px-3 sm:px-4 text-earth font-mono text-sm">#{{ $beneficiarie->id }}</td>
+                        <td class="px-3 sm:px-4 font-semibold">
+                            {{ $beneficiarie->person ? $beneficiarie->person->names . ' ' . $beneficiarie->person->father_lastname . ' ' . $beneficiarie->person->mother_lastname : 'Sin nombre' }}
+                        </td>
+                        <td class="px-3 sm:px-4 text-earth font-mono text-sm">{{ $beneficiarie->person->dni ?? '-' }}</td>
+                        <td class="px-3 sm:px-4">
+                            @if($beneficiarie->partner && $beneficiarie->partner->people)
+                                <span class="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">
+                                    {{ $beneficiarie->partner->people->names }} {{ $beneficiarie->partner->people->father_lastname }}
+                                </span>
+                            @else -
+                            @endif
+                        </td>
+                        <td class="px-3 sm:px-4 text-earth text-sm">{{ $beneficiarie->relationship->title ?? '-' }}</td>
+                        <td class="px-3 sm:px-4">
+                            <div class="flex gap-2">
+                                <button type="button"
+                                    onclick="openViewBeneficiario(this)"
+                                    data-nombre="{{ $beneficiarie->person ? $beneficiarie->person->names . ' ' . $beneficiarie->person->father_lastname . ' ' . $beneficiarie->person->mother_lastname : 'Sin nombre' }}"
+                                    data-dni="{{ $beneficiarie->person->dni ?? '-' }}"
+                                    data-parentesco="{{ $beneficiarie->relationship->title ?? '-' }}"
+                                    data-socio="{{ $beneficiarie->partner && $beneficiarie->partner->people ? $beneficiarie->partner->people->names . ' ' . $beneficiarie->partner->people->father_lastname : '-' }}"
+                                    data-nacimiento="{{ $beneficiarie->person && $beneficiarie->person->birthdate ? \Carbon\Carbon::parse($beneficiarie->person->birthdate)->format('d/m/Y') : '' }}"
+                                    class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
+                                    <i class="fas fa-eye"></i>
                                 </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" class="px-3 sm:px-4 py-8 text-center text-earth">No hay registros</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                                <button type="button"
+                                    onclick="openEditBeneficiario(this)"
+                                    data-update-url="{{ route('socios-beneficiarios.beneficiarios.update', $beneficiarie) }}"
+                                    data-person-id="{{ $beneficiarie->person->id ?? '' }}"
+                                    data-person-label="{{ $beneficiarie->person ? $beneficiarie->person->names . ' ' . $beneficiarie->person->father_lastname . ' (' . $beneficiarie->person->dni . ')' : '' }}"
+                                    data-partner-id="{{ $beneficiarie->partner_id }}"
+                                    data-relationship-id="{{ $beneficiarie->relationship_id }}"
+                                    class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form id="form-delete-benef-{{ $beneficiarie->id }}" action="{{ route('socios-beneficiarios.beneficiarios.destroy', $beneficiarie) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                        onclick="confirmDelete('form-delete-benef-{{ $beneficiarie->id }}', 'Se eliminará este beneficiario de forma permanente.')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fas fa-hand-holding-heart"></i>
+                                <p>No hay beneficiarios registrados</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-    <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-t-2 border-wheat">
-        <span class="text-xs sm:text-sm text-earth font-medium">Mostrando {{ $beneficiaries->firstItem() ?? 0 }} - {{ $beneficiaries->lastItem() ?? 0 }} de {{ $beneficiaries->total() }} registros</span>
-        {{ $beneficiaries->appends(request()->query())->links() }}
+        <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-t-2 border-wheat">
+            <span class="text-xs sm:text-sm text-earth font-medium">Mostrando {{ $beneficiaries->firstItem() ?? 0 }} - {{ $beneficiaries->lastItem() ?? 0 }} de {{ $beneficiaries->total() }} registros</span>
+            {{ $beneficiaries->appends(request()->query())->links() }}
+        </div>
     </div>
 </div>
 
 {{-- Modal Crear Beneficiario --}}
-<div id="modal-crear-beneficiario" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-full sm:max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
-        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+<div id="modal-crear-beneficiario" class="modal-overlay">
+    <div class="modal-panel sm:max-w-lg">
+        <div class="modal-card">
+            <div class="modal-header">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-hand-holding-heart text-leaf"></i> Nuevo Beneficiario
                 </h3>
-                <button onclick="closeModal('modal-crear-beneficiario')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button onclick="closeModal('modal-crear-beneficiario')" class="modal-close-btn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -165,93 +179,84 @@
     </div>
 </div>
 
-@foreach($beneficiaries as $beneficiarie)
-
-{{-- Modal Ver Beneficiario --}}
-<div id="modal-ver-beneficiario-{{ $beneficiarie->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-full sm:max-w-md mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
-        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+{{-- Modal Ver Beneficiario (único, poblado por JS al hacer clic en una fila) --}}
+<div id="modal-ver-beneficiario" class="modal-overlay">
+    <div class="modal-panel sm:max-w-md">
+        <div class="modal-card">
+            <div class="modal-header">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-hand-holding-heart text-leaf"></i> Detalle del Beneficiario
                 </h3>
-                <button onclick="closeModal('modal-ver-beneficiario-{{ $beneficiarie->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button onclick="closeModal('modal-ver-beneficiario')" class="modal-close-btn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="p-6 space-y-3 text-sm">
                 <div><span class="text-[11px] font-bold text-earth uppercase">Nombre</span>
-                    <p class="font-semibold text-charcoal">{{ $beneficiarie->person ? $beneficiarie->person->names . ' ' . $beneficiarie->person->father_lastname . ' ' . $beneficiarie->person->mother_lastname : 'Sin nombre' }}</p>
+                    <p class="font-semibold text-charcoal" id="ver-benef-nombre"></p>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div><span class="text-[11px] font-bold text-earth uppercase">DNI</span><p>{{ $beneficiarie->person->dni ?? '-' }}</p></div>
-                    <div><span class="text-[11px] font-bold text-earth uppercase">Parentesco</span><p>{{ $beneficiarie->relationship->title ?? '-' }}</p></div>
+                    <div><span class="text-[11px] font-bold text-earth uppercase">DNI</span><p id="ver-benef-dni"></p></div>
+                    <div><span class="text-[11px] font-bold text-earth uppercase">Parentesco</span><p id="ver-benef-parentesco"></p></div>
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Socio</span>
-                    <p>{{ $beneficiarie->partner && $beneficiarie->partner->people ? $beneficiarie->partner->people->names . ' ' . $beneficiarie->partner->people->father_lastname : '-' }}</p>
+                    <p id="ver-benef-socio"></p>
                 </div>
-                @if($beneficiarie->person && $beneficiarie->person->birthdate)
-                <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Nacimiento</span>
-                    <p>{{ \Carbon\Carbon::parse($beneficiarie->person->birthdate)->format('d/m/Y') }}</p>
+                <div id="ver-benef-nacimiento-wrap" class="hidden">
+                    <span class="text-[11px] font-bold text-earth uppercase">Fecha Nacimiento</span>
+                    <p id="ver-benef-nacimiento"></p>
                 </div>
-                @endif
             </div>
             <div class="px-6 pb-6">
-                <button onclick="closeModal('modal-ver-beneficiario-{{ $beneficiarie->id }}')" class="btn-secondary w-full">Cerrar</button>
+                <button onclick="closeModal('modal-ver-beneficiario')" class="btn-secondary w-full">Cerrar</button>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Modal Editar Beneficiario --}}
-<div id="modal-editar-beneficiario-{{ $beneficiarie->id }}" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-full sm:max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
-        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+{{-- Modal Editar Beneficiario (único, poblado por JS al hacer clic en una fila) --}}
+<div id="modal-editar-beneficiario" class="modal-overlay">
+    <div class="modal-panel sm:max-w-lg">
+        <div class="modal-card">
+            <div class="modal-header">
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-edit text-sun"></i> Editar Beneficiario
                 </h3>
-                <button onclick="closeModal('modal-editar-beneficiario-{{ $beneficiarie->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button onclick="closeModal('modal-editar-beneficiario')" class="modal-close-btn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('socios-beneficiarios.beneficiarios.update', $beneficiarie) }}" method="POST" class="p-6 space-y-4">
+            <form id="form-editar-beneficiario" method="POST" class="p-6 space-y-4">
                 @csrf
                 @method('PUT')
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Persona *</label>
-                    <select name="person_id" class="select-person-edit w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                        @if($beneficiarie->person)
-                        <option value="{{ $beneficiarie->person->id }}" selected>{{ $beneficiarie->person->names }} {{ $beneficiarie->person->father_lastname }} ({{ $beneficiarie->person->dni }})</option>
-                        @endif
-                    </select>
+                    <select name="person_id" id="select-person-edit-shared" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required></select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Socio *</label>
-                    <select name="partner_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    <select name="partner_id" id="select-partner-edit-shared" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
                         @foreach($partners as $partner)
-                        <option value="{{ $partner->id }}" {{ $beneficiarie->partner_id == $partner->id ? 'selected' : '' }}>{{ $partner->people->names ?? '' }} {{ $partner->people->father_lastname ?? '' }}</option>
+                        <option value="{{ $partner->id }}">{{ $partner->people->names ?? '' }} {{ $partner->people->father_lastname ?? '' }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Parentesco *</label>
-                    <select name="relationship_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    <select name="relationship_id" id="select-relationship-edit-shared" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
                         @foreach($relationships as $relationship)
-                        <option value="{{ $relationship->id }}" {{ $beneficiarie->relationship_id == $relationship->id ? 'selected' : '' }}>{{ $relationship->title }}</option>
+                        <option value="{{ $relationship->id }}">{{ $relationship->title }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
-                    <button type="button" onclick="closeModal('modal-editar-beneficiario-{{ $beneficiarie->id }}')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="button" onclick="closeModal('modal-editar-beneficiario')" class="btn-secondary flex-1">Cancelar</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-@endforeach
 
 @push('scripts')
 <script>
@@ -275,8 +280,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var peopleUrl = '{{ route("api.search.people") }}';
     initSelect2Ajax('#select-person-create', peopleUrl);
-    initSelect2Ajax('.select-person-edit', peopleUrl);
+    initSelect2Ajax('#select-person-edit-shared', peopleUrl);
+
+    window.initLiveFilter({
+        formEl: document.getElementById('filtro-beneficiarios'),
+        resultsSelector: '#beneficiarios-results',
+        url: '{{ route("socios-beneficiarios.beneficiarios.index") }}',
+    });
 });
+
+function openViewBeneficiario(btn) {
+    document.getElementById('ver-benef-nombre').textContent = btn.dataset.nombre || 'Sin nombre';
+    document.getElementById('ver-benef-dni').textContent = btn.dataset.dni || '-';
+    document.getElementById('ver-benef-parentesco').textContent = btn.dataset.parentesco || '-';
+    document.getElementById('ver-benef-socio').textContent = btn.dataset.socio || '-';
+
+    const nacWrap = document.getElementById('ver-benef-nacimiento-wrap');
+    if (btn.dataset.nacimiento) {
+        nacWrap.classList.remove('hidden');
+        document.getElementById('ver-benef-nacimiento').textContent = btn.dataset.nacimiento;
+    } else {
+        nacWrap.classList.add('hidden');
+    }
+
+    openModal('modal-ver-beneficiario');
+}
+
+function openEditBeneficiario(btn) {
+    document.getElementById('form-editar-beneficiario').action = btn.dataset.updateUrl;
+
+    const personSelect = $('#select-person-edit-shared');
+    personSelect.empty();
+    if (btn.dataset.personId) {
+        const opt = new Option(btn.dataset.personLabel, btn.dataset.personId, true, true);
+        personSelect.append(opt).trigger('change');
+    }
+
+    document.getElementById('select-partner-edit-shared').value = btn.dataset.partnerId || '';
+    document.getElementById('select-relationship-edit-shared').value = btn.dataset.relationshipId || '';
+
+    openModal('modal-editar-beneficiario');
+}
 </script>
 @endpush
 @endsection

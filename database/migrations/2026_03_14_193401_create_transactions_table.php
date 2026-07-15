@@ -20,7 +20,7 @@ class CreateTransactionsTable extends Migration
             $table->decimal('total_price', 8, 2);
             $table->string('document_number', 20)->nullable();
             $table->decimal('adjustment', 8, 2)->nullable();
-            $table->date('transaction_date')->nullable()->after('adjustment');
+            $table->date('transaction_date')->nullable();
             $table->foreignId('detail_product_id')->constrained();
             $table->foreignId('type_transaction_id')->constrained();
             

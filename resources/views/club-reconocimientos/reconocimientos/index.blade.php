@@ -19,18 +19,7 @@
     </div>
 
     <div class="p-4 sm:p-6">
-        @if(session('success'))
-            <div class="mb-4 p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700">
-                <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="mb-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700">
-                <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
-            </div>
-        @endif
-
-        <form method="GET" class="mb-6">
+        <form id="filtro-resoluciones" method="GET" class="mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Buscar</label>
@@ -38,7 +27,7 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
-                    <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    <select name="state_id" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="">Todos los estados</option>
                         @foreach($states as $state)
                             <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
@@ -47,20 +36,19 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Vigencia</label>
-                    <select name="vigencia" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
+                    <select name="vigencia" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                         <option value="vigentes" {{ request('vigencia') == 'vigentes' ? 'selected' : '' }}>Vigentes</option>
                         <option value="vencidas" {{ request('vigencia') == 'vencidas' ? 'selected' : '' }}>Vencidas</option>
                         <option value="" {{ request('vigencia') == '' ? 'selected' : '' }}>Todas</option>
                     </select>
-                </div> 
+                </div>
                 <div class="flex gap-2 mt-4">
-                    <button type="submit" class="btn-primary"><i class="fas fa-search mr-1"></i> Buscar</button>
-                    <a href="{{ route('club-reconocimientos.reconocimientos.index') }}" class="btn-secondary"><i class="fas fa-times mr-1"></i> Limpiar</a>
+                    <a href="{{ route('club-reconocimientos.reconocimientos.index') }}" class="btn-secondary"><i class="fas fa-broom mr-1"></i> Limpiar</a>
                 </div>
             </div>
-            
         </form>
 
+        <div id="resoluciones-results">
         <div class="overflow-x-auto -mx-4 sm:mx-0">
             <table class="w-full min-w-[600px] text-xs sm:text-sm">
                 <thead>
@@ -135,62 +123,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="mt-6">{{ $resolutions->links() }}</div>
-    </div>
-</div>
-
-{{-- Modal Crear Resolución --}}
-<div id="modal-crear-resolucion" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative mx-auto w-full max-w-full sm:max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
-        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
-                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
-                    <i class="fas fa-file-contract text-leaf"></i> Nueva Resolución
-                </h3>
-                <button onclick="closeModal('modal-crear-resolucion')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form action="{{ route('club-reconocimientos.reconocimientos.store') }}" method="POST" class="p-6 space-y-4">
-                @csrf
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Documento *</label>
-                    <input type="text" name="document" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Emisión *</label>
-                        <input type="date" name="date_document" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado *</label>
-                        <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                            <option value="">Seleccionar...</option>
-                            @foreach($states as $state)
-                            <option value="{{ $state->id }}">{{ $state->title }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Inicio *</label>
-                        <input type="date" name="date_start" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Fin *</label>
-                        <input type="date" name="date_end" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                    </div>
-                </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
-                    <button type="button" onclick="closeModal('modal-crear-resolucion')" class="btn-secondary flex-1">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
+        <div class="mt-6">{{ $resolutions->appends(request()->query())->links() }}</div>
 @foreach($resolutions as $resolution)
 
 {{-- Modal Ver Resolución --}}
@@ -279,4 +212,71 @@
 </div>
 
 @endforeach
+        </div>
+    </div>
+</div>
+
+{{-- Modal Crear Resolución --}}
+<div id="modal-crear-resolucion" class="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative mx-auto w-full max-w-full sm:max-w-lg mt-8 sm:mt-16 mb-8 px-2 sm:px-4">
+        <div class="bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
+                <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                    <i class="fas fa-file-contract text-leaf"></i> Nueva Resolución
+                </h3>
+                <button onclick="closeModal('modal-crear-resolucion')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="{{ route('club-reconocimientos.reconocimientos.store') }}" method="POST" class="p-6 space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Documento *</label>
+                    <input type="text" name="document" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Emisión *</label>
+                        <input type="date" name="date_document" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado *</label>
+                        <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                            <option value="">Seleccionar...</option>
+                            @foreach($states as $state)
+                            <option value="{{ $state->id }}">{{ $state->title }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Inicio *</label>
+                        <input type="date" name="date_start" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Fin *</label>
+                        <input type="date" name="date_end" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
+                    <button type="button" onclick="closeModal('modal-crear-resolucion')" class="btn-secondary flex-1">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    window.initLiveFilter({
+        formEl: document.getElementById('filtro-resoluciones'),
+        resultsSelector: '#resoluciones-results',
+        url: '{{ route("club-reconocimientos.reconocimientos.index") }}',
+    });
+});
+</script>
+@endpush
 @endsection

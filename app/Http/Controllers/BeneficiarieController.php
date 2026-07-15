@@ -46,4 +46,37 @@ class BeneficiarieController extends Controller
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('ficha-beneficiario-' . date('Y-m-d-His') . '.pdf');
     }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'person_id' => 'required|exists:people,id',
+            'partner_id' => 'required|exists:partners,id',
+            'relationship_id' => 'required|exists:relationships,id',
+        ]);
+
+        Beneficiarie::create($validated);
+
+        return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario registrado exitosamente');
+    }
+
+    public function update(Request $request, Beneficiarie $beneficiarie)
+    {
+        $validated = $request->validate([
+            'person_id' => 'required|exists:people,id',
+            'partner_id' => 'required|exists:partners,id',
+            'relationship_id' => 'required|exists:relationships,id',
+        ]);
+
+        $beneficiarie->update($validated);
+
+        return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario actualizado exitosamente');
+    }
+
+    public function destroy(Beneficiarie $beneficiarie)
+    {
+        $beneficiarie->delete();
+
+        return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario eliminado exitosamente');
+    }
 }

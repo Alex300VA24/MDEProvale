@@ -36,11 +36,19 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             ->paginate($perPage);
     }
 
+    /**
+     * `date_begin`/`date_end` no están poblados en la data migrada (el sistema de
+     * origen solo trackea vigencia por `state_id`, no por rango de fechas), así que
+     * un socio sin fechas se considera vigente en cualquier periodo, igual que en
+     * countBeneficiariesForAssociationAtDate().
+     */
     public function findActiveByAssociation(int $associationId, string $date): Collection
     {
         return $this->model
             ->where('association_id', $associationId)
-            ->where('date_begin', '<=', $date)
+            ->where(function ($q) use ($date) {
+                $q->whereNull('date_begin')->orWhere('date_begin', '<=', $date);
+            })
             ->where(function ($q) use ($date) {
                 $q->whereNull('date_end')->orWhere('date_end', '>=', $date);
             })

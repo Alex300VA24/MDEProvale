@@ -11,123 +11,11 @@
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/700.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
+    <script src="{{ mix('js/app.js') }}" defer></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        #loading-screen {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.85);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            opacity: 0;
-            backdrop-filter: blur(4px);
-        }
-        #loading-screen.active {
-            display: flex;
-            opacity: 1;
-        }
-        .loader-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        .loader-icon {
-            position: relative;
-            width: 100px;
-            height: 100px;
-        }
-        .loader-icon::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(255,255,255,0.1);
-            border-radius: 24px;
-            backdrop-filter: blur(10px);
-        }
-        .loader-icon img {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            object-fit: contain;
-        }
-        .loader-spin {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            right: -10px;
-            bottom: -10px;
-            width: 120px;
-            height: 120px;
-            border: 3px solid rgba(255,255,255,0.15);
-            border-top: 3px solid #5EEAD4;
-            border-radius: 50%;
-            animation: spin 1.2s linear infinite;
-        }
-        .loader-ring {
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            right: -5px;
-            bottom: -5px;
-            width: 110px;
-            height: 110px;
-            border: 2px solid transparent;
-            border-bottom: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            animation: spin 1.8s linear infinite reverse;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .loader-text {
-            text-align: center;
-        }
-        .loader-title {
-            font-size: 1.75rem;
-            font-weight: 800;
-            color: white;
-            letter-spacing: 0.05em;
-        }
-        .loader-subtitle {
-            font-size: 0.875rem;
-            color: rgba(255,255,255,0.6);
-            margin-top: 0.25rem;
-        }
-        .loader-progress {
-            width: 180px;
-            height: 4px;
-            background: rgba(255,255,255,0.15);
-            border-radius: 999px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-        .loader-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #4A90D9, #1E5799);
-            border-radius: 999px;
-            animation: progress 1.5s ease-in-out infinite;
-        }
-        @keyframes progress {
-            0% { width: 0%; margin-left: 0; }
-            50% { width: 70%; margin-left: 15%; }
-            100% { width: 0%; margin-left: 100%; }
-        }
-        #loading-screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
+
         .login-bg {
             background-image: url('{{ asset("img/banner.png") }}');
             background-size: cover;
@@ -185,23 +73,8 @@
 </head>
 <body class="login-bg min-h-screen flex items-center justify-center p-4 overflow-y-auto">
     
-    <div id="loading-screen">
-        <div class="loader-container">
-            <div class="loader-icon">
-                <div class="loader-spin"></div>
-                <div class="loader-ring"></div>
-                <img src="{{ asset('img/muni2.png') }}" alt="PROVALE">
-            </div>
-            <div class="loader-text">
-                <div class="loader-title">PROVALE</div>
-                <div class="loader-subtitle">Programa Vaso de Leche</div>
-            </div>
-            <div class="loader-progress">
-                <div class="loader-progress-bar"></div>
-            </div>
-        </div>
-    </div>
-    
+    <x-loading-screen subtitle="Programa Vaso de Leche" />
+
     <div class="w-full max-w-md relative z-10 py-4">
 
         <div class="glass-card rounded-3xl p-6 sm:p-8">

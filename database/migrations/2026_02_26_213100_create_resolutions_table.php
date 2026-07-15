@@ -17,7 +17,7 @@ class CreateResolutionsTable extends Migration
         Schema::create('resolutions', function (Blueprint $table) {
             $table->id();
             $table->string('document', 100);
-            $table->dateTime('date_document')->default(DB::raw('GETDATE()'));
+            $table->dateTime('date_document')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->date('date_start')->nullable();
             $table->date('date_end')->nullable();
             $table->string('file_path', 255)->nullable(); // ruta del archivo en storage

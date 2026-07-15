@@ -19,3 +19,8 @@ mix.js('resources/js/app.js', 'public/js')
     // Select2
     .copy('node_modules/select2/dist/css/select2.min.css', 'public/css/select2.min.css')
     .copy('node_modules/select2/dist/js/select2.min.js', 'public/js/select2.min.js');
+
+// Cache-busting: sin esto, css/app.css y js/app.js se sirven siempre con la
+// misma URL, así que el navegador puede quedarse con una copia vieja en caché
+// aunque el archivo haya cambiado en el build.
+mix.version();

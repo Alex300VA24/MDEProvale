@@ -108,17 +108,19 @@
                                 </span>
                             </td>
                             <td class="px-3 sm:px-4 py-3 text-center">
-                                <button onclick="openModal('modal-editar-racion-{{ $racion->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <form action="{{ route('mantenimiento.raciones.destroy', $racion->id) }}" method="POST" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white" title="Eliminar"
-                                        onclick="confirmDelete('racion-{{ $racion->id }}', '¿Eliminar esta ración?')">
-                                        <i class="fas fa-trash"></i>
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="openModal('modal-editar-racion-{{ $racion->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
+                                        <i class="fas fa-edit"></i>
                                     </button>
-                                </form>
+                                    <form action="{{ route('mantenimiento.raciones.destroy', $racion->id) }}" method="POST" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white" title="Eliminar"
+                                            onclick="confirmDelete('racion-{{ $racion->id }}', '¿Eliminar esta ración?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @empty

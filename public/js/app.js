@@ -5610,6 +5610,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist-module/jquery.module.js");
 /* harmony import */ var select2__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! select2 */ "./node_modules/select2/dist/js/select2.js");
 /* harmony import */ var select2__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(select2__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _toast__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./toast */ "./resources/js/toast.js");
+/* harmony import */ var _confirm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./confirm */ "./resources/js/confirm.js");
+/* harmony import */ var _filter_loading__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./filter-loading */ "./resources/js/filter-loading.js");
+/* harmony import */ var _live_filter__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./live-filter */ "./resources/js/live-filter.js");
 __webpack_require__(/*! ./bootstrap */ "./resources/js/bootstrap.js");
 
 window.Alpine = alpinejs__WEBPACK_IMPORTED_MODULE_0__["default"];
@@ -5628,6 +5632,12 @@ window.Swal = (sweetalert2__WEBPACK_IMPORTED_MODULE_2___default());
 window.$ = window.jQuery = jquery__WEBPACK_IMPORTED_MODULE_3__["default"];
 
 // Select2 (requiere jQuery)
+
+
+// Avisos flotantes, modal de confirmación y filtros dinámicos (ver docs en cada archivo)
+
+
+
 
 
 /***/ },
@@ -5665,6 +5675,292 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 //     cluster: process.env.MIX_PUSHER_APP_CLUSTER,
 //     forceTLS: true
 // });
+
+/***/ },
+
+/***/ "./resources/js/confirm.js"
+/*!*********************************!*\
+  !*** ./resources/js/confirm.js ***!
+  \*********************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ConfirmDialog: () => (/* binding */ ConfirmDialog)
+/* harmony export */ });
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_0__);
+
+
+/**
+ * Modal de confirmación para acciones destructivas (eliminar, cerrar sesión,
+ * resetear contraseña). Antes cada función en main.blade.php repetía el mismo
+ * `customClass`/colores; ahora es un solo mixin y cada call-site solo pasa
+ * lo que cambia (título, texto, ícono, texto del botón).
+ */
+var ConfirmDialog = sweetalert2__WEBPACK_IMPORTED_MODULE_0___default().mixin({
+  customClass: {
+    popup: 'rounded-2xl shadow-2xl border-2 border-mist',
+    confirmButton: 'rounded-xl font-bold px-4 py-2',
+    cancelButton: 'rounded-xl font-bold px-4 py-2'
+  },
+  backdrop: 'rgba(0,0,0,0.4)',
+  showCancelButton: true,
+  reverseButtons: true,
+  confirmButtonColor: '#D94F3D',
+  cancelButtonColor: '#5A7FA8',
+  cancelButtonText: 'Cancelar'
+});
+window.ConfirmDialog = ConfirmDialog;
+
+/***/ },
+
+/***/ "./resources/js/filter-loading.js"
+/*!****************************************!*\
+  !*** ./resources/js/filter-loading.js ***!
+  \****************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FilterLoading: () => (/* binding */ FilterLoading)
+/* harmony export */ });
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_0__);
+
+
+/**
+ * Modal ligero "Aplicando filtro..." que se muestra mientras un filtro
+ * dinámico (live-filter.js) está en vuelo. No se puede cerrar manualmente:
+ * se cierra solo cuando la respuesta llega, para no permitir aplicar otro
+ * filtro hasta que el anterior termine.
+ */
+var FilterLoading = sweetalert2__WEBPACK_IMPORTED_MODULE_0___default().mixin({
+  html: "\n        <div class=\"flex flex-col items-center gap-3 py-1\">\n            <div class=\"relative w-16 h-16 flex items-center justify-center\">\n                <span class=\"absolute inset-0 rounded-full border-4 border-mist\"></span>\n                <span class=\"absolute inset-0 rounded-full border-4 border-transparent border-t-sky animate-spin\"></span>\n                <i class=\"fas fa-filter text-blue text-lg\"></i>\n            </div>\n            <div class=\"text-center\">\n                <div class=\"text-base font-extrabold text-charcoal\">Aplicando filtro</div>\n                <div class=\"text-xs text-earth mt-0.5\">Actualizando resultados...</div>\n            </div>\n            <div class=\"filter-progress-track\">\n                <div class=\"filter-progress-bar\"></div>\n            </div>\n        </div>",
+  showConfirmButton: false,
+  showCloseButton: false,
+  allowOutsideClick: false,
+  allowEscapeKey: false,
+  backdrop: 'rgba(15, 23, 42, 0.35)',
+  customClass: {
+    popup: 'rounded-2xl shadow-2xl border-2 border-wheat',
+    container: 'backdrop-blur-[2px]'
+  }
+});
+window.FilterLoading = FilterLoading;
+
+/***/ },
+
+/***/ "./resources/js/live-filter.js"
+/*!*************************************!*\
+  !*** ./resources/js/live-filter.js ***!
+  \*************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   initLiveFilter: () => (/* binding */ initLiveFilter)
+/* harmony export */ });
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
+/**
+ * Convierte un formulario de filtro <form method="GET"> en una búsqueda
+ * dinámica sin recargar la página, SIN tocar el backend: pide la misma
+ * ruta con los mismos parámetros vía fetch(), y solo reemplaza el
+ * contenedor de resultados (tabla + paginación) parseando el HTML
+ * devuelto. El controlador recibe una petición normal y devuelve la
+ * misma vista Blade de siempre.
+ *
+ * Uso:
+ *   initLiveFilter({
+ *     formEl: document.getElementById('filtro-x'),
+ *     resultsSelector: '#resultados-x',
+ *     url: '{{ route("modulo.index") }}',
+ *   });
+ */
+
+var activeRequests = 0;
+function setFormBusy(formEl, busy) {
+  activeRequests = Math.max(0, activeRequests + (busy ? 1 : -1));
+  if (window.FilterLoading) {
+    if (activeRequests > 0) {
+      window.FilterLoading.fire();
+    } else if (window.Swal) {
+      window.Swal.close();
+    }
+  }
+  formEl.querySelectorAll('input, select').forEach(function (el) {
+    el.disabled = busy;
+  });
+}
+function initLiveFilter(_ref) {
+  var formEl = _ref.formEl,
+    resultsSelector = _ref.resultsSelector,
+    url = _ref.url,
+    onAfterSwap = _ref.onAfterSwap;
+  if (!formEl) return;
+  var debounceTimer;
+  var isBusy = false;
+  var debounce = function debounce(fn) {
+    var ms = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 350;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(fn, ms);
+  };
+  function refresh(_x) {
+    return _refresh.apply(this, arguments);
+  }
+  function _refresh() {
+    _refresh = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(targetUrl) {
+      var container, requestUrl, res, html, doc, fresh, _t;
+      return _regenerator().w(function (_context) {
+        while (1) switch (_context.p = _context.n) {
+          case 0:
+            if (!isBusy) {
+              _context.n = 1;
+              break;
+            }
+            return _context.a(2);
+          case 1:
+            container = document.querySelector(resultsSelector);
+            if (container) {
+              _context.n = 2;
+              break;
+            }
+            return _context.a(2);
+          case 2:
+            requestUrl = targetUrl || "".concat(url, "?").concat(new URLSearchParams(new FormData(formEl)).toString());
+            isBusy = true;
+            setFormBusy(formEl, true);
+            _context.p = 3;
+            _context.n = 4;
+            return fetch(requestUrl, {
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            });
+          case 4:
+            res = _context.v;
+            _context.n = 5;
+            return res.text();
+          case 5:
+            html = _context.v;
+            doc = new DOMParser().parseFromString(html, 'text/html');
+            fresh = doc.querySelector(resultsSelector);
+            if (fresh) {
+              container.replaceWith(fresh);
+              history.replaceState(null, '', requestUrl);
+              attachPaginationLinks();
+              reinitSelect2();
+              if (typeof onAfterSwap === 'function') onAfterSwap();
+            }
+            _context.n = 7;
+            break;
+          case 6:
+            _context.p = 6;
+            _t = _context.v;
+          case 7:
+            _context.p = 7;
+            isBusy = false;
+            setFormBusy(formEl, false);
+            return _context.f(7);
+          case 8:
+            return _context.a(2);
+        }
+      }, _callee, null, [[3, 6, 7, 8]]);
+    }));
+    return _refresh.apply(this, arguments);
+  }
+  function reinitSelect2() {
+    if (typeof window.$ === 'undefined' || !window.$.fn.select2) return;
+    window.$(formEl).find('.select2-filter').each(function () {
+      if (window.$(this).data('select2')) window.$(this).select2('destroy');
+      // Sin botón "×": estos selects ya traen su propia opción "Todos los..."
+      // para limpiar el filtro, así que el botón de limpiar es redundante.
+      window.$(this).select2({
+        width: '100%',
+        allowClear: false
+      });
+    });
+  }
+  function attachPaginationLinks() {
+    document.querySelectorAll("".concat(resultsSelector, " .pagination a[href], ").concat(resultsSelector, " nav a[href]")).forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        refresh(a.href);
+      });
+    });
+  }
+  formEl.querySelectorAll('input[type="text"], input[type="search"]').forEach(function (el) {
+    // Más margen que un simple debounce de UI: le da tiempo a alguien
+    // que escribe despacio a terminar la palabra antes de disparar el
+    // filtro (y el modal "Aplicando filtro...").
+    el.addEventListener('input', function () {
+      return debounce(function () {
+        return refresh();
+      }, 700);
+    });
+  });
+  formEl.querySelectorAll('select, input[type="date"]').forEach(function (el) {
+    el.addEventListener('change', function () {
+      return refresh();
+    });
+  });
+  // Select2 actualiza el <select> y dispara "change" solo por dentro de jQuery
+  // (no despacha un evento nativo), así que un addEventListener normal nunca
+  // se entera. Se escucha también por delegación de jQuery para cubrir ese caso.
+  if (window.$ && window.$.fn) {
+    window.$(formEl).on('change', 'select', function () {
+      return refresh();
+    });
+  }
+  formEl.addEventListener('submit', function (e) {
+    e.preventDefault();
+    refresh();
+  });
+  attachPaginationLinks();
+  reinitSelect2();
+}
+window.initLiveFilter = initLiveFilter;
+
+/***/ },
+
+/***/ "./resources/js/toast.js"
+/*!*******************************!*\
+  !*** ./resources/js/toast.js ***!
+  \*******************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Toast: () => (/* binding */ Toast)
+/* harmony export */ });
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
+/* harmony import */ var sweetalert2__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(sweetalert2__WEBPACK_IMPORTED_MODULE_0__);
+
+
+/**
+ * Notificación flotante no bloqueante (éxito/error/advertencia/info),
+ * se cierra sola. Reemplaza el banner de página + Swal.fire duplicado
+ * que existía antes para los mensajes flash.
+ */
+var Toast = sweetalert2__WEBPACK_IMPORTED_MODULE_0___default().mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 3500,
+  timerProgressBar: true,
+  didOpen: function didOpen(t) {
+    t.addEventListener('mouseenter', (sweetalert2__WEBPACK_IMPORTED_MODULE_0___default().stopTimer));
+    t.addEventListener('mouseleave', (sweetalert2__WEBPACK_IMPORTED_MODULE_0___default().resumeTimer));
+  }
+});
+window.Toast = Toast;
 
 /***/ },
 

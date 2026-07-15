@@ -5,6 +5,7 @@ module.exports = {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        './resources/js/**/*.js',
     ],
     theme: {
         extend: {
@@ -52,6 +53,7 @@ module.exports = {
                 amber: {
                     DEFAULT: '#E5930A',
                     light:   '#FEF3DC',
+                    dark:    '#B87300',
                 },
                 coral: {
                     DEFAULT: '#D94F3D',
