@@ -25,8 +25,8 @@
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Inicio</span><p>{{ $partner->date_begin ? \Carbon\Carbon::parse($partner->date_begin)->format('d/m/Y') : '-' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Fin</span><p>{{ $partner->date_end ? \Carbon\Carbon::parse($partner->date_end)->format('d/m/Y') : '-' }}</p></div>
                 </div>
-                <div><span class="text-[11px] font-bold text-earth uppercase">Beneficiarios</span><p class="font-bold text-leaf text-lg">{{ $partner->beneficiaries->count() }}</p></div>
-                @if($partner->beneficiaries->count() > 0)
+                <div><span class="text-[11px] font-bold text-earth uppercase">Beneficiarios</span><p class="font-bold text-leaf text-lg">{{ $partner->beneficiaries_count }}</p></div>
+                @if($partner->beneficiaries_count > 0)
                 <div class="mt-3">
                     <span class="text-[11px] font-bold text-earth uppercase">Lista de Beneficiarios</span>
                     <div class="mt-2 space-y-2">

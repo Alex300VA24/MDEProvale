@@ -55,6 +55,32 @@ class ClubReconocimientosController extends Controller
 
         $associations = $query->orderBy('id', 'desc')->paginate(10);
 
+        // ── Batch-load president data (elimina N+1 en getPresidentName()) ──
+        $activeState = State::where('abbreviation', 'A')->first();
+        $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
+        if ($activeState && $presidentPosition) {
+            $resolutionIds = $associations->pluck('resolution_id')->filter()->unique();
+            $directivesByResolution = Directive::whereIn('resolution_id', $resolutionIds)
+                ->where('position_id', $presidentPosition->id)
+                ->where('state_id', $activeState->id)
+                ->get()
+                ->keyBy('resolution_id');
+            $partnerIds = $directivesByResolution->pluck('partner_id')->unique();
+            $partnersWithPeople = Partner::whereIn('id', $partnerIds)
+                ->with('people:id,names,father_lastname')
+                ->get()
+                ->keyBy('id');
+            foreach ($associations as $association) {
+                $directive = $directivesByResolution->get($association->resolution_id);
+                if ($directive) {
+                    $partner = $partnersWithPeople->get($directive->partner_id);
+                    if ($partner && $partner->people) {
+                        $association->president_name = $partner->people->names . ' ' . $partner->people->father_lastname;
+                    }
+                }
+            }
+        }
+
         foreach ($associations as $association) {
             $resolutionsAll = [];
             if ($association->resolution) {

@@ -36,13 +36,12 @@ class PecosaController extends Controller
         $associations = Association::select(['id', 'name', 'code'])->get();
         $states = State::select(['id', 'title', 'abbreviation'])->get();
 
-        $estadoActivo = State::where('abbreviation', 'A')->select(['id'])->first();
-        $associationsForModal = $estadoActivo
+        $activeState = State::where('abbreviation', 'A')->select(['id'])->first();
+        $associationsForModal = $activeState
             ? Association::select(['id', 'name', 'code', 'state_id'])
-                ->where('state_id', $estadoActivo->id)->get()
+                ->where('state_id', $activeState->id)->get()
             : Association::select(['id', 'name', 'code', 'state_id'])->get();
 
-        $activeState = State::where('abbreviation', 'A')->first();
         $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
 
         $directives = Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id']);

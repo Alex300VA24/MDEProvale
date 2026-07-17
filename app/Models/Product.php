@@ -9,6 +9,9 @@ class Product extends Model
 {
     use HasFactory;
 
+    private $cachedStock = null;
+    private $cachedUnitPrice = null;
+
     protected $fillable = [
         'code',
         'title',
@@ -80,14 +83,26 @@ class Product extends Model
         return $totalStock;
     }
 
-    // Accessors para compatibilidad con vistas existentes
+    public function flushCache()
+    {
+        $this->cachedStock = null;
+        $this->cachedUnitPrice = null;
+    }
+
     public function getStockAttribute()
     {
-        return $this->getAvailableStock();
+        if ($this->cachedStock === null) {
+            $this->cachedStock = $this->getAvailableStock();
+        }
+        return $this->cachedStock;
     }
 
     public function getUnitPriceAttribute()
     {
+        if ($this->cachedUnitPrice !== null) {
+            return $this->cachedUnitPrice;
+        }
+
         $today = now()->toDateString();
         $detailProduct = $this->relationLoaded('detailProducts')
             ? $this->detailProducts
@@ -104,6 +119,7 @@ class Product extends Model
                 ->where('end_date', '>=', $today)
                 ->orderBy('start_date')
                 ->first();
-        return $detailProduct ? $detailProduct->unit_price : 0;
+        $this->cachedUnitPrice = $detailProduct ? $detailProduct->unit_price : 0;
+        return $this->cachedUnitPrice;
     }
 }

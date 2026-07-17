@@ -134,10 +134,17 @@ class Association extends Model
 
     public function getPresidentName(): ?string
     {
+        if (array_key_exists('president_name', $this->attributes)) {
+            return $this->attributes['president_name'];
+        }
+
         $presidenta = $this->getPresidentaCached();
         if ($presidenta && $presidenta->people) {
-            return $presidenta->people->names . ' ' . $presidenta->people->father_lastname;
+            $name = $presidenta->people->names . ' ' . $presidenta->people->father_lastname;
+            $this->attributes['president_name'] = $name;
+            return $name;
         }
+        $this->attributes['president_name'] = null;
         return null;
     }
 

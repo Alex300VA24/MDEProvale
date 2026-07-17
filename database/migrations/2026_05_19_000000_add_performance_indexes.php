@@ -23,7 +23,10 @@ return new class extends Migration
         $indexName = $indexName ?: $table . '_' . implode('_', $columns) . '_index';
 
         $exists = DB::select(
-            "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
+            "SELECT 1
+            FROM sys.indexes i
+            INNER JOIN sys.tables t ON i.object_id = t.object_id
+            WHERE t.name = ? AND i.name = ?",
             [$table, $indexName]
         );
 
@@ -162,9 +165,15 @@ return new class extends Migration
         ];
 
         foreach ($indexes as [$table, $indexName]) {
+            $schema = 'dbo';
+
             $exists = DB::select(
-                "SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
-                [$table, $indexName]
+                "SELECT 1
+                FROM sys.indexes i
+                INNER JOIN sys.tables t ON i.object_id = t.object_id
+                INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+                WHERE s.name = ? AND t.name = ? AND i.name = ?",
+                [$schema, $table, $indexName]
             );
             if (!empty($exists)) {
                 Schema::table($table, function (Blueprint $tbl) use ($indexName) {

@@ -35,7 +35,12 @@ class PartnerController extends Controller
             ->with([
                 'people:id,names,father_lastname,mother_lastname,dni,address',
                 'association:id,name,code',
-                'state:id,title'
+                'state:id,title',
+                'beneficiaries.person',
+                'beneficiaries.relationship',
+                'beneficiaries.histories.typeBenefit',
+                'beneficiaries.histories.state',
+                'beneficiaries.histories.reasonDisqualification',
             ])
             ->withCount('beneficiaries');
 
