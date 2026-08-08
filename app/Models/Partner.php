@@ -16,6 +16,7 @@ class Partner extends Model
         'state_id',
         'person_id',
         'association_id',
+        'position_id',
         'created_at',
         'updated_at',
     ];
@@ -33,6 +34,11 @@ class Partner extends Model
     public function state()
     {
         return $this->belongsTo(State::class);
+    }
+
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
     }
 
     public function directives()

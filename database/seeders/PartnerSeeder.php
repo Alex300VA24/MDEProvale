@@ -9,7 +9,7 @@ class PartnerSeeder extends Seeder
 {
     public function run(): void
     {
-        // Chunk 1 (261 registros — 8 cols × 261 = 2088 params)
+        // Chunk 1 (261 registros — 9 cols × 261 = 2088 params)
         DB::table('partners')->insert([
             [
                 'date_begin'     => null,
@@ -18,6 +18,7 @@ class PartnerSeeder extends Seeder
                 'person_id'      => DB::table('people')->where('dni', '90161846')->value('id'),
                 'association_id' => DB::table('associations')->where('code', '005')->value('id'),
                 'state_id'       => 1,
+                'position_id'    => null,
                 'created_at'     => now(),
                 'updated_at'     => now(),
             ],
