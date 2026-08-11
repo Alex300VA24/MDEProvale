@@ -13,3 +13,8 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+# Ignorar carpetas de migración local y seeders
+/migracion_productos/
+/migracion_socios/
+/database/seeders/
