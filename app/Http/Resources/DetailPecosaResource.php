@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class DetailPecosaResource extends JsonResource
+{
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'priority' => $this->priority,
+            'quantity' => $this->quantity,
+            'delivered_quantity' => $this->delivered_quantity,
+            'unit_price' => $this->unit_price,
+            'subtotal' => $this->subtotal,
+            'detail_product_id' => $this->detail_product_id,
+            'product_name' => $this->product_name,
+            'product_abbreviation' => $this->product_abbreviation,
+            'uom_title' => $this->uom_title,
+            'product' => $this->whenLoaded('detailProduct', fn () => [
+                'id' => $this->detailProduct->product->id ?? null,
+                'title' => $this->detailProduct->product->title ?? null,
+                'abbreviation' => $this->detailProduct->product->abbreviation ?? null,
+            ]),
+        ];
+    }
+}

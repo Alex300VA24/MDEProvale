@@ -24,6 +24,8 @@ class StoreTransactionRequest extends FormRequest
             'unit_price' => 'required|numeric|min:0',
             'document_number' => 'nullable|string|max:50',
             'transaction_date' => 'required|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
         ];
     }
 
@@ -31,7 +33,7 @@ class StoreTransactionRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $typeTransaction = TypeTransaction::find($this->input('type_transaction_id'));
-            
+
             if ($typeTransaction && $typeTransaction->isIngreso()) {
                 if (!$this->input('product_id')) {
                     $validator->errors()->add('product_id', 'El producto es obligatorio para ingresos.');

@@ -1,0 +1,633 @@
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import http from '../../http';
+import { useToast } from '../../Components/Toast';
+import Modal from '../../Components/Modal';
+import ConfirmDialog from '../../Components/ConfirmDialog';
+import Pagination from '../../Components/Pagination';
+import { useDebounced } from '../socios/hooks';
+import { fmtDate, fmtDateTime, vigenciaBadge, stateBadge } from './format';
+
+const BASE = '/api/dashboard/club-madres';
+
+const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const inputCls =
+    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+
+function resolutionLabel(res) {
+    if (!res) return '';
+    return res.document ? `${res.document} (${fmtDate(res.date_document)})` : `Resolución #${res.id}`;
+}
+
+function ClubFormModal({ mode, club, options, onClose, onSaved }) {
+    const toast = useToast();
+    const [code, setCode] = useState(mode === 'edit' && club ? club.code || '' : '');
+    const [name, setName] = useState(mode === 'edit' && club ? club.name || '' : '');
+    const [companyName, setCompanyName] = useState(mode === 'edit' && club ? club.company_name || '' : '');
+    const [address, setAddress] = useState(mode === 'edit' && club ? club.address || '' : '');
+    const [phone, setPhone] = useState(mode === 'edit' && club ? club.phone || '' : '');
+    const [observation, setObservation] = useState(mode === 'edit' && club ? club.observation || '' : '');
+    const [resolutionId, setResolutionId] = useState(mode === 'edit' && club ? club.resolution_id ?? '' : '');
+    const [placeSectorId, setPlaceSectorId] = useState(mode === 'edit' && club ? club.place_sector_id ?? '' : '');
+    const [typePremisesId, setTypePremisesId] = useState(mode === 'edit' && club ? club.type_premises_id ?? '' : '');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!code || !name || !companyName || !address || !resolutionId || !placeSectorId || !typePremisesId) {
+            toast.error('Complete los campos obligatorios del comité (incluye Razón Social).');
+            return;
+        }
+        setSubmitting(true);
+        try {
+            const payload = {
+                code,
+                name,
+                company_name: companyName,
+                address,
+                phone: phone || null,
+                observation: observation || null,
+                resolution_id: resolutionId,
+                place_sector_id: placeSectorId,
+                type_premises_id: typePremisesId,
+            };
+            if (mode === 'edit') {
+                await http.put(`${BASE}/clubs/${club.id}`, payload);
+                toast.success('Comité actualizado correctamente.');
+            } else {
+                await http.post(`${BASE}/clubs`, payload);
+                toast.success('Comité creado exitosamente.');
+            }
+            onSaved();
+        } catch (err) {
+            const data = err.response?.data;
+            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
+            toast.error(message || 'Ocurrió un error al guardar el comité.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <Modal
+            open
+            onClose={onClose}
+            title={mode === 'edit' ? 'Editar Comité' : 'Nuevo Comité'}
+            icon={mode === 'edit' ? 'fa-edit' : 'fa-plus-circle'}
+            iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
+            maxWidth="sm:max-w-3xl"
+        >
+            <form onSubmit={handleSubmit} className="p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className={labelCls}>Código *</label>
+                        <input type="text" value={code} onChange={(e) => setCode(e.target.value)} className={inputCls} required maxLength={20} />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Nombre del Comité *</label>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} required maxLength={100} />
+                    </div>
+                    <div className="sm:col-span-2">
+                        <label className={labelCls}>Razón Social *</label>
+                        <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputCls} required maxLength={150} />
+                    </div>
+                    <div className="sm:col-span-2">
+                        <label className={labelCls}>Dirección *</label>
+                        <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputCls} required maxLength={150} />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Teléfono</label>
+                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} maxLength={20} />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Tipo de Local *</label>
+                        <select value={typePremisesId} onChange={(e) => setTypePremisesId(e.target.value)} className={inputCls} required>
+                            <option value="">Seleccione</option>
+                            {(options.type_premises || []).map((t) => (
+                                <option key={t.id} value={t.id}>{t.title}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                        <label className={labelCls}>Zona / Sector *</label>
+                        <select value={placeSectorId} onChange={(e) => setPlaceSectorId(e.target.value)} className={inputCls} required>
+                            <option value="">Seleccione</option>
+                            {(options.place_sectors || []).map((ps) => (
+                                <option key={ps.id} value={ps.id}>
+                                    {ps.place ? ps.place.title : ''} - {ps.sector ? ps.sector.title : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                        <label className={labelCls}>Resolución Vigente *</label>
+                        <select value={resolutionId} onChange={(e) => setResolutionId(e.target.value)} className={inputCls} required>
+                            <option value="">Seleccione</option>
+                            {(options.resolutions || []).map((r) => (
+                                <option key={r.id} value={r.id}>{resolutionLabel(r)}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="sm:col-span-2">
+                        <label className={labelCls}>Observación</label>
+                        <textarea
+                            value={observation}
+                            onChange={(e) => setObservation(e.target.value)}
+                            className={`${inputCls} resize-none`}
+                            rows={2}
+                        />
+                    </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+                    <button type="submit" disabled={submitting} className="btn-primary">
+                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
+                        {mode === 'edit' ? 'Actualizar' : 'Guardar'}
+                    </button>
+                </div>
+            </form>
+        </Modal>
+    );
+}
+
+function ClubViewModal({ club, onClose, onEdit }) {
+    if (!club) return null;
+    const status = vigenciaBadge(club.latest_resolution || club.resolution);
+    return (
+        <Modal open onClose={onClose} title="Detalle del Comité" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-2xl">
+            <div className="p-6">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Código</p>
+                        <p className="font-semibold text-charcoal">{club.code || '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Nombre</p>
+                        <p className="font-semibold text-charcoal">{club.name || '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Razón Social</p>
+                        <p className="font-semibold text-charcoal">{club.company_name || '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Dirección</p>
+                        <p className="font-semibold text-charcoal">{club.address || '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Teléfono</p>
+                        <p className="font-semibold text-charcoal">{club.phone || '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Presidenta</p>
+                        <p className="font-semibold text-charcoal">{club.president_name || 'Sin asignar'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Zona / Sector</p>
+                        <p className="font-semibold text-charcoal">
+                            {club.place_sector?.place?.title} - {club.place_sector?.sector?.title}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Tipo de Local</p>
+                        <p className="font-semibold text-charcoal">{club.type_premises?.title || '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado</p>
+                        <span className={`badge ${stateBadge(club.state).cls}`}>{stateBadge(club.state).label}</span>
+                    </div>
+                    <div>
+                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Vigencia</p>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.cls}`}>{status.label}</span>
+                    </div>
+                </div>
+
+                <div className="mt-5">
+                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Resoluciones del Comité</p>
+                    {(club.all_resolutions || []).length === 0 ? (
+                        <p className="text-sm text-earth">Sin resoluciones registradas.</p>
+                    ) : (
+                        <div className="overflow-x-auto border-2 border-wheat rounded-xl">
+                            <table className="w-full text-xs sm:text-sm">
+                                <thead className="bg-cream">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left font-bold text-earth">Documento</th>
+                                        <th className="px-3 py-2 text-left font-bold text-earth">F. Documento</th>
+                                        <th className="px-3 py-2 text-left font-bold text-earth">Inicio</th>
+                                        <th className="px-3 py-2 text-left font-bold text-earth">Fin</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-wheat">
+                                    {(club.all_resolutions || []).map((r) => (
+                                        <tr key={r.id} className="hover:bg-mist/50">
+                                            <td className="px-3 py-2 font-semibold">{r.document || '-'}</td>
+                                            <td className="px-3 py-2">{fmtDateTime(r.date_document)}</td>
+                                            <td className="px-3 py-2">{fmtDate(r.date_start)}</td>
+                                            <td className="px-3 py-2">{fmtDate(r.date_end)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="flex justify-end gap-3 px-6 pb-6">
+                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
+                <button type="button" onClick={() => { onClose(); onEdit(); }} className="btn-primary">
+                    <i className="fas fa-edit mr-2" /> Editar
+                </button>
+            </div>
+        </Modal>
+    );
+}
+
+function AsignarPresidentaModal({ club, onClose, onSaved }) {
+    const toast = useToast();
+    const clubId = club?.id;
+    const [detail, setDetail] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
+    const [partnerId, setPartnerId] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const loadDetail = useCallback(async () => {
+        if (!clubId) return;
+        setLoading(true);
+        setLoadError(false);
+        try {
+            const res = await http.get(`${BASE}/clubs/${clubId}`);
+            setDetail(res.data.data);
+            setPartnerId(res.data.data.president_partner_id ? String(res.data.data.president_partner_id) : '');
+        } catch {
+            setLoadError(true);
+        } finally {
+            setLoading(false);
+        }
+    }, [clubId]);
+
+    useEffect(() => {
+        loadDetail();
+    }, [loadDetail]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!clubId) return;
+        if (!partnerId) {
+            toast.error('Seleccione una socia para asignar como presidenta.');
+            return;
+        }
+        setSubmitting(true);
+        try {
+            await http.post(`${BASE}/clubs/${clubId}/asignar-presidenta`, { partner_id: partnerId });
+            toast.success('Presidenta asignada correctamente.');
+            onSaved();
+        } catch (err) {
+            const data = err.response?.data;
+            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
+            toast.error(message || 'No se pudo asignar la presidenta.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const partners = detail?.partners || [];
+
+    if (!club) return null;
+
+    return (
+        <Modal
+            open
+            onClose={onClose}
+            title="Asignar Presidenta"
+            icon="fa-user-tie"
+            iconClass="text-sun"
+            maxWidth="sm:max-w-lg"
+        >
+            <div className="p-6">
+                <p className="text-sm text-earth mb-4">
+                    Comité: <span className="font-bold text-charcoal">{club.name}</span> ({club.code})
+                </p>
+                {loading ? (
+                    <div className="flex items-center justify-center py-8 text-earth">
+                        <i className="fas fa-spinner fa-spin mr-2" /> Cargando socias del comité...
+                    </div>
+                ) : loadError ? (
+                    <div className="empty-state py-8">
+                        <i className="fas fa-exclamation-triangle" />
+                        <p>No se pudieron cargar las socias del comité. Intenta de nuevo.</p>
+                        <button type="button" onClick={loadDetail} className="btn-primary mt-3 text-xs">
+                            Reintentar
+                        </button>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit}>
+                        <label className={labelCls}>Socia Presidenta *</label>
+                        {partners.length === 0 ? (
+                            <p className="text-sm text-clay font-semibold mt-1">
+                                El comité no tiene socias registradas. Registre socias antes de asignar la presidenta.
+                            </p>
+                        ) : (
+                            <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} className={inputCls} required>
+                                <option value="">Seleccione una socia</option>
+                                {partners.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.dni ? `${p.name} (${p.dni})` : p.name}</option>
+                                ))}
+                            </select>
+                        )}
+                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+                            <button type="submit" disabled={submitting || partners.length === 0} className="btn-primary">
+                                <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-check'} mr-2`} />
+                                Asignar
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
+        </Modal>
+    );
+}
+
+const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
+    const toast = useToast();
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [filters, setFilters] = useState({ search: '', state_id: '', vigencia: '', resolution_id: '' });
+    const [page, setPage] = useState(1);
+    const [formOpen, setFormOpen] = useState(false);
+    const [formMode, setFormMode] = useState('create');
+    const [editing, setEditing] = useState(null);
+    const [viewing, setViewing] = useState(null);
+    const [assigning, setAssigning] = useState(null);
+    const [deleting, setDeleting] = useState(null);
+
+    const debouncedFilters = useDebounced(filters, 400);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedFilters]);
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = { per_page: 10, page };
+            if (debouncedFilters.search) params.search = debouncedFilters.search;
+            if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
+            if (debouncedFilters.vigencia) params.vigencia = debouncedFilters.vigencia;
+            if (debouncedFilters.resolution_id) params.resolution_id = debouncedFilters.resolution_id;
+            const res = await http.get(`${BASE}/clubs`, { params });
+            setData(res.data);
+        } catch {
+            toast.error('No se pudo cargar la lista de comités.');
+        } finally {
+            setLoading(false);
+        }
+    }, [debouncedFilters, page, toast]);
+
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            await load();
+            active = false;
+        })();
+        return () => {
+            active = false;
+        };
+    }, [load]);
+
+    useImperativeHandle(ref, () => ({
+        openCreate: () => {
+            setFormMode('create');
+            setEditing(null);
+            setFormOpen(true);
+        },
+    }));
+
+    const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
+
+    const openEdit = (club) => {
+        setEditing(club);
+        setFormMode('edit');
+        setFormOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleting) return;
+        try {
+            await http.delete(`${BASE}/clubs/${deleting.id}`);
+            toast.success('Comité eliminado exitosamente.');
+            setDeleting(null);
+            load();
+        } catch (err) {
+            const data = err.response?.data;
+            toast.error(data?.message || 'No se pudo eliminar el comité.');
+            setDeleting(null);
+        }
+    };
+
+    return (
+        <>
+            <form onSubmit={(e) => e.preventDefault()} className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4 flex-wrap">
+                <div className="w-full sm:w-72">
+                    <input
+                        type="text"
+                        value={filters.search}
+                        onChange={(e) => setFilter('search', e.target.value)}
+                        placeholder="Buscar por código o nombre..."
+                        className={inputCls}
+                    />
+                </div>
+                <div className="flex-1 min-w-36">
+                    <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
+                        <option value="">Todos los Estados</option>
+                        {(options.states || []).map((s) => (
+                            <option key={s.id} value={s.id}>{s.title}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="flex-1 min-w-36">
+                    <select value={filters.vigencia} onChange={(e) => setFilter('vigencia', e.target.value)} className={inputCls}>
+                        <option value="">Todas las Vigencias</option>
+                        <option value="vigente">Vigentes</option>
+                        <option value="vencido">Vencidos</option>
+                    </select>
+                </div>
+                <div className="flex-1 min-w-44">
+                    <select value={filters.resolution_id} onChange={(e) => setFilter('resolution_id', e.target.value)} className={inputCls}>
+                        <option value="">Todas las Resoluciones</option>
+                        {(options.resolutions || []).map((r) => (
+                            <option key={r.id} value={r.id}>{resolutionLabel(r)}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilters({ search: '', state_id: '', vigencia: '', resolution_id: '' });
+                            setPage(1);
+                        }}
+                        className="btn-secondary text-xs sm:text-sm"
+                    >
+                        <i className="fas fa-broom mr-1 sm:mr-2" /> Limpiar
+                    </button>
+                </div>
+            </form>
+
+            {loading && !data && (
+                <div className="flex items-center justify-center py-10 text-earth">
+                    <i className="fas fa-spinner fa-spin mr-2" /> Cargando comités...
+                </div>
+            )}
+
+            {data && (
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                    <table className="data-table w-full text-xs sm:text-sm min-w-[820px]">
+                        <thead>
+                            <tr>
+                                <th className="px-3 sm:px-4 py-3 text-left">ID</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Código</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Nombre</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Zona / Sector</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Presidenta</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Vigencia</th>
+                                <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.data.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7}>
+                                        <div className="empty-state">
+                                            <i className="fas fa-people-roof" />
+                                            <p>No hay comités registrados</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                data.data.map((club) => {
+                                    const status = vigenciaBadge(club.latest_resolution || club.resolution);
+                                    return (
+                                        <tr key={club.id} className="row-enter">
+                                            <td className="px-3 sm:px-4 py-3 text-earth font-mono">#{club.id}</td>
+                                            <td className="px-3 sm:px-4 py-3 font-semibold">{club.code || '-'}</td>
+                                            <td className="px-3 sm:px-4 py-3">
+                                                <div className="font-semibold">{club.name || 'Sin nombre'}</div>
+                                                {club.company_name && <div className="text-xs text-earth">{club.company_name}</div>}
+                                            </td>
+                                            <td className="px-3 sm:px-4 py-3 text-earth">
+                                                {club.place_sector?.place?.title} - {club.place_sector?.sector?.title}
+                                            </td>
+                                            <td className="px-3 sm:px-4 py-3">
+                                                {club.president_name ? (
+                                                    <span className="text-charcoal font-semibold">{club.president_name}</span>
+                                                ) : (
+                                                    <span className="text-xs text-clay italic">Sin asignar</span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 sm:px-4 py-3">
+                                                <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${status.cls}`}>{status.label}</span>
+                                            </td>
+                                            <td className="px-3 sm:px-4 py-3 text-center">
+                                                <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setViewing(club)}
+                                                        className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                        title="Ver"
+                                                    >
+                                                        <i className="fas fa-eye" />
+                                                    </button>
+                                                    {can.edit && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEdit(club)}
+                                                            className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                            title="Editar"
+                                                        >
+                                                            <i className="fas fa-edit" />
+                                                        </button>
+                                                    )}
+                                                    {can.edit && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setAssigning(club)}
+                                                            className="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
+                                                            title="Asignar Presidenta"
+                                                        >
+                                                            <i className="fas fa-user-tie" />
+                                                        </button>
+                                                    )}
+                                                    {can.del && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDeleting(club)}
+                                                            className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                            title="Eliminar"
+                                                        >
+                                                            <i className="fas fa-trash" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {data && (
+                <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                    <span className="text-xs sm:text-sm text-earth font-medium">
+                        Mostrando {data.from ?? 0} - {data.to ?? 0} de {data.total ?? 0} registros
+                    </span>
+                    <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
+                </div>
+            )}
+
+            {formOpen && (
+                <ClubFormModal
+                    key={editing ? editing.id : 'create'}
+                    mode={formMode}
+                    club={editing}
+                    options={options}
+                    onClose={() => setFormOpen(false)}
+                    onSaved={() => {
+                        setFormOpen(false);
+                        load();
+                    }}
+                />
+            )}
+
+            <ClubViewModal
+                club={viewing}
+                onClose={() => setViewing(null)}
+                onEdit={() => viewing && openEdit(viewing)}
+            />
+
+            {assigning && (
+                <AsignarPresidentaModal
+                    key={assigning.id}
+                    club={assigning}
+                    onClose={() => setAssigning(null)}
+                    onSaved={() => {
+                        setAssigning(null);
+                        load();
+                    }}
+                />
+            )}
+
+            <ConfirmDialog
+                open={!!deleting}
+                onCancel={() => setDeleting(null)}
+                onConfirm={confirmDelete}
+                title="Eliminar Comité"
+                message={deleting ? `Se eliminará el comité "${deleting.name}" de forma permanente.` : ''}
+            />
+        </>
+    );
+});
+
+export default ComitesTab;

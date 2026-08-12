@@ -115,11 +115,14 @@ class ClubReconocimientosController extends Controller
         // Validación de datos
         $request->validate([
             'resolution_id' => 'required|exists:resolutions,id',
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50',
-            'address' => 'required|string|max:500',
+            'name' => 'required|string|max:100',
+            'code' => 'required|string|max:20',
+            'company_name' => 'required|string|max:150',
+            'address' => 'required|string|max:150',
+            'phone' => 'nullable|string|max:20',
             'place_sector_id' => 'required|exists:place_sectors,id',
-            'type_premises_id' => 'nullable|exists:type_premises,id',
+            'type_premises_id' => 'required|exists:type_premises,id',
+            'observation' => 'nullable|string',
         ]);
 
         try {
@@ -157,11 +160,11 @@ class ClubReconocimientosController extends Controller
     public function updateClub(Request $request, Association $association)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string|max:500',
+            'name' => 'required|string|max:100',
+            'address' => 'nullable|string|max:150',
             'phone' => 'nullable|string|max:20',
-            'company_name' => 'nullable|string|max:10',
-            'code' => 'nullable|string|max:50',
+            'company_name' => 'required|string|max:150',
+            'code' => 'required|string|max:20',
             'resolution_id' => 'nullable|exists:resolutions,id',
             'place_sector_id' => 'nullable|exists:place_sectors,id',
             'type_premises_id' => 'nullable|exists:type_premises,id',
@@ -175,6 +178,17 @@ class ClubReconocimientosController extends Controller
 
     public function destroyClub(Association $association)
     {
+        $hasPartners = $association->partners()->exists();
+        $hasPecosas = $association->pecosas()->exists();
+        $hasHistory = DB::table('resolution_associations')
+            ->where('association_id', $association->id)
+            ->exists();
+
+        if ($hasPartners || $hasPecosas || $hasHistory) {
+            return redirect()->route('club-reconocimientos.index')
+                ->with('error', 'No se puede eliminar el comité porque tiene socios, pecosas o historial de resoluciones asociado.');
+        }
+
         $association->delete();
         return redirect()->route('club-reconocimientos.index')->with('success', 'Club de Madres eliminado exitosamente');
     }
@@ -253,12 +267,18 @@ class ClubReconocimientosController extends Controller
 
     public function destroyReconocimiento(Resolution $resolution)
     {
-        // Verificar si hay comités asociados
-        if ($resolution->associations()->count() > 0) {
+        $hasPivot = DB::table('resolution_associations')
+            ->where('resolution_id', $resolution->id)
+            ->exists();
+
+        $hasAssociations = Association::where('resolution_id', $resolution->id)->exists();
+        $hasDirectives = Directive::where('resolution_id', $resolution->id)->exists();
+
+        if ($hasPivot || $hasAssociations || $hasDirectives) {
             return redirect()->route('club-reconocimientos.reconocimientos.index')
-                ->with('error', 'No se puede eliminar la resolución porque tiene comités asociados.');
+                ->with('error', 'No se puede eliminar la resolución porque tiene comités o directivas asociadas.');
         }
-        
+
         $resolution->delete();
         return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución eliminada exitosamente');
     }
@@ -272,6 +292,14 @@ class ClubReconocimientosController extends Controller
         $request->validate([
             'partner_id' => 'required|exists:partners,id',
         ]);
+
+        $perteneceAlComite = $association->partners()
+            ->whereKey($request->partner_id)
+            ->exists();
+
+        if (!$perteneceAlComite) {
+            return back()->withInput()->with('error', 'La socia seleccionada no pertenece a este comité.');
+        }
 
         try {
             DB::beginTransaction();

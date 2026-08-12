@@ -18,7 +18,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     public function searchWithFilters(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
-            ->select(['id', 'title', 'abbreviation', 'state_id', 'uom_id', 'created_at'])
+            ->select(['id', 'title', 'abbreviation', 'code', 'state_id', 'uom_id', 'created_at'])
             ->with(['state:id,title,abbreviation', 'uom:id,title', 'detailProducts' => function ($q) {
                 $q->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
                   ->withSum('stocks as used_quantity', 'quantity');
@@ -56,7 +56,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             ->map(fn($dp) => $dp->setAttribute('available_stock', $dp->quantity - ($dp->used_quantity ?? 0)));
     }
 
-    public function getDetailProductsByIds(Collection $ids): Collection
+    public function getDetailProductsByIds(\Illuminate\Support\Collection $ids): Collection
     {
         return DetailProduct::whereIn('id', $ids)
             ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])

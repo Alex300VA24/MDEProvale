@@ -1,0 +1,334 @@
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Head, router, usePage } from '@inertiajs/react';
+import SectionSkeleton from '../Components/SectionSkeleton';
+import http from '../http';
+
+// Secciones cargadas bajo demanda (React.lazy => chunk separado por sección).
+const Inicio = lazy(() => import('../Sections/Inicio'));
+const SociosBeneficiarios = lazy(() => import('../Sections/SociosBeneficiarios'));
+const ProductosPecosas = lazy(() => import('../Sections/ProductosPecosas'));
+const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos'));
+const Movimientos = lazy(() => import('../Sections/Movimientos'));
+const Mantenimiento = lazy(() => import('../Sections/Mantenimiento'));
+const Sistema = lazy(() => import('../Sections/Sistema'));
+
+const SECTION_COMPONENTS = {
+    inicio: Inicio,
+    socios: SociosBeneficiarios,
+    productos: ProductosPecosas,
+    comites: ClubReconocimientos,
+    movimientos: Movimientos,
+    mantenimiento: Mantenimiento,
+    sistema: Sistema,
+};
+
+// Ítems del menú. `modules` = slugs permitidos que habilitan el ítem (vacío = siempre visible).
+const NAV_ITEMS = [
+    { key: 'inicio', label: 'Inicio', icon: 'fa-home', modules: [] },
+    { key: 'socios', label: 'Socios', icon: 'fa-user-friends', modules: ['socios-beneficiarios'] },
+    { key: 'productos', label: 'Pecosas', icon: 'fa-box', modules: ['productos', 'pecosas'] },
+    { key: 'comites', label: 'Comités', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
+    { key: 'movimientos', label: 'Movimientos', icon: 'fa-exchange-alt', modules: ['movimientos'] },
+    { key: 'mantenimiento', label: 'Mantenimiento', icon: 'fa-screwdriver-wrench', modules: ['mantenimiento'] },
+    { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
+];
+
+function getSectionFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    return SECTION_COMPONENTS[section] ? section : 'inicio';
+}
+
+export default function Dashboard() {
+    const { auth, modules } = usePage().props;
+    const user = auth?.user ?? null;
+
+    const allowedSlugs = new Set(
+        (modules ?? []).filter((m) => m.can_view).map((m) => m.slug)
+    );
+    const navItems = NAV_ITEMS.filter(
+        (item) => item.modules.length === 0 || item.modules.some((slug) => allowedSlugs.has(slug))
+    );
+
+    const [activeSection, setActiveSection] = useState(getSectionFromUrl);
+    const [sidebarExpanded, setSidebarExpanded] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const [notifOpen, setNotifOpen] = useState(false);
+    const [notifCount, setNotifCount] = useState(0);
+    const [notifLabel, setNotifLabel] = useState('');
+    const [notifs, setNotifs] = useState([]);
+    const [notifLoading, setNotifLoading] = useState(false);
+    const notifLoaded = useRef(false);
+
+    const navigate = (key) => {
+        setActiveSection(key);
+        const url = new URL(window.location.href);
+        if (key === 'inicio') {
+            url.searchParams.delete('section');
+        } else {
+            url.searchParams.set('section', key);
+        }
+        // Solo query param + history.pushState; sin recargar props del servidor.
+        window.history.pushState({ section: key }, '', url.pathname + url.search);
+    };
+
+    // Botón "atrás" del navegador también cambia de sección.
+    useEffect(() => {
+        const onPop = () => setActiveSection(getSectionFromUrl());
+        window.addEventListener('popstate', onPop);
+        return () => window.removeEventListener('popstate', onPop);
+    }, []);
+
+    // Contador de notificaciones no leídas (poll cada 30s, como el original).
+    useEffect(() => {
+        const loadCount = async () => {
+            try {
+                const res = await http.get('/sistema/notifications/count/unread');
+                setNotifCount(res.data?.count ?? 0);
+                setNotifLabel(res.data?.label ?? '');
+            } catch {
+                /* silencioso */
+            }
+        };
+        loadCount();
+        const id = setInterval(loadCount, 30000);
+        return () => clearInterval(id);
+    }, []);
+
+    const loadNotifications = useCallback(async () => {
+        setNotifLoading(true);
+        try {
+            const res = await http.get('/api/dashboard/sistema/notifications');
+            setNotifs(res.data?.data ?? []);
+            notifLoaded.current = true;
+        } catch {
+            notifLoaded.current = true;
+        } finally {
+            setNotifLoading(false);
+        }
+    }, []);
+
+    const openNotifications = () => {
+        setNotifOpen(true);
+        document.body.style.overflow = 'hidden';
+        if (!notifLoaded.current) loadNotifications();
+    };
+
+    const closeNotifications = () => {
+        setNotifOpen(false);
+        document.body.style.overflow = '';
+    };
+
+    const handleLogout = (e) => {
+        e.preventDefault();
+        router.post('/logout');
+    };
+
+    const ActiveComponent = SECTION_COMPONENTS[activeSection];
+
+    return (
+        <>
+            <Head title="Dashboard" />
+            <div id="app-shell">
+                <aside
+                    id="sidebar"
+                    className={sidebarExpanded ? 'expanded' : ''}
+                    onMouseEnter={() => {
+                        if (window.innerWidth > 768) setSidebarExpanded(true);
+                    }}
+                    onMouseLeave={() => {
+                        if (window.innerWidth > 768) {
+                            setTimeout(() => {
+                                if (!mobileOpen) setSidebarExpanded(false);
+                            }, 200);
+                        }
+                    }}
+                >
+                    <div className="flex items-center gap-4 px-5 py-6 border-b border-white/10 min-h-[88px]">
+                        <div className="w-12 h-12 bg-blue rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
+                            <img src="/img/muni2.png" alt="PROVALE" className="w-9 h-9 object-contain" />
+                        </div>
+                        <div className="logo-text">
+                            <div className="text-white font-extrabold text-xl tracking-tight">MDE</div>
+                            <div className="text-blue-light text-[11px] font-semibold uppercase tracking-widest">Vaso de Leche</div>
+                        </div>
+                    </div>
+
+                    <nav className="px-3 py-4 overflow-y-auto flex flex-col" style={{ height: 'calc(100% - 88px)' }}>
+                        <div className="flex-1">
+                            {navItems.map((item) => (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={() => navigate(item.key)}
+                                    className={`nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all w-full text-left ${
+                                        activeSection === item.key
+                                            ? 'active bg-white/10 text-white'
+                                            : 'text-white/70 hover:text-white hover:bg-white/10'
+                                    }`}
+                                >
+                                    <i className={`fas ${item.icon} w-5 text-center text-lg flex-shrink-0`} />
+                                    <span className="nav-text text-[14px]">{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="pt-4 border-t border-white/10">
+                            <div className="flex items-center gap-3 px-4 py-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold flex-shrink-0">
+                                    {(user?.name || 'A').charAt(0).toUpperCase()}
+                                </div>
+                                <div className="logo-text">
+                                    <div className="text-white font-bold text-sm leading-none mb-1">{user?.name ?? 'Usuario'}</div>
+                                    <div className="text-white/50 text-[11px]">{user?.rol ?? ''}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </aside>
+
+                <div id="sidebar-spacer" className={sidebarExpanded ? 'expanded' : ''} />
+
+                <div id="content-wrapper">
+                    <div
+                        id="mobile-overlay"
+                        className={mobileOpen ? 'visible' : ''}
+                        onClick={() => {
+                            setSidebarExpanded(false);
+                            setMobileOpen(false);
+                        }}
+                    />
+
+                    <button
+                        id="mobile-toggle"
+                        type="button"
+                        onClick={() => {
+                            setSidebarExpanded(true);
+                            setMobileOpen(true);
+                        }}
+                        className="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border-2 border-mist shadow-md flex items-center justify-center text-slate hover:bg-mist transition-all"
+                    >
+                        <i className="fas fa-bars text-sm sm:text-base" />
+                    </button>
+
+                    <header id="top-header" className="flex items-center justify-between px-4 sm:px-8 h-14 sm:h-[72px]">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center text-white text-base overflow-hidden flex-shrink-0">
+                                <img src="/img/logovaso.svg" alt="PROVALE" className="w-6 h-6 object-contain" />
+                            </div>
+                            <h2 className="text-navy font-bold text-[13px] sm:text-[15px] uppercase tracking-wider truncate">Sistema de Gestión PROVALE</h2>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                            <button
+                                type="button"
+                                onClick={openNotifications}
+                                className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all"
+                            >
+                                <i className="fas fa-bell text-sm sm:text-base" style={{ color: '#1A2E4A' }} />
+                                {notifCount > 0 && (
+                                    <span className="notification-badge absolute -top-1 -right-1 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1">
+                                        {notifLabel}
+                                    </span>
+                                )}
+                            </button>
+
+                            <div className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-mist bg-base hover:bg-mist transition-all cursor-pointer">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-base">
+                                    {(user?.name || 'A').charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div className="text-navy font-bold text-sm leading-none mb-1">{user?.name ?? 'Usuario'}</div>
+                                    <div className="text-slate text-[11px] font-semibold">{user?.rol ?? ''}</div>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-coral-light text-coral font-bold text-sm border-2 border-transparent hover:bg-coral hover:text-white transition-all"
+                            >
+                                <i className="fas fa-power-off" />
+                                <span className="hidden md:inline">Salir</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 p-4 sm:p-6 lg:p-8">
+                        <Suspense fallback={<SectionSkeleton />}>
+                            <ActiveComponent />
+                        </Suspense>
+                    </main>
+                </div>
+            </div>
+
+            {notifOpen && (
+                <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50"
+                    onClick={closeNotifications}
+                >
+                    <div
+                        className="relative mx-auto w-full max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
+                            <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-mist">
+                                <h3 className="font-extrabold text-navy text-base sm:text-lg flex items-center gap-2">
+                                    <i className="fas fa-bell text-blue" /> <span className="hidden sm:inline">Bandeja de </span>Notificaciones
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={closeNotifications}
+                                    className="w-8 h-8 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all"
+                                >
+                                    <i className="fas fa-times" />
+                                </button>
+                            </div>
+                            <div className="p-4 sm:p-6 max-h-96 overflow-y-auto">
+                                {notifLoading ? (
+                                    <div className="text-center py-8">
+                                        <i className="fas fa-spinner fa-spin text-3xl mb-3" />
+                                        <p>Cargando...</p>
+                                    </div>
+                                ) : notifs.length === 0 ? (
+                                    <div className="text-center py-8 text-slate">
+                                        <i className="fas fa-inbox text-4xl mb-3" />
+                                        <p>No hay notificaciones</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {notifs.map((n) => (
+                                            <div key={n.id} className="p-4 rounded-xl border-2 border-mist bg-base">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="px-2 py-1 bg-blue-light text-blue text-xs font-bold rounded">{n.type}</span>
+                                                            {n.status && n.status !== 'pending' && (
+                                                                <span className={`px-2 py-1 text-xs font-bold rounded ${
+                                                                    n.status === 'approved'
+                                                                        ? 'bg-teal-light text-teal'
+                                                                        : 'bg-coral-light text-coral'
+                                                                }`}>
+                                                                    {n.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="font-bold text-navy">{n.title}</p>
+                                                        <p className="text-sm text-slate mt-1">{n.description}</p>
+                                                        {n.requested_at && (
+                                                            <p className="text-xs text-slate mt-2">{n.requested_at}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}

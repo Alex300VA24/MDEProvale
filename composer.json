@@ -8,6 +8,7 @@
         "php": ">=8.1 <8.2",
         "barryvdh/laravel-dompdf": "^2.2",
         "guzzlehttp/guzzle": "^7.5",
+        "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^10.0",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.11"

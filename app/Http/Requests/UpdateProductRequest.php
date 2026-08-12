@@ -10,7 +10,7 @@ class UpdateProductRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('update', Product::class);
+        return Gate::allows('update', $this->route('product') ?? Product::class);
     }
 
     public function rules(): array

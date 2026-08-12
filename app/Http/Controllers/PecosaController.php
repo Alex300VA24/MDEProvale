@@ -13,19 +13,25 @@ use App\Models\Position;
 use App\Models\ProductStock;
 use App\Models\Responsible;
 use App\Models\State;
+use App\Models\DetailPecosa;
+use App\Models\Transaction;
 use App\Services\PecosaService;
 use App\Services\PDFService;
+use App\Services\StockService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PecosaController extends Controller
 {
     private PecosaService $pecosaService;
     private PDFService $pdfService;
+    private StockService $stockService;
 
-    public function __construct(PecosaService $pecosaService, PDFService $pdfService)
+    public function __construct(PecosaService $pecosaService, PDFService $pdfService, StockService $stockService)
     {
         $this->pecosaService = $pecosaService;
         $this->pdfService = $pdfService;
+        $this->stockService = $stockService;
     }
 
     public function index(Request $request)
@@ -165,8 +171,18 @@ class PecosaController extends Controller
 
     public function destroy(Pecosa $pecosa)
     {
-        $pecosa->delete();
-        return redirect()->route('pecosas.index')->with('success', 'Pecosa eliminada exitosamente');
+        try {
+            DB::transaction(function () use ($pecosa) {
+                $this->stockService->revertStockByPecosa($pecosa->id);
+                DetailPecosa::where('pecosa_id', $pecosa->id)->delete();
+                Transaction::where('document_number', $pecosa->pecosa_number)->delete();
+                $pecosa->delete();
+            });
+
+            return redirect()->route('pecosas.index')->with('success', 'Pecosa eliminada exitosamente');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al eliminar PECOSA: ' . $e->getMessage());
+        }
     }
 
     public function generarComprobante(Pecosa $pecosa)

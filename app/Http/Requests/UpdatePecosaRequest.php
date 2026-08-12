@@ -10,7 +10,7 @@ class UpdatePecosaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('update', Pecosa::class);
+        return Gate::allows('update', $this->route('pecosa') ?? Pecosa::class);
     }
 
     public function rules(): array

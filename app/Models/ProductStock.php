@@ -12,6 +12,7 @@ class ProductStock extends Model
     protected $fillable = [
         'detail_product_id',
         'pecosa_id',
+        'transaction_id',
         'quantity',
         'observation',
     ];
@@ -24,6 +25,11 @@ class ProductStock extends Model
     public function pecosa()
     {
         return $this->belongsTo(Pecosa::class);
+    }
+
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
     }
 
     public static function getStockForDetailProduct($detailProductId)

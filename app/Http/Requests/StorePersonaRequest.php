@@ -23,6 +23,8 @@ class StorePersonaRequest extends FormRequest
             'birthdate' => 'nullable|date',
             'gender' => 'nullable|in:M,F',
             'address' => 'nullable|string|max:255',
+            'phone_number' => 'nullable|string|max:9',
+            'place_sector_id' => 'nullable|exists:place_sectors,id',
         ];
     }
 

@@ -1,7 +1,7 @@
 /* Tailwind */
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ==================== Pantalla de carga (components/loading-screen.blade.php) ====================
    Antes había 3 copias divergentes (main.blade.php, auth/login.blade.php,
@@ -205,6 +205,9 @@
     .modal-overlay:not(.hidden) {
         opacity: 1;
     }
+    .modal-overlay.is-open {
+        display: block;
+    }
     .modal-panel {
         @apply relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4;
     }
@@ -374,5 +377,143 @@
 @media (max-width: 640px) {
     button, a, [role="button"] {
         min-height: 32px;
+    }
+}
+
+/* ==================== Shell del Dashboard (Inertia + React) ====================
+   Replica el shell de layouts/main.blade.php para que la SPA luzca idéntica. */
+#app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+#sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 70px;
+    background: linear-gradient(180deg, #1E5799 0%, #0F1E30 100%);
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 50;
+    overflow: hidden;
+    box-shadow: 4px 0 20px rgba(44, 36, 32, 0.15);
+}
+
+#sidebar.expanded {
+    width: 240px;
+}
+
+#sidebar-spacer {
+    width: 70px;
+    flex-shrink: 0;
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#sidebar-spacer.expanded {
+    width: 240px;
+}
+
+#content-wrapper {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#top-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: #fff;
+    border-bottom: 2px solid #D4E4F7;
+    box-shadow: 0 2px 16px rgba(30, 87, 153, 0.08);
+}
+
+.logo-text,
+.nav-text,
+.section-title {
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+#sidebar.expanded .logo-text,
+#sidebar.expanded .nav-text,
+#sidebar.expanded .section-title {
+    opacity: 1;
+    visibility: visible;
+}
+
+.nav-text {
+    transform: translateX(-8px);
+}
+
+#sidebar.expanded .nav-text {
+    transform: translateX(0);
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: #4A90D9;
+    border-radius: 0 3px 3px 0;
+    transition: height 0.3s ease;
+}
+
+.nav-item:hover::before {
+    height: 60%;
+}
+
+.nav-item.active::before {
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    #sidebar {
+        position: fixed;
+        z-index: 60;
+        width: 0;
+    }
+
+    #sidebar.expanded {
+        width: 260px;
+    }
+
+    #sidebar-spacer {
+        display: none !important;
+    }
+
+    #top-header {
+        padding-left: 56px !important;
+    }
+
+    #mobile-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(44, 36, 32, 0.4);
+        z-index: 55;
+        backdrop-filter: blur(2px);
+    }
+
+    #mobile-overlay.visible {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) {
+    #mobile-toggle {
+        display: none !important;
     }
 }

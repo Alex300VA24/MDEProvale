@@ -13,6 +13,8 @@ class ProductResource extends JsonResource
             'title' => $this->title,
             'abbreviation' => $this->abbreviation,
             'code' => $this->code,
+            'uom_id' => $this->uom_id,
+            'state_id' => $this->state_id,
             'uom' => $this->whenLoaded('uom', fn() => [
                 'id' => $this->uom->id,
                 'title' => $this->uom->title,
@@ -22,6 +24,7 @@ class ProductResource extends JsonResource
                 'title' => $this->state->title,
             ]),
             'stock' => $this->stock,
+            'unit_price' => $this->unit_price,
         ];
     }
 }

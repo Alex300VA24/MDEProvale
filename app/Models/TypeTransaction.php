@@ -17,4 +17,14 @@ class TypeTransaction extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    public function isIngreso(): bool
+    {
+        return mb_strtolower(trim((string) $this->title)) === 'ingreso';
+    }
+
+    public function isSalida(): bool
+    {
+        return mb_strtolower(trim((string) $this->title)) === 'salida';
+    }
 }

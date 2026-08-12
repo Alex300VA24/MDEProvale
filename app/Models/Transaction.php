@@ -22,6 +22,13 @@ class Transaction extends Model
         'uom_title',
     ];
 
+    protected $casts = [
+        'unit_price' => 'decimal:2',
+        'total_price' => 'decimal:2',
+        'adjustment' => 'decimal:2',
+        'transaction_date' => 'date',
+    ];
+
     public function detailProduct()
     {
         return $this->belongsTo(DetailProduct::class);

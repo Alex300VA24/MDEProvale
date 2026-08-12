@@ -47,34 +47,37 @@ class TransactionController extends Controller
 
             $message = $isIngreso ? 'Ingreso registrado correctamente.' : 'Salida registrada correctamente.';
             return redirect()->route('movimientos.index')->with('success', $message);
-        } catch (\RuntimeException $e) {
-            return back()->withInput()->with('error', $e->getMessage());
-        } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Error al registrar movimiento: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            return redirect()->route('movimientos.index')->with('error', $e->getMessage());
         }
     }
 
     public function update(Request $request, Transaction $transaction)
     {
-        try {
-            $validated = $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'quantity' => 'required|numeric|min:0.01',
-                'unit_price' => 'required|numeric|min:0',
-                'document_number' => 'nullable|string|max:50',
-                'transaction_date' => 'required|date',
-            ]);
+        $validated = $request->validate([
+            'quantity' => 'required|numeric|min:0.01',
+            'unit_price' => 'required|numeric|min:0',
+            'document_number' => 'nullable|string|max:50',
+            'transaction_date' => 'required|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+        ]);
 
-            $transaction->update($validated);
-            return redirect()->route('movimientos.index')->with('success', 'Movimiento actualizado correctamente');
-        } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Error al actualizar movimiento: ' . $e->getMessage());
+        try {
+            $this->transactionService->updateTransaction($transaction, $validated);
+            return redirect()->route('movimientos.index')->with('success', 'Movimiento actualizado correctamente.');
+        } catch (\Throwable $e) {
+            return redirect()->route('movimientos.index')->with('error', $e->getMessage());
         }
     }
 
     public function destroy(Transaction $transaction)
     {
-        $transaction->delete();
-        return redirect()->route('movimientos.index')->with('success', 'Movimiento eliminado correctamente');
+        try {
+            $this->transactionService->deleteTransaction($transaction);
+            return redirect()->route('movimientos.index')->with('success', 'Movimiento eliminado correctamente.');
+        } catch (\Throwable $e) {
+            return redirect()->route('movimientos.index')->with('error', $e->getMessage());
+        }
     }
 }

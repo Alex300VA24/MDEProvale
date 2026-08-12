@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Models\DetailPecosa;
 use App\Models\DetailProduct;
 use App\Models\Product;
 use App\Models\State;
@@ -116,7 +117,22 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        $referencedByPecosa = DetailPecosa::whereHas('detailProduct', function ($q) use ($product) {
+            $q->where('product_id', $product->id);
+        })->exists();
+
+        $hasStock = DetailProduct::where('product_id', $product->id)
+            ->whereHas('stocks')
+            ->exists();
+
+        if ($referencedByPecosa || $hasStock) {
+            return redirect()->route('products.index')
+                ->with('error', 'No se puede eliminar: el producto tiene detalles/stock asociado');
+        }
+
+        DetailProduct::where('product_id', $product->id)->delete();
         $product->delete();
+
         return redirect()->route('products.index')->with('success', 'Producto eliminado exitosamente');
     }
 

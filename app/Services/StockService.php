@@ -24,10 +24,9 @@ class StockService
         return $dp->quantity - ($dp->used_quantity ?? 0);
     }
 
-    public function deductByDetailProduct(int $detailProductId, float $quantity, ?int $pecosaId = null, string $observation = 'Salida por Pecosa'): ProductStock
+    public function deductByDetailProduct(int $detailProductId, float $quantity, ?int $pecosaId = null, ?int $transactionId = null, string $observation = 'Salida por Pecosa'): ProductStock
     {
         $available = $this->getAvailableStockByDetailProduct($detailProductId);
-
         if ($quantity > $available) {
             throw new \RuntimeException("Stock insuficiente. Disponible: {$available}, Solicitado: {$quantity}");
         }
@@ -35,35 +34,36 @@ class StockService
         return ProductStock::create([
             'detail_product_id' => $detailProductId,
             'pecosa_id' => $pecosaId,
+            'transaction_id' => $transactionId,
             'quantity' => $quantity,
             'observation' => $observation . ($pecosaId ? " #{$pecosaId}" : ''),
         ]);
     }
 
-    public function deductByProduct(int $productId, float $quantity, ?int $pecosaId = null): void
+    public function deductByProduct(int $productId, float $quantity, ?int $pecosaId = null, ?int $transactionId = null): void
     {
         $detailProducts = DetailProduct::where('product_id', $productId)
             ->where('start_date', '<=', now()->toDateString())
             ->where('end_date', '>=', now()->toDateString())
             ->withSum('stocks as used_quantity', 'quantity')
             ->orderBy('start_date', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         $remaining = $quantity;
-
         foreach ($detailProducts as $dp) {
-            if ($remaining <= 0) break;
-            $available = $dp->quantity - ($dp->used_quantity ?? 0);
-            if ($available > 0) {
-                $deduct = min($remaining, $available);
-                ProductStock::create([
-                    'detail_product_id' => $dp->id,
-                    'pecosa_id' => $pecosaId,
-                    'quantity' => $deduct,
-                    'observation' => 'Salida por transacción' . ($pecosaId ? " - Pecosa #{$pecosaId}" : ''),
-                ]);
-                $remaining -= $deduct;
+            if ($remaining <= 0) {
+                break;
             }
+
+            $available = $dp->quantity - ($dp->used_quantity ?? 0);
+            $toDeduct = min($remaining, $available);
+            if ($toDeduct <= 0) {
+                continue;
+            }
+
+            $this->deductByDetailProduct($dp->id, $toDeduct, $pecosaId, $transactionId);
+            $remaining -= $toDeduct;
         }
 
         if ($remaining > 0) {
@@ -76,27 +76,13 @@ class StockService
         ProductStock::where('pecosa_id', $pecosaId)->delete();
     }
 
-    public function getStockInfoByProduct(int $productId): array
+    public function revertStockByDetailProduct(int $detailProductId): void
     {
-        $detailProducts = DetailProduct::where('product_id', $productId)
-            ->where('start_date', '<=', now()->toDateString())
-            ->where('end_date', '>=', now()->toDateString())
-            ->withSum('stocks as used_quantity', 'quantity')
-            ->get();
+        ProductStock::where('detail_product_id', $detailProductId)->delete();
+    }
 
-        $totalStock = 0;
-        $totalValue = 0;
-
-        foreach ($detailProducts as $dp) {
-            $available = $dp->quantity - ($dp->used_quantity ?? 0);
-            $totalStock += $available;
-            $totalValue += $available * $dp->unit_price;
-        }
-
-        return [
-            'quantity' => $totalStock,
-            'unit_price' => $totalStock > 0 ? $totalValue / $totalStock : 0,
-            'total' => $totalValue,
-        ];
+    public function revertStockByTransaction(int $transactionId): void
+    {
+        ProductStock::where('transaction_id', $transactionId)->delete();
     }
 }

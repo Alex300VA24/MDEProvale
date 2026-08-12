@@ -38,7 +38,7 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
             ->first();
     }
 
-    public function getPresidentDirectivesByAssociation(Collection $associationIds, int $presidentPositionId, int $activeStateId): Collection
+    public function getPresidentDirectivesByAssociation(\Illuminate\Support\Collection $associationIds, int $presidentPositionId, int $activeStateId): \Illuminate\Support\Collection
     {
         return Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id'])
             ->where('position_id', $presidentPositionId)

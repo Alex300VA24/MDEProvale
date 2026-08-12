@@ -85,21 +85,24 @@ class PecosaService
                     'uom_title' => $dp->product->uom->title ?? null,
                 ]);
 
-                $this->stockService->deductByDetailProduct($detail['detail_product_id'], $detail['quantity'], $pecosa->id);
+                $transaction = Transaction::create([
+                    'detail_product_id' => $detail['detail_product_id'],
+                    'type_transaction_id' => $typeSalida->id,
+                    'quantity' => $detail['quantity'],
+                    'unit_price' => $unitPrice,
+                    'total_price' => $subtotal,
+                    'document_number' => $data['pecosa_number'],
+                    'transaction_date' => $data['delivery_date'],
+                    'product_name' => $dp->product->title,
+                    'uom_title' => $dp->product->uom->title ?? null,
+                ]);
 
-                if ($typeSalida) {
-                    Transaction::create([
-                        'detail_product_id' => $detail['detail_product_id'],
-                        'type_transaction_id' => $typeSalida->id,
-                        'quantity' => $detail['quantity'],
-                        'unit_price' => $unitPrice,
-                        'total_price' => $subtotal,
-                        'document_number' => $data['pecosa_number'],
-                        'transaction_date' => $data['delivery_date'],
-                        'product_name' => $dp->product->title,
-                        'uom_title' => $dp->product->uom->title ?? null,
-                    ]);
-                }
+                $this->stockService->deductByDetailProduct(
+                    $detail['detail_product_id'],
+                    $detail['quantity'],
+                    $pecosa->id,
+                    $transaction->id
+                );
             }
 
             return $pecosa;
@@ -138,21 +141,24 @@ class PecosaService
                     'uom_title' => $dp->product->uom->title ?? null,
                 ]);
 
-                $this->stockService->deductByDetailProduct($detail['detail_product_id'], $detail['quantity'], $pecosa->id);
+                $transaction = Transaction::create([
+                    'detail_product_id' => $detail['detail_product_id'],
+                    'type_transaction_id' => $typeSalida->id,
+                    'quantity' => $detail['quantity'],
+                    'unit_price' => $unitPrice,
+                    'total_price' => $subtotal,
+                    'document_number' => $data['pecosa_number'],
+                    'transaction_date' => $data['delivery_date'],
+                    'product_name' => $dp->product->title,
+                    'uom_title' => $dp->product->uom->title ?? null,
+                ]);
 
-                if ($typeSalida) {
-                    Transaction::create([
-                        'detail_product_id' => $detail['detail_product_id'],
-                        'type_transaction_id' => $typeSalida->id,
-                        'quantity' => $detail['quantity'],
-                        'unit_price' => $unitPrice,
-                        'total_price' => $subtotal,
-                        'document_number' => $data['pecosa_number'],
-                        'transaction_date' => $data['delivery_date'],
-                        'product_name' => $dp->product->title,
-                        'uom_title' => $dp->product->uom->title ?? null,
-                    ]);
-                }
+                $this->stockService->deductByDetailProduct(
+                    $detail['detail_product_id'],
+                    $detail['quantity'],
+                    $pecosa->id,
+                    $transaction->id
+                );
             }
 
             return $pecosa->fresh();

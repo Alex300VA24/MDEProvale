@@ -9,21 +9,21 @@ class PecosaPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasModuleAccess('productos');
+        return $user->hasModuleAccess('pecosas');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('productos');
+        return $user->hasModuleAccess('pecosas');
     }
 
     public function update(User $user, Pecosa $pecosa): bool
     {
-        return $user->hasModuleAccess('productos');
+        return $user->hasModuleAccess('pecosas');
     }
 
     public function delete(User $user, Pecosa $pecosa): bool
     {
-        return $user->hasModuleAccess('productos') && $user->isAdmin();
+        return $user->hasModuleAccess('pecosas') && $user->isAdmin();
     }
 }

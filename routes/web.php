@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +28,10 @@ Route::post('password-reset-request', [App\Http\Controllers\SistemaController::c
 
 // Rutas que requieren autenticación
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard SPA (Inertia + React). El resto de la navegación es 100% client-side.
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
 
     require __DIR__ . '/search.php';
     require __DIR__ . '/socios-beneficiarios.php';
