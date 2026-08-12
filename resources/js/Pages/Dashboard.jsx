@@ -83,7 +83,7 @@ export default function Dashboard() {
     useEffect(() => {
         const loadCount = async () => {
             try {
-                const res = await http.get('/sistema/notifications/count/unread');
+                const res = await http.get('/api/dashboard/sistema/notifications/unread-count');
                 setNotifCount(res.data?.count ?? 0);
                 setNotifLabel(res.data?.label ?? '');
             } catch {

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ComitesController;
 use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
+use App\Http\Controllers\Api\SistemaController;
 use App\Http\Controllers\Api\SociosBeneficiariosController;
 use Illuminate\Support\Facades\Route;
 
@@ -111,4 +112,35 @@ Route::prefix('dashboard/mantenimiento')->middleware('module:mantenimiento')->na
     Route::post('raciones', [MantenimientoController::class, 'storeRacion'])->name('raciones.store');
     Route::put('raciones/{racion}', [MantenimientoController::class, 'updateRacion'])->name('raciones.update');
     Route::delete('raciones/{racion}', [MantenimientoController::class, 'destroyRacion'])->name('raciones.destroy');
+});
+
+// ==================== MÓDULO: SISTEMA ====================
+Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
+    // Campanita de notificaciones: disponible para cualquier usuario autenticado,
+    // sin exigir acceso al módulo 'sistema' (mismo comportamiento que las vistas
+    // Blade originales, que exponían el contador/lista propia a todos).
+    Route::get('notifications', [SistemaController::class, 'notifications'])->name('notifications');
+    Route::get('notifications/unread-count', [SistemaController::class, 'unreadNotificationsCount'])->name('notifications.unread-count');
+    Route::post('notifications/mark-seen', [SistemaController::class, 'markNotificationsSeen'])->name('notifications.mark-seen');
+
+    Route::middleware('module:sistema')->group(function () {
+        Route::get('usuarios', [SistemaController::class, 'usuarios'])->name('usuarios');
+        Route::post('usuarios', [SistemaController::class, 'storeUsuario'])->name('usuarios.store');
+        Route::put('usuarios/{usuario}', [SistemaController::class, 'updateUsuario'])->name('usuarios.update');
+        Route::delete('usuarios/{usuario}', [SistemaController::class, 'destroyUsuario'])->name('usuarios.destroy');
+        Route::post('usuarios/{usuario}/reset-password', [SistemaController::class, 'resetUserPassword'])->name('usuarios.reset-password');
+
+        Route::get('roles', [SistemaController::class, 'roles'])->name('roles');
+        Route::post('roles', [SistemaController::class, 'storeRol'])->name('roles.store');
+        Route::put('roles/{rol}', [SistemaController::class, 'updateRol'])->name('roles.update');
+        Route::delete('roles/{rol}', [SistemaController::class, 'destroyRol'])->name('roles.destroy');
+
+        Route::get('modulos', [SistemaController::class, 'modulos'])->name('modulos');
+        Route::post('modulos', [SistemaController::class, 'storeModulo'])->name('modulos.store');
+        Route::put('modulos/{modulo}', [SistemaController::class, 'updateModulo'])->name('modulos.update');
+        Route::delete('modulos/{modulo}', [SistemaController::class, 'destroyModulo'])->name('modulos.destroy');
+
+        Route::post('notifications/{notification}/approve', [SistemaController::class, 'approveNotification'])->name('notifications.approve');
+        Route::post('notifications/{notification}/reject', [SistemaController::class, 'rejectNotification'])->name('notifications.reject');
+    });
 });

@@ -2,9 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
-use App\Models\User;
 
 class StoreUserRequest extends FormRequest
 {
@@ -16,18 +16,16 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'names' => 'required|string|max:150',
+            'father_surname' => 'required|string|max:100',
+            'mother_surname' => 'required|string|max:100',
+            'username' => 'required|string|max:100|unique:users,username',
+            'email' => 'required|email|unique:users,email',
+            'dni' => 'required|string|size:8|unique:users,dni',
+            'cui' => 'nullable|string|max:1',
             'rol_id' => 'required|exists:rols,id',
             'state_id' => 'required|exists:states,id',
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'email.unique' => 'El email ya está registrado.',
+            'password' => 'required|string|min:8',
         ];
     }
 }
