@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ComitesController;
+use App\Http\Controllers\Api\InicioController;
 use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
@@ -18,6 +19,11 @@ use Illuminate\Support\Facades\Route;
 | el middleware de módulo correspondiente.
 |
 */
+
+// ==================== INICIO (panel de KPIs) ====================
+// Sin middleware de módulo: la sección "Inicio" es visible para cualquier
+// usuario autenticado (ver NAV_ITEMS en Dashboard.jsx, modules: []).
+Route::get('dashboard/inicio/kpis', [InicioController::class, 'kpis'])->name('api.inicio.kpis');
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================
 Route::prefix('dashboard/socios-beneficiarios')->middleware('module:socios-beneficiarios')->name('api.socios-beneficiarios.')->group(function () {
