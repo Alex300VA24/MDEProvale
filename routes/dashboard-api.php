@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ComitesController;
+use App\Http\Controllers\Api\MantenimientoController;
 use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
 use App\Http\Controllers\Api\SociosBeneficiariosController;
@@ -97,4 +98,17 @@ Route::prefix('dashboard/movimientos')->middleware('module:movimientos')->name('
 
     // Repartición mensual (reporte de raciones por comité + enlace al PDF)
     Route::get('reparticion', [MovimientosController::class, 'reparticion'])->name('reparticion');
+});
+
+// ==================== MÓDULO: MANTENIMIENTO ====================
+Route::prefix('dashboard/mantenimiento')->middleware('module:mantenimiento')->name('api.mantenimiento.')->group(function () {
+    Route::get('responsibles', [MantenimientoController::class, 'responsibles'])->name('responsibles');
+    Route::put('responsibles/{type}', [MantenimientoController::class, 'updateResponsible'])
+        ->where('type', 'chief|storekeeper')
+        ->name('responsibles.update');
+
+    Route::get('raciones', [MantenimientoController::class, 'raciones'])->name('raciones');
+    Route::post('raciones', [MantenimientoController::class, 'storeRacion'])->name('raciones.store');
+    Route::put('raciones/{racion}', [MantenimientoController::class, 'updateRacion'])->name('raciones.update');
+    Route::delete('raciones/{racion}', [MantenimientoController::class, 'destroyRacion'])->name('raciones.destroy');
 });
