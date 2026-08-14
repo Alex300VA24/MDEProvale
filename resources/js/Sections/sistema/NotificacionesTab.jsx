@@ -2,13 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
-
-function errorMessage(err, fallback) {
-    const data = err.response?.data;
-    return data?.message || fallback;
-}
 
 const STATUS_LABEL = {
     pending: { label: 'Pendiente', cls: 'bg-sun-light text-[#D97706]' },

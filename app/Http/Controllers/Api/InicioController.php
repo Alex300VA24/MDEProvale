@@ -5,57 +5,115 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Association;
 use App\Models\Beneficiarie;
+use App\Models\DetailPecosa;
 use App\Models\Partner;
-use App\Models\Pecosa;
-use App\Models\Product;
-use App\Models\Racion;
-use App\Models\State;
+use Illuminate\Support\Facades\DB;
 
 class InicioController extends Controller
 {
     /**
-     * KPIs agregados del panel de inicio. Disponible para cualquier usuario
-     * autenticado (la sección 'Inicio' no está atada a ningún módulo, ver
-     * NAV_ITEMS en Dashboard.jsx): son solo conteos, sin datos personales.
+     * Datos del panel de inicio (tarjetas KPI + gráficas). Disponible para
+     * cualquier usuario autenticado (la sección 'Inicio' no está atada a
+     * ningún módulo, ver NAV_ITEMS en Dashboard.jsx): son solo conteos y
+     * agregados, sin datos personales.
      */
-    public function kpis()
+    public function panel()
     {
-        $activeStateId = State::where('abbreviation', 'A')->value('id');
-        $today = now()->toDateString();
+        $totalSocios = Partner::count();
+        $totalBeneficiarios = Beneficiarie::count();
+        $totalComites = Association::count();
 
-        $sociosActivos = Partner::where('state_id', $activeStateId)->count();
+        // Stock total: una sola query (cantidad ingresada - cantidad ya repartida
+        // por cada lote), en vez de iterar cada detail_product en PHP.
+        $stockTotal = (int) DB::table('detail_products')
+            ->selectRaw('COALESCE(SUM(detail_products.quantity - COALESCE(used.total_used, 0)), 0) as stock')
+            ->leftJoin(
+                DB::raw('(SELECT detail_product_id, SUM(quantity) as total_used FROM product_stocks GROUP BY detail_product_id) as used'),
+                'detail_products.id', '=', 'used.detail_product_id'
+            )
+            ->value('stock');
 
-        $beneficiariosActivos = Beneficiarie::whereHas('histories', function ($q) use ($today) {
-            $q->where(function ($qq) use ($today) {
-                $qq->whereNull('date_begin')->orWhere('date_begin', '<=', $today);
-            })->where(function ($qq) use ($today) {
-                $qq->whereNull('date_end')->orWhere('date_end', '>=', $today);
-            });
-        })->count();
+        $currentYear = now()->year;
+        $yearStart = $currentYear . '-01-01';
+        $yearEnd = $currentYear . '-12-31';
 
-        $comitesActivos = Association::where('state_id', $activeStateId)->count();
+        // PECOSAs por mes (año actual).
+        // Nota: se usa el query builder (no el modelo Eloquent Pecosa) porque
+        // Pecosa::getMonthAttribute() es un accessor que pisa el alias "month"
+        // seleccionado aquí y lo devuelve siempre en null al hidratar el modelo.
+        $pecosasPorMes = DB::table('pecosas')
+            ->selectRaw('MONTH(delivery_date) as month, COUNT(*) as total')
+            ->whereNotNull('delivery_date')
+            ->whereBetween('delivery_date', [$yearStart, $yearEnd])
+            ->groupByRaw('MONTH(delivery_date)')
+            ->get();
 
-        $productosStockCritico = Product::with(['detailProducts' => function ($q) {
-            $q->withSum('stocks as used_quantity', 'quantity');
-        }])->get()->filter(fn ($p) => $p->stock <= 10)->count();
+        $pecosaData = array_fill(0, 12, 0);
+        foreach ($pecosasPorMes as $item) {
+            $month = (int) $item->month;
+            if ($month >= 1 && $month <= 12) {
+                $pecosaData[$month - 1] = (int) $item->total;
+            }
+        }
+        $totalPecosasAnio = array_sum($pecosaData);
 
-        $pecosasMesActual = Pecosa::whereMonth('delivery_date', now()->month)
-            ->whereYear('delivery_date', now()->year)
-            ->count();
+        // Productos distribuidos por mes (Leche / Hojuelas)
+        $productosPorMes = DetailPecosa::selectRaw('MONTH(pecosas.delivery_date) as month, SUM(detail_pecosas.quantity) as total, products.title as product')
+            ->join('pecosas', 'detail_pecosas.pecosa_id', '=', 'pecosas.id')
+            ->join('detail_products', 'detail_pecosas.detail_product_id', '=', 'detail_products.id')
+            ->join('products', 'detail_products.product_id', '=', 'products.id')
+            ->whereBetween('pecosas.delivery_date', [$yearStart, $yearEnd])
+            ->groupByRaw('MONTH(pecosas.delivery_date), products.title')
+            ->get();
 
-        $racionActiva = Racion::where('year', now()->year)->where('active', true)->first();
+        $lecheData = array_fill(0, 12, 0);
+        $hojuelasData = array_fill(0, 12, 0);
+        foreach ($productosPorMes as $item) {
+            $month = (int) $item->month;
+            if ($month < 1 || $month > 12) {
+                continue;
+            }
+            $mes = $month - 1;
+            if (stripos($item->product, 'leche') !== false) {
+                $lecheData[$mes] = (int) $item->total;
+            } elseif (stripos($item->product, 'hojuela') !== false) {
+                $hojuelasData[$mes] = (int) $item->total;
+            }
+        }
+
+        // Top comités con más beneficiarios
+        $topComites = Association::selectRaw('associations.name as club, COUNT(beneficiaries.id) as total')
+            ->join('partners', 'partners.association_id', '=', 'associations.id')
+            ->join('beneficiaries', 'beneficiaries.partner_id', '=', 'partners.id')
+            ->groupBy('associations.id', 'associations.name')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get()
+            ->map(fn ($item) => ['nombre' => $item->club, 'total' => (int) $item->total])
+            ->values();
 
         return response()->json([
-            'socios_activos' => $sociosActivos,
-            'beneficiarios_activos' => $beneficiariosActivos,
-            'comites_activos' => $comitesActivos,
-            'productos_stock_critico' => $productosStockCritico,
-            'pecosas_mes_actual' => $pecosasMesActual,
-            'racion_activa' => $racionActiva ? [
-                'year' => (int) $racionActiva->year,
-                'racion_leche_militros' => (float) $racionActiva->racion_leche_militros,
-                'racion_hojuelas_gramos' => (float) $racionActiva->racion_hojuelas_gramos,
-            ] : null,
-        ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
+            'stats' => [
+                'total_socios' => $totalSocios,
+                'total_beneficiarios' => $totalBeneficiarios,
+                'total_comites' => $totalComites,
+                'stock_total' => $stockTotal,
+            ],
+            'pecosas_por_mes' => [
+                'data' => $pecosaData,
+                'total_anio' => $totalPecosasAnio,
+                'anio' => $currentYear,
+            ],
+            'productos_distribuidos' => [
+                'leche' => $lecheData,
+                'hojuelas' => $hojuelasData,
+                'anio' => $currentYear,
+            ],
+            'socios_vs_beneficiarios' => [
+                'socios' => $totalSocios,
+                'beneficiarios' => $totalBeneficiarios,
+            ],
+            'top_comites' => $topComites,
+        ]);
     }
 }

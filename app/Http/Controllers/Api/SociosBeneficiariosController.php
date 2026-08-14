@@ -35,6 +35,15 @@ class SociosBeneficiariosController extends Controller
         'beneficiaries.histories.reasonDisqualification:id,title',
     ];
 
+    private const BENEFICIARIO_WITH = [
+        'person',
+        'partner.people:id,names,father_lastname',
+        'relationship',
+        'histories.typeBenefit:id,title,abbreviation',
+        'histories.state:id,title',
+        'histories.reasonDisqualification:id,title',
+    ];
+
     private PartnerService $partnerService;
 
     public function __construct(PartnerService $partnerService)
@@ -196,7 +205,7 @@ class SociosBeneficiariosController extends Controller
 
     public function beneficiarios(Request $request)
     {
-        $query = Beneficiarie::with(['person', 'partner.people:id,names,father_lastname', 'relationship']);
+        $query = Beneficiarie::with(self::BENEFICIARIO_WITH);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -234,32 +243,91 @@ class SociosBeneficiariosController extends Controller
         ]);
     }
 
+    private function beneficiarioHistoryRules(): array
+    {
+        return [
+            'weight' => 'nullable|numeric|min:0',
+            'height' => 'nullable|numeric|min:0',
+            'hmg' => 'nullable|numeric|min:0',
+            'date_begin' => 'nullable|date',
+            'date_end' => 'nullable|date',
+            'type_benefit_id' => 'nullable|exists:type_benefits,id',
+            'history_state_id' => 'nullable|exists:states,id',
+            'reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
+        ];
+    }
+
+    /**
+     * Crea o actualiza el registro "actual" de historial clínico/beneficio de un
+     * beneficiario. Requiere tipo de beneficio, estado y fechas de inicio/fin
+     * completos para persistir (misma regla que PartnerService::syncBeneficiaries
+     * al guardar beneficiarios anidados en el formulario de Socio).
+     */
+    private function syncBeneficiarioHistory(Beneficiarie $beneficiarie, array $data): void
+    {
+        if (empty($data['type_benefit_id']) || empty($data['history_state_id'])
+            || empty($data['date_begin']) || empty($data['date_end'])) {
+            return;
+        }
+
+        $payload = [
+            'weight' => $data['weight'] ?? 0,
+            'height' => $data['height'] ?? 0,
+            'hmg' => $data['hmg'] ?? 0,
+            'date_begin' => $data['date_begin'],
+            'date_end' => $data['date_end'],
+            'type_benefit_id' => $data['type_benefit_id'],
+            'state_id' => $data['history_state_id'],
+            'reason_disqualification_id' => $data['reason_disqualification_id'] ?? null,
+        ];
+
+        $history = $beneficiarie->histories()->first();
+
+        if ($history) {
+            $history->update($payload);
+        } else {
+            $beneficiarie->histories()->create($payload);
+        }
+    }
+
     public function storeBeneficiario(Request $request)
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'person_id' => 'required|exists:people,id',
             'partner_id' => 'required|exists:partners,id',
             'relationship_id' => 'required|exists:relationships,id',
+        ], $this->beneficiarioHistoryRules()));
+
+        $beneficiarie = Beneficiarie::create([
+            'person_id' => $validated['person_id'],
+            'partner_id' => $validated['partner_id'],
+            'relationship_id' => $validated['relationship_id'],
         ]);
 
-        $beneficiarie = Beneficiarie::create($validated);
+        $this->syncBeneficiarioHistory($beneficiarie, $validated);
 
-        return (new BeneficiarieResource($beneficiarie->load(['person', 'partner.people:id,names,father_lastname', 'relationship'])))
+        return (new BeneficiarieResource($beneficiarie->load(self::BENEFICIARIO_WITH)))
             ->response()
             ->setStatusCode(201);
     }
 
     public function updateBeneficiario(Request $request, Beneficiarie $beneficiarie)
     {
-        $validated = $request->validate([
+        $validated = $request->validate(array_merge([
             'person_id' => 'required|exists:people,id',
             'partner_id' => 'required|exists:partners,id',
             'relationship_id' => 'required|exists:relationships,id',
+        ], $this->beneficiarioHistoryRules()));
+
+        $beneficiarie->update([
+            'person_id' => $validated['person_id'],
+            'partner_id' => $validated['partner_id'],
+            'relationship_id' => $validated['relationship_id'],
         ]);
 
-        $beneficiarie->update($validated);
+        $this->syncBeneficiarioHistory($beneficiarie, $validated);
 
-        return new BeneficiarieResource($beneficiarie->load(['person', 'partner.people:id,names,father_lastname', 'relationship']));
+        return new BeneficiarieResource($beneficiarie->load(self::BENEFICIARIO_WITH));
     }
 
     public function destroyBeneficiario(Beneficiarie $beneficiarie)

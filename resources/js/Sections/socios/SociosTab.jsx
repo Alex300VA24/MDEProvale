@@ -5,9 +5,9 @@ import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
-import BeneficiaryForm from './BeneficiaryForm';
 import { useDebounced } from './hooks';
 import { formatDate, personFullName, personLabel } from './format';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -21,84 +21,24 @@ const peopleSearch = async (q) => {
     return (res.data.results || []).map((r) => ({ id: r.id, label: r.text }));
 };
 
-function emptyBeneficiaryRow(key) {
-    return {
-        key,
-        person_id: null,
-        person_label: '',
-        relationship_id: null,
-        weight: '',
-        height: '',
-        hmg: '',
-        date_begin: '',
-        date_end: '',
-        type_benefit_id: null,
-        history_state_id: null,
-        reason_disqualification_id: null,
-    };
-}
-
-function beneficiaryRowFromApi(b) {
-    const h = b.histories && b.histories.length ? b.histories[0] : null;
-    return {
-        key: `existing-${b.id}`,
-        person_id: b.person_id,
-        person_label: personLabel(b.person),
-        relationship_id: b.relationship_id,
-        weight: h?.weight ?? '',
-        height: h?.height ?? '',
-        hmg: h?.hmg ?? '',
-        date_begin: h?.date_begin || '',
-        date_end: h?.date_end || '',
-        type_benefit_id: h?.type_benefit_id ?? null,
-        history_state_id: h?.state_id ?? null,
-        reason_disqualification_id: h?.reason_disqualification_id ?? null,
-    };
-}
-
 function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
     const toast = useToast();
     const [personId, setPersonId] = useState(mode === 'edit' && partner ? partner.person_id : null);
-    const [personLabel, setPersonLabel] = useState(mode === 'edit' && partner?.person ? personLabel(partner.person) : '');
+    const [personLabelState, setPersonLabelState] = useState(mode === 'edit' && partner?.person ? personLabel(partner.person) : '');
     const [associationId, setAssociationId] = useState(mode === 'edit' && partner ? partner.association_id : '');
     const [dateBegin, setDateBegin] = useState(partner?.date_begin || '');
     const [dateEnd, setDateEnd] = useState(partner?.date_end || '');
     const [stateId, setStateId] = useState(mode === 'edit' && partner ? partner.state_id : '');
     const [observations, setObservations] = useState(partner?.observations || '');
-    const [beneficiaries, setBeneficiaries] = useState(() =>
-        mode === 'edit' && partner ? (partner.beneficiaries || []).map(beneficiaryRowFromApi) : []
-    );
     const [submitting, setSubmitting] = useState(false);
 
     const associationOptions = (options.associations || []).map((a) => ({ id: a.id, label: a.name }));
     const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: s.title }));
 
-    const addBeneficiary = () =>
-        setBeneficiaries((prev) => [...prev, emptyBeneficiaryRow(`new-${Date.now()}-${prev.length}`)]);
-
-    const updateBeneficiary = (index, field, value) =>
-        setBeneficiaries((prev) => prev.map((b, i) => (i === index ? { ...b, [field]: value } : b)));
-
-    const removeBeneficiary = (index) => setBeneficiaries((prev) => prev.filter((_, i) => i !== index));
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!personId || !associationId || !stateId || !dateBegin) {
             toast.error('Complete los campos obligatorios del socio.');
-            return;
-        }
-        const valid = beneficiaries.filter(
-            (b) => b.person_id === null || b.person_id === undefined || b.person_id === ''
-        );
-        const halfFilled = beneficiaries.find(
-            (b) => Boolean(b.person_id && b.person_id !== '') !== Boolean(b.relationship_id)
-        );
-        if (halfFilled) {
-            toast.error('Cada beneficiario requiere persona y parentesco.');
-            return;
-        }
-        if (valid.length > 0 && valid.length < beneficiaries.length) {
-            toast.error('Complete la persona de cada beneficiario.');
             return;
         }
         setSubmitting(true);
@@ -110,20 +50,6 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                 date_begin: dateBegin,
                 date_end: dateEnd || null,
                 observations: observations || null,
-                beneficiaries: beneficiaries
-                    .filter((b) => b.person_id && b.relationship_id)
-                    .map((b) => ({
-                        person_id: b.person_id,
-                        relationship_id: b.relationship_id,
-                        type_benefit_id: b.type_benefit_id || null,
-                        history_state_id: b.history_state_id || null,
-                        date_begin: b.date_begin || null,
-                        date_end: b.date_end || null,
-                        weight: b.weight === '' ? null : b.weight,
-                        height: b.height === '' ? null : b.height,
-                        hmg: b.hmg === '' ? null : b.hmg,
-                        reason_disqualification_id: b.reason_disqualification_id || null,
-                    })),
             };
 
             if (mode === 'edit') {
@@ -131,13 +57,11 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                 toast.success('Socio actualizado correctamente.');
             } else {
                 await http.post(`${BASE}/partners`, payload);
-                toast.success('Socio y beneficiarios creados exitosamente.');
+                toast.success('Socio creado exitosamente.');
             }
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
-            toast.error(message || 'Ocurrió un error al guardar el socio.');
+            toast.error(errorMessage(err, 'Ocurrió un error al guardar el socio.'));
         } finally {
             setSubmitting(false);
         }
@@ -150,7 +74,7 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
             title={mode === 'edit' ? 'Editar Socio' : 'Nuevo Socio'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-user-plus'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
-            maxWidth="sm:max-w-4xl"
+            maxWidth="sm:max-w-2xl"
         >
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
                 <div>
@@ -158,9 +82,9 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                     <Combobox
                         value={personId}
                         onChange={setPersonId}
-                        onSelect={(opt) => setPersonLabel(opt.label)}
+                        onSelect={(opt) => setPersonLabelState(opt.label)}
                         onSearch={peopleSearch}
-                        selectedLabel={personLabel}
+                        selectedLabel={personLabelState}
                         placeholder="Buscar persona por nombre o DNI..."
                         minQuery={2}
                     />
@@ -193,41 +117,12 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                     />
                 </div>
 
-                <div className="border-t-2 border-wheat pt-4 mt-4">
-                    <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-bold text-charcoal flex items-center gap-2">
-                            <i className="fas fa-users text-leaf" /> Beneficiarios
-                        </h4>
-                        <button type="button" onClick={addBeneficiary} className="btn-secondary text-xs">
-                            <i className="fas fa-plus mr-1" /> Agregar
-                        </button>
-                    </div>
-                    <div className="space-y-3">
-                        {beneficiaries.length === 0 && (
-                            <p className="text-sm text-earth bg-base rounded-lg px-4 py-3">
-                                No hay beneficiarios registrados para este socio.
-                            </p>
-                        )}
-                        {beneficiaries.map((b, i) => (
-                            <BeneficiaryForm
-                                key={b.key}
-                                row={b}
-                                index={i}
-                                options={options}
-                                onChange={updateBeneficiary}
-                                onRemove={removeBeneficiary}
-                                peopleSearch={peopleSearch}
-                            />
-                        ))}
-                    </div>
-                </div>
-
                 <div className="flex gap-3 pt-2">
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">
+                    <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">
                         Cancelar
                     </button>
                 </div>
@@ -365,7 +260,7 @@ function SocioViewModal({ partner, onClose }) {
                 )}
             </div>
             <div className="px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary w-full text-xs sm:text-sm">
+                <button type="button" onClick={onClose} className="btn-danger w-full text-xs sm:text-sm">
                     Cerrar
                 </button>
             </div>
@@ -441,8 +336,8 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
             toast.success('Socio y beneficiarios eliminados exitosamente.');
             setDeleting(null);
             load();
-        } catch {
-            toast.error('No se pudo eliminar el socio.');
+        } catch (err) {
+            toast.error(errorMessage(err, 'No se pudo eliminar el socio.'));
             setDeleting(null);
         }
     };
@@ -508,11 +403,9 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                     <table className="data-table w-full text-xs sm:text-sm min-w-[600px]">
                         <thead>
                             <tr>
-                                <th className="px-3 sm:px-4 py-3 text-left">ID</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Socio</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">DNI</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Club</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Benef.</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
@@ -520,7 +413,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                         <tbody>
                             {data.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7}>
+                                    <td colSpan={5}>
                                         <div className="empty-state">
                                             <i className="fas fa-users" />
                                             <p>No hay socios registrados</p>
@@ -530,7 +423,6 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                             ) : (
                                 data.data.map((partner) => (
                                     <tr key={partner.id} className="row-enter">
-                                        <td className="px-3 sm:px-4 py-3">#{partner.id}</td>
                                         <td className="px-3 sm:px-4 py-3 font-medium">
                                             {partner.person
                                                 ? `${partner.person.names} ${partner.person.father_lastname}`
@@ -538,17 +430,6 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                                         </td>
                                         <td className="px-3 sm:px-4 py-3">{partner.person?.dni || 'Sin DNI'}</td>
                                         <td className="px-3 sm:px-4 py-3">{partner.association?.name || 'Sin club'}</td>
-                                        <td className="px-3 sm:px-4 py-3">
-                                            <span
-                                                className={`badge ${
-                                                    partner.state && partner.state.title === 'Activo'
-                                                        ? 'badge-active'
-                                                        : 'badge-inactive'
-                                                }`}
-                                            >
-                                                {partner.state?.title || 'Sin estado'}
-                                            </span>
-                                        </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
                                             <span className="font-bold text-leaf">{partner.beneficiaries_count ?? 0}</span>
                                         </td>
@@ -593,12 +474,10 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
             )}
 
             {data && (
-                <div className="mt-4">
-                    {loading && (
-                        <p className="text-xs text-earth text-center mb-2">
-                            <i className="fas fa-spinner fa-spin mr-1" /> Cargando...
-                        </p>
-                    )}
+                <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                    <span className="text-xs sm:text-sm text-earth font-medium">
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
+                    </span>
                     <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
                 </div>
             )}
@@ -625,6 +504,10 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                 onConfirm={confirmDelete}
                 title="Eliminar Socio"
                 message="Se eliminará este socio y todos sus beneficiarios de forma permanente."
+                details={deleting ? [
+                    { label: 'Socio', value: personFullName(deleting.person) },
+                    { label: 'DNI', value: deleting.person?.dni },
+                ] : []}
             />
         </>
     );

@@ -5,9 +5,12 @@ import axios from 'axios';
  * - withCredentials: envía la cookie de sesión en cada request.
  * - Envía XSRF-TOKEN / X-CSRF-TOKEN automáticamente para los verbos mutantes.
  * - Si la sesión expiró (401), redirige al login.
+ * - timeout: evita que un request se quede "colgado" indefinidamente
+ *   (p. ej. combos de búsqueda) si la conexión o el servidor no responden.
  */
 const http = axios.create({
     withCredentials: true,
+    timeout: 15000,
     headers: {
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',

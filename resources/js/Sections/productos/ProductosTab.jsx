@@ -6,6 +6,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
 import { fmtDate, money } from './format';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/productos-pecosas';
 
@@ -55,9 +56,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
             }
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
-            toast.error(message || 'Ocurrió un error al guardar el producto.');
+            toast.error(errorMessage(err, 'Ocurrió un error al guardar el producto.'));
         } finally {
             setSubmitting(false);
         }
@@ -106,7 +105,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-danger">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
@@ -158,7 +157,7 @@ function ProductViewModal({ product, onClose, onEdit }) {
                 </div>
             </div>
             <div className="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
+                <button type="button" onClick={onClose} className="btn-danger">Cerrar</button>
                 <button type="button" onClick={() => { onClose(); onEdit(); }} className="btn-primary">
                     <i className="fas fa-edit mr-2" /> Editar
                 </button>
@@ -184,7 +183,6 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
     const [detData, setDetData] = useState(null);
     const [detLoading, setDetLoading] = useState(true);
     const [detPage, setDetPage] = useState(1);
-    const [detShow, setDetShow] = useState(true);
 
     const debouncedFilters = useDebounced(filters, 400);
     const debouncedDetFilters = useDebounced(detFilters, 400);
@@ -275,8 +273,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
             setDeleting(null);
             load();
         } catch (err) {
-            const data = err.response?.data;
-            toast.error(data?.message || 'No se pudo eliminar el producto.');
+            toast.error(errorMessage(err, 'No se pudo eliminar el producto.'));
             setDeleting(null);
         }
     };
@@ -407,21 +404,17 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
             {data && (
                 <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
                     <span className="text-xs sm:text-sm text-earth font-medium">
-                        Mostrando {data.from ?? 0} - {data.to ?? 0} de {data.total ?? 0} registros
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
                     </span>
                     <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
                 </div>
             )}
 
-            {detShow && (
-                <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden mt-6">
-                    <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat flex-wrap gap-3">
+            <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden mt-6">
+                    <div className="px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat">
                         <h3 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
                             <i className="fas fa-boxes text-leaf" /> Detalle Productos
                         </h3>
-                        <button type="button" onClick={() => setDetShow(false)} className="btn-secondary text-xs">
-                            <i className="fas fa-chevron-up mr-1" /> Ocultar
-                        </button>
                     </div>
                     <div className="p-4 sm:p-6">
                         <form onSubmit={(e) => e.preventDefault()} className="mb-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -535,7 +528,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
 
                             <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-4">
                                 <span className="text-xs sm:text-sm text-earth font-medium">
-                                    Mostrando {detData.from ?? 0} - {detData.to ?? 0} de {detData.total ?? 0} registros
+                                    Mostrando {detData.meta?.from ?? 0} - {detData.meta?.to ?? 0} de {detData.meta?.total ?? 0} registros
                                 </span>
                                 <Pagination links={detData.meta?.links} meta={detData.meta} onPage={setDetPage} loading={detLoading} />
                             </div>
@@ -543,7 +536,6 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         )}
                     </div>
                 </div>
-            )}
 
             {formOpen && (
                 <ProductFormModal
@@ -570,7 +562,11 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Producto"
-                message={deleting ? `Se eliminará el producto "${deleting.title}" de forma permanente.` : ''}
+                message="Se eliminará este producto de forma permanente."
+                details={deleting ? [
+                    { label: 'Producto', value: deleting.title },
+                    { label: 'Código', value: deleting.code },
+                ] : []}
             />
         </>
     );

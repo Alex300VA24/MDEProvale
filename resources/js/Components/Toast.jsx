@@ -44,7 +44,7 @@ export function ToastProvider({ children }) {
                         >
                             <i className={`fas ${s.icon} ${s.iconColor} mt-0.5 text-lg`} />
                             <p className="text-sm font-semibold flex-1 text-charcoal">{t.message}</p>
-                            <button type="button" onClick={() => dismiss(t.id)} className="text-earth hover:text-charcoal">
+                            <button type="button" onClick={() => dismiss(t.id)} className="text-earth hover:text-clay">
                                 <i className="fas fa-xmark" />
                             </button>
                         </div>

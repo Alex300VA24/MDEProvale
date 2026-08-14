@@ -25,11 +25,11 @@ const SECTION_COMPONENTS = {
 // Ítems del menú. `modules` = slugs permitidos que habilitan el ítem (vacío = siempre visible).
 const NAV_ITEMS = [
     { key: 'inicio', label: 'Inicio', icon: 'fa-home', modules: [] },
-    { key: 'socios', label: 'Socios', icon: 'fa-user-friends', modules: ['socios-beneficiarios'] },
-    { key: 'productos', label: 'Pecosas', icon: 'fa-box', modules: ['productos', 'pecosas'] },
-    { key: 'comites', label: 'Comités', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
+    { key: 'socios', label: 'Socios y Beneficiarios', icon: 'fa-user-friends', modules: ['socios-beneficiarios'] },
+    { key: 'productos', label: 'Productos y Pecosas', icon: 'fa-box', modules: ['productos', 'pecosas'] },
+    { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'movimientos', label: 'Movimientos', icon: 'fa-exchange-alt', modules: ['movimientos'] },
-    { key: 'mantenimiento', label: 'Mantenimiento', icon: 'fa-screwdriver-wrench', modules: ['mantenimiento'] },
+    { key: 'mantenimiento', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['mantenimiento'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
 ];
 
@@ -211,34 +211,48 @@ export default function Dashboard() {
                         <i className="fas fa-bars text-sm sm:text-base" />
                     </button>
 
-                    <header id="top-header" className="flex items-center justify-between px-4 sm:px-8 h-14 sm:h-[72px]">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center text-white text-base overflow-hidden flex-shrink-0">
-                                <img src="/img/logovaso.svg" alt="PROVALE" className="w-6 h-6 object-contain" />
+                    <header id="top-header" className="relative flex items-center justify-between px-4 sm:px-8 h-16 sm:h-20">
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md ring-1 ring-black/5">
+                                <img src="/img/logovaso.svg" alt="PROVALE" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
                             </div>
-                            <h2 className="text-navy font-bold text-[13px] sm:text-[15px] uppercase tracking-wider truncate">Sistema de Gestión PROVALE</h2>
+                            <div className="min-w-0">
+                                <div className="hidden sm:flex items-center gap-1.5 mb-0.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-leaf pulse-dot flex-shrink-0" />
+                                    <span className="text-leaf text-[10px] font-bold uppercase tracking-widest">Sistema activo</span>
+                                </div>
+                                <h2 className="text-navy font-extrabold text-[14px] sm:text-[17px] tracking-tight truncate leading-tight">
+                                    Sistema de Gestión <span className="text-blue">PROVALE</span>
+                                </h2>
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                             <button
                                 type="button"
                                 onClick={openNotifications}
-                                className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all"
+                                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-sun-light flex items-center justify-center text-sun hover:bg-sun hover:text-white hover:shadow-lg hover:shadow-sun/30 hover:-translate-y-0.5 transition-all"
+                                title="Notificaciones"
                             >
-                                <i className="fas fa-bell text-sm sm:text-base" style={{ color: '#1A2E4A' }} />
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 sm:w-[22px] sm:h-[22px]" aria-hidden="true">
+                                    <path d="M12 2.25c-.966 0-1.75.784-1.75 1.75v.61C7.36 5.24 5.25 7.9 5.25 11v3.19c0 .82-.32 1.6-.9 2.19l-.99 1a1.417 1.417 0 0 0 1 2.42h15.28a1.417 1.417 0 0 0 1-2.42l-.99-1a3.12 3.12 0 0 1-.9-2.19V11c0-3.1-2.11-5.76-5-6.39V4c0-.966-.784-1.75-1.75-1.75Z" />
+                                    <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0h-5Z" />
+                                </svg>
                                 {notifCount > 0 && (
-                                    <span className="notification-badge absolute -top-1 -right-1 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1">
+                                    <span className="notification-badge absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm">
                                         {notifLabel}
                                     </span>
                                 )}
                             </button>
 
-                            <div className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-mist bg-base hover:bg-mist transition-all cursor-pointer">
-                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-base">
+                            <div className="hidden sm:block w-px h-9 bg-gradient-to-b from-transparent via-mist to-transparent" />
+
+                            <div className="hidden sm:flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full border border-mist bg-white shadow-sm hover:shadow-md hover:border-sky/50 transition-all">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-sm ring-2 ring-white shadow-sm flex-shrink-0">
                                     {(user?.name || 'A').charAt(0).toUpperCase()}
                                 </div>
-                                <div>
-                                    <div className="text-navy font-bold text-sm leading-none mb-1">{user?.name ?? 'Usuario'}</div>
+                                <div className="leading-tight">
+                                    <div className="text-navy font-bold text-sm">{user?.name ?? 'Usuario'}</div>
                                     <div className="text-slate text-[11px] font-semibold">{user?.rol ?? ''}</div>
                                 </div>
                             </div>
@@ -246,7 +260,7 @@ export default function Dashboard() {
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-coral-light text-coral font-bold text-sm border-2 border-transparent hover:bg-coral hover:text-white transition-all"
+                                className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-coral-light text-coral font-bold text-xs sm:text-sm border border-transparent hover:bg-coral hover:text-white hover:shadow-lg hover:shadow-coral/30 hover:-translate-y-0.5 transition-all"
                             >
                                 <i className="fas fa-power-off" />
                                 <span className="hidden md:inline">Salir</span>
@@ -256,7 +270,11 @@ export default function Dashboard() {
 
                     <main className="flex-1 p-4 sm:p-6 lg:p-8">
                         <Suspense fallback={<SectionSkeleton />}>
-                            <ActiveComponent />
+                            {activeSection === 'inicio' ? (
+                                <ActiveComponent onNavigate={navigate} />
+                            ) : (
+                                <ActiveComponent />
+                            )}
                         </Suspense>
                     </main>
                 </div>
@@ -279,7 +297,7 @@ export default function Dashboard() {
                                 <button
                                     type="button"
                                     onClick={closeNotifications}
-                                    className="w-8 h-8 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all"
+                                    className="modal-close-btn"
                                 >
                                     <i className="fas fa-times" />
                                 </button>

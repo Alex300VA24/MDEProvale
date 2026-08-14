@@ -37,7 +37,7 @@ class People extends Model
 
     public function beneficiaries()
     {
-        return $this->hasMany(Beneficiarie::class);
+        return $this->hasMany(Beneficiarie::class, 'person_id');
     }
 
     public function getAgeArray(): array

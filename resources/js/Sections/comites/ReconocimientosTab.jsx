@@ -7,6 +7,7 @@ import Pagination from '../../Components/Pagination';
 import ResolucionExternaModal from './ResolucionExternaModal';
 import { useDebounced } from '../socios/hooks';
 import { fmtDate, fmtDateTime, vigenciaBadge, stateBadge, datetimeInputValue, datetimeToSubmit } from './format';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
 
@@ -53,9 +54,7 @@ function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }
             }
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
-            toast.error(message || 'Ocurrió un error al guardar la resolución.');
+            toast.error(errorMessage(err, 'Ocurrió un error al guardar la resolución.'));
         } finally {
             setSubmitting(false);
         }
@@ -99,7 +98,7 @@ function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-danger">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
@@ -142,7 +141,7 @@ function ReconocimientoViewModal({ resolution, onClose, onEdit, onOpenExterna })
                 </div>
             </div>
             <div className="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
+                <button type="button" onClick={onClose} className="btn-danger">Cerrar</button>
                 <button type="button" onClick={() => { onClose(); onOpenExterna(); }} className="btn-primary">
                     <i className="fas fa-external-link-alt mr-2" /> Consultar en Portal
                 </button>
@@ -221,8 +220,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
             setDeleting(null);
             load();
         } catch (err) {
-            const data = err.response?.data;
-            toast.error(data?.message || 'No se pudo eliminar la resolución.');
+            toast.error(errorMessage(err, 'No se pudo eliminar la resolución.'));
             setDeleting(null);
         }
     };
@@ -371,7 +369,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
             {data && (
                 <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
                     <span className="text-xs sm:text-sm text-earth font-medium">
-                        Mostrando {data.from ?? 0} - {data.to ?? 0} de {data.total ?? 0} registros
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
                     </span>
                     <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
                 </div>
@@ -410,7 +408,11 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Resolución"
-                message={deleting ? `Se eliminará la resolución "${deleting.document}" de forma permanente.` : ''}
+                message="Se eliminará esta resolución de forma permanente."
+                details={deleting ? [
+                    { label: 'Documento', value: deleting.document },
+                    { label: 'Fecha', value: fmtDateTime(deleting.date_document) },
+                ] : []}
             />
         </>
     );

@@ -10,7 +10,7 @@ class UpdatePartnerRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('update', Partner::class);
+        return Gate::allows('update', $this->route('partner') ?? Partner::class);
     }
 
     public function rules(): array

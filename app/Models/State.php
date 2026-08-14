@@ -41,7 +41,7 @@ class State extends Model
     
     public function beneficiaries()
     {
-        return $this->hasMany(Beneficiarie::class);
+        return $this->hasMany(BeneficiaryHistory::class);
     }
 
     public function pecosas()

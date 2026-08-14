@@ -4,13 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use App\Models\People;
 
 class UpdatePersonaRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return Gate::allows('update', People::class);
+        return Gate::allows('update', $this->route('person') ?? People::class);
     }
 
     public function rules(): array
@@ -19,7 +20,13 @@ class UpdatePersonaRequest extends FormRequest
             'names' => 'sometimes|required|string|max:100',
             'father_lastname' => 'sometimes|required|string|max:100',
             'mother_lastname' => 'sometimes|required|string|max:100',
-            'dni' => 'sometimes|required|string|max:8|unique:people,dni,' . $this->route('person'),
+            'dni' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:8',
+                Rule::unique('people', 'dni')->ignore($this->route('person')?->id),
+            ],
             'birthdate' => 'nullable|date',
             'gender' => 'nullable|in:M,F',
             'address' => 'nullable|string|max:255',

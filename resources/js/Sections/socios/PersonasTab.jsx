@@ -7,6 +7,7 @@ import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from './hooks';
 import { formatDate, personFullName } from './format';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -59,12 +60,7 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
             toast.success(mode === 'edit' ? 'Persona actualizada correctamente.' : 'Persona creada exitosamente.');
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            if (data?.errors) {
-                toast.error(Object.values(data.errors)[0][0]);
-            } else {
-                toast.error(data?.message || 'Ocurrió un error al guardar la persona.');
-            }
+            toast.error(errorMessage(err, 'Ocurrió un error al guardar la persona.'));
         } finally {
             setSubmitting(false);
         }
@@ -183,7 +179,7 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">
+                    <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">
                         Cancelar
                     </button>
                 </div>
@@ -237,7 +233,7 @@ function PersonaViewModal({ persona, onClose }) {
                 </div>
             </div>
             <div className="px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary w-full text-xs sm:text-sm">
+                <button type="button" onClick={onClose} className="btn-danger w-full text-xs sm:text-sm">
                     Cerrar
                 </button>
             </div>
@@ -308,8 +304,7 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
             setDeleting(null);
             load();
         } catch (err) {
-            const data = err.response?.data;
-            toast.error(data?.message || 'No se pudo eliminar la persona.');
+            toast.error(errorMessage(err, 'No se pudo eliminar la persona.'));
             setDeleting(null);
         }
     };
@@ -455,12 +450,10 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
             )}
 
             {data && (
-                <div className="mt-4">
-                    {loading && (
-                        <p className="text-xs text-earth text-center mb-2">
-                            <i className="fas fa-spinner fa-spin mr-1" /> Cargando...
-                        </p>
-                    )}
+                <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                    <span className="text-xs sm:text-sm text-earth font-medium">
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
+                    </span>
                     <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
                 </div>
             )}
@@ -487,6 +480,10 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                 onConfirm={confirmDelete}
                 title="Eliminar Persona"
                 message="Se eliminará esta persona de forma permanente. Si está asociada a un socio o beneficiario no se podrá eliminar."
+                details={deleting ? [
+                    { label: 'Nombre', value: personFullName(deleting) },
+                    { label: 'DNI', value: deleting.dni },
+                ] : []}
             />
         </>
     );

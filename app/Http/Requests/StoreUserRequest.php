@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
@@ -25,7 +26,7 @@ class StoreUserRequest extends FormRequest
             'cui' => 'nullable|string|max:1',
             'rol_id' => 'required|exists:rols,id',
             'state_id' => 'required|exists:states,id',
-            'password' => 'required|string|min:8',
+            'password' => ['required', 'string', Password::min(8)->numbers()->symbols()],
         ];
     }
 }

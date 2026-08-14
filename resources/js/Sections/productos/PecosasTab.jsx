@@ -3,9 +3,11 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
+import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
 import { dateValue, detailOptionLabel, fmtDate } from './format';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/productos-pecosas';
 
@@ -55,11 +57,11 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
     const storekeeper = (options.responsibles || []).find((r) => r.type === 'storekeeper');
 
     const associations = (options.associations || []).filter((a) => a && a.id !== undefined && a.id !== null);
+    const clubOptions = associations.map((a) => ({ id: a.id, label: a.name }));
     const detailOptions = (options.detail_products || []).filter((dp) => Number(dp.available_stock || 0) > 0);
 
-    const handleAssociationChange = (e) => {
-        const value = e.target.value;
-        setAssociationId(value);
+    const handleAssociationChange = (value) => {
+        setAssociationId(value ?? '');
         const assoc = associations.find((a) => String(a.id) === String(value));
         const pId = assoc?.president_partner_id;
         setManagingPartnerId(pId ?? '');
@@ -129,9 +131,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
             }
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
-            toast.error(message || 'Ocurrió un error al guardar la pecosa.');
+            toast.error(errorMessage(err, 'Ocurrió un error al guardar la pecosa.'));
         } finally {
             setSubmitting(false);
         }
@@ -158,12 +158,13 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                     </div>
                     <div>
                         <label className={labelCls}>Club de Madres *</label>
-                        <select value={associationId} onChange={handleAssociationChange} className={inputCls} required>
-                            <option value="">Seleccionar club...</option>
-                            {associations.map((a) => (
-                                <option key={a.id} value={a.id}>{a.name}</option>
-                            ))}
-                        </select>
+                        <Combobox
+                            value={associationId}
+                            onChange={handleAssociationChange}
+                            options={clubOptions}
+                            placeholder="Buscar club..."
+                            allowClear
+                        />
                     </div>
                     <div>
                         <label className={labelCls}>Fecha de Entrega *</label>
@@ -263,7 +264,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar Pecosa' : 'Guardar Pecosa'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">Cancelar</button>
                 </div>
             </form>
         </Modal>
@@ -338,7 +339,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                 <a href={`/productos-pecosas/pecosas/${pecosa.id}/comprobante`} target="_blank" rel="noreferrer" className="btn-secondary flex-1 text-center">
                     <i className="fas fa-file-pdf mr-2" /> Comprobante
                 </a>
-                <button type="button" onClick={onClose} className="btn-secondary flex-1">Cerrar</button>
+                <button type="button" onClick={onClose} className="btn-danger flex-1">Cerrar</button>
             </div>
         </Modal>
     );
@@ -413,8 +414,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
             setDeleting(null);
             load();
         } catch (err) {
-            const data = err.response?.data;
-            toast.error(data?.message || 'No se pudo eliminar la pecosa.');
+            toast.error(errorMessage(err, 'No se pudo eliminar la pecosa.'));
             setDeleting(null);
         }
     };
@@ -432,12 +432,13 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                     />
                 </div>
                 <div className="flex-1 min-w-44">
-                    <select value={filters.association_id} onChange={(e) => setFilter('association_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Clubes</option>
-                        {(options.associations || []).map((a) => (
-                            <option key={a.id} value={a.id}>{a.name}</option>
-                        ))}
-                    </select>
+                    <Combobox
+                        value={filters.association_id}
+                        onChange={(v) => setFilter('association_id', v ?? '')}
+                        options={(options.associations || []).map((a) => ({ id: a.id, label: a.name }))}
+                        placeholder="Todos los Clubes"
+                        allowClear
+                    />
                 </div>
                 <div className="flex-1 min-w-36">
                     <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
@@ -566,7 +567,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
             {data && (
                 <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
                     <span className="text-xs sm:text-sm text-earth font-medium">
-                        Mostrando {data.from ?? 0} - {data.to ?? 0} de {data.total ?? 0} registros
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
                     </span>
                     <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
                 </div>
@@ -594,6 +595,11 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                 onConfirm={confirmDelete}
                 title="Eliminar Pecosa"
                 message="Se eliminará esta pecosa, se revertirá el stock y se borrarán sus movimientos de forma permanente."
+                details={deleting ? [
+                    { label: 'N° Pecosa', value: deleting.pecosa_number },
+                    { label: 'Comité', value: deleting.association?.name },
+                    { label: 'Fecha', value: fmtDate(deleting.delivery_date) },
+                ] : []}
             />
         </>
     );

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
+import { useDebounced } from '../socios/hooks';
+import errorMessage from '../../errorMessage';
 
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
@@ -20,30 +22,35 @@ export default function ReparticionTab() {
     const [notice, setNotice] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    const consultar = async () => {
+    const debouncedYear = useDebounced(year, 500);
+
+    useEffect(() => {
+        if (!debouncedYear || debouncedYear < 2000 || debouncedYear > 2100) return;
+
+        let active = true;
         setLoading(true);
-        setReport(null);
         setNotice(null);
-        try {
-            const res = await http.get('/api/dashboard/movimientos/reparticion', { params: { year, month } });
-            setReport(res.data);
-        } catch (err) {
-            const message = err.response?.data?.message || 'No se pudo generar el reporte de repartición.';
-            setNotice(message);
-        } finally {
-            setLoading(false);
-        }
-    };
+        (async () => {
+            try {
+                const res = await http.get('/api/dashboard/movimientos/reparticion', { params: { year: debouncedYear, month } });
+                if (active) setReport(res.data);
+            } catch (err) {
+                if (active) {
+                    setReport(null);
+                    setNotice(errorMessage(err, 'No se pudo generar el reporte de repartición.'));
+                }
+            } finally {
+                if (active) setLoading(false);
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, [debouncedYear, month]);
 
     return (
         <>
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    consultar();
-                }}
-                className="mb-6 flex flex-col sm:flex-row items-end gap-3 sm:gap-4 flex-wrap"
-            >
+            <div className="mb-6 flex flex-col sm:flex-row items-end gap-3 sm:gap-4 flex-wrap">
                 <div className="w-full sm:w-32">
                     <label className={labelCls}>Año</label>
                     <input type="number" min="2000" max="2100" value={year} onChange={(e) => setYear(Number(e.target.value))} className={inputCls} />
@@ -56,15 +63,17 @@ export default function ReparticionTab() {
                         ))}
                     </select>
                 </div>
-                <button type="submit" disabled={loading} className="btn-primary text-xs sm:text-sm">
-                    <i className={`fas ${loading ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'} mr-2`} /> Consultar
-                </button>
+                {loading && (
+                    <span className="text-xs sm:text-sm text-earth font-semibold">
+                        <i className="fas fa-spinner fa-spin mr-2" /> Cargando...
+                    </span>
+                )}
                 {report && (
                     <a href={report.pdf_url} target="_blank" rel="noreferrer" className="btn-secondary text-xs sm:text-sm">
                         <i className="fas fa-file-pdf mr-2" /> Descargar PDF
                     </a>
                 )}
-            </form>
+            </div>
 
             {notice && (
                 <div className="empty-state">

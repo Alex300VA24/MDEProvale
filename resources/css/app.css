@@ -160,6 +160,30 @@
         opacity: 1 !important;
     }
 
+    /* Panel de Inicio (hero, tarjetas KPI, gráficas) */
+    .stat-card {
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+    }
+    .chart-wrap {
+        position: relative;
+    }
+    .quick-btn {
+        transition: all 0.25s ease;
+    }
+    .quick-btn:hover {
+        transform: translateY(-3px);
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(1.3); }
+    }
+    .pulse-dot {
+        animation: pulse-dot 2s ease-in-out infinite;
+    }
+
     @media (max-width: 640px) {
         .btn-action { width: 2.25rem; height: 2.25rem; }
     }
@@ -218,10 +242,10 @@
         @apply flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat;
     }
     .modal-close-btn {
-        @apply w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth transition-all duration-200;
+        @apply w-8 h-8 rounded-xl bg-clay-light border-2 border-transparent flex items-center justify-center text-clay transition-all duration-200;
     }
     .modal-close-btn:hover {
-        @apply bg-wheat;
+        @apply bg-clay text-white;
     }
 
     /* Estado vacío ("sin registros") — antes cada tabla lo escribía a mano distinto */
@@ -425,9 +449,22 @@
     position: sticky;
     top: 0;
     z-index: 40;
-    background: #fff;
-    border-bottom: 2px solid #D4E4F7;
-    box-shadow: 0 2px 16px rgba(30, 87, 153, 0.08);
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0.9) 0%, rgba(238, 244, 252, 0.85) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(212, 228, 247, 0.7);
+    box-shadow: 0 4px 24px rgba(30, 87, 153, 0.07);
+}
+
+#top-header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: linear-gradient(90deg, #1E5799 0%, #4A90D9 35%, #0E8A7A 70%, transparent 100%);
+    opacity: 0.5;
 }
 
 .logo-text,
@@ -448,6 +485,11 @@
 
 .nav-text {
     transform: translateX(-8px);
+    /* Los nombres completos de sección (p. ej. "Socios y Beneficiarios") no
+       entran en una sola línea dentro del sidebar sin agrandarlo; se permite
+       el salto de línea en vez de recortar o desbordar el texto. */
+    white-space: normal;
+    line-height: 1.2;
 }
 
 #sidebar.expanded .nav-text {

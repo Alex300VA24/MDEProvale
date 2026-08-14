@@ -3,6 +3,7 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
 
@@ -10,10 +11,30 @@ const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wide
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
-function errorMessage(err, fallback) {
-    const data = err.response?.data;
-    if (data?.errors) return Object.values(data.errors)[0]?.[0] || fallback;
-    return data?.message || fallback;
+const PASSWORD_RULES = [
+    { key: 'length', label: 'Al menos 8 caracteres', test: (v) => v.length >= 8 },
+    { key: 'number', label: 'Al menos 1 número', test: (v) => /\d/.test(v) },
+    { key: 'special', label: 'Al menos 1 caracter especial', test: (v) => /[^A-Za-z0-9]/.test(v) },
+];
+
+function isPasswordValid(password) {
+    return PASSWORD_RULES.every((rule) => rule.test(password));
+}
+
+function PasswordRequirements({ password }) {
+    return (
+        <ul className="mt-2 space-y-1">
+            {PASSWORD_RULES.map((rule) => {
+                const met = rule.test(password);
+                return (
+                    <li key={rule.key} className={`flex items-center gap-2 text-xs font-semibold ${met ? 'text-leaf' : 'text-clay'}`}>
+                        <i className={`fas ${met ? 'fa-circle-check' : 'fa-circle-xmark'}`} />
+                        {rule.label}
+                    </li>
+                );
+            })}
+        </ul>
+    );
 }
 
 function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
@@ -29,6 +50,7 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
     const [rolId, setRolId] = useState(usuario?.rol_id || '');
     const [stateId, setStateId] = useState(usuario?.state_id || '');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -37,8 +59,8 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
             toast.error('Complete los campos obligatorios.');
             return;
         }
-        if (mode === 'create' && (!password || password.length < 8)) {
-            toast.error('La contraseña debe tener al menos 8 caracteres.');
+        if ((mode === 'create' || password) && !isPasswordValid(password)) {
+            toast.error('La contraseña no cumple los requisitos.');
             return;
         }
         setSubmitting(true);
@@ -114,21 +136,33 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
                     </div>
                     <div>
                         <label className={labelCls}>{mode === 'edit' ? 'Nueva Contraseña' : 'Contraseña *'}</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className={inputCls}
-                            placeholder={mode === 'edit' ? 'Dejar en blanco para no cambiar' : ''}
-                            required={mode === 'create'}
-                        />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className={`${inputCls} pr-10`}
+                                placeholder={mode === 'edit' ? 'Dejar en blanco para no cambiar' : ''}
+                                required={mode === 'create'}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((v) => !v)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-earth hover:text-charcoal"
+                                tabIndex={-1}
+                                title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                            >
+                                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} />
+                            </button>
+                        </div>
+                        {(mode === 'create' || password) && <PasswordRequirements password={password} />}
                     </div>
                 </div>
                 <div className="flex gap-3">
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">Cancelar</button>
                 </div>
             </form>
         </Modal>
@@ -312,7 +346,12 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Usuario"
-                message={`Se eliminará al usuario "${deleting?.full_name}" de forma permanente.`}
+                message="Se eliminará este usuario de forma permanente."
+                details={deleting ? [
+                    { label: 'Usuario', value: deleting.full_name },
+                    { label: 'Usuario (login)', value: deleting.username },
+                    { label: 'Rol', value: deleting.rol?.title },
+                ] : []}
             />
 
             <ConfirmDialog
@@ -320,7 +359,11 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                 onCancel={() => setResetting(null)}
                 onConfirm={confirmReset}
                 title="Restaurar Contraseña"
-                message={`La contraseña de "${resetting?.full_name}" se restaurará a su número de DNI.`}
+                message="La contraseña se restaurará a su número de DNI."
+                details={resetting ? [
+                    { label: 'Usuario', value: resetting.full_name },
+                    { label: 'Usuario (login)', value: resetting.username },
+                ] : []}
                 danger={false}
                 confirmLabel="Sí, restaurar"
             />

@@ -3,9 +3,11 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
+import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
 import { fmtDate, fmtDateTime, vigenciaBadge, stateBadge } from './format';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
 
@@ -30,6 +32,12 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     const [placeSectorId, setPlaceSectorId] = useState(mode === 'edit' && club ? club.place_sector_id ?? '' : '');
     const [typePremisesId, setTypePremisesId] = useState(mode === 'edit' && club ? club.type_premises_id ?? '' : '');
     const [submitting, setSubmitting] = useState(false);
+
+    const placeSectorOptions = (options.place_sectors || []).map((ps) => ({
+        id: ps.id,
+        label: `${ps.place ? ps.place.title : ''} - ${ps.sector ? ps.sector.title : ''}`,
+    }));
+    const resolutionOptions = (options.resolutions || []).map((r) => ({ id: r.id, label: resolutionLabel(r) }));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -59,9 +67,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
             }
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
-            toast.error(message || 'Ocurrió un error al guardar el comité.');
+            toast.error(errorMessage(err, 'Ocurrió un error al guardar el comité.'));
         } finally {
             setSubmitting(false);
         }
@@ -109,23 +115,23 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                     </div>
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Zona / Sector *</label>
-                        <select value={placeSectorId} onChange={(e) => setPlaceSectorId(e.target.value)} className={inputCls} required>
-                            <option value="">Seleccione</option>
-                            {(options.place_sectors || []).map((ps) => (
-                                <option key={ps.id} value={ps.id}>
-                                    {ps.place ? ps.place.title : ''} - {ps.sector ? ps.sector.title : ''}
-                                </option>
-                            ))}
-                        </select>
+                        <Combobox
+                            value={placeSectorId}
+                            onChange={(v) => setPlaceSectorId(v ?? '')}
+                            options={placeSectorOptions}
+                            placeholder="Buscar zona / sector..."
+                            allowClear
+                        />
                     </div>
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Resolución Vigente *</label>
-                        <select value={resolutionId} onChange={(e) => setResolutionId(e.target.value)} className={inputCls} required>
-                            <option value="">Seleccione</option>
-                            {(options.resolutions || []).map((r) => (
-                                <option key={r.id} value={r.id}>{resolutionLabel(r)}</option>
-                            ))}
-                        </select>
+                        <Combobox
+                            value={resolutionId}
+                            onChange={(v) => setResolutionId(v ?? '')}
+                            options={resolutionOptions}
+                            placeholder="Buscar resolución..."
+                            allowClear
+                        />
                     </div>
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Observación</label>
@@ -138,7 +144,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-danger">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
@@ -149,7 +155,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     );
 }
 
-function ClubViewModal({ club, onClose, onEdit }) {
+function ClubViewModal({ club, onClose }) {
     if (!club) return null;
     const status = vigenciaBadge(club.latest_resolution || club.resolution);
     return (
@@ -231,10 +237,7 @@ function ClubViewModal({ club, onClose, onEdit }) {
                 </div>
             </div>
             <div className="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
-                <button type="button" onClick={() => { onClose(); onEdit(); }} className="btn-primary">
-                    <i className="fas fa-edit mr-2" /> Editar
-                </button>
+                <button type="button" onClick={onClose} className="btn-danger">Cerrar</button>
             </div>
         </Modal>
     );
@@ -281,9 +284,7 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
             toast.success('Presidenta asignada correctamente.');
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            const message = data?.errors ? Object.values(data.errors)[0]?.[0] : data?.message;
-            toast.error(message || 'No se pudo asignar la presidenta.');
+            toast.error(errorMessage(err, 'No se pudo asignar la presidenta.'));
         } finally {
             setSubmitting(false);
         }
@@ -334,7 +335,7 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
                             </select>
                         )}
                         <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
+                            <button type="button" onClick={onClose} className="btn-danger">Cancelar</button>
                             <button type="submit" disabled={submitting || partners.length === 0} className="btn-primary">
                                 <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-check'} mr-2`} />
                                 Asignar
@@ -418,8 +419,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
             setDeleting(null);
             load();
         } catch (err) {
-            const data = err.response?.data;
-            toast.error(data?.message || 'No se pudo eliminar el comité.');
+            toast.error(errorMessage(err, 'No se pudo eliminar el comité.'));
             setDeleting(null);
         }
     };
@@ -452,12 +452,13 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                     </select>
                 </div>
                 <div className="flex-1 min-w-44">
-                    <select value={filters.resolution_id} onChange={(e) => setFilter('resolution_id', e.target.value)} className={inputCls}>
-                        <option value="">Todas las Resoluciones</option>
-                        {(options.resolutions || []).map((r) => (
-                            <option key={r.id} value={r.id}>{resolutionLabel(r)}</option>
-                        ))}
-                    </select>
+                    <Combobox
+                        value={filters.resolution_id}
+                        onChange={(v) => setFilter('resolution_id', v ?? '')}
+                        options={(options.resolutions || []).map((r) => ({ id: r.id, label: resolutionLabel(r) }))}
+                        placeholder="Todas las Resoluciones"
+                        allowClear
+                    />
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -581,7 +582,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
             {data && (
                 <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
                     <span className="text-xs sm:text-sm text-earth font-medium">
-                        Mostrando {data.from ?? 0} - {data.to ?? 0} de {data.total ?? 0} registros
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
                     </span>
                     <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
                 </div>
@@ -604,7 +605,6 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
             <ClubViewModal
                 club={viewing}
                 onClose={() => setViewing(null)}
-                onEdit={() => viewing && openEdit(viewing)}
             />
 
             {assigning && (
@@ -624,7 +624,11 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Comité"
-                message={deleting ? `Se eliminará el comité "${deleting.name}" de forma permanente.` : ''}
+                message="Se eliminará este comité de forma permanente."
+                details={deleting ? [
+                    { label: 'Comité', value: deleting.name },
+                    { label: 'Código', value: deleting.code },
+                ] : []}
             />
         </>
     );

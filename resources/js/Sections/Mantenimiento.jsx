@@ -4,18 +4,14 @@ import http from '../http';
 import { useToast } from '../Components/Toast';
 import Modal from '../Components/Modal';
 import ConfirmDialog from '../Components/ConfirmDialog';
+import Combobox from '../Components/Combobox';
+import errorMessage from '../errorMessage';
 
 const BASE = '/api/dashboard/mantenimiento';
 
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
-
-function errorMessage(err, fallback) {
-    const data = err.response?.data;
-    if (data?.errors) return Object.values(data.errors)[0]?.[0] || fallback;
-    return data?.message || fallback;
-}
 
 function ResponsibleCard({ title, subtitle, icon, iconClass, responsible, people, canEdit, onSaved }) {
     const toast = useToast();
@@ -27,6 +23,11 @@ function ResponsibleCard({ title, subtitle, icon, iconClass, responsible, people
         setPersonId(responsible?.person_id ?? '');
         setOpen(true);
     };
+
+    const peopleOptions = people.map((p) => ({
+        id: p.id,
+        label: `${p.names} ${p.father_lastname} ${p.mother_lastname} - ${p.dni}`,
+    }));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -69,20 +70,18 @@ function ResponsibleCard({ title, subtitle, icon, iconClass, responsible, people
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
                         <label className={labelCls}>Seleccionar Persona</label>
-                        <select value={personId} onChange={(e) => setPersonId(e.target.value)} className={inputCls} required>
-                            <option value="">Seleccionar...</option>
-                            {people.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.names} {p.father_lastname} {p.mother_lastname} - {p.dni}
-                                </option>
-                            ))}
-                        </select>
+                        <Combobox
+                            value={personId}
+                            onChange={(id) => setPersonId(id ?? '')}
+                            options={peopleOptions}
+                            placeholder="Buscar persona..."
+                        />
                     </div>
                     <div className="flex gap-3 pt-2">
                         <button type="submit" disabled={submitting} className="btn-primary flex-1">
                             <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> Guardar
                         </button>
-                        <button type="button" onClick={() => setOpen(false)} className="btn-secondary flex-1">Cancelar</button>
+                        <button type="button" onClick={() => setOpen(false)} className="btn-danger flex-1">Cancelar</button>
                     </div>
                 </form>
             </Modal>
@@ -143,7 +142,7 @@ function RacionFormModal({ mode, racion, onClose, onSaved }) {
                     <button type="submit" disabled={submitting} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-danger flex-1">Cancelar</button>
                 </div>
             </form>
         </Modal>
@@ -212,7 +211,7 @@ export default function Mantenimiento() {
         <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
                 <h3 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
-                    <i className="fas fa-tools text-leaf" /> Mantenimiento
+                    <i className="fas fa-sliders text-leaf" /> Responsables y Raciones
                 </h3>
             </div>
 
@@ -370,6 +369,11 @@ export default function Mantenimiento() {
                 onConfirm={confirmDelete}
                 title="Eliminar Ración"
                 message="Se eliminará esta ración de forma permanente."
+                details={deleting ? [
+                    { label: 'Año', value: deleting.year },
+                    { label: 'Ración Hojuelas', value: `${deleting.racion_hojuelas_gramos} g` },
+                    { label: 'Ración Leche', value: `${deleting.racion_leche_militros} ml` },
+                ] : []}
             />
         </div>
     );

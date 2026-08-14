@@ -19,18 +19,13 @@ class SearchController extends Controller
      */
     public function people(Request $request)
     {
-        $q = $request->get('q', '');
+        $q = trim((string) $request->get('q', ''));
         $limit = min((int) $request->get('limit', 30), 100);
 
         $query = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni']);
 
-        if (strlen($q) >= 2) {
-            $query->where(function ($qb) use ($q) {
-                $qb->where('names', 'like', "{$q}%")
-                    ->orWhere('father_lastname', 'like', "{$q}%")
-                    ->orWhere('mother_lastname', 'like', "{$q}%")
-                    ->orWhere('dni', 'like', "{$q}%");
-            });
+        if (mb_strlen($q) >= 2) {
+            $this->applyNameSearch($query, $q);
         }
 
         $results = $query->orderBy('names')->limit($limit)->get();
@@ -51,19 +46,14 @@ class SearchController extends Controller
      */
     public function partners(Request $request)
     {
-        $q = $request->get('q', '');
+        $q = trim((string) $request->get('q', ''));
         $limit = min((int) $request->get('limit', 30), 100);
 
         $query = Partner::select(['partners.id', 'partners.person_id'])
             ->join('people', 'partners.person_id', '=', 'people.id');
 
-        if (strlen($q) >= 2) {
-            $query->where(function ($qb) use ($q) {
-                $qb->where('people.names', 'like', "{$q}%")
-                    ->orWhere('people.father_lastname', 'like', "{$q}%")
-                    ->orWhere('people.mother_lastname', 'like', "{$q}%")
-                    ->orWhere('people.dni', 'like', "{$q}%");
-            });
+        if (mb_strlen($q) >= 2) {
+            $this->applyNameSearch($query, $q, 'people.');
         }
 
         $results = $query
@@ -80,5 +70,27 @@ class SearchController extends Controller
                 ];
             }),
         ]);
+    }
+
+    /**
+     * Filtra por nombre completo (nombres + apellidos) buscando cada palabra
+     * escrita en cualquiera de las columnas de nombre/DNI, en cualquier orden.
+     * Antes cada columna se comparaba contra el texto completo, así que
+     * "SHARON VASQUEZ" (nombres + apellido) nunca hacía match con nada.
+     */
+    private function applyNameSearch($query, string $q, string $prefix = ''): void
+    {
+        $terms = preg_split('/\s+/', $q, -1, PREG_SPLIT_NO_EMPTY);
+
+        $query->where(function ($outer) use ($terms, $prefix) {
+            foreach ($terms as $term) {
+                $outer->where(function ($qb) use ($term, $prefix) {
+                    $qb->where("{$prefix}names", 'like', "{$term}%")
+                        ->orWhere("{$prefix}father_lastname", 'like', "{$term}%")
+                        ->orWhere("{$prefix}mother_lastname", 'like', "{$term}%")
+                        ->orWhere("{$prefix}dni", 'like', "{$term}%");
+                });
+            }
+        });
     }
 }

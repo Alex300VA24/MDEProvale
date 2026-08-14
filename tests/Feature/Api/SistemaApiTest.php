@@ -85,7 +85,7 @@ class SistemaApiTest extends TestCase
             ->postJson(self::BASE . '/usuarios', [
                 'names' => 'Nuevo', 'father_surname' => 'Usuario', 'mother_surname' => 'Test',
                 'username' => 'nuevo', 'email' => 'nuevo@example.com', 'dni' => '00000004', 'cui' => '0',
-                'rol_id' => 1, 'state_id' => 1, 'password' => 'password123',
+                'rol_id' => 1, 'state_id' => 1, 'password' => 'password123!',
             ])
             ->assertStatus(201)
             ->assertJsonPath('data.username', 'nuevo');

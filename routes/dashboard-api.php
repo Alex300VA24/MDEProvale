@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 // ==================== INICIO (panel de KPIs) ====================
 // Sin middleware de módulo: la sección "Inicio" es visible para cualquier
 // usuario autenticado (ver NAV_ITEMS en Dashboard.jsx, modules: []).
-Route::get('dashboard/inicio/kpis', [InicioController::class, 'kpis'])->name('api.inicio.kpis');
+Route::get('dashboard/inicio/panel', [InicioController::class, 'panel'])->name('api.inicio.panel');
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================
 Route::prefix('dashboard/socios-beneficiarios')->middleware('module:socios-beneficiarios')->name('api.socios-beneficiarios.')->group(function () {

@@ -16,6 +16,7 @@ class AuthServiceProvider extends ServiceProvider
         \App\Models\Association::class => \App\Policies\AssociationPolicy::class,
         \App\Models\Module::class => \App\Policies\ModulePolicy::class,
         \App\Models\Partner::class => \App\Policies\PartnerPolicy::class,
+        \App\Models\People::class => \App\Policies\PersonaPolicy::class,
         \App\Models\Pecosa::class => \App\Policies\PecosaPolicy::class,
         \App\Models\Product::class => \App\Policies\ProductPolicy::class,
         \App\Models\Racion::class => \App\Policies\RacionPolicy::class,

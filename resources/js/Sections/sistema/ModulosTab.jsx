@@ -3,18 +3,13 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
 
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
-
-function errorMessage(err, fallback) {
-    const data = err.response?.data;
-    if (data?.errors) return Object.values(data.errors)[0]?.[0] || fallback;
-    return data?.message || fallback;
-}
 
 function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
     const toast = useToast();
@@ -81,7 +76,7 @@ function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
                     <button type="submit" disabled={submitting} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-danger flex-1">Cancelar</button>
                 </div>
             </form>
         </Modal>
@@ -224,7 +219,11 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Módulo"
-                message={`Se eliminará el módulo "${deleting?.name}" de forma permanente.`}
+                message="Se eliminará este módulo de forma permanente."
+                details={deleting ? [
+                    { label: 'Módulo', value: deleting.name },
+                    { label: 'Slug', value: deleting.slug },
+                ] : []}
             />
         </>
     );

@@ -7,22 +7,37 @@ import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from './hooks';
 import { formatDate, personFullName, personLabel } from './format';
+import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 const SEARCH_PEOPLE = '/api/search/people';
 
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const inputCls =
+    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
 function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }) {
     const toast = useToast();
+    const history = mode === 'edit' ? beneficiario?.histories?.[0] ?? null : null;
     const [personId, setPersonId] = useState(mode === 'edit' ? beneficiario?.person_id ?? '' : '');
     const [personLabelState, setPersonLabelState] = useState(mode === 'edit' ? personLabel(beneficiario?.person) : '');
     const [partnerId, setPartnerId] = useState(mode === 'edit' ? beneficiario?.partner_id ?? '' : '');
     const [relationshipId, setRelationshipId] = useState(mode === 'edit' ? beneficiario?.relationship_id ?? '' : '');
+    const [weight, setWeight] = useState(history?.weight ?? '');
+    const [height, setHeight] = useState(history?.height ?? '');
+    const [hmg, setHmg] = useState(history?.hmg ?? '');
+    const [dateBegin, setDateBegin] = useState(history?.date_begin ?? '');
+    const [dateEnd, setDateEnd] = useState(history?.date_end ?? '');
+    const [typeBenefitId, setTypeBenefitId] = useState(history?.type_benefit_id ?? '');
+    const [historyStateId, setHistoryStateId] = useState(history?.state_id ?? '');
+    const [reasonDisqualificationId, setReasonDisqualificationId] = useState(history?.reason_disqualification_id ?? '');
     const [submitting, setSubmitting] = useState(false);
 
     const partnerOptions = (options.partners ?? []).map((p) => ({ id: p.id, label: p.name }));
     const relationshipOptions = (options.relationships ?? []).map((r) => ({ id: r.id, label: r.title }));
+    const typeBenefitOptions = (options.type_benefits ?? []).map((t) => ({ id: t.id, label: t.title }));
+    const stateOptions = (options.states ?? []).map((s) => ({ id: s.id, label: s.title }));
+    const reasonOptions = (options.reason_disqualifications ?? []).map((r) => ({ id: r.id, label: r.title }));
 
     const searchPeople = async (search) => {
         try {
@@ -41,7 +56,19 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
         }
         setSubmitting(true);
         try {
-            const payload = { person_id: personId, partner_id: partnerId, relationship_id: relationshipId };
+            const payload = {
+                person_id: personId,
+                partner_id: partnerId,
+                relationship_id: relationshipId,
+                weight: weight === '' ? null : weight,
+                height: height === '' ? null : height,
+                hmg: hmg === '' ? null : hmg,
+                date_begin: dateBegin || null,
+                date_end: dateEnd || null,
+                type_benefit_id: typeBenefitId || null,
+                history_state_id: historyStateId || null,
+                reason_disqualification_id: reasonDisqualificationId || null,
+            };
             if (mode === 'edit') {
                 await http.put(`${BASE}/beneficiarios/${beneficiario.id}`, payload);
             } else {
@@ -50,12 +77,7 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
             toast.success(mode === 'edit' ? 'Beneficiario actualizado correctamente.' : 'Beneficiario creado exitosamente.');
             onSaved();
         } catch (err) {
-            const data = err.response?.data;
-            if (data?.errors) {
-                toast.error(Object.values(data.errors)[0][0]);
-            } else {
-                toast.error(data?.message || 'Ocurrió un error al guardar el beneficiario.');
-            }
+            toast.error(errorMessage(err, 'Ocurrió un error al guardar el beneficiario.'));
         } finally {
             setSubmitting(false);
         }
@@ -68,7 +90,7 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
             title={mode === 'edit' ? 'Editar Beneficiario' : 'Nuevo Beneficiario'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-hand-holding-heart'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
-            maxWidth="sm:max-w-xl"
+            maxWidth="sm:max-w-2xl"
         >
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div>
@@ -111,12 +133,77 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
                         allowClear
                     />
                 </div>
+
+                <div className="border-t-2 border-wheat pt-4">
+                    <p className={`${labelCls} mb-3`}>
+                        Datos Clínicos <span className="font-normal normal-case text-earth">(opcional)</span>
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label className={labelCls}>Peso (kg)</label>
+                            <input type="number" step="0.01" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} className={inputCls} placeholder="65.50" />
+                        </div>
+                        <div>
+                            <label className={labelCls}>Talla (cm)</label>
+                            <input type="number" step="0.01" min="0" value={height} onChange={(e) => setHeight(e.target.value)} className={inputCls} placeholder="160.00" />
+                        </div>
+                        <div>
+                            <label className={labelCls}>HMG (g/dL)</label>
+                            <input type="number" step="0.01" min="0" value={hmg} onChange={(e) => setHmg(e.target.value)} className={inputCls} placeholder="12.50" />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className={labelCls}>F. Inicio Beneficio</label>
+                            <input type="date" value={dateBegin} onChange={(e) => setDateBegin(e.target.value)} className={inputCls} />
+                        </div>
+                        <div>
+                            <label className={labelCls}>F. Fin Beneficio</label>
+                            <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className={inputCls} />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label className={labelCls}>Tipo de Beneficio</label>
+                            <Combobox
+                                value={typeBenefitId}
+                                onChange={(v) => setTypeBenefitId(v ?? '')}
+                                options={typeBenefitOptions}
+                                placeholder="Seleccionar..."
+                                allowClear
+                            />
+                        </div>
+                        <div>
+                            <label className={labelCls}>Estado</label>
+                            <Combobox
+                                value={historyStateId}
+                                onChange={(v) => setHistoryStateId(v ?? '')}
+                                options={stateOptions}
+                                placeholder="Seleccionar..."
+                                allowClear
+                            />
+                        </div>
+                        <div>
+                            <label className={labelCls}>Motivo Descalificación</label>
+                            <Combobox
+                                value={reasonDisqualificationId}
+                                onChange={(v) => setReasonDisqualificationId(v ?? '')}
+                                options={reasonOptions}
+                                placeholder="Ninguno"
+                                allowClear
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex gap-3 pt-2">
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">
+                    <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">
                         Cancelar
                     </button>
                 </div>
@@ -125,8 +212,9 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
     );
 }
 
-function BeneficiarioViewModal({ beneficiario, onClose }) {
+function BeneficiarioViewModal({ beneficiario, onClose, onEdit }) {
     if (!beneficiario) return null;
+    const history = beneficiario.histories?.[0] ?? null;
     return (
         <Modal
             open
@@ -134,7 +222,7 @@ function BeneficiarioViewModal({ beneficiario, onClose }) {
             title="Detalle de Beneficiario"
             icon="fa-hand-holding-heart"
             iconClass="text-leaf"
-            maxWidth="sm:max-w-md"
+            maxWidth="sm:max-w-lg"
         >
             <div className="p-6 space-y-4 text-sm">
                 <div>
@@ -159,11 +247,58 @@ function BeneficiarioViewModal({ beneficiario, onClose }) {
                     <span className={labelCls}>Fecha de Nacimiento</span>
                     <p>{formatDate(beneficiario.person?.birthdate) || '-'}</p>
                 </div>
+
+                <div className="border-t-2 border-wheat pt-4">
+                    <span className={labelCls}>Datos Clínicos</span>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">Peso</span>
+                            <p className="font-semibold">{history?.weight ?? '-'} {history?.weight != null ? 'kg' : ''}</p>
+                        </div>
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">Talla</span>
+                            <p className="font-semibold">{history?.height ?? '-'} {history?.height != null ? 'cm' : ''}</p>
+                        </div>
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">HMG</span>
+                            <p className="font-semibold">{history?.hmg ?? '-'} {history?.hmg != null ? 'g/dL' : ''}</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-3">
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">F. Inicio Beneficio</span>
+                            <p>{formatDate(history?.date_begin) || '-'}</p>
+                        </div>
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">F. Fin Beneficio</span>
+                            <p>{formatDate(history?.date_end) || '-'}</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">Tipo de Beneficio</span>
+                            <p>{history?.type_benefit?.title || '-'}</p>
+                        </div>
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">Estado</span>
+                            <p>{history?.state?.title || '-'}</p>
+                        </div>
+                        <div>
+                            <span className="text-[10px] text-earth uppercase">Motivo Descalif.</span>
+                            <p>{history?.reason_disqualification?.title || 'Ninguno'}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div className="px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary w-full text-xs sm:text-sm">
+            <div className="flex gap-3 px-6 pb-6">
+                <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">
                     Cerrar
                 </button>
+                {onEdit && (
+                    <button type="button" onClick={() => { onClose(); onEdit(); }} className="btn-primary flex-1 text-xs sm:text-sm">
+                        <i className="fas fa-edit mr-2" /> Editar
+                    </button>
+                )}
             </div>
         </Modal>
     );
@@ -232,8 +367,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
             setDeleting(null);
             load();
         } catch (err) {
-            const data = err.response?.data;
-            toast.error(data?.message || 'No se pudo eliminar el beneficiario.');
+            toast.error(errorMessage(err, 'No se pudo eliminar el beneficiario.'));
             setDeleting(null);
         }
     };
@@ -297,7 +431,6 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                     <table className="data-table w-full text-xs sm:text-sm min-w-[640px]">
                         <thead>
                             <tr>
-                                <th className="px-3 sm:px-4 py-3 text-left">ID</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Beneficiario</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">DNI</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Socio</th>
@@ -308,7 +441,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                         <tbody>
                             {data.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6}>
+                                    <td colSpan={5}>
                                         <div className="empty-state">
                                             <i className="fas fa-hand-holding-heart" />
                                             <p>No hay beneficiarios registrados</p>
@@ -318,7 +451,6 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                             ) : (
                                 data.data.map((beneficiario) => (
                                     <tr key={beneficiario.id} className="row-enter">
-                                        <td className="px-3 sm:px-4 py-3 font-mono">{beneficiario.id}</td>
                                         <td className="px-3 sm:px-4 py-3 font-medium">{personFullName(beneficiario.person)}</td>
                                         <td className="px-3 sm:px-4 py-3 font-mono">{beneficiario.person?.dni || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3">
@@ -372,12 +504,10 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
             )}
 
             {data && (
-                <div className="mt-4">
-                    {loading && (
-                        <p className="text-xs text-earth text-center mb-2">
-                            <i className="fas fa-spinner fa-spin mr-1" /> Cargando...
-                        </p>
-                    )}
+                <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                    <span className="text-xs sm:text-sm text-earth font-medium">
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
+                    </span>
                     <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
                 </div>
             )}
@@ -396,7 +526,11 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                 />
             )}
 
-            <BeneficiarioViewModal beneficiario={viewing} onClose={() => setViewing(null)} />
+            <BeneficiarioViewModal
+                beneficiario={viewing}
+                onClose={() => setViewing(null)}
+                onEdit={can.edit ? () => viewing && openEdit(viewing) : null}
+            />
 
             <ConfirmDialog
                 open={!!deleting}
@@ -404,6 +538,10 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                 onConfirm={confirmDelete}
                 title="Eliminar Beneficiario"
                 message="Se eliminará el registro del beneficiario de forma permanente."
+                details={deleting ? [
+                    { label: 'Beneficiario', value: personFullName(deleting.person) },
+                    { label: 'DNI', value: deleting.person?.dni },
+                ] : []}
             />
         </>
     );

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function Combobox({
     value,
@@ -18,8 +19,10 @@ export default function Combobox({
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [highlight, setHighlight] = useState(-1);
+    const [coords, setCoords] = useState(null);
     const rootRef = useRef(null);
-    const timerRef = useRef(null);
+    const inputRef = useRef(null);
+    const popRef = useRef(null);
     const searchRef = useRef(onSearch);
 
     useEffect(() => {
@@ -28,39 +31,85 @@ export default function Combobox({
 
     useEffect(() => {
         const handler = (e) => {
-            if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+            const inRoot = rootRef.current && rootRef.current.contains(e.target);
+            const inPop = popRef.current && popRef.current.contains(e.target);
+            if (!inRoot && !inPop) setOpen(false);
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
+    // Recalcula la posición del panel flotante (portal) mientras está abierto,
+    // ya que se saca del flujo del modal para no ser recortado por su overflow-hidden.
     useEffect(() => {
-        if (searchRef.current) {
-            const q = query.trim();
-            if (q.length < minQuery) {
-                setResults([]);
-                setLoading(false);
-                return;
-            }
-            setLoading(true);
-            clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(async () => {
-                try {
-                    const data = await searchRef.current(q);
-                    setResults(Array.isArray(data) ? data : []);
-                } catch {
-                    setResults([]);
-                } finally {
-                    setLoading(false);
-                }
-            }, 300);
-            return () => clearTimeout(timerRef.current);
+        if (!open) return undefined;
+
+        const updatePosition = () => {
+            const el = inputRef.current;
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const preferred = 288; // ~18rem
+            const openUp = spaceBelow < 180 && spaceAbove > spaceBelow;
+            const maxHeight = Math.max(120, Math.min(preferred, (openUp ? spaceAbove : spaceBelow) - 12));
+            setCoords({
+                left: rect.left,
+                width: rect.width,
+                top: openUp ? undefined : rect.bottom + 4,
+                bottom: openUp ? window.innerHeight - rect.top + 4 : undefined,
+                maxHeight,
+            });
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [open, query, results.length]);
+
+    const isSearchMode = Boolean(onSearch);
+
+    // Efecto de búsqueda remota (debounced). Depende solo de query/minQuery:
+    // `options` no se usa en este modo, y como el caller normalmente no pasa
+    // `options` (queda en su valor por defecto `[]`, una referencia nueva en
+    // cada render), tenerlo en las dependencias reiniciaba el debounce en
+    // cada re-render y la búsqueda nunca llegaba a dispararse.
+    useEffect(() => {
+        if (!isSearchMode) return undefined;
+
+        const q = query.trim();
+        if (q.length < minQuery) {
+            setResults([]);
+            setLoading(false);
+            return undefined;
         }
+
+        setLoading(true);
+        const timer = setTimeout(async () => {
+            try {
+                const data = await searchRef.current(q);
+                setResults(Array.isArray(data) ? data : []);
+            } catch {
+                setResults([]);
+            } finally {
+                setLoading(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [query, minQuery, isSearchMode]);
+
+    // Filtrado local (sin onSearch): sincrónico, sobre la lista de `options`.
+    useEffect(() => {
+        if (isSearchMode) return;
 
         const q = query.trim().toLowerCase();
         setResults(q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options);
         setLoading(false);
-    }, [query, options, minQuery]);
+    }, [query, options, minQuery, isSearchMode]);
 
     const selected = useMemo(() => {
         if (value === null || value === undefined || value === '') return null;
@@ -115,12 +164,17 @@ export default function Combobox({
         <div className="relative" ref={rootRef}>
             <div className="relative">
                 <input
+                    ref={inputRef}
                     type="text"
                     className="w-full px-4 py-2.5 pr-9 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
                     value={inputValue}
                     placeholder={placeholder}
                     disabled={disabled}
-                    onFocus={() => setOpen(true)}
+                    onFocus={(e) => {
+                        setOpen(true);
+                        const el = e.target;
+                        requestAnimationFrame(() => el.select());
+                    }}
                     onChange={(e) => {
                         setQuery(e.target.value);
                         setOpen(true);
@@ -142,8 +196,18 @@ export default function Combobox({
                     <i className={`fas fa-chevron-down ${open ? 'rotate-180' : ''}`} />
                 </span>
             </div>
-            {open && (
-                <div className="absolute z-30 mt-1 w-full bg-white border-2 border-wheat rounded-xl shadow-lg max-h-56 overflow-y-auto">
+            {open && coords && createPortal(
+                <div
+                    ref={popRef}
+                    className="fixed z-[999] bg-white border-2 border-wheat rounded-xl shadow-lg overflow-y-auto"
+                    style={{
+                        left: coords.left,
+                        width: coords.width,
+                        top: coords.top,
+                        bottom: coords.bottom,
+                        maxHeight: coords.maxHeight,
+                    }}
+                >
                     {loading ? (
                         <div className="px-4 py-3 text-sm text-earth flex items-center gap-2">
                             <i className="fas fa-spinner fa-spin" /> Buscando...
@@ -161,7 +225,7 @@ export default function Combobox({
                                 key={o.id}
                                 onClick={() => handleSelect(o)}
                                 onMouseEnter={() => setHighlight(i)}
-                                className={`block w-full text-left px-4 py-2 text-sm truncate ${i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
+                                className={`block w-full text-left px-4 py-2 text-sm text-charcoal truncate ${i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
                             >
                                 {o.label}
                             </button>
@@ -172,7 +236,8 @@ export default function Combobox({
                             Escribe para filtrar ({results.length} opciones)
                         </div>
                     )}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

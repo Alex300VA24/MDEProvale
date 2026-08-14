@@ -40,7 +40,6 @@
         
         .page-container {
             width: 100%;
-            height: 100%;
             padding: 10px;
         }
         
@@ -363,7 +362,7 @@
                     <td colspan="13" class="section-header">
                         <strong>{{ mb_strtoupper($sectoresList) }}</strong>
                     </td>
-                    <<td style="border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white; width: 10px;">&nbsp;</td>
+                    <td style="border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white; width: 10px;">&nbsp;</td>
                 </tr>
                 
                 @foreach($todosLosClubes as $club)
