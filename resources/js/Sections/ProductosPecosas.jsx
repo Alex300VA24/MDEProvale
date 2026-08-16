@@ -70,74 +70,59 @@ export default function ProductosPecosas() {
     return (
         <>
             <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
-                    <h3 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
+                <div className="px-4 sm:px-6 py-4 sm:py-5">
+                    <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                         <i className={`fas ${header.icon} text-leaf`} /> {header.title}
                     </h3>
-                    <div className="flex flex-wrap items-center gap-2">
-                        {can.pecosas.view && tab === 'pecosas' && can.pecosas.create && (
-                            <button
-                                type="button"
-                                onClick={() => pecosasRef.current?.openCreate()}
-                                className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-plus" /> Nueva Pecosa
-                            </button>
-                        )}
-                        {can.productos.view && tab === 'productos' && can.productos.create && (
-                            <button
-                                type="button"
-                                onClick={() => productosRef.current?.openCreate()}
-                                className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-plus" /> Nuevo Producto
-                            </button>
-                        )}
-                        {can.pecosas.view && tab === 'productos' && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('pecosas')}
-                                className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-file-alt" /> Ver Pecosas
-                            </button>
-                        )}
-                        {can.productos.view && tab === 'pecosas' && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('productos')}
-                                className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-clipboard-list" /> Detalle Productos
-                            </button>
-                        )}
-                    </div>
                 </div>
 
                 {(can.pecosas.view || can.productos.view) && (
-                    <div className="flex border-b-2 border-wheat bg-cream px-2 sm:px-4 gap-1 overflow-x-auto">
-                        {can.pecosas.view && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('pecosas')}
-                                className={`flex items-center gap-2 px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold border-b-2 -mb-px whitespace-nowrap transition-all ${
-                                    tab === 'pecosas' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
-                                }`}
-                            >
-                                <i className="fas fa-file-alt" /> Pecosas
-                            </button>
-                        )}
-                        {can.productos.view && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('productos')}
-                                className={`flex items-center gap-2 px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold border-b-2 -mb-px whitespace-nowrap transition-all ${
-                                    tab === 'productos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
-                                }`}
-                            >
-                                <i className="fas fa-box" /> Productos
-                            </button>
-                        )}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {can.pecosas.view && tab === 'pecosas' && can.pecosas.create && (
+                                <button
+                                    type="button"
+                                    onClick={() => pecosasRef.current?.openCreate()}
+                                    className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-plus" /> Nueva Pecosa
+                                </button>
+                            )}
+                            {can.productos.view && tab === 'productos' && can.productos.create && (
+                                <button
+                                    type="button"
+                                    onClick={() => productosRef.current?.openCreate()}
+                                    className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-plus" /> Nuevo Producto
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-1 overflow-x-auto">
+                            {can.pecosas.view && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('pecosas')}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                        tab === 'pecosas' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
+                                    }`}
+                                >
+                                    <i className="fas fa-file-alt" /> Pecosas
+                                </button>
+                            )}
+                            {can.productos.view && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('productos')}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                        tab === 'productos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
+                                    }`}
+                                >
+                                    <i className="fas fa-box" /> Productos
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

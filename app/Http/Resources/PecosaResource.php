@@ -13,34 +13,32 @@ class PecosaResource extends JsonResource
             'pecosa_number' => $this->pecosa_number,
             'delivery_date' => $this->delivery_date,
             'observation' => $this->observation,
-            'association' => $this->whenLoaded('association', fn () => [
+            'association_id' => $this->association_id,
+            'state_id' => $this->state_id,
+            'managing_partner_id' => $this->managing_partner_name ? $this->managing_partner_id : null,
+            'chief_id' => $this->chief_name ? $this->chief_id : null,
+            'storekeeper_id' => $this->storekeeper_name ? $this->storekeeper_id : null,
+            'association' => $this->whenLoaded('association', fn () => $this->association ? [
                 'id' => $this->association->id,
-                'name' => $this->association->name,
-                'code' => $this->association->code,
-            ]),
-            'state' => $this->whenLoaded('state', fn () => [
+                'name' => $this->association_name ?: $this->association->name,
+                'code' => $this->association_code ?: $this->association->code,
+            ] : null),
+            'state' => $this->whenLoaded('state', fn () => $this->state ? [
                 'id' => $this->state->id,
                 'title' => $this->state->title,
                 'abbreviation' => $this->state->abbreviation,
-            ]),
-            'managing_partner' => $this->whenLoaded('managingPartner', fn () => [
-                'id' => $this->managingPartner->id,
-                'person' => $this->managingPartner->relationLoaded('people')
-                    ? new PeopleResource($this->managingPartner->people)
-                    : null,
-            ]),
-            'chief' => $this->whenLoaded('chief', fn () => [
-                'id' => $this->chief->id,
-                'person' => $this->chief->relationLoaded('person')
-                    ? new PeopleResource($this->chief->person)
-                    : null,
-            ]),
-            'storekeeper' => $this->whenLoaded('storekeeper', fn () => [
-                'id' => $this->storekeeper->id,
-                'person' => $this->storekeeper->relationLoaded('person')
-                    ? new PeopleResource($this->storekeeper->person)
-                    : null,
-            ]),
+            ] : null),
+            'managing_partner' => $this->responsibleSnapshot(
+                $this->managing_partner_id,
+                $this->managing_partner_name,
+                $this->managing_partner_dni
+            ),
+            'chief' => $this->responsibleSnapshot($this->chief_id, $this->chief_name, $this->chief_dni),
+            'storekeeper' => $this->responsibleSnapshot(
+                $this->storekeeper_id,
+                $this->storekeeper_name,
+                $this->storekeeper_dni
+            ),
             'president_name' => $this->president_name,
             'president_dni' => $this->president_dni,
             'chief_name' => $this->chief_name,
@@ -58,6 +56,27 @@ class PecosaResource extends JsonResource
             'beneficiaries_count' => $this->beneficiaries_count,
             'detail_pecosas' => DetailPecosaResource::collection($this->whenLoaded('detailPecosas')),
             'created_at' => $this->created_at,
+        ];
+    }
+
+    private function responsibleSnapshot($id, ?string $name, ?string $dni): ?array
+    {
+        $name = trim((string) $name);
+
+        if ($name === '') {
+            return null;
+        }
+
+        return [
+            'id' => $id,
+            'person' => [
+                'id' => null,
+                'full_name' => $name,
+                'names' => $name,
+                'father_lastname' => null,
+                'mother_lastname' => null,
+                'dni' => $dni,
+            ],
         ];
     }
 }

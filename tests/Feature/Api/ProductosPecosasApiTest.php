@@ -4,6 +4,8 @@ namespace Tests\Feature\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use App\Models\Pecosa;
+use App\Services\PecosaService;
 use Tests\TestCase;
 use Tests\Traits\SeedsBaseData;
 
@@ -343,13 +345,29 @@ class ProductosPecosasApiTest extends TestCase
     public function test_pecosas_endpoint_returns_json_collection(): void
     {
         $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/pecosas', $this->pecosaPayload())
+            ->assertCreated();
+
+        $this->actingAs($this->userWithAccess())
             ->getJson(self::BASE . '/pecosas')
             ->assertOk()
             ->assertJsonStructure([
-                'data' => ['*' => ['id', 'pecosa_number', 'delivery_date', 'observation', 'association', 'state', 'detail_pecosas']],
+                'data' => ['*' => [
+                    'id', 'pecosa_number', 'delivery_date', 'observation',
+                    'association_id', 'state_id', 'managing_partner_id', 'chief_id', 'storekeeper_id',
+                    'association', 'state', 'managing_partner', 'chief', 'storekeeper', 'detail_pecosas',
+                ]],
                 'links' => [],
                 'meta' => [],
-            ]);
+            ])
+            ->assertJsonPath('data.0.association_id', 1)
+            ->assertJsonPath('data.0.state_id', 1)
+            ->assertJsonPath('data.0.managing_partner_id', 1)
+            ->assertJsonPath('data.0.chief_id', 1)
+            ->assertJsonPath('data.0.storekeeper_id', 2)
+            ->assertJsonPath('data.0.chief.person.full_name', 'Juan Apellido Materno')
+            ->assertJsonPath('data.0.storekeeper.person.full_name', 'Ana Apellido Materno')
+            ->assertJsonPath('data.0.detail_pecosas.0.product.title', 'Arroz');
     }
 
     public function test_pecosas_options_endpoint_returns_modal_data(): void
@@ -363,6 +381,134 @@ class ProductosPecosasApiTest extends TestCase
                 'responsibles' => ['*' => ['id', 'type', 'name', 'dni']],
                 'detail_products' => ['*' => ['id', 'product_id', 'product_title', 'unit_price', 'available_stock', 'active']],
             ]);
+    }
+
+    public function test_legacy_pecosa_does_not_expose_default_responsibles_as_historical_data(): void
+    {
+        DB::table('pecosas')->insert([
+            'pecosa_number' => 'LEG-0001',
+            'delivery_date' => now()->toDateString(),
+            'chief_id' => 1,
+            'storekeeper_id' => 2,
+            'state_id' => 1,
+            'association_id' => 1,
+            'chief_name' => null,
+            'storekeeper_name' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . '/pecosas')
+            ->assertOk()
+            ->assertJsonPath('data.0.pecosa_number', 'LEG-0001')
+            ->assertJsonPath('data.0.chief_name', null)
+            ->assertJsonPath('data.0.storekeeper_name', null)
+            ->assertJsonPath('data.0.chief_id', null)
+            ->assertJsonPath('data.0.storekeeper_id', null)
+            ->assertJsonPath('data.0.chief', null)
+            ->assertJsonPath('data.0.storekeeper', null);
+    }
+
+    public function test_historical_responsibles_are_returned_instead_of_current_people(): void
+    {
+        DB::table('pecosas')->insert([
+            'pecosa_number' => 'HST0001',
+            'delivery_date' => now()->toDateString(),
+            'chief_id' => 1,
+            'storekeeper_id' => 2,
+            'state_id' => 1,
+            'association_id' => 1,
+            'chief_name' => 'Jefe Histórico',
+            'chief_dni' => '12345678',
+            'storekeeper_name' => 'Almacenera Histórica',
+            'storekeeper_dni' => '87654321',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . '/pecosas')
+            ->assertOk()
+            ->assertJsonPath('data.0.chief.person.full_name', 'Jefe Histórico')
+            ->assertJsonPath('data.0.chief.person.dni', '12345678')
+            ->assertJsonPath('data.0.storekeeper.person.full_name', 'Almacenera Histórica')
+            ->assertJsonPath('data.0.storekeeper.person.dni', '87654321');
+    }
+
+    public function test_comprobante_uses_pecosa_snapshots_instead_of_template_defaults_or_current_people(): void
+    {
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/pecosas', $this->pecosaPayload('PDF-001'))
+            ->assertCreated();
+
+        DB::table('people')->where('id', 2)->update(['names' => 'Jefe Actual']);
+        DB::table('people')->where('id', 3)->update(['names' => 'Almacenera Actual']);
+
+        $pecosa = Pecosa::where('pecosa_number', 'PDF-001')->firstOrFail();
+        $pecosa->load('detailPecosas');
+        $method = new \ReflectionMethod(PecosaService::class, 'buildComprobanteData');
+        $method->setAccessible(true);
+        $data = $method->invoke(app(PecosaService::class), $pecosa);
+
+        $this->assertSame('PDF-001', $data['numero_orden']);
+        $this->assertSame('Z001', $data['zona']);
+        $this->assertSame('CDM', $data['comite']);
+        $this->assertSame('Comité Demo', $data['domicilio']);
+        $this->assertSame('María Apellido Materno', $data['solicitante_nombre']);
+        $this->assertSame('Juan Apellido Materno', $data['encargado_almacen']);
+        $this->assertSame('Ana Apellido Materno', $data['control']);
+        $this->assertSame('Arroz (ARROZ)', $data['articulos'][0]['descripcion']);
+        $this->assertSame('S/. 20.00', $data['total_general']);
+
+        $html = view('comprobante_salida', ['articulos' => []])->render();
+        $this->assertStringNotContainsString('MARIA NELLY RODRIGUEZ LOYOLA', $html);
+        $this->assertStringNotContainsString('SANTA RITA DE CASA', $html);
+        $this->assertStringNotContainsString('MEZCLAS PARA YOGURES', $html);
+    }
+
+    public function test_legacy_comprobante_uses_document_relations_but_never_current_responsibles(): void
+    {
+        $pecosaId = DB::table('pecosas')->insertGetId([
+            'pecosa_number' => 'PDF-002',
+            'delivery_date' => now()->toDateString(),
+            'chief_id' => 1,
+            'storekeeper_id' => 2,
+            'state_id' => 1,
+            'association_id' => 1,
+            'chief_name' => null,
+            'storekeeper_name' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('detail_pecosas')->insert([
+            'pecosa_id' => $pecosaId,
+            'detail_product_id' => 1,
+            'quantity' => 3,
+            'unit_price' => 10,
+            'subtotal' => 30,
+            'priority' => 1,
+            'product_name' => null,
+            'product_abbreviation' => null,
+            'uom_title' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $pecosa = Pecosa::findOrFail($pecosaId);
+        $pecosa->load(['detailPecosas.detailProduct.product.uom', 'association.placeSector.place']);
+        $method = new \ReflectionMethod(PecosaService::class, 'buildComprobanteData');
+        $method->setAccessible(true);
+        $data = $method->invoke(app(PecosaService::class), $pecosa);
+
+        $this->assertSame('Comité Demo', $data['domicilio']);
+        $this->assertSame('CDM', $data['comite']);
+        $this->assertSame('Z001', $data['zona']);
+        $this->assertSame('Arroz (ARROZ)', $data['articulos'][0]['descripcion']);
+        $this->assertSame('UNIDAD', $data['articulos'][0]['unidad']);
+        $this->assertSame('', $data['encargado_almacen']);
+        $this->assertSame('', $data['control']);
     }
 
     public function test_pecosas_options_association_has_president(): void

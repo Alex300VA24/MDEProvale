@@ -5,7 +5,7 @@
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
-        <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
+        <h3 class="font-extrabold text-charcoal text-2xl flex items-center gap-3">
             <i class="fas fa-cog text-leaf"></i> Configuración del Sistema
         </h3>
     </div>

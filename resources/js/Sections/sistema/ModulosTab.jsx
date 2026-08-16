@@ -73,10 +73,10 @@ function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
                     Módulo activo
                 </label>
                 <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-danger flex-1">Cancelar</button>
                 </div>
             </form>
         </Modal>

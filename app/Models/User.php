@@ -118,30 +118,45 @@ class User extends Authenticatable
 
     public function hasModuleAccess($moduleSlug)
     {
+        if ($this->isAdmin()) {
+            return true;
+        }
         $perms = $this->getModulePermissions();
         return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view;
     }
 
     public function canAccessModule($moduleSlug)
     {
+        if ($this->isAdmin()) {
+            return true;
+        }
         $perms = $this->getModulePermissions();
         return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view;
     }
 
     public function canCreateModule($moduleSlug)
     {
+        if ($this->isAdmin()) {
+            return true;
+        }
         $perms = $this->getModulePermissions();
         return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_create;
     }
 
     public function canEditModule($moduleSlug)
     {
+        if ($this->isAdmin()) {
+            return true;
+        }
         $perms = $this->getModulePermissions();
         return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_edit;
     }
 
     public function canDeleteModule($moduleSlug)
     {
+        if ($this->isAdmin()) {
+            return true;
+        }
         $perms = $this->getModulePermissions();
         return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_delete;
     }

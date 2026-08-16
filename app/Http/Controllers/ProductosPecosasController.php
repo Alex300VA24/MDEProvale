@@ -722,10 +722,8 @@ class ProductosPecosasController extends Controller
             return $d->quantity * $d->unit_price;
         }), 2);
 
-        $jefePerson = $pecosa->chief && $pecosa->chief->person ? $pecosa->chief->person : null;
-        $storekeeperPerson = $pecosa->storekeeper && $pecosa->storekeeper->person ? $pecosa->storekeeper->person : null;
-        $jefeName = $pecosa->chief_name ?? ($jefePerson ? trim($jefePerson->names . ' ' . $jefePerson->father_lastname . ' ' . $jefePerson->mother_lastname) : 'ENCARGADO DE PROVALE');
-        $storekeeperName = $pecosa->storekeeper_name ?? ($storekeeperPerson ? trim($storekeeperPerson->names . ' ' . $storekeeperPerson->father_lastname . ' ' . $storekeeperPerson->mother_lastname) : 'JEFA DE ALMACÉN PROVALE');
+        $jefeName = $pecosa->chief_name ?? '';
+        $storekeeperName = $pecosa->storekeeper_name ?? '';
         $association = $pecosa->association;
         $zonaCode = $pecosa->association_zone_code ?: ($association && $association->placeSector && $association->placeSector->place
             ? ($association->placeSector->place->code ?? '01')
@@ -745,15 +743,15 @@ class ProductosPecosasController extends Controller
             'num_mes' => $totalBeneficiarios,
             'racion' => 'N/A',
             'numero_orden' => $pecosa->pecosa_number,
-            'solicitante_nombre' => $pecosa->managing_partner_name ?? 'N/A',
+            'solicitante_nombre' => $pecosa->managing_partner_name ?? $pecosa->president_name ?? '',
             'domicilio' => $pecosa->association_name ?? ($association ? $association->name : 'N/A'),
             'fecha' => $fechaLarga,
             'articulos' => $articulos,
             'total_general' => 'S/. ' . $total_general,
             'encargado_almacen' => $jefeName,
-            'dni_encargado' => $pecosa->chief_dni ?? ($jefePerson->dni ?? ''),
+            'dni_encargado' => $pecosa->chief_dni ?? '',
             'control' => $storekeeperName,
-            'dni_control' => $pecosa->storekeeper_dni ?? ($storekeeperPerson->dni ?? ''),
+            'dni_control' => $pecosa->storekeeper_dni ?? '',
         ];
 
         $pdf = PDF::loadView('comprobante_salida', $data);

@@ -34,27 +34,43 @@ function detailRowFromApi(d, options) {
 function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
     const toast = useToast();
     const [pecosaNumber, setPecosaNumber] = useState(mode === 'edit' && pecosa ? pecosa.pecosa_number : '');
-    const [associationId, setAssociationId] = useState(mode === 'edit' && pecosa ? pecosa.association_id : '');
+    const [associationId, setAssociationId] = useState(
+        mode === 'edit' && pecosa ? pecosa.association_id ?? pecosa.association?.id ?? '' : ''
+    );
     const [deliveryDate, setDeliveryDate] = useState(
         mode === 'edit' && pecosa ? dateValue(pecosa.delivery_date) : new Date().toISOString().split('T')[0]
     );
     const [presidentName, setPresidentName] = useState(
         mode === 'edit' && pecosa
-            ? pecosa.managing_partner_name || pecosa.president_name || pecosa.managing_partner?.person?.full_name || ''
+            ? pecosa.managing_partner_name || pecosa.president_name || ''
             : ''
     );
     const [managingPartnerId, setManagingPartnerId] = useState(
-        mode === 'edit' && pecosa ? pecosa.managing_partner?.id ?? '' : ''
+        mode === 'edit' && pecosa ? pecosa.managing_partner_id ?? pecosa.managing_partner?.id ?? '' : ''
     );
-    const [stateId, setStateId] = useState(mode === 'edit' && pecosa ? pecosa.state_id : '');
+    const [stateId, setStateId] = useState(
+        mode === 'edit' && pecosa ? pecosa.state_id ?? pecosa.state?.id ?? '' : ''
+    );
     const [observation, setObservation] = useState(mode === 'edit' && pecosa ? pecosa.observation : '');
     const [details, setDetails] = useState(() =>
         mode === 'edit' && pecosa ? (pecosa.detail_pecosas || []).map((d) => detailRowFromApi(d, options)) : []
     );
     const [submitting, setSubmitting] = useState(false);
 
-    const chief = (options.responsibles || []).find((r) => r.type === 'chief');
-    const storekeeper = (options.responsibles || []).find((r) => r.type === 'storekeeper');
+    const activeChief = (options.responsibles || []).find((r) => r.type === 'chief');
+    const activeStorekeeper = (options.responsibles || []).find((r) => r.type === 'storekeeper');
+    const chiefId = mode === 'edit'
+        ? (pecosa?.chief_name ? pecosa?.chief_id ?? null : null)
+        : activeChief?.id;
+    const storekeeperId = mode === 'edit'
+        ? (pecosa?.storekeeper_name ? pecosa?.storekeeper_id ?? null : null)
+        : activeStorekeeper?.id;
+    const chiefName = mode === 'edit'
+        ? pecosa?.chief_name || ''
+        : activeChief?.name;
+    const storekeeperName = mode === 'edit'
+        ? pecosa?.storekeeper_name || ''
+        : activeStorekeeper?.name;
 
     const associations = (options.associations || []).filter((a) => a && a.id !== undefined && a.id !== null);
     const clubOptions = associations.map((a) => ({ id: a.id, label: a.name }));
@@ -113,8 +129,8 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                 association_id: associationId,
                 delivery_date: deliveryDate,
                 managing_partner_id: managingPartnerId,
-                chief_id: chief?.id ?? null,
-                storekeeper_id: storekeeper?.id ?? null,
+                chief_id: chiefId ?? null,
+                storekeeper_id: storekeeperId ?? null,
                 state_id: stateId,
                 observation: observation || null,
                 details: details.map((d) => ({
@@ -176,11 +192,11 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                     </div>
                     <div>
                         <label className={labelCls}>Subgerencia de Programas Sociales</label>
-                        <input type="text" readOnly value={chief?.name || 'No hay jefe activo'} className={readonlyCls} />
+                        <input type="text" readOnly value={chiefName || ''} className={readonlyCls} />
                     </div>
                     <div>
                         <label className={labelCls}>Programa Vaso de Leche</label>
-                        <input type="text" readOnly value={storekeeper?.name || 'No hay almacenero activo'} className={readonlyCls} />
+                        <input type="text" readOnly value={storekeeperName || ''} className={readonlyCls} />
                     </div>
                     <div>
                         <label className={labelCls}>Estado *</label>
@@ -260,11 +276,11 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                 </div>
 
                 <div className="flex gap-3 mt-10">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar Pecosa' : 'Guardar Pecosa'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">Cancelar</button>
                 </div>
             </form>
         </Modal>
@@ -293,7 +309,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                 </div>
                 <div>
                     <span className="text-[11px] font-bold text-earth uppercase">Club de Madres</span>
-                    <p>{pecosa.association?.name || '-'}</p>
+                    <p>{pecosa.association_name || pecosa.association?.name || '-'}</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -302,7 +318,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                     </div>
                     <div>
                         <span className="text-[11px] font-bold text-earth uppercase">Presidenta</span>
-                        <p>{pecosa.president_name || '-'}</p>
+                        <p>{pecosa.managing_partner_name || pecosa.president_name || ''}</p>
                     </div>
                 </div>
                 {pecosa.observation && (
@@ -339,7 +355,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                 <a href={`/productos-pecosas/pecosas/${pecosa.id}/comprobante`} target="_blank" rel="noreferrer" className="btn-secondary flex-1 text-center">
                     <i className="fas fa-file-pdf mr-2" /> Comprobante
                 </a>
-                <button type="button" onClick={onClose} className="btn-danger flex-1">Cerrar</button>
+                <button type="button" onClick={onClose} className="btn-secondary flex-1">Cerrar</button>
             </div>
         </Modal>
     );
@@ -498,12 +514,12 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                         <td className="px-3 sm:px-4 py-3 text-earth font-mono">#{pecosa.id}</td>
                                         <td className="px-3 sm:px-4 py-3 font-semibold">{pecosa.pecosa_number || 'Sin número'}</td>
                                         <td className="px-3 sm:px-4 py-3">
-                                            {pecosa.association ? (
-                                                <span className="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">{pecosa.association.name}</span>
+                                            {pecosa.association_name || pecosa.association?.name ? (
+                                                <span className="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">{pecosa.association_name || pecosa.association.name}</span>
                                             ) : '-'}
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{fmtDate(pecosa.delivery_date) || '-'}</td>
-                                        <td className="px-3 sm:px-4 py-3">{pecosa.president_name || '-'}</td>
+                                        <td className="px-3 sm:px-4 py-3">{pecosa.managing_partner_name || pecosa.president_name || ''}</td>
                                         <td className="px-3 sm:px-4 py-3">
                                             {pecosa.state ? (
                                                 pecosa.state.title === 'Activo' ? (

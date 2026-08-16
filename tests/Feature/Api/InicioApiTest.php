@@ -119,4 +119,16 @@ class InicioApiTest extends TestCase
     {
         $this->getJson(self::BASE . '/panel')->assertStatus(401);
     }
+
+    public function test_authenticated_spa_request_from_localhost_8000_uses_web_session(): void
+    {
+        $this->post('/login', [
+            'username' => 'testadmin',
+            'password' => 'password',
+        ])->assertRedirect('/dashboard');
+
+        $this->withHeader('Referer', 'http://localhost:8000/dashboard')
+            ->getJson(self::BASE . '/panel')
+            ->assertOk();
+    }
 }

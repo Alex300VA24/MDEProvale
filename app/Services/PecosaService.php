@@ -14,6 +14,7 @@ use App\Repositories\PartnerRepository;
 use App\Repositories\PecosaRepository;
 use App\Repositories\ProductRepository;
 use Barryvdh\DomPDF\Facade\PDF;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -170,9 +171,6 @@ class PecosaService
         $pecosa->load([
             'detailPecosas.detailProduct.product.uom',
             'association.placeSector.place',
-            'association.partners.beneficiaries',
-            'chief.person',
-            'storekeeper.person'
         ]);
 
         $data = $this->buildComprobanteData($pecosa);
@@ -213,18 +211,50 @@ class PecosaService
 
     private function buildComprobanteData(Pecosa $pecosa): array
     {
-        $association = $pecosa->association;
-        $details = $pecosa->detailPecosas;
-        
+        $formatQuantity = static function ($value): string {
+            return rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
+        };
+
+        $articulos = $pecosa->detailPecosas->map(function (DetailPecosa $detail, int $index) use ($formatQuantity) {
+            $product = $detail->detailProduct ? $detail->detailProduct->product : null;
+            $name = trim((string) ($detail->product_name ?: ($product ? $product->title : '')));
+            $abbreviation = trim((string) ($detail->product_abbreviation ?: ($product ? $product->abbreviation : '')));
+            $description = $abbreviation !== '' ? "{$name} ({$abbreviation})" : $name;
+
+            return [
+                'numero' => str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT),
+                'cantidad_solicitado' => $formatQuantity($detail->quantity),
+                'descripcion' => $description,
+                'cantidad_despachado' => $formatQuantity($detail->quantity),
+                'unidad' => $detail->uom_title ?: ($product && $product->uom ? $product->uom->title : ''),
+                'unitario' => number_format((float) $detail->unit_price, 2),
+                'total' => number_format((float) $detail->quantity * (float) $detail->unit_price, 2),
+            ];
+        })->all();
+
+        $total = $pecosa->detailPecosas->sum(
+            fn (DetailPecosa $detail) => (float) $detail->quantity * (float) $detail->unit_price
+        );
+
         return [
-            'pecosa' => $pecosa,
-            'association' => $association,
-            'details' => $details,
-            'president_name' => $pecosa->president_name,
-            'chief_name' => $pecosa->chief_name,
-            'storekeeper_name' => $pecosa->storekeeper_name,
-            'managing_partner_name' => $pecosa->managing_partner_name,
-            'beneficiaries_count' => $pecosa->beneficiaries_count,
+            'zona' => $pecosa->association_zone_code
+                ?: ($pecosa->association && $pecosa->association->placeSector && $pecosa->association->placeSector->place
+                    ? $pecosa->association->placeSector->place->code
+                    : ''),
+            'comite' => $pecosa->association_code ?: ($pecosa->association->code ?? ''),
+            'num_mes' => $pecosa->beneficiaries_count ?? '',
+            'numero_orden' => $pecosa->pecosa_number ?? '',
+            'fecha' => $pecosa->delivery_date
+                ? Carbon::parse($pecosa->delivery_date)->locale('es')->translatedFormat('j \\d\\e F \\d\\e Y')
+                : '',
+            'solicitante_nombre' => $pecosa->managing_partner_name ?: ($pecosa->president_name ?? ''),
+            'domicilio' => $pecosa->association_name ?: ($pecosa->association->name ?? ''),
+            'articulos' => $articulos,
+            'total_general' => 'S/. ' . number_format($total, 2),
+            'encargado_almacen' => $pecosa->chief_name ?? '',
+            'dni_encargado' => $pecosa->chief_dni ?? '',
+            'control' => $pecosa->storekeeper_name ?? '',
+            'dni_control' => $pecosa->storekeeper_dni ?? '',
         ];
     }
 }

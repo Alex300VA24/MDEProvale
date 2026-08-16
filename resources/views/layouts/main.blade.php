@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'PROVALE - Sistema de Gestión Social')</title>
-    <link rel="icon" href="{{ asset('img/logovaso.svg') }}" type="image/x-icon">
+    <link rel="icon" href="{{ asset('img/logoPro.png') }}" type="image/x-icon">
     {{-- Assets locales compilados (sin CDN) --}}
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/400.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/500.css') }}">
@@ -392,7 +392,7 @@
             <header id="top-header" class="flex items-center justify-between px-4 sm:px-8 h-14 sm:h-[72px]">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center text-white text-base overflow-hidden flex-shrink-0">
-                        <img src="{{ asset('img/logovaso.svg') }}" alt="PROVALE" class="w-6 h-6 object-contain">
+                        <img src="{{ asset('img/logoPro.png') }}" alt="PROVALE" class="w-6 h-6 object-contain">
                     </div>
                     <h2 class="text-navy font-bold text-[13px] sm:text-[15px] uppercase tracking-wider truncate">Sistema de Gestión PROVALE</h2>
                 </div>
@@ -423,7 +423,7 @@
                 </div>
             </header>
 
-            <main class="flex-1 p-4 sm:p-6 lg:p-8">
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-100">
                 @yield('content')
             </main>
         </div>

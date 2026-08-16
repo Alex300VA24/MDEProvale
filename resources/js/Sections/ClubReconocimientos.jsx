@@ -4,6 +4,7 @@ import http from '../http';
 import ComitesTab from './comites/ComitesTab';
 import ReconocimientosTab from './comites/ReconocimientosTab';
 import PadronModal from './comites/PadronModal';
+import MoreActionsMenu from '../Components/MoreActionsMenu';
 
 const BASE = '/api/dashboard/club-madres';
 
@@ -72,83 +73,64 @@ export default function ClubReconocimientos() {
     return (
         <>
             <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
-                    <h3 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
+                <div className="px-4 sm:px-6 py-4 sm:py-5">
+                    <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                         <i className={`fas ${header.icon} text-leaf`} /> {header.title}
                     </h3>
-                    <div className="flex flex-wrap items-center gap-2">
-                        {can.comites.view && (
-                            <button
-                                type="button"
-                                onClick={() => setPadronOpen(true)}
-                                className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-file-pdf" /> Padrón
-                            </button>
-                        )}
-                        {can.comites.view && tab === 'comites' && can.comites.create && (
-                            <button
-                                type="button"
-                                onClick={() => comitesRef.current?.openCreate()}
-                                className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-plus" /> Nuevo Comité
-                            </button>
-                        )}
-                        {can.reconocimientos.view && tab === 'reconocimientos' && can.reconocimientos.create && (
-                            <button
-                                type="button"
-                                onClick={() => reconocimientosRef.current?.openCreate()}
-                                className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-plus" /> Nuevo Reconocimiento
-                            </button>
-                        )}
-                        {can.comites.view && tab === 'reconocimientos' && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('comites')}
-                                className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-people-roof" /> Ver Comités
-                            </button>
-                        )}
-                        {can.reconocimientos.view && tab === 'comites' && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('reconocimientos')}
-                                className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-scroll" /> Ver Reconocimientos
-                            </button>
-                        )}
-                    </div>
                 </div>
 
                 {(can.comites.view || can.reconocimientos.view) && (
-                    <div className="flex border-b-2 border-wheat bg-cream px-2 sm:px-4 gap-1 overflow-x-auto">
-                        {can.comites.view && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('comites')}
-                                className={`flex items-center gap-2 px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold border-b-2 -mb-px whitespace-nowrap transition-all ${
-                                    tab === 'comites' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
-                                }`}
-                            >
-                                <i className="fas fa-people-roof" /> Comités
-                            </button>
-                        )}
-                        {can.reconocimientos.view && (
-                            <button
-                                type="button"
-                                onClick={() => setTab('reconocimientos')}
-                                className={`flex items-center gap-2 px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold border-b-2 -mb-px whitespace-nowrap transition-all ${
-                                    tab === 'reconocimientos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
-                                }`}
-                            >
-                                <i className="fas fa-scroll" /> Reconocimientos
-                            </button>
-                        )}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {can.comites.view && tab === 'comites' && can.comites.create && (
+                                <button
+                                    type="button"
+                                    onClick={() => comitesRef.current?.openCreate()}
+                                    className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-plus" /> Nuevo Comité
+                                </button>
+                            )}
+                            {can.reconocimientos.view && tab === 'reconocimientos' && can.reconocimientos.create && (
+                                <button
+                                    type="button"
+                                    onClick={() => reconocimientosRef.current?.openCreate()}
+                                    className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-plus" /> Nuevo Reconocimiento
+                                </button>
+                            )}
+                            {can.comites.view && (
+                                <MoreActionsMenu
+                                    items={[{ icon: 'fa-file-pdf', label: 'Padrón', onClick: () => setPadronOpen(true) }]}
+                                />
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-1 overflow-x-auto">
+                            {can.comites.view && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('comites')}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                        tab === 'comites' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
+                                    }`}
+                                >
+                                    <i className="fas fa-people-roof" /> Comités
+                                </button>
+                            )}
+                            {can.reconocimientos.view && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('reconocimientos')}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                        tab === 'reconocimientos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
+                                    }`}
+                                >
+                                    <i className="fas fa-scroll" /> Reconocimientos
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
 

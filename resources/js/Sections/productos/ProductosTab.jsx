@@ -105,7 +105,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onClick={onClose} className="btn-danger">Cancelar</button>
+                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
@@ -157,7 +157,7 @@ function ProductViewModal({ product, onClose, onEdit }) {
                 </div>
             </div>
             <div className="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-danger">Cerrar</button>
+                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
                 <button type="button" onClick={() => { onClose(); onEdit(); }} className="btn-primary">
                     <i className="fas fa-edit mr-2" /> Editar
                 </button>

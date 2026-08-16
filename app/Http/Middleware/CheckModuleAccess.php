@@ -20,6 +20,10 @@ class CheckModuleAccess
             return redirect('/login');
         }
 
+        if ($user->isAdmin()) {
+            return $next($request);
+        }
+
         // Delegates to User::canAccessModule() which uses a per-request
         // cached permissions query (single JOIN, loaded once per request).
         if (!$user->canAccessModule($moduleSlug)) {

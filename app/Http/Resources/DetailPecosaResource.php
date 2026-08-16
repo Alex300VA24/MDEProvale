@@ -19,11 +19,11 @@ class DetailPecosaResource extends JsonResource
             'product_name' => $this->product_name,
             'product_abbreviation' => $this->product_abbreviation,
             'uom_title' => $this->uom_title,
-            'product' => $this->whenLoaded('detailProduct', fn () => [
-                'id' => $this->detailProduct->product->id ?? null,
-                'title' => $this->detailProduct->product->title ?? null,
-                'abbreviation' => $this->detailProduct->product->abbreviation ?? null,
-            ]),
+            'product' => $this->whenLoaded('detailProduct', fn () => $this->detailProduct?->product ? [
+                'id' => $this->detailProduct->product->id,
+                'title' => $this->detailProduct->product->title,
+                'abbreviation' => $this->detailProduct->product->abbreviation,
+            ] : null),
         ];
     }
 }

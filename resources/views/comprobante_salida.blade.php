@@ -115,9 +115,9 @@
                         <td class="lbl">BENEF</td>
                     </tr>
                     <tr>
-                        <td class="val">{{ $zona ?? '01' }}</td>
-                        <td class="val">{{ $comite ?? '005' }}</td>
-                        <td class="val">{{ $num_mes ?? '51' }}</td>
+                        <td class="val">{{ $zona ?? '' }}</td>
+                        <td class="val">{{ $comite ?? '' }}</td>
+                        <td class="val">{{ $num_mes ?? '' }}</td>
                     </tr>
                 </table>
             </td>
@@ -127,7 +127,7 @@
                         <td class="lbl">NÚMERO</td>
                     </tr>
                     <tr>
-                        <td class="num-orden">{{ $numero_orden ?? '000001' }}</td>
+                        <td class="num-orden">{{ $numero_orden ?? '' }}</td>
                     </tr>
                 </table>
             </td>
@@ -135,12 +135,12 @@
         </tr>
     </table>
 
-    <div class="date-right">La Esperanza, {{ $fecha ?? '2 de Marzo del 2026' }}</div>
+    <div class="date-right">La Esperanza, {{ $fecha ?? '' }}</div>
 
     {{-- SOLICITANTE --}}
     <div class="info-row">
         <span class="lbl-bold">Se les entrega a la Sra. (Sr.):</span>
-        <span class="field-line">{{ $solicitante_nombre ?? 'MARIA NELLY RODRIGUEZ LOYOLA' }}</span>
+        <span class="field-line">{{ $solicitante_nombre ?? '' }}</span>
     </div>
 
 
@@ -148,7 +148,7 @@
         <tr>
             <td style="width:60%;">
                 <span class="lbl-bold">Con destino al club de Madres:</span>
-                <span class="field-line" style="min-width:180px;">{{ $domicilio ?? 'SANTA RITA DE CASA' }}</span>
+                <span class="field-line" style="min-width:180px;">{{ $domicilio ?? '' }}</span>
                 los siguientes artículos.
             </td>
         </tr>
@@ -178,16 +178,7 @@
         </thead>
         <tbody>
             @php
-                $articulos = $articulos ?? [
-                    [
-                        'cantidad_solicitado' => '0.00',
-                        'descripcion' => 'MEZCLAS PARA YOGURES MARCA ESTERILIZADA V/FORMA + AVENA + VIVIR BEST.',
-                        'cantidad_despachado' => '0.00',
-                        'unidad' => 'KILOS',
-                        'unitario' => '6.55',
-                        'total' => '0.00'
-                    ]
-                ];
+                $articulos = $articulos ?? [];
                 $rows_count = max(count($articulos), 14);
             @endphp
             @for ($i = 0; $i < $rows_count; $i++)
@@ -205,7 +196,7 @@
             @endfor
             <tr class="total-row">
                 <td colspan="6" style="text-align:right; padding-right:10px;">TOTAL:</td>
-                <td class="price-col" style="background-color: #e0e0e0;">{{ $total_general ?? '*****0.00' }}</td>
+                <td class="price-col" style="background-color: #e0e0e0;">{{ $total_general ?? '' }}</td>
                 <td class="spacer-col"></td>
             </tr>
         </tbody>
@@ -226,7 +217,7 @@
                     </div>
                     <div class="sig-space"></div>
                     <div class="sig-line"></div>
-                    <div class="sig-role">{{ $encargado_almacen ?? 'NOMBRE DE LA JEFA' }}</div>
+                    <div class="sig-role">{{ $encargado_almacen ?? '' }}</div>
                     <div class="sig-area">SUBGERENTE DE PROGRAMAS SOCIALES</div>
                     <div class="sig-area">PROGRAMA VASO DE LECHE</div>
                     <div class="sig-dni">DNI: {{ $dni_encargado ?? '' }}</div>
@@ -244,7 +235,7 @@
                     </div>
                     <div class="sig-space"></div>
                     <div class="sig-line"></div>
-                    <div class="sig-role">{{ $control ?? 'NOMBRE RESPONSABLE' }}</div>
+                    <div class="sig-role">{{ $control ?? '' }}</div>
                     <div class="sig-area">ENCARGADO DE PROVALE</div>
                     <div class="sig-dni">DNI: {{ $dni_control ?? '' }}</div>
                 </div>

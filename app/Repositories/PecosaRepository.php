@@ -18,8 +18,25 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
     public function searchWithFilters(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
-            ->select(['id', 'pecosa_number', 'delivery_date', 'observation', 'managing_partner_id', 'president_name', 'state_id', 'association_id', 'chief_name', 'storekeeper_name', 'created_at'])
-            ->with(['association:id,name,code,address,state_id', 'state:id,title,abbreviation', 'managingPartner.people:id,names,father_lastname,mother_lastname,dni', 'detailPecosas:id,pecosa_id,detail_product_id,quantity,unit_price,subtotal'])
+            ->select([
+                'id', 'pecosa_number', 'delivery_date', 'observation',
+                'association_id', 'state_id', 'managing_partner_id', 'chief_id', 'storekeeper_id',
+                'president_name', 'president_dni', 'chief_name', 'chief_dni',
+                'storekeeper_name', 'storekeeper_dni', 'managing_partner_name', 'managing_partner_dni',
+                'association_name', 'association_code', 'association_address',
+                'association_zone_code', 'association_zone_name', 'association_sector_name',
+                'beneficiaries_count', 'created_at',
+            ])
+            ->with([
+                'association:id,name,code,address,state_id',
+                'state:id,title,abbreviation',
+                'managingPartner.people:id,names,father_lastname,mother_lastname,dni',
+                'chief.person:id,names,father_lastname,mother_lastname,dni',
+                'storekeeper.person:id,names,father_lastname,mother_lastname,dni',
+                'detailPecosas:id,pecosa_id,detail_product_id,quantity,unit_price,subtotal,product_name,product_abbreviation,uom_title',
+                'detailPecosas.detailProduct:id,product_id,unit_price,start_date,end_date',
+                'detailPecosas.detailProduct.product:id,title,abbreviation',
+            ])
             ->when($filters['search'] ?? null, fn($q, $v) => $q->where('pecosa_number', 'like', "{$v}%"))
             ->when($filters['association_id'] ?? null, fn($q, $v) => $q->where('association_id', $v))
             ->when($filters['state_id'] ?? null, fn($q, $v) => $q->where('state_id', $v))

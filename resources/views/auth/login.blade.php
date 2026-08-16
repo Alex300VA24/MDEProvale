@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - PROVALE</title>
-    <link rel="icon" href="{{ asset('img/logovaso.svg') }}">
+    <link rel="icon" href="{{ asset('img/logoPro.png') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/400.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/500.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/600.css') }}">
@@ -79,8 +79,8 @@
 
         <div class="glass-card rounded-3xl p-6 sm:p-8">
             <div class="text-center mb-6 sm:mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-3xl shadow-2xl mb-4 sm:mb-6 overflow-hidden">
-                <img src="{{ asset('img/muni2.png') }}" alt="PROVALE" class="w-18 h-18 object-contain">
+            <div class="flex justify-center items-center w-full">
+                <img src="{{ asset('img/logoPro.png') }}" alt="PROVALE" class="w-[200px] h-[160px] object-contain">
             </div>
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-slate-800">Bienvenido</h2>

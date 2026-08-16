@@ -5,7 +5,7 @@
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden mb-6">
     <div class="flex items-center justify-between px-6 py-5 border-b-2 border-wheat">
-        <h3 class="font-extrabold text-charcoal text-xl flex items-center gap-3">
+        <h3 class="font-extrabold text-charcoal text-2xl flex items-center gap-3">
             <i class="fas fa-building text-leaf"></i> Padrón de Club de Madres y Comités PVL
         </h3>
         <a href="{{ route('club-reconocimientos.index') }}" class="btn-secondary flex items-center gap-2">

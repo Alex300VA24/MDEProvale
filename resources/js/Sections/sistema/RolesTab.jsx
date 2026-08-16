@@ -130,10 +130,10 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
                 </div>
 
                 <div className="flex gap-3">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-danger flex-1 text-xs sm:text-sm">Cancelar</button>
                 </div>
             </form>
         </Modal>

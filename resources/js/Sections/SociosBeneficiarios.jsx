@@ -5,6 +5,7 @@ import SociosTab from './socios/SociosTab';
 import BeneficiariosTab from './socios/BeneficiariosTab';
 import PersonasTab from './socios/PersonasTab';
 import PadronModal from './socios/PadronModal';
+import MoreActionsMenu from '../Components/MoreActionsMenu';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -70,10 +71,13 @@ export default function SociosBeneficiarios() {
     return (
         <>
             <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
-                    <h3 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
+                <div className="px-4 sm:px-6 py-4 sm:py-5">
+                    <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                         <i className={`fas ${header.icon} text-leaf`} /> {header.title}
                     </h3>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
                     <div className="flex flex-wrap items-center gap-2">
                         {can.create && tab === 'socios' && (
                             <button
@@ -102,39 +106,30 @@ export default function SociosBeneficiarios() {
                                 <i className="fas fa-plus" /> Nueva Persona
                             </button>
                         )}
-                        <a
-                            href="/socios-beneficiarios/beneficiarios-imprimir"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                        >
-                            <i className="fas fa-print" /> Ficha
-                        </a>
-                        <button
-                            type="button"
-                            onClick={() => setPadronOpen(true)}
-                            className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                        >
-                            <i className="fas fa-clipboard-list" /> Padrón
-                        </button>
+                        <MoreActionsMenu
+                            items={[
+                                { icon: 'fa-print', label: 'Ficha', href: '/socios-beneficiarios/beneficiarios-imprimir', target: '_blank' },
+                                { icon: 'fa-clipboard-list', label: 'Padrón', onClick: () => setPadronOpen(true) },
+                            ]}
+                        />
                     </div>
-                </div>
 
-                <div className="flex border-b-2 border-wheat bg-cream px-2 sm:px-4 gap-1 overflow-x-auto">
-                    {TABS.map((t) => (
-                        <button
-                            key={t.key}
-                            type="button"
-                            onClick={() => setTab(t.key)}
-                            className={`flex items-center gap-2 px-3 sm:px-5 py-3 text-xs sm:text-sm font-bold border-b-2 -mb-px whitespace-nowrap transition-all ${
-                                tab === t.key
-                                    ? 'text-leaf border-leaf'
-                                    : 'text-earth border-transparent hover:text-charcoal'
-                            }`}
-                        >
-                            <i className={`fas ${t.icon}`} /> {t.label}
-                        </button>
-                    ))}
+                    <div className="flex items-center gap-1 overflow-x-auto">
+                        {TABS.map((t) => (
+                            <button
+                                key={t.key}
+                                type="button"
+                                onClick={() => setTab(t.key)}
+                                className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                    tab === t.key
+                                        ? 'text-leaf border-leaf'
+                                        : 'text-earth border-transparent hover:text-charcoal'
+                                }`}
+                            >
+                                <i className={`fas ${t.icon}`} /> {t.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="p-4 sm:p-6">

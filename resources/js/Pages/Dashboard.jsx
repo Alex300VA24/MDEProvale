@@ -213,16 +213,18 @@ export default function Dashboard() {
 
                     <header id="top-header" className="relative flex items-center justify-between px-4 sm:px-8 h-16 sm:h-20">
                         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                            <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-blue-mid to-navy-dark flex items-center justify-center overflow-hidden flex-shrink-0 shadow-md ring-1 ring-black/5">
-                                <img src="/img/logovaso.svg" alt="PROVALE" className="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
-                            </div>
+                            <img 
+                            src="/img/logoPro.png" 
+                            alt="PROVALE" 
+                            className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" 
+                            />
                             <div className="min-w-0">
                                 <div className="hidden sm:flex items-center gap-1.5 mb-0.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-leaf pulse-dot flex-shrink-0" />
                                     <span className="text-leaf text-[10px] font-bold uppercase tracking-widest">Sistema activo</span>
                                 </div>
                                 <h2 className="text-navy font-extrabold text-[14px] sm:text-[17px] tracking-tight truncate leading-tight">
-                                    Sistema de Gestión <span className="text-blue">PROVALE</span>
+                                    Sistema de Gestión Integral <span className="text-blue">PROVALE</span>
                                 </h2>
                             </div>
                         </div>
@@ -268,7 +270,7 @@ export default function Dashboard() {
                         </div>
                     </header>
 
-                    <main className="flex-1 p-4 sm:p-6 lg:p-8">
+                    <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-100">
                         <Suspense fallback={<SectionSkeleton />}>
                             {activeSection === 'inicio' ? (
                                 <ActiveComponent onNavigate={navigate} />

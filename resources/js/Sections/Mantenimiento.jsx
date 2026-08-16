@@ -49,7 +49,7 @@ function ResponsibleCard({ title, subtitle, icon, iconClass, responsible, people
     };
 
     return (
-        <div className="bg-cream rounded-xl p-6 border-2 border-wheat">
+        <div className="bg-wheat/40 rounded-xl p-6">
             <div className="flex items-center gap-3 mb-4">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconClass}`}>
                     <i className={`fas ${icon}`} />
@@ -78,10 +78,10 @@ function ResponsibleCard({ title, subtitle, icon, iconClass, responsible, people
                         />
                     </div>
                     <div className="flex gap-3 pt-2">
+                        <button type="button" onClick={() => setOpen(false)} className="btn-secondary flex-1">Cancelar</button>
                         <button type="submit" disabled={submitting} className="btn-primary flex-1">
                             <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> Guardar
                         </button>
-                        <button type="button" onClick={() => setOpen(false)} className="btn-danger flex-1">Cancelar</button>
                     </div>
                 </form>
             </Modal>
@@ -139,10 +139,10 @@ function RacionFormModal({ mode, racion, onClose, onSaved }) {
                     <input type="number" step="0.01" min="0" value={leche} onChange={(e) => setLeche(e.target.value)} className={inputCls} required placeholder="Ej: 410.00" />
                 </div>
                 <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
-                    <button type="button" onClick={onClose} className="btn-danger flex-1">Cancelar</button>
                 </div>
             </form>
         </Modal>
@@ -209,10 +209,28 @@ export default function Mantenimiento() {
 
     return (
         <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
-                <h3 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
+            <div className="px-4 sm:px-6 py-4 sm:py-5">
+                <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                     <i className="fas fa-sliders text-leaf" /> Responsables y Raciones
                 </h3>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    {can.create && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setFormMode('create');
+                                setEditing(null);
+                                setFormOpen(true);
+                            }}
+                            className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                        >
+                            <i className="fas fa-plus" /> Nueva Ración
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="p-4 sm:p-6 space-y-8">
@@ -260,24 +278,9 @@ export default function Mantenimiento() {
                         </div>
 
                         <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="font-extrabold text-charcoal text-lg flex items-center gap-2">
-                                    <i className="fas fa-utensils text-leaf" /> Raciones por Año
-                                </h4>
-                                {can.create && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setFormMode('create');
-                                            setEditing(null);
-                                            setFormOpen(true);
-                                        }}
-                                        className="btn-primary text-sm"
-                                    >
-                                        <i className="fas fa-plus mr-2" /> Nueva Ración
-                                    </button>
-                                )}
-                            </div>
+                            <h4 className="font-extrabold text-charcoal text-lg flex items-center gap-2 mb-4">
+                                <i className="fas fa-utensils text-leaf" /> Raciones por Año
+                            </h4>
 
                             <div className="overflow-x-auto -mx-4 sm:mx-0">
                                 <table className="data-table w-full text-xs sm:text-sm min-w-[500px]">

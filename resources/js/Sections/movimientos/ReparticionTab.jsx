@@ -13,6 +13,8 @@ const MONTHS = [
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
+const PAGE_SIZE = 15;
+
 export default function ReparticionTab() {
     const toast = useToast();
     const now = new Date();
@@ -21,6 +23,7 @@ export default function ReparticionTab() {
     const [report, setReport] = useState(null);
     const [notice, setNotice] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
 
     const debouncedYear = useDebounced(year, 500);
 
@@ -33,7 +36,10 @@ export default function ReparticionTab() {
         (async () => {
             try {
                 const res = await http.get('/api/dashboard/movimientos/reparticion', { params: { year: debouncedYear, month } });
-                if (active) setReport(res.data);
+                if (active) {
+                    setReport(res.data);
+                    setPage(1);
+                }
             } catch (err) {
                 if (active) {
                     setReport(null);
@@ -47,6 +53,14 @@ export default function ReparticionTab() {
             active = false;
         };
     }, [debouncedYear, month]);
+
+    const totalAssociations = report?.associations.length ?? 0;
+    const totalPages = Math.max(1, Math.ceil(totalAssociations / PAGE_SIZE));
+    const pagedAssociations = report
+        ? report.associations.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+        : [];
+    const rangeFrom = totalAssociations === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    const rangeTo = Math.min(page * PAGE_SIZE, totalAssociations);
 
     return (
         <>
@@ -122,7 +136,7 @@ export default function ReparticionTab() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    report.associations.map((a) => (
+                                    pagedAssociations.map((a) => (
                                         <tr key={a.id} className="row-enter">
                                             <td className="px-3 sm:px-4 py-3 font-mono text-earth">{a.codigo}</td>
                                             <td className="px-3 sm:px-4 py-3 font-semibold">{a.nombre}</td>
@@ -136,6 +150,46 @@ export default function ReparticionTab() {
                             </tbody>
                         </table>
                     </div>
+
+                    {totalAssociations > 0 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+                            <span className="text-xs sm:text-sm text-earth font-semibold">
+                                Mostrando {rangeFrom} - {rangeTo} de {totalAssociations} comités
+                            </span>
+                            <nav className="flex flex-wrap items-center justify-center gap-1">
+                                <button
+                                    type="button"
+                                    disabled={page <= 1}
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    className="min-w-9 h-9 px-2 rounded-lg text-sm font-semibold transition-all bg-cream text-earth hover:bg-mist disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    ‹
+                                </button>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setPage(p)}
+                                        className={`min-w-9 h-9 px-2 rounded-lg text-sm font-semibold transition-all ${
+                                            p === page
+                                                ? 'bg-gradient-to-r from-sky to-blue text-white shadow'
+                                                : 'bg-cream text-earth hover:bg-mist'
+                                        }`}
+                                    >
+                                        {p}
+                                    </button>
+                                ))}
+                                <button
+                                    type="button"
+                                    disabled={page >= totalPages}
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    className="min-w-9 h-9 px-2 rounded-lg text-sm font-semibold transition-all bg-cream text-earth hover:bg-mist disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                    ›
+                                </button>
+                            </nav>
+                        </div>
+                    )}
                 </>
             )}
 
