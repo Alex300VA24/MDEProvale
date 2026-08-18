@@ -12,8 +12,13 @@ const BASE = '/api/dashboard/movimientos';
 
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
 const inputCls =
-    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 const readonlyCls = inputCls.replace('bg-white', 'bg-gray-100');
+
+const MONTHS = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
 
 function IngresoFormModal({ options, onClose, onSaved }) {
     const toast = useToast();
@@ -199,7 +204,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', type_transaction_id: '', fecha_inicio: '', fecha_fin: '' });
+    const [filters, setFilters] = useState({ search: '', type_transaction_id: '', year: '', month: '' });
     const [page, setPage] = useState(1);
     const [creating, setCreating] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -217,12 +222,12 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
             const params = { per_page: 10, page };
             if (debouncedFilters.search) params.search = debouncedFilters.search;
             if (debouncedFilters.type_transaction_id) params.type_transaction_id = debouncedFilters.type_transaction_id;
-            if (debouncedFilters.fecha_inicio) params.fecha_inicio = debouncedFilters.fecha_inicio;
-            if (debouncedFilters.fecha_fin) params.fecha_fin = debouncedFilters.fecha_fin;
+            if (debouncedFilters.year) params.year = debouncedFilters.year;
+            if (debouncedFilters.month) params.month = debouncedFilters.month;
             const res = await http.get(`${BASE}/transactions`, { params });
             setData(res.data);
         } catch {
-            toast.error('No se pudo cargar el kardex de movimientos.');
+            toast.error('No se pudieron cargar los movimientos.');
         } finally {
             setLoading(false);
         }
@@ -253,17 +258,29 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
 
     return (
         <>
-            <form onSubmit={(e) => e.preventDefault()} className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4 flex-wrap">
-                <div className="w-full sm:w-64">
-                    <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) => setFilter('search', e.target.value)}
-                        placeholder="Buscar por producto..."
-                        className={inputCls}
-                    />
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+            <form
+                onSubmit={(e) => e.preventDefault()}
+                className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
+            >
+                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[22rem] min-w-0">
+                    <label className={labelCls}>Buscar</label>
+                    <div className="relative">
+                        <i
+                            className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"
+                            aria-hidden="true"
+                        />
+                        <input
+                            type="text"
+                            value={filters.search}
+                            onChange={(e) => setFilter('search', e.target.value)}
+                            placeholder="Buscar por producto..."
+                            className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 min-w-40">
+                <div className="w-full sm:w-40">
+                    <label className={labelCls}>Tipo</label>
                     <select value={filters.type_transaction_id} onChange={(e) => setFilter('type_transaction_id', e.target.value)} className={inputCls}>
                         <option value="">Todos los Tipos</option>
                         {(options.types || []).map((t) => (
@@ -271,25 +288,36 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                         ))}
                     </select>
                 </div>
-                <div className="flex-1 min-w-36">
-                    <input type="date" value={filters.fecha_inicio} onChange={(e) => setFilter('fecha_inicio', e.target.value)} className={inputCls} />
+                <div className="w-full sm:w-28">
+                    <label className={labelCls}>Año</label>
+                    <select value={filters.year} onChange={(e) => setFilter('year', e.target.value)} className={inputCls}>
+                        <option value="">Todos los Años</option>
+                        {(options.years || []).map((year) => (
+                            <option key={year} value={year}>{year}</option>
+                        ))}
+                    </select>
                 </div>
-                <div className="flex-1 min-w-36">
-                    <input type="date" value={filters.fecha_fin} onChange={(e) => setFilter('fecha_fin', e.target.value)} className={inputCls} />
+                <div className="w-full sm:w-32">
+                    <label className={labelCls}>Mes</label>
+                    <select value={filters.month} onChange={(e) => setFilter('month', e.target.value)} className={inputCls}>
+                        <option value="">Todos los Meses</option>
+                        {MONTHS.map((month, index) => (
+                            <option key={month} value={index + 1}>{month}</option>
+                        ))}
+                    </select>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFilters({ search: '', type_transaction_id: '', fecha_inicio: '', fecha_fin: '' });
-                            setPage(1);
-                        }}
-                        className="btn-secondary text-xs sm:text-sm"
-                    >
-                        <i className="fas fa-broom mr-1 sm:mr-2" /> Limpiar
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFilters({ search: '', type_transaction_id: '', year: '', month: '' });
+                        setPage(1);
+                    }}
+                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                >
+                    <i className="fa-solid fa-sliders" /> Limpiar filtros
+                </button>
             </form>
+            </div>
 
             {loading && !data && (
                 <div className="flex items-center justify-center py-10 text-earth">
@@ -299,24 +327,23 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
 
             {data && (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="data-table w-full text-xs sm:text-sm min-w-[900px]">
+                    <table className="data-table w-full text-xs sm:text-sm min-w-[840px]">
                         <thead>
                             <tr>
-                                <th className="px-3 sm:px-4 py-3 text-left">ID</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Tipo</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Producto</th>
                                 <th className="px-3 sm:px-4 py-3 text-right">Cantidad</th>
                                 <th className="px-3 sm:px-4 py-3 text-right">P. Unit.</th>
                                 <th className="px-3 sm:px-4 py-3 text-right">Total</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Documento</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Fecha</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Período</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {data.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={9}>
+                                    <td colSpan={8}>
                                         <div className="empty-state">
                                             <i className="fas fa-right-left" />
                                             <p>No hay movimientos registrados</p>
@@ -326,7 +353,6 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                             ) : (
                                 data.data.map((tx) => (
                                     <tr key={tx.id} className="row-enter">
-                                        <td className="px-3 sm:px-4 py-3 text-earth font-mono">#{tx.id}</td>
                                         <td className="px-3 sm:px-4 py-3">
                                             <span className={`px-2 py-1 rounded-lg text-xs font-bold ${typeBadgeClass(tx.type?.title)}`}>
                                                 {tx.type?.title || '-'}
@@ -337,7 +363,10 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                                         <td className="px-3 sm:px-4 py-3 text-right">S/ {money(tx.unit_price)}</td>
                                         <td className="px-3 sm:px-4 py-3 text-right font-bold">S/ {money(tx.total_price)}</td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{tx.document_number || '-'}</td>
-                                        <td className="px-3 sm:px-4 py-3 text-earth">{fmtDate(tx.transaction_date) || '-'}</td>
+                                        <td className="px-3 sm:px-4 py-3 text-earth whitespace-nowrap">
+                                            <div><span className="font-semibold text-charcoal">Desde:</span> {fmtDate(tx.detail_product?.start_date) || '-'}</div>
+                                            <div><span className="font-semibold text-charcoal">Hasta:</span> {fmtDate(tx.detail_product?.end_date) || '-'}</div>
+                                        </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
                                             <div className="flex items-center justify-center gap-1 sm:gap-2">
                                                 {can.edit && (

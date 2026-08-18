@@ -26,7 +26,7 @@ class MovimientosController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'type_transaction_id', 'fecha_inicio', 'fecha_fin']);
+        $filters = $request->only(['search', 'type_transaction_id', 'year', 'month', 'fecha_inicio', 'fecha_fin']);
         $transactions = $this->transactionService->searchTransactions($filters, (int) $request->input('per_page', 15));
 
         return TransactionResource::collection($transactions);
@@ -35,6 +35,15 @@ class MovimientosController extends Controller
     public function options()
     {
         $today = now()->toDateString();
+        $years = Transaction::query()
+            ->whereNotNull('transaction_date')
+            ->orderByDesc('transaction_date')
+            ->pluck('transaction_date')
+            ->map(fn ($date) => (int) \Carbon\Carbon::parse($date)->format('Y'))
+            ->push((int) now()->format('Y'))
+            ->unique()
+            ->sortDesc()
+            ->values();
 
         $detailProducts = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
             ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
@@ -61,6 +70,7 @@ class MovimientosController extends Controller
             'types' => TypeTransaction::select(['id', 'title'])->get(),
             'products' => Product::select(['id', 'title', 'abbreviation'])->get(),
             'detail_products' => $detailProducts,
+            'years' => $years,
         ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 

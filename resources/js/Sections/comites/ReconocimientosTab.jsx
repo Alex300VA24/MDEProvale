@@ -13,7 +13,7 @@ const BASE = '/api/dashboard/club-madres';
 
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
 const inputCls =
-    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
 function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }) {
     const toast = useToast();
@@ -154,7 +154,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', state_id: '', vigencia: 'vigentes', anio: '' });
+    const [filters, setFilters] = useState({ search: '', vigencia: 'vigentes', anio: '' });
     const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -174,7 +174,6 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
         try {
             const params = { per_page: 10, page, vigencia: debouncedFilters.vigencia };
             if (debouncedFilters.search) params.search = debouncedFilters.search;
-            if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
             if (debouncedFilters.anio) params.anio = debouncedFilters.anio;
             const res = await http.get(`${BASE}/reconocimientos`, { params });
             setData(res.data);
@@ -227,32 +226,37 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
 
     return (
         <>
-            <form onSubmit={(e) => e.preventDefault()} className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4 flex-wrap">
-                <div className="w-full sm:w-72">
-                    <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) => setFilter('search', e.target.value)}
-                        placeholder="Buscar por documento..."
-                        className={inputCls}
-                    />
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+            <form
+                onSubmit={(e) => e.preventDefault()}
+                className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
+            >
+                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                    <label className={labelCls}>Buscar</label>
+                    <div className="relative">
+                        <i
+                            className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"
+                            aria-hidden="true"
+                        />
+                        <input
+                            type="text"
+                            value={filters.search}
+                            onChange={(e) => setFilter('search', e.target.value)}
+                            placeholder="Buscar por documento..."
+                            className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 min-w-36">
-                    <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Estados</option>
-                        {(options.states || []).map((s) => (
-                            <option key={s.id} value={s.id}>{s.title}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="flex-1 min-w-36">
+                <div className="w-full sm:w-40">
+                    <label className={labelCls}>Vigencia</label>
                     <select value={filters.vigencia} onChange={(e) => setFilter('vigencia', e.target.value)} className={inputCls}>
                         <option value="vigentes">Vigentes</option>
                         <option value="vencidas">Vencidas</option>
                         <option value="">Todas</option>
                     </select>
                 </div>
-                <div className="flex-1 min-w-32">
+                <div className="w-full sm:w-28">
+                    <label className={labelCls}>Año</label>
                     <select value={filters.anio} onChange={(e) => setFilter('anio', e.target.value)} className={inputCls}>
                         <option value="">Todos los Años</option>
                         {(options.years || []).map((y) => (
@@ -260,19 +264,18 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                         ))}
                     </select>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFilters({ search: '', state_id: '', vigencia: 'vigentes', anio: '' });
-                            setPage(1);
-                        }}
-                        className="btn-secondary text-xs sm:text-sm"
-                    >
-                        <i className="fas fa-broom mr-1 sm:mr-2" /> Limpiar
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFilters({ search: '', vigencia: 'vigentes', anio: '' });
+                        setPage(1);
+                    }}
+                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                >
+                    <i className="fa-solid fa-sliders" /> Limpiar filtros
+                </button>
             </form>
+            </div>
 
             {loading && !data && (
                 <div className="flex items-center justify-center py-10 text-earth">
@@ -282,10 +285,9 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
 
             {data && (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="data-table w-full text-xs sm:text-sm min-w-[720px]">
+                    <table className="data-table w-full text-xs sm:text-sm min-w-[660px]">
                         <thead>
                             <tr>
-                                <th className="px-3 sm:px-4 py-3 text-left">ID</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Documento</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">F. Documento</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Vigencia</th>
@@ -296,7 +298,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                         <tbody>
                             {data.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6}>
+                                    <td colSpan={5}>
                                         <div className="empty-state">
                                             <i className="fas fa-scroll" />
                                             <p>No hay resoluciones registradas</p>
@@ -308,7 +310,6 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                                     const status = vigenciaBadge(resolution);
                                     return (
                                         <tr key={resolution.id} className="row-enter">
-                                            <td className="px-3 sm:px-4 py-3 text-earth font-mono">#{resolution.id}</td>
                                             <td className="px-3 sm:px-4 py-3 font-semibold">{resolution.document || '-'}</td>
                                             <td className="px-3 sm:px-4 py-3 text-earth">{fmtDateTime(resolution.date_document)}</td>
                                             <td className="px-3 sm:px-4 py-3">

@@ -64,8 +64,12 @@ class ComitesController extends Controller
             }
         }
 
-        if ($request->filled('resolution_id')) {
-            $query->where('resolution_id', $request->resolution_id);
+        if ($request->filled('place_id')) {
+            $query->whereHas('placeSector', fn ($q) => $q->where('place_id', $request->place_id));
+        }
+
+        if ($request->filled('sector_id')) {
+            $query->whereHas('placeSector', fn ($q) => $q->where('sector_id', $request->sector_id));
         }
 
         $associations = $query->orderByDesc('id')->paginate((int) $request->input('per_page', 10));

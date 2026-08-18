@@ -14,7 +14,7 @@ const SEARCH_PEOPLE = '/api/search/people';
 
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
 const inputCls =
-    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
 function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }) {
     const toast = useToast();
@@ -377,17 +377,28 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
 
     return (
         <>
-            <form onSubmit={(e) => e.preventDefault()} className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <div className="w-full sm:w-72">
-                    <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) => setFilter('search', e.target.value)}
-                        placeholder="Buscar por nombre o DNI"
-                        className="w-full px-4 sm:px-10 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
-                    />
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+            <form
+                onSubmit={(e) => e.preventDefault()}
+                className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
+            >
+                <div className="w-full lg:flex-1 min-w-[180px]">
+                    <label className={labelCls}>Buscar</label>
+                    <div className="relative">
+                        <i
+                            className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"
+                        />
+                        <input
+                            type="text"
+                            value={filters.search}
+                            onChange={(e) => setFilter('search', e.target.value)}
+                            placeholder="Buscar por nombre o DNI"
+                            className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 sm:min-w-48">
+                <div className="w-full sm:w-44 sm:w-44 lg:w-44 shrink-0">
+                    <label className={labelCls}>Socio (Titular)</label>
                     <Combobox
                         value={filters.partner_id}
                         onChange={(v) => setFilter('partner_id', v ?? '')}
@@ -396,7 +407,8 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                         allowClear
                     />
                 </div>
-                <div className="flex-1 sm:min-w-40">
+                <div className="w-full sm:w-40 lg:w-40 shrink-0">
+                    <label className={labelCls}>Parentesco</label>
                     <Combobox
                         value={filters.relationship_id}
                         onChange={(v) => setFilter('relationship_id', v ?? '')}
@@ -405,20 +417,24 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                         allowClear
                     />
                 </div>
-                <div>
+                <div className="w-full sm:w-auto shrink-0 flex flex-col">
                     <button
                         type="button"
                         onClick={() => {
                             setFilters({ search: '', partner_id: '', relationship_id: '' });
                             setPage(1);
                         }}
-                        className="btn-secondary text-xs sm:text-sm"
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
                     >
-                        <i className="fas fa-broom mr-1 sm:mr-2" />
-                        Limpiar
+                        <i className="fa-solid fa-sliders" /> Limpiar filtros
                     </button>
+                    <p style={{ visibility: 'hidden', height: 15, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
                 </div>
             </form>
+            </div>
 
             {loading && !data && (
                 <div className="flex items-center justify-center py-10 text-earth">

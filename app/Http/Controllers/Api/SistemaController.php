@@ -25,9 +25,30 @@ class SistemaController extends Controller
 {
     // ==================== USUARIOS ====================
 
-    public function usuarios()
+    public function usuarios(Request $request)
     {
-        $usuarios = User::with(['rol', 'state'])->orderBy('names')->get();
+        $query = User::with(['rol', 'state'])->orderBy('names');
+
+        if ($search = trim((string) $request->input('search'))) {
+            $query->where(function ($q) use ($search) {
+                $q->where('names', 'like', "%{$search}%")
+                    ->orWhere('father_surname', 'like', "%{$search}%")
+                    ->orWhere('mother_surname', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('dni', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('rol_id')) {
+            $query->where('rol_id', $request->input('rol_id'));
+        }
+
+        if ($request->filled('state_id')) {
+            $query->where('state_id', $request->input('state_id'));
+        }
+
+        $usuarios = $query->get();
 
         return response()->json([
             'data' => UserResource::collection($usuarios),

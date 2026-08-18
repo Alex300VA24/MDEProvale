@@ -51,6 +51,7 @@ export default function Dashboard() {
     );
 
     const [activeSection, setActiveSection] = useState(getSectionFromUrl);
+    const [navigationIntent, setNavigationIntent] = useState(null);
     const [sidebarExpanded, setSidebarExpanded] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
@@ -60,7 +61,8 @@ export default function Dashboard() {
     const [notifLoading, setNotifLoading] = useState(false);
     const notifLoaded = useRef(false);
 
-    const navigate = (key) => {
+    const navigate = (key, action = null) => {
+        setNavigationIntent(action ? { section: key, action } : null);
         setActiveSection(key);
         const url = new URL(window.location.href);
         if (key === 'inicio') {
@@ -74,7 +76,10 @@ export default function Dashboard() {
 
     // Botón "atrás" del navegador también cambia de sección.
     useEffect(() => {
-        const onPop = () => setActiveSection(getSectionFromUrl());
+        const onPop = () => {
+            setNavigationIntent(null);
+            setActiveSection(getSectionFromUrl());
+        };
         window.addEventListener('popstate', onPop);
         return () => window.removeEventListener('popstate', onPop);
     }, []);
@@ -272,11 +277,10 @@ export default function Dashboard() {
 
                     <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-100">
                         <Suspense fallback={<SectionSkeleton />}>
-                            {activeSection === 'inicio' ? (
-                                <ActiveComponent onNavigate={navigate} />
-                            ) : (
-                                <ActiveComponent />
-                            )}
+                            <ActiveComponent
+                                onNavigate={activeSection === 'inicio' ? navigate : undefined}
+                                initialAction={navigationIntent?.section === activeSection ? navigationIntent.action : null}
+                            />
                         </Suspense>
                     </main>
                 </div>

@@ -7,11 +7,11 @@ import ReparticionTab from './movimientos/ReparticionTab';
 const BASE = '/api/dashboard/movimientos';
 
 const HEADERS = {
-    kardex: { icon: 'fa-right-left', title: 'Kardex de Movimientos' },
-    reparticion: { icon: 'fa-truck', title: 'Repartición Mensual' },
+    kardex: { icon: 'fa-right-left', title: 'Movimientos', description: 'Administra los movimientos de ingreso y salida de productos.' },
+    reparticion: { icon: 'fa-truck', title: 'Repartición Mensual', description: 'Administra la repartición mensual de productos.' },
 };
 
-export default function Movimientos() {
+export default function Movimientos({ initialAction }) {
     const { modules } = usePage().props;
     const mod = (modules ?? []).find((m) => m.slug === 'movimientos');
 
@@ -22,7 +22,7 @@ export default function Movimientos() {
         del: !!mod?.can_delete,
     };
 
-    const [tab, setTab] = useState('kardex');
+    const [tab, setTab] = useState(initialAction === 'reparticion' ? 'reparticion' : 'kardex');
     const [options, setOptions] = useState(null);
     const [optionsError, setOptionsError] = useState(false);
     const kardexRef = useRef(null);
@@ -61,21 +61,10 @@ export default function Movimientos() {
                 <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                     <i className={`fas ${header.icon} text-leaf`} /> {header.title}
                 </h3>
+                <p className="text-earth text-xs sm:text-sm mt-1">{header.description}</p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    {tab === 'kardex' && can.create && (
-                        <button
-                            type="button"
-                            onClick={() => kardexRef.current?.openCreate()}
-                            className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                        >
-                            <i className="fas fa-plus" /> Nuevo Ingreso
-                        </button>
-                    )}
-                </div>
-
                 <div className="flex items-center gap-1 overflow-x-auto">
                     <button
                         type="button"
@@ -84,7 +73,7 @@ export default function Movimientos() {
                             tab === 'kardex' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
                         }`}
                     >
-                        <i className="fas fa-right-left" /> Kardex
+                        <i className="fas fa-right-left" /> Movimientos
                     </button>
                     <button
                         type="button"
@@ -96,22 +85,30 @@ export default function Movimientos() {
                         <i className="fas fa-truck" /> Repartición
                     </button>
                 </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {tab === 'kardex' && can.create && (
+                        <button
+                            type="button"
+                            onClick={() => kardexRef.current?.openCreate()}
+                            className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                        >
+                            <i className="fas fa-plus" /> Nuevo Ingreso
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="p-4 sm:p-6">
                 {tab === 'kardex' && (
-                    optionsError ? (
-                        <div className="empty-state">
-                            <i className="fas fa-exclamation-triangle" />
-                            <p>No se pudieron cargar los datos de la sección. Recarga la página.</p>
-                        </div>
-                    ) : !options ? (
-                        <div className="flex items-center justify-center py-10 text-earth">
-                            <i className="fas fa-spinner fa-spin mr-2" /> Cargando...
-                        </div>
-                    ) : (
-                        <KardexTab ref={kardexRef} options={options} can={can} />
-                    )
+                    <>
+                        {optionsError && (
+                            <div className="mb-3 text-xs text-clay bg-clay-light rounded-lg px-3 py-2">
+                                <i className="fas fa-exclamation-triangle mr-1" /> No se pudieron cargar algunas opciones de filtro.
+                            </div>
+                        )}
+                        <KardexTab ref={kardexRef} options={options ?? {}} can={can} />
+                    </>
                 )}
 
                 {tab === 'reparticion' && <ReparticionTab />}

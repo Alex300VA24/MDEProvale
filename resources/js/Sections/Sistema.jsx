@@ -6,10 +6,10 @@ import ModulosTab from './sistema/ModulosTab';
 import NotificacionesTab from './sistema/NotificacionesTab';
 
 const HEADERS = {
-    usuarios: { icon: 'fa-users', title: 'Gestión de Usuarios', newLabel: 'Nuevo Usuario' },
-    roles: { icon: 'fa-user-tag', title: 'Gestión de Roles', newLabel: 'Nuevo Rol' },
-    modulos: { icon: 'fa-puzzle-piece', title: 'Gestión de Módulos', newLabel: 'Nuevo Módulo' },
-    notificaciones: { icon: 'fa-bell', title: 'Notificaciones' },
+    usuarios: { icon: 'fa-users', title: 'Gestión de Usuarios', newLabel: 'Nuevo Usuario', description: 'Administra los usuarios del sistema.' },
+    roles: { icon: 'fa-user-tag', title: 'Gestión de Roles', newLabel: 'Nuevo Rol', description: 'Administra los roles y permisos del sistema.' },
+    modulos: { icon: 'fa-puzzle-piece', title: 'Gestión de Módulos', newLabel: 'Nuevo Módulo', description: 'Administra los módulos del sistema.' },
+    notificaciones: { icon: 'fa-bell', title: 'Notificaciones', description: 'Administra las notificaciones del sistema.' },
 };
 
 export default function Sistema() {
@@ -47,21 +47,10 @@ export default function Sistema() {
                 <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                     <i className={`fas ${header.icon} text-leaf`} /> {header.title}
                 </h3>
+                <p className="text-earth text-xs sm:text-sm mt-1">{header.description}</p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    {header.newLabel && can.create && activeCreateRef && (
-                        <button
-                            type="button"
-                            onClick={() => activeCreateRef.current?.openCreate()}
-                            className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                        >
-                            <i className="fas fa-plus" /> {header.newLabel}
-                        </button>
-                    )}
-                </div>
-
                 <div className="flex items-center gap-1 overflow-x-auto">
                     {Object.entries(HEADERS).map(([key, h]) => (
                         <button
@@ -75,6 +64,18 @@ export default function Sistema() {
                             <i className={`fas ${h.icon}`} /> {h.title.replace('Gestión de ', '')}
                         </button>
                     ))}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {header.newLabel && can.create && activeCreateRef && (
+                        <button
+                            type="button"
+                            onClick={() => activeCreateRef.current?.openCreate()}
+                            className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                        >
+                            <i className="fas fa-plus" /> {header.newLabel}
+                        </button>
+                    )}
                 </div>
             </div>
 

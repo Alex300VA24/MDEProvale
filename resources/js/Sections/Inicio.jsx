@@ -24,19 +24,18 @@ function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label }
     );
 }
 
-function QuickButton({ href, icon, label, bgClass, tileClass, textClass }) {
+function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
     return (
-        <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
+        <button
+            type="button"
+            onClick={onClick}
             className={`quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all group ${bgClass}`}
         >
             <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all ${tileClass}`}>
                 <i className={`fas ${icon}`} />
             </div>
             <span className={`text-[8px] sm:text-[10px] font-semibold text-center leading-tight ${textClass}`}>{label}</span>
-        </a>
+        </button>
     );
 }
 
@@ -250,7 +249,7 @@ export default function Inicio({ onNavigate }) {
                         <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 sm:mt-5">
                             <button
                                 type="button"
-                                onClick={() => onNavigate?.('productos')}
+                                onClick={() => onNavigate?.('productos', 'new-pecosa')}
                                 className="px-3 sm:px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-xs sm:text-sm hover:bg-white/30 transition-all border border-white/20"
                             >
                                 <i className="fas fa-plus mr-1" />Nueva Pecosa
@@ -386,10 +385,10 @@ export default function Inicio({ onNavigate }) {
                 </div>
 
                 <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
-                    <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-4">Reportes Rápidos</h3>
+                    <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-4">Acciones Rápidas</h3>
                     <div className="grid grid-cols-2 gap-2">
                         <QuickButton
-                            href="/socios-beneficiarios/beneficiarios-padron"
+                            onClick={() => onNavigate?.('socios', 'beneficiarios-padron')}
                             icon="fa-file-pdf"
                             label="Padrón Beneficiarios"
                             bgClass="bg-blue-light hover:bg-blue/10"
@@ -397,15 +396,15 @@ export default function Inicio({ onNavigate }) {
                             textClass="text-blue"
                         />
                         <QuickButton
-                            href="/club-reconocimientos/club-padron"
+                            onClick={() => onNavigate?.('comites', 'comites-padron')}
                             icon="fa-file-pdf"
-                            label="Padrón Club"
+                            label="Padrón Comité"
                             bgClass="bg-amber-light hover:bg-amber/10"
                             tileClass="bg-amber"
                             textClass="text-amber"
                         />
                         <QuickButton
-                            href="/productos-pecosas/productos-reporte/reparticion"
+                            onClick={() => onNavigate?.('movimientos', 'reparticion')}
                             icon="fa-file-pdf"
                             label="Repartición"
                             bgClass="bg-teal-light hover:bg-teal/10"
@@ -414,13 +413,13 @@ export default function Inicio({ onNavigate }) {
                         />
                         <button
                             type="button"
-                            onClick={() => onNavigate?.('productos')}
+                            onClick={() => onNavigate?.('productos', 'productos')}
                             className="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-sky-light hover:bg-sky/10 transition-all group"
                         >
                             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-sky rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
                                 <i className="fas fa-box" />
                             </div>
-                            <span className="text-[8px] sm:text-[10px] font-semibold text-sky text-center leading-tight">Pecosas</span>
+                            <span className="text-[8px] sm:text-[10px] font-semibold text-sky text-center leading-tight">Productos</span>
                         </button>
                     </div>
                 </div>

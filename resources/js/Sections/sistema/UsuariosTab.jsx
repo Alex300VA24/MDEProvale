@@ -3,6 +3,7 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
+import { useDebounced } from '../socios/hooks';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
@@ -120,7 +121,7 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
                         </label>
                         <select value={rolId} onChange={(e) => setRolId(e.target.value)} className={inputCls} required disabled={isSelf}>
                             <option value="">Seleccionar...</option>
-                            {roles.map((r) => (
+                            {(roles || []).map((r) => (
                                 <option key={r.id} value={r.id}>{r.title}</option>
                             ))}
                         </select>
@@ -129,7 +130,7 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
                         <label className={labelCls}>Estado *</label>
                         <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
                             <option value="">Seleccionar...</option>
-                            {estados.map((s) => (
+                            {(estados || []).map((s) => (
                                 <option key={s.id} value={s.id}>{s.title}</option>
                             ))}
                         </select>
@@ -173,23 +174,30 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [filters, setFilters] = useState({ search: '', rol_id: '', state_id: '' });
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
     const [editing, setEditing] = useState(null);
     const [deleting, setDeleting] = useState(null);
     const [resetting, setResetting] = useState(null);
 
+    const debouncedFilters = useDebounced(filters, 400);
+
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await http.get(`${BASE}/usuarios`);
+            const params = {};
+            if (debouncedFilters.search) params.search = debouncedFilters.search;
+            if (debouncedFilters.rol_id) params.rol_id = debouncedFilters.rol_id;
+            if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
+            const res = await http.get(`${BASE}/usuarios`, { params });
             setData(res.data);
         } catch {
             toast.error('No se pudo cargar la lista de usuarios.');
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, [debouncedFilters, toast]);
 
     useEffect(() => {
         load();
@@ -234,18 +242,69 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
         }
     };
 
-    if (loading && !data) {
-        return (
-            <div className="flex items-center justify-center py-10 text-earth">
-                <i className="fas fa-spinner fa-spin mr-2" /> Cargando usuarios...
-            </div>
-        );
-    }
-
-    if (!data) return null;
-
     return (
         <>
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+                <div className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3">
+                    <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                        <label className={labelCls}>Buscar</label>
+                        <div className="relative">
+                            <i
+                                className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"
+                                aria-hidden="true"
+                            />
+                            <input
+                                type="text"
+                                value={filters.search}
+                                onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+                                placeholder="Buscar por nombre, usuario, email o DNI"
+                                className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                            />
+                        </div>
+                    </div>
+                    <div className="w-full sm:w-44">
+                        <label className={labelCls}>Rol</label>
+                        <select
+                            value={filters.rol_id}
+                            onChange={(e) => setFilters((prev) => ({ ...prev, rol_id: e.target.value }))}
+                            className={inputCls}
+                        >
+                            <option value="">Todos los Roles</option>
+                            {(data?.roles || []).map((r) => (
+                                <option key={r.id} value={r.id}>{r.title}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="w-full sm:w-40">
+                        <label className={labelCls}>Estado</label>
+                        <select
+                            value={filters.state_id}
+                            onChange={(e) => setFilters((prev) => ({ ...prev, state_id: e.target.value }))}
+                            className={inputCls}
+                        >
+                            <option value="">Todos los Estados</option>
+                            {(data?.estados || []).map((s) => (
+                                <option key={s.id} value={s.id}>{s.title}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setFilters({ search: '', rol_id: '', state_id: '' })}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                    >
+                        <i className="fa-solid fa-sliders" /> Limpiar filtros
+                    </button>
+                </div>
+            </div>
+
+            {loading && !data && (
+                <div className="flex items-center justify-center py-10 text-earth">
+                    <i className="fas fa-spinner fa-spin mr-2" /> Cargando usuarios...
+                </div>
+            )}
+
+            {data && (
             <div className="overflow-x-auto -mx-4 sm:mx-0">
                 <table className="data-table w-full text-xs sm:text-sm min-w-[900px]">
                     <thead>
@@ -325,14 +384,15 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                     </tbody>
                 </table>
             </div>
+            )}
 
             {formOpen && (
                 <UserFormModal
                     key={editing ? editing.id : 'create'}
                     mode={formMode}
                     usuario={editing}
-                    roles={data.roles}
-                    estados={data.estados}
+                    roles={data?.roles}
+                    estados={data?.estados}
                     onClose={() => setFormOpen(false)}
                     onSaved={() => {
                         setFormOpen(false);

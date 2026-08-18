@@ -53,9 +53,10 @@ export default function Combobox({
             const preferred = 288; // ~18rem
             const openUp = spaceBelow < 180 && spaceAbove > spaceBelow;
             const maxHeight = Math.max(120, Math.min(preferred, (openUp ? spaceAbove : spaceBelow) - 12));
+            const width = Math.max(rect.width, 288);
             setCoords({
-                left: rect.left,
-                width: rect.width,
+                left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                width,
                 top: openUp ? undefined : rect.bottom + 4,
                 bottom: openUp ? window.innerHeight - rect.top + 4 : undefined,
                 maxHeight,
@@ -225,7 +226,7 @@ export default function Combobox({
                                 key={o.id}
                                 onClick={() => handleSelect(o)}
                                 onMouseEnter={() => setHighlight(i)}
-                                className={`block w-full text-left px-4 py-2 text-sm text-charcoal truncate ${i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
+                                className={`block w-full text-left px-4 py-2 text-sm text-charcoal whitespace-normal break-words ${i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
                             >
                                 {o.label}
                             </button>

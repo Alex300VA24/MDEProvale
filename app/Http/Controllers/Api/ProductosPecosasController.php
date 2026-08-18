@@ -24,6 +24,7 @@ use App\Repositories\PecosaRepository;
 use App\Repositories\ProductRepository;
 use App\Services\PecosaService;
 use App\Services\StockService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -82,8 +83,8 @@ class ProductosPecosasController extends Controller
             ->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
             ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
             ->withSum('stocks as used_quantity', 'quantity')
-            ->orderBy('start_date', 'asc')
-            ->orderBy('id', 'asc');
+            ->orderByDesc('start_date')
+            ->orderByDesc('id');
 
         if ($search = trim((string) $request->input('search'))) {
             $query->whereHas('product', function ($q) use ($search) {
@@ -94,6 +95,24 @@ class ProductosPecosasController extends Controller
 
         if ($request->filled('product_id')) {
             $query->where('product_id', $request->input('product_id'));
+        }
+
+        if ($request->filled('year') || $request->filled('month')) {
+            $year = (int) $request->input('year', now()->year);
+
+            if ($request->filled('month')) {
+                $start = Carbon::create($year, (int) $request->input('month'), 1)->startOfMonth();
+                $end = $start->copy()->endOfMonth();
+            } else {
+                $start = Carbon::create($year, 1, 1)->startOfYear();
+                $end = $start->copy()->endOfYear();
+            }
+
+            $query->where(function ($q) use ($start, $end) {
+                $q->whereNull('start_date')->orWhere('start_date', '<=', $end->toDateString());
+            })->where(function ($q) use ($start, $end) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', $start->toDateString());
+            });
         }
 
         $periodo = $request->input('periodo');
@@ -199,7 +218,8 @@ class ProductosPecosasController extends Controller
         $detailProducts = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
             ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
             ->withSum('stocks as used_quantity', 'quantity')
-            ->orderBy('start_date', 'asc')
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
             ->get()
             ->map(fn ($dp) => [
                 'id' => $dp->id,

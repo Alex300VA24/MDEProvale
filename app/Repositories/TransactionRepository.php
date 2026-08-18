@@ -20,9 +20,12 @@ class TransactionRepository extends BaseRepository implements TransactionReposit
             ->with(['detailProduct:id,product_id,quantity,unit_price,start_date,end_date', 'detailProduct.product:id,title,abbreviation', 'typeTransaction:id,title'])
             ->when($filters['search'] ?? null, fn($q, $v) => $q->where('product_name', 'like', "{$v}%"))
             ->when($filters['type_transaction_id'] ?? null, fn($q, $v) => $q->where('type_transaction_id', $v))
+            ->when($filters['year'] ?? null, fn($q, $v) => $q->whereYear('transaction_date', $v))
+            ->when($filters['month'] ?? null, fn($q, $v) => $q->whereMonth('transaction_date', $v))
             ->when($filters['fecha_inicio'] ?? null, fn($q, $v) => $q->whereDate('transaction_date', '>=', $v))
             ->when($filters['fecha_fin'] ?? null, fn($q, $v) => $q->whereDate('transaction_date', '<=', $v))
-            ->orderBy('created_at', 'desc')
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
             ->paginate($perPage);
     }
 }

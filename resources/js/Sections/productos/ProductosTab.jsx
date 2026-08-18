@@ -12,7 +12,25 @@ const BASE = '/api/dashboard/productos-pecosas';
 
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
 const inputCls =
-    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+
+const MESES = [
+    { value: '1', label: 'Enero' },
+    { value: '2', label: 'Febrero' },
+    { value: '3', label: 'Marzo' },
+    { value: '4', label: 'Abril' },
+    { value: '5', label: 'Mayo' },
+    { value: '6', label: 'Junio' },
+    { value: '7', label: 'Julio' },
+    { value: '8', label: 'Agosto' },
+    { value: '9', label: 'Setiembre' },
+    { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' },
+    { value: '12', label: 'Diciembre' },
+];
+
+const currentYear = new Date().getFullYear();
+const ANIOS = Array.from({ length: 15 }, (_, i) => currentYear - i).map((y) => ({ value: String(y), label: String(y) }));
 
 function productStatus(dp) {
     const today = new Date();
@@ -179,7 +197,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
     const [deleting, setDeleting] = useState(null);
 
     // Detalle Productos (endpoint paginado /products/detail-products)
-    const [detFilters, setDetFilters] = useState({ search_detalle: '', product_id: '', periodo: '' });
+    const [detFilters, setDetFilters] = useState({ product_id: '', year: '', month: '', periodo: '' });
     const [detData, setDetData] = useState(null);
     const [detLoading, setDetLoading] = useState(true);
     const [detPage, setDetPage] = useState(1);
@@ -226,8 +244,9 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
         setDetLoading(true);
         try {
             const params = { per_page: 15, page: detPage };
-            if (debouncedDetFilters.search_detalle) params.search = debouncedDetFilters.search_detalle;
             if (debouncedDetFilters.product_id) params.product_id = debouncedDetFilters.product_id;
+            if (debouncedDetFilters.year) params.year = debouncedDetFilters.year;
+            if (debouncedDetFilters.month) params.month = debouncedDetFilters.month;
             if (debouncedDetFilters.periodo) params.periodo = debouncedDetFilters.periodo;
             const res = await http.get(`${BASE}/products/detail-products`, { params });
             setDetData(res.data);
@@ -282,17 +301,29 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
 
     return (
         <>
-            <form onSubmit={(e) => e.preventDefault()} className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4 flex-wrap">
-                <div className="w-full sm:w-72">
-                    <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) => setFilter('search', e.target.value)}
-                        placeholder="Buscar por nombre o abreviatura..."
-                        className={inputCls}
-                    />
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+            <form
+                onSubmit={(e) => e.preventDefault()}
+                className="mb-5 flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
+            >
+                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                    <label className={labelCls}>Buscar</label>
+                    <div className="relative">
+                        <i
+                            className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"
+                            aria-hidden="true"
+                        />
+                        <input
+                            type="text"
+                            value={filters.search}
+                            onChange={(e) => setFilter('search', e.target.value)}
+                            placeholder="Buscar por nombre o abreviatura..."
+                            className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 min-w-36">
+                <div className="w-full sm:w-40">
+                    <label className={labelCls}>Estado</label>
                     <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
                         <option value="">Todos los Estados</option>
                         {(options.states || []).map((s) => (
@@ -300,7 +331,8 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         ))}
                     </select>
                 </div>
-                <div className="flex-1 min-w-36">
+                <div className="w-full sm:w-44">
+                    <label className={labelCls}>Unidad de Medida</label>
                     <select value={filters.uom_id} onChange={(e) => setFilter('uom_id', e.target.value)} className={inputCls}>
                         <option value="">Todas las UOM</option>
                         {(options.uoms || []).map((u) => (
@@ -308,32 +340,30 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         ))}
                     </select>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFilters({ search: '', state_id: '', uom_id: '' });
-                            setPage(1);
-                        }}
-                        className="btn-secondary text-xs sm:text-sm"
-                    >
-                        <i className="fas fa-broom mr-1 sm:mr-2" /> Limpiar
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFilters({ search: '', state_id: '', uom_id: '' });
+                        setPage(1);
+                    }}
+                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 sm:shrink-0 sm:self-center"
+                >
+                    <i className="fa-solid fa-sliders" /> Limpiar filtros
+                </button>
             </form>
+            </div>
 
-            {loading && !data && (
+            {((loading && !data) || (detLoading && !detData)) && (
                 <div className="flex items-center justify-center py-10 text-earth">
-                    <i className="fas fa-spinner fa-spin mr-2" /> Cargando productos...
+                    <i className="fas fa-spinner fa-spin mr-2" /> Cargando...
                 </div>
             )}
 
-            {data && (
+            {data && detData && (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="data-table w-full text-xs sm:text-sm min-w-[600px]">
+                    <table className="data-table w-full text-xs sm:text-sm min-w-[520px]">
                         <thead>
                             <tr>
-                                <th className="px-3 sm:px-4 py-3 text-left">ID</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Nombre</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Abreviatura</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
@@ -343,7 +373,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         <tbody>
                             {data.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5}>
+                                    <td colSpan={4}>
                                         <div className="empty-state">
                                             <i className="fas fa-box" />
                                             <p>No hay productos registrados</p>
@@ -353,7 +383,6 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                             ) : (
                                 data.data.map((product) => (
                                     <tr key={product.id} className="row-enter">
-                                        <td className="px-3 sm:px-4 py-3 text-earth font-mono">#{product.id}</td>
                                         <td className="px-3 sm:px-4 py-3 font-semibold">{product.title || 'Sin nombre'}</td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{product.abbreviation || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3">
@@ -401,7 +430,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                 </div>
             )}
 
-            {data && (
+            {data && detData && (
                 <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
                     <span className="text-xs sm:text-sm text-earth font-medium">
                         Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
@@ -410,6 +439,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                 </div>
             )}
 
+            {data && detData && (
             <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden mt-6">
                     <div className="px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat">
                         <h3 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
@@ -417,18 +447,8 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         </h3>
                     </div>
                     <div className="p-4 sm:p-6">
-                        <form onSubmit={(e) => e.preventDefault()} className="mb-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="md:col-span-2">
-                                <label className={labelCls}>Buscar Producto</label>
-                                <input
-                                    type="text"
-                                    value={detFilters.search_detalle}
-                                    onChange={(e) => setDetFilters((p) => ({ ...p, search_detalle: e.target.value }))}
-                                    placeholder="Nombre o abreviatura..."
-                                    className={inputCls}
-                                />
-                            </div>
-                            <div>
+<form onSubmit={(e) => e.preventDefault()} className="mb-5 flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3">
+                            <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[22rem] min-w-0">
                                 <label className={labelCls}>Producto</label>
                                 <select
                                     value={detFilters.product_id}
@@ -441,8 +461,34 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <label className={labelCls}>Período</label>
+                            <div className="w-full sm:w-28">
+                                <label className={labelCls}>Año</label>
+                                <select
+                                    value={detFilters.year}
+                                    onChange={(e) => setDetFilters((p) => ({ ...p, year: e.target.value }))}
+                                    className={inputCls}
+                                >
+                                    <option value="">Todos los años</option>
+                                    {ANIOS.map((y) => (
+                                        <option key={y.value} value={y.value}>{y.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="w-full sm:w-32">
+                                <label className={labelCls}>Mes</label>
+                                <select
+                                    value={detFilters.month}
+                                    onChange={(e) => setDetFilters((p) => ({ ...p, month: e.target.value }))}
+                                    className={inputCls}
+                                >
+                                    <option value="">Todos los meses</option>
+                                    {MESES.map((m) => (
+                                        <option key={m.value} value={m.value}>{m.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="w-full sm:w-32">
+                                <label className={labelCls}>Vigencia</label>
                                 <select
                                     value={detFilters.periodo}
                                     onChange={(e) => setDetFilters((p) => ({ ...p, periodo: e.target.value }))}
@@ -453,13 +499,17 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                     <option value="vencido">Vencido</option>
                                 </select>
                             </div>
-                        </form>
-
-                        {detLoading && !detData && (
-                            <div className="flex items-center justify-center py-10 text-earth">
-                                <i className="fas fa-spinner fa-spin mr-2" /> Cargando detalle de productos...
-                            </div>
-                        )}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setDetFilters({ product_id: '', year: '', month: '', periodo: '' });
+                                    setDetPage(1);
+                                }}
+                                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                            >
+                                <i className="fa-solid fa-sliders" /> Limpiar filtros
+                            </button>
+</form>
 
                         {detData && (
                             <>
@@ -536,6 +586,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         )}
                     </div>
                 </div>
+            )}
 
             {formOpen && (
                 <ProductFormModal

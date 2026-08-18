@@ -316,17 +316,29 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
 
     return (
         <>
-            <form onSubmit={(e) => e.preventDefault()} className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <div className="w-full sm:w-72">
-                    <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) => setFilter('search', e.target.value)}
-                        placeholder="Buscar por nombre o DNI"
-                        className="w-full px-4 sm:px-10 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
-                    />
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+            <form
+                onSubmit={(e) => e.preventDefault()}
+                className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
+            >
+                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                    <label className={labelCls}>Buscar</label>
+                    <div className="relative">
+                        <i
+                            className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"
+                            aria-hidden="true"
+                        />
+                        <input
+                            type="text"
+                            value={filters.search}
+                            onChange={(e) => setFilter('search', e.target.value)}
+                            placeholder="Buscar por nombre o DNI"
+                            className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 sm:min-w-36">
+                <div className="w-full sm:w-44">
+                    <label className={labelCls}>Género</label>
                     <Combobox
                         value={filters.gender}
                         onChange={(v) => setFilter('gender', v ?? '')}
@@ -338,7 +350,8 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                         allowClear
                     />
                 </div>
-                <div className="flex-1 sm:min-w-48">
+                <div className="w-full sm:w-44">
+                    <label className={labelCls}>Barrio / Sector</label>
                     <Combobox
                         value={filters.place_sector_id}
                         onChange={(v) => setFilter('place_sector_id', v ?? '')}
@@ -347,20 +360,18 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                         allowClear
                     />
                 </div>
-                <div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFilters({ search: '', gender: '', place_sector_id: '' });
-                            setPage(1);
-                        }}
-                        className="btn-secondary text-xs sm:text-sm"
-                    >
-                        <i className="fas fa-broom mr-1 sm:mr-2" />
-                        Limpiar
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFilters({ search: '', gender: '', place_sector_id: '' });
+                        setPage(1);
+                    }}
+                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                >
+                    <i className="fa-solid fa-sliders" /> Limpiar filtros
+                </button>
             </form>
+            </div>
 
             {loading && !data && (
                 <div className="flex items-center justify-center py-10 text-earth">

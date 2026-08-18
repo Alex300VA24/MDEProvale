@@ -347,50 +347,70 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
 
     return (
         <>
-            <form
-                onSubmit={(e) => e.preventDefault()}
-                className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4"
-            >
-                <div className="w-full sm:w-72">
-                    <input
-                        type="text"
-                        value={filters.search}
-                        onChange={(e) => setFilter('search', e.target.value)}
-                        placeholder="Buscar por nombre o DNI"
-                        className="w-full px-4 sm:px-10 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
-                    />
-                </div>
-                <div className="flex-1 sm:min-w-40">
+            <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
+                <form
+                    onSubmit={(e) => e.preventDefault()}
+                    className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
+                >
+                    {/* Buscar – ocupa el espacio restante */}
+                    <div className="w-full lg:flex-1 min-w-[180px]">
+                    <label className={labelCls}>Buscar</label>
+                    <div className="relative">
+                        <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"/>
+                        <input
+                            type="text"
+                            value={filters.search}
+                            onChange={(e) => setFilter('search', e.target.value)}
+                            placeholder="Buscar por nombre o DNI"
+                            className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                        />
+                    </div>
+                    </div>
+
+                    {/* Club – ancho fijo */}
+                    <div className="w-full sm:w-44 lg:w-44 shrink-0">
+                    <label className={labelCls}>Club</label>
                     <Combobox
                         value={filters.association_id}
                         onChange={(v) => setFilter('association_id', v ?? '')}
                         options={associationOptions}
-                        placeholder="Todos los Clubes"
+                        placeholder="Comités"
                         allowClear
                     />
-                </div>
-                <div className="flex-1 sm:min-w-36">
+                    </div>
+
+                    {/* Estado – ancho fijo */}
+                    <div className="w-full sm:w-40 lg:w-40 shrink-0">
+                    <label className={labelCls}>Estado</label>
                     <Combobox
                         value={filters.state_id}
                         onChange={(v) => setFilter('state_id', v ?? '')}
                         options={stateOptions}
-                        placeholder="Todos los Estados"
+                        placeholder="Estados"
                         allowClear
                     />
-                </div>
-                <div className="flex gap-2">
+                    </div>
+
+                    {/* Botón Limpiar filtros – con label oculto que conserva el espacio */}
+                    <div className="w-full sm:w-auto shrink-0 flex flex-col">
+
                     <button
                         type="button"
                         onClick={() => {
-                            setFilters({ search: '', association_id: '', state_id: '' });
-                            setPage(1);
+                        setFilters({ search: '', association_id: '', state_id: '' });
+                        setPage(1);
                         }}
-                        className="btn-secondary text-xs sm:text-sm"
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap"
                     >
-                        <i className="fas fa-broom mr-1 sm:mr-2" /> Limpiar
+                        <i className="fa-solid fa-sliders" /> Limpiar filtros
                     </button>
-                </div>
-            </form>
+                    <p style={{ visibility: 'hidden', height: 15, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
+                    </div>
+                </form>
+            </div>
 
             {loading && !data && (
                 <div className="flex items-center justify-center py-10 text-earth">

@@ -46,7 +46,11 @@ export default function MoreActionsMenu({ items, label = 'Más Acciones' }) {
                 aria-haspopup="true"
                 aria-expanded={open}
             >
-                <i className="fas fa-ellipsis-vertical" /> {label}
+                {label}
+                <i
+                    className={`fas ${open ? 'fa-chevron-up' : 'fa-chevron-down'} text-[10px]`}
+                    aria-hidden="true"
+                />
             </button>
             {open && (
                 <div className="absolute left-0 sm:right-0 sm:left-auto top-full mt-2 w-56 bg-white border-2 border-wheat rounded-xl shadow-lg py-1.5 z-30">

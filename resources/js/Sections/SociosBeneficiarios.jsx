@@ -16,12 +16,12 @@ const TABS = [
 ];
 
 const HEADERS = {
-    socios: { icon: 'fa-user-friends', title: 'Socios y Beneficiarios' },
-    beneficiarios: { icon: 'fa-hand-holding-heart', title: 'Gestión de Beneficiarios' },
-    personas: { icon: 'fa-users', title: 'Personas Registradas' },
+    socios: { icon: 'fa-user-friends', title: 'Socios y Beneficiarios', description: 'Administra los socios registrados y sus beneficiarios.' },
+    beneficiarios: { icon: 'fa-hand-holding-heart', title: 'Gestión de Beneficiarios', description: 'Administra los beneficiarios registrados en el sistema.' },
+    personas: { icon: 'fa-users', title: 'Personas Registradas', description: 'Administra las personas registradas en el sistema.' },
 };
 
-export default function SociosBeneficiarios() {
+export default function SociosBeneficiarios({ initialAction }) {
     const { modules } = usePage().props;
     const module = (modules ?? []).find((m) => m.slug === 'socios-beneficiarios');
     const can = {
@@ -66,6 +66,10 @@ export default function SociosBeneficiarios() {
         };
     }, []);
 
+    useEffect(() => {
+        if (options && initialAction === 'beneficiarios-padron') setPadronOpen(true);
+    }, [options, initialAction]);
+
     const header = HEADERS[tab];
 
     return (
@@ -75,9 +79,27 @@ export default function SociosBeneficiarios() {
                     <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                         <i className={`fas ${header.icon} text-leaf`} /> {header.title}
                     </h3>
+                    <p className="text-earth text-xs sm:text-sm mt-1">{header.description}</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
+                    <div className="flex items-center gap-1 overflow-x-auto">
+                        {TABS.map((t) => (
+                            <button
+                                key={t.key}
+                                type="button"
+                                onClick={() => setTab(t.key)}
+                                className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                    tab === t.key
+                                        ? 'text-leaf border-leaf'
+                                        : 'text-earth border-transparent hover:text-charcoal'
+                                }`}
+                            >
+                                <i className={`fas ${t.icon}`} /> {t.label}
+                            </button>
+                        ))}
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-2">
                         {can.create && tab === 'socios' && (
                             <button
@@ -108,53 +130,28 @@ export default function SociosBeneficiarios() {
                         )}
                         <MoreActionsMenu
                             items={[
-                                { icon: 'fa-print', label: 'Ficha', href: '/socios-beneficiarios/beneficiarios-imprimir', target: '_blank' },
-                                { icon: 'fa-clipboard-list', label: 'Padrón', onClick: () => setPadronOpen(true) },
+                                { icon: 'fa-print', label: 'Imprimir ficha', href: '/fichas/fichaBeneficiario.pdf', target: '_blank' },
+                                { icon: 'fa-clipboard-list', label: 'Generar padrón', onClick: () => setPadronOpen(true) },
                             ]}
                         />
-                    </div>
-
-                    <div className="flex items-center gap-1 overflow-x-auto">
-                        {TABS.map((t) => (
-                            <button
-                                key={t.key}
-                                type="button"
-                                onClick={() => setTab(t.key)}
-                                className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
-                                    tab === t.key
-                                        ? 'text-leaf border-leaf'
-                                        : 'text-earth border-transparent hover:text-charcoal'
-                                }`}
-                            >
-                                <i className={`fas ${t.icon}`} /> {t.label}
-                            </button>
-                        ))}
                     </div>
                 </div>
 
                 <div className="p-4 sm:p-6">
-                    {optionsError ? (
-                        <div className="empty-state">
-                            <i className="fas fa-exclamation-triangle" />
-                            <p>No se pudieron cargar los datos de la sección. Recarga la página.</p>
+                    {optionsError && (
+                        <div className="mb-3 text-xs text-clay bg-clay-light rounded-lg px-3 py-2">
+                            <i className="fas fa-exclamation-triangle mr-1" /> No se pudieron cargar algunas opciones de filtro.
                         </div>
-                    ) : !options ? (
-                        <div className="flex items-center justify-center py-10 text-earth">
-                            <i className="fas fa-spinner fa-spin mr-2" /> Cargando...
-                        </div>
-                    ) : (
-                        <>
-                            <div className={tab === 'socios' ? '' : 'hidden'}>
-                                <SociosTab ref={sociosRef} options={options} can={can} />
-                            </div>
-                            <div className={tab === 'beneficiarios' ? '' : 'hidden'}>
-                                <BeneficiariosTab ref={beneficiariosRef} options={options} can={can} />
-                            </div>
-                            <div className={tab === 'personas' ? '' : 'hidden'}>
-                                <PersonasTab ref={personasRef} options={options} can={can} />
-                            </div>
-                        </>
                     )}
+                    <div className={tab === 'socios' ? '' : 'hidden'}>
+                        <SociosTab ref={sociosRef} options={options ?? {}} can={can} />
+                    </div>
+                    <div className={tab === 'beneficiarios' ? '' : 'hidden'}>
+                        <BeneficiariosTab ref={beneficiariosRef} options={options ?? {}} can={can} />
+                    </div>
+                    <div className={tab === 'personas' ? '' : 'hidden'}>
+                        <PersonasTab ref={personasRef} options={options ?? {}} can={can} />
+                    </div>
                 </div>
             </div>
 

@@ -9,11 +9,11 @@ import MoreActionsMenu from '../Components/MoreActionsMenu';
 const BASE = '/api/dashboard/club-madres';
 
 const HEADERS = {
-    comites: { icon: 'fa-people-roof', title: 'Gestión de Clubes de Madres' },
-    reconocimientos: { icon: 'fa-scroll', title: 'Gestión de Reconocimientos' },
+    comites: { icon: 'fa-people-roof', title: 'Gestión de Clubes de Madres', description: 'Administra los clubes de madres y comités registrados.' },
+    reconocimientos: { icon: 'fa-scroll', title: 'Gestión de Reconocimientos', description: 'Administra los reconocimientos otorgados a los clubes.' },
 };
 
-export default function ClubReconocimientos() {
+export default function ClubReconocimientos({ initialAction }) {
     const { modules } = usePage().props;
     const modComites = (modules ?? []).find((m) => m.slug === 'club-madres');
     const modReconocimientos = (modules ?? []).find((m) => m.slug === 'reconocimientos');
@@ -68,6 +68,12 @@ export default function ClubReconocimientos() {
         };
     }, [can.comites.view, can.reconocimientos.view]);
 
+    useEffect(() => {
+        if (initialAction !== 'comites-padron' || !can.comites.view) return;
+        setTab('comites');
+        setPadronOpen(true);
+    }, [initialAction, can.comites.view]);
+
     const header = HEADERS[tab];
 
     return (
@@ -77,10 +83,36 @@ export default function ClubReconocimientos() {
                     <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
                         <i className={`fas ${header.icon} text-leaf`} /> {header.title}
                     </h3>
+                    <p className="text-earth text-xs sm:text-sm mt-1">{header.description}</p>
                 </div>
 
                 {(can.comites.view || can.reconocimientos.view) && (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
+                        <div className="flex items-center gap-1 overflow-x-auto">
+                            {can.comites.view && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('comites')}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                        tab === 'comites' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
+                                    }`}
+                                >
+                                    <i className="fas fa-people-roof" /> Comités
+                                </button>
+                            )}
+                            {can.reconocimientos.view && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('reconocimientos')}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                        tab === 'reconocimientos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
+                                    }`}
+                                >
+                                    <i className="fas fa-scroll" /> Reconocimientos
+                                </button>
+                            )}
+                        </div>
+
                         <div className="flex flex-wrap items-center gap-2">
                             {can.comites.view && tab === 'comites' && can.comites.create && (
                                 <button
@@ -106,57 +138,24 @@ export default function ClubReconocimientos() {
                                 />
                             )}
                         </div>
-
-                        <div className="flex items-center gap-1 overflow-x-auto">
-                            {can.comites.view && (
-                                <button
-                                    type="button"
-                                    onClick={() => setTab('comites')}
-                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
-                                        tab === 'comites' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
-                                    }`}
-                                >
-                                    <i className="fas fa-people-roof" /> Comités
-                                </button>
-                            )}
-                            {can.reconocimientos.view && (
-                                <button
-                                    type="button"
-                                    onClick={() => setTab('reconocimientos')}
-                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
-                                        tab === 'reconocimientos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
-                                    }`}
-                                >
-                                    <i className="fas fa-scroll" /> Reconocimientos
-                                </button>
-                            )}
-                        </div>
                     </div>
                 )}
 
                 <div className="p-4 sm:p-6">
-                    {optionsError ? (
-                        <div className="empty-state">
-                            <i className="fas fa-exclamation-triangle" />
-                            <p>No se pudieron cargar los datos de la sección. Recarga la página.</p>
+                    {optionsError && (
+                        <div className="mb-3 text-xs text-clay bg-clay-light rounded-lg px-3 py-2">
+                            <i className="fas fa-exclamation-triangle mr-1" /> No se pudieron cargar algunas opciones de filtro.
                         </div>
-                    ) : !options ? (
-                        <div className="flex items-center justify-center py-10 text-earth">
-                            <i className="fas fa-spinner fa-spin mr-2" /> Cargando...
+                    )}
+                    {can.comites.view && (
+                        <div className={tab === 'comites' ? '' : 'hidden'}>
+                            <ComitesTab ref={comitesRef} options={options ?? {}} can={can.comites} />
                         </div>
-                    ) : (
-                        <>
-                            {can.comites.view && (
-                                <div className={tab === 'comites' ? '' : 'hidden'}>
-                                    <ComitesTab ref={comitesRef} options={options} can={can.comites} />
-                                </div>
-                            )}
-                            {can.reconocimientos.view && (
-                                <div className={tab === 'reconocimientos' ? '' : 'hidden'}>
-                                    <ReconocimientosTab ref={reconocimientosRef} options={options} can={can.reconocimientos} />
-                                </div>
-                            )}
-                        </>
+                    )}
+                    {can.reconocimientos.view && (
+                        <div className={tab === 'reconocimientos' ? '' : 'hidden'}>
+                            <ReconocimientosTab ref={reconocimientosRef} options={options ?? {}} can={can.reconocimientos} />
+                        </div>
                     )}
                 </div>
             </div>

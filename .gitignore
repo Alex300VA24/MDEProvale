@@ -19,3 +19,12 @@ yarn-error.log
 /migracion_productos/
 /migracion_socios/
 /database/seeders/
+.agent/
+.agents/
+.claude/
+.codex/
+.cursor/
+.gemini/
+.impeccable/
+.kiro/
+.opencode/

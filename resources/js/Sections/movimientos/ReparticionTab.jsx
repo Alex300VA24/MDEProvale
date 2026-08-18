@@ -5,7 +5,7 @@ import { useDebounced } from '../socios/hooks';
 import errorMessage from '../../errorMessage';
 
 const inputCls =
-    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
 
 const MONTHS = [
@@ -84,7 +84,7 @@ export default function ReparticionTab() {
                 )}
                 {report && (
                     <a href={report.pdf_url} target="_blank" rel="noreferrer" className="btn-secondary text-xs sm:text-sm">
-                        <i className="fas fa-file-pdf mr-2" /> Descargar PDF
+                        <i className="fas fa-file-pdf mr-2" /> Descargar Repartición
                     </a>
                 )}
             </div>
