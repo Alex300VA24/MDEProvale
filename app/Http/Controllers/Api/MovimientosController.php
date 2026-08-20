@@ -133,7 +133,7 @@ class MovimientosController extends Controller
         $racion = $this->reparticionService->getActiveRacion($year);
         if (!$racion) {
             return response()->json([
-                'message' => "No hay ración configurada para el año {$year}. Configure las raciones en Mantenimiento.",
+                'message' => "No hay ración configurada para el año {$year}. Configure las raciones en Responsables y Raciones.",
             ], 404);
         }
 

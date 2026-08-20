@@ -351,10 +351,10 @@
                     </a>
                     @endif
 
-                    @if(Auth::user()->canAccessModule('mantenimiento'))
-                    <a href="{{ route('mantenimiento.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('mantenimiento.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="mantenimiento">
-                        <i class="fas fa-screwdriver-wrench w-5 text-center text-lg flex-shrink-0"></i>
-                        <span class="nav-text text-[14px]">Mantenimiento</span>
+                    @if(Auth::user()->canAccessModule('responsables-raciones'))
+                    <a href="{{ route('responsables-raciones.index') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all {{ request()->routeIs('responsables-raciones.*') ? 'active bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/10' }}" data-section="responsables-raciones">
+                        <i class="fas fa-sliders w-5 text-center text-lg flex-shrink-0"></i>
+                        <span class="nav-text text-[14px]">Responsables y Raciones</span>
                     </a>
                     @endif
 
@@ -364,6 +364,11 @@
                         <span class="nav-text text-[14px]">Sistema</span>
                     </a>
                     @endif
+
+                    <a href="{{ url('/dashboard?section=ayuda') }}" class="nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all text-white/70 hover:text-white hover:bg-white/10" data-section="ayuda">
+                        <i class="fas fa-circle-question w-5 text-center text-lg flex-shrink-0"></i>
+                        <span class="nav-text text-[14px]">Ayuda</span>
+                    </a>
                 </div>
 
                 <div class="pt-4 border-t border-white/10">

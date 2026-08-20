@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Api\ComitesController;
 use App\Http\Controllers\Api\InicioController;
-use App\Http\Controllers\Api\MantenimientoController;
+use App\Http\Controllers\Api\ResponsablesRacionesController;
 use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
 use App\Http\Controllers\Api\SistemaController;
@@ -107,17 +107,17 @@ Route::prefix('dashboard/movimientos')->middleware('module:movimientos')->name('
     Route::get('reparticion', [MovimientosController::class, 'reparticion'])->name('reparticion');
 });
 
-// ==================== MÓDULO: MANTENIMIENTO ====================
-Route::prefix('dashboard/mantenimiento')->middleware('module:mantenimiento')->name('api.mantenimiento.')->group(function () {
-    Route::get('responsibles', [MantenimientoController::class, 'responsibles'])->name('responsibles');
-    Route::put('responsibles/{type}', [MantenimientoController::class, 'updateResponsible'])
+// ==================== MÓDULO: RESPONSABLES Y RACIONES ====================
+Route::prefix('dashboard/responsables-raciones')->middleware('module:responsables-raciones')->name('api.responsables-raciones.')->group(function () {
+    Route::get('responsibles', [ResponsablesRacionesController::class, 'responsibles'])->name('responsibles');
+    Route::put('responsibles/{type}', [ResponsablesRacionesController::class, 'updateResponsible'])
         ->where('type', 'chief|storekeeper')
         ->name('responsibles.update');
 
-    Route::get('raciones', [MantenimientoController::class, 'raciones'])->name('raciones');
-    Route::post('raciones', [MantenimientoController::class, 'storeRacion'])->name('raciones.store');
-    Route::put('raciones/{racion}', [MantenimientoController::class, 'updateRacion'])->name('raciones.update');
-    Route::delete('raciones/{racion}', [MantenimientoController::class, 'destroyRacion'])->name('raciones.destroy');
+    Route::get('raciones', [ResponsablesRacionesController::class, 'raciones'])->name('raciones');
+    Route::post('raciones', [ResponsablesRacionesController::class, 'storeRacion'])->name('raciones.store');
+    Route::put('raciones/{racion}', [ResponsablesRacionesController::class, 'updateRacion'])->name('raciones.update');
+    Route::delete('raciones/{racion}', [ResponsablesRacionesController::class, 'destroyRacion'])->name('raciones.destroy');
 });
 
 // ==================== MÓDULO: SISTEMA ====================

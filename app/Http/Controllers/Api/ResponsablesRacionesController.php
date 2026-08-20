@@ -13,7 +13,7 @@ use App\Models\People;
 use App\Models\Racion;
 use App\Models\Responsible;
 
-class MantenimientoController extends Controller
+class ResponsablesRacionesController extends Controller
 {
     public function responsibles()
     {

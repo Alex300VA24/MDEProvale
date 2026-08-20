@@ -517,7 +517,7 @@ class MovimientosApiTest extends TestCase
         $this->actingAs($this->adminUser())
             ->getJson(self::BASE . '/reparticion?year=1990&month=1')
             ->assertStatus(404)
-            ->assertJsonPath('message', 'No hay ración configurada para el año 1990. Configure las raciones en Mantenimiento.');
+            ->assertJsonPath('message', 'No hay ración configurada para el año 1990. Configure las raciones en Responsables y Raciones.');
     }
 
     public function test_reparticion_computes_rations_and_totals(): void

@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
     require __DIR__ . '/productos-pecosas.php';
     require __DIR__ . '/movimientos.php';
     require __DIR__ . '/sistema.php';
-    require __DIR__ . '/mantenimiento.php';
+    require __DIR__ . '/responsables-raciones.php';
 });
 
 require __DIR__ . '/auth.php';

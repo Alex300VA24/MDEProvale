@@ -1,12 +1,12 @@
 @extends('layouts.main')
 
-@section('title', 'Mantenimiento - PROVALE')
+@section('title', 'Responsables y Raciones - PROVALE')
 
 @section('content')
 <div class="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat gap-3">
         <h3 class="font-extrabold text-charcoal text-2xl flex items-center gap-3">
-            <i class="fas fa-tools text-leaf"></i> Mantenimiento
+            <i class="fas fa-sliders text-leaf"></i> Responsables y Raciones
         </h3>
     </div>
 
@@ -112,7 +112,7 @@
                                     <button onclick="openModal('modal-editar-racion-{{ $racion->id }}')" class="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white" title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <form action="{{ route('mantenimiento.raciones.destroy', $racion->id) }}" method="POST" class="inline">
+                                    <form action="{{ route('responsables-raciones.raciones.destroy', $racion->id) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="button" class="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white" title="Eliminar"
@@ -149,7 +149,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('mantenimiento.responsibles.update', 'chief') }}" method="POST" class="p-6 space-y-4">
+            <form action="{{ route('responsables-raciones.responsibles.update', 'chief') }}" method="POST" class="p-6 space-y-4">
                 @csrf
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Seleccionar Persona</label>
@@ -183,7 +183,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('mantenimiento.responsibles.update', 'storekeeper') }}" method="POST" class="p-6 space-y-4">
+            <form action="{{ route('responsables-raciones.responsibles.update', 'storekeeper') }}" method="POST" class="p-6 space-y-4">
                 @csrf
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Seleccionar Persona</label>
@@ -217,7 +217,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('mantenimiento.raciones.store') }}" method="POST" class="p-6 space-y-4">
+            <form action="{{ route('responsables-raciones.raciones.store') }}" method="POST" class="p-6 space-y-4">
                 @csrf
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Año</label>
@@ -253,7 +253,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('mantenimiento.raciones.update', $racion->id) }}" method="POST" class="p-6 space-y-4">
+            <form action="{{ route('responsables-raciones.raciones.update', $racion->id) }}" method="POST" class="p-6 space-y-4">
                 @csrf
                 @method('PUT')
                 <div>

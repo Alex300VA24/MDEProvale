@@ -7,14 +7,14 @@ use App\Models\People;
 use App\Models\Racion;
 use Illuminate\Http\Request;
 
-class MantenimientoController extends Controller
+class ResponsablesRacionesController extends Controller
 {
     public function index()
     {
         $responsibles = Responsible::with('person')->get();
         $people = People::orderBy('names')->get();
         $raciones = Racion::orderBy('year', 'desc')->get();
-        return view('mantenimiento.index', compact('responsibles', 'people', 'raciones'));
+        return view('responsables-raciones.index', compact('responsibles', 'people', 'raciones'));
     }
 
     public function updateResponsible(Request $request, $type)
@@ -32,7 +32,7 @@ class MantenimientoController extends Controller
         ]);
 
         $label = $type === 'chief' ? 'Jefe de Almacén' : 'Almacenero';
-        return redirect()->route('mantenimiento.index')->with('success', "{$label} actualizado correctamente.");
+        return redirect()->route('responsables-raciones.index')->with('success', "{$label} actualizado correctamente.");
     }
 
     public function updateRacion(Request $request, $id)
@@ -48,7 +48,7 @@ class MantenimientoController extends Controller
             'racion_leche_militros' => $request->racion_leche_militros,
         ]);
 
-        return redirect()->route('mantenimiento.index')->with('success', 'Ración actualizada correctamente.');
+        return redirect()->route('responsables-raciones.index')->with('success', 'Ración actualizada correctamente.');
     }
 
     public function storeRacion(Request $request)
@@ -66,7 +66,7 @@ class MantenimientoController extends Controller
             'active' => true,
         ]);
 
-        return redirect()->route('mantenimiento.index')->with('success', 'Ración creada correctamente.');
+        return redirect()->route('responsables-raciones.index')->with('success', 'Ración creada correctamente.');
     }
 
     public function deleteRacion($id)
@@ -74,6 +74,6 @@ class MantenimientoController extends Controller
         $racion = Racion::findOrFail($id);
         $racion->delete();
 
-        return redirect()->route('mantenimiento.index')->with('success', 'Ración eliminada correctamente.');
+        return redirect()->route('responsables-raciones.index')->with('success', 'Ración eliminada correctamente.');
     }
 }

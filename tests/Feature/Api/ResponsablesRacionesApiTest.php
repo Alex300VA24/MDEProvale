@@ -7,29 +7,29 @@ use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 use Tests\Traits\SeedsBaseData;
 
-class MantenimientoApiTest extends TestCase
+class ResponsablesRacionesApiTest extends TestCase
 {
     use RefreshDatabase;
     use SeedsBaseData;
 
-    private const BASE = '/api/dashboard/mantenimiento';
+    private const BASE = '/api/dashboard/responsables-raciones';
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->seedBaseData();
-        $this->seedMantenimientoModule();
+        $this->seedResponsablesRacionesModule();
         $this->seedPeople();
     }
 
-    private function seedMantenimientoModule(): void
+    private function seedResponsablesRacionesModule(): void
     {
         $moduleId = DB::table('modules')->insertGetId([
-            'name' => 'Mantenimiento',
-            'slug' => 'mantenimiento',
-            'description' => 'Mantenimiento',
-            'icon' => 'fa-tools',
-            'route' => 'mantenimiento',
+            'name' => 'Responsables y Raciones',
+            'slug' => 'responsables-raciones',
+            'description' => 'Gestión de responsables del programa y raciones por año',
+            'icon' => 'fa-sliders',
+            'route' => 'responsables-raciones',
             'order' => 3,
             'is_active' => true,
         ]);
@@ -184,7 +184,7 @@ class MantenimientoApiTest extends TestCase
     {
         $rolId = DB::table('rols')->insertGetId(['title' => 'Basico', 'description' => 'Usuario básico']);
         DB::table('module_rol')->insert([
-            'module_id' => DB::table('modules')->where('slug', 'mantenimiento')->value('id'),
+            'module_id' => DB::table('modules')->where('slug', 'responsables-raciones')->value('id'),
             'rol_id' => $rolId,
             'can_view' => true,
             'can_create' => true,

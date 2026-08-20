@@ -9,21 +9,21 @@ class RacionPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasModuleAccess('mantenimiento');
+        return $user->hasModuleAccess('responsables-raciones');
     }
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('mantenimiento');
+        return $user->hasModuleAccess('responsables-raciones');
     }
 
     public function update(User $user, Racion $racion): bool
     {
-        return $user->hasModuleAccess('mantenimiento');
+        return $user->hasModuleAccess('responsables-raciones');
     }
 
     public function delete(User $user, Racion $racion): bool
     {
-        return $user->hasModuleAccess('mantenimiento') && $user->isAdmin();
+        return $user->hasModuleAccess('responsables-raciones') && $user->isAdmin();
     }
 }

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
-import ResponsablesTab from './mantenimiento/ResponsablesTab';
-import RacionesTab from './mantenimiento/RacionesTab';
+import ResponsablesTab from './responsables-raciones/ResponsablesTab';
+import RacionesTab from './responsables-raciones/RacionesTab';
 
 const TABS = [
     { key: 'responsables', label: 'Responsables', icon: 'fa-user-tie' },
@@ -13,9 +13,9 @@ const HEADERS = {
     raciones: { icon: 'fa-utensils', title: 'Raciones por Año', description: 'Administra las raciones registradas por año.' },
 };
 
-export default function Mantenimiento() {
+export default function ResponsablesRaciones() {
     const { modules } = usePage().props;
-    const mod = (modules ?? []).find((m) => m.slug === 'mantenimiento');
+    const mod = (modules ?? []).find((m) => m.slug === 'responsables-raciones');
     const can = {
         view: !!mod?.can_view,
         create: !!mod?.can_create,

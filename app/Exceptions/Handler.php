@@ -5,6 +5,7 @@ namespace App\Exceptions;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Session\TokenMismatchException;
+use Inertia\Inertia;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -41,6 +42,10 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (TokenMismatchException $e, $request) {
+            if ($request->inertia()) {
+                return Inertia::location(route('login', ['expired' => 1]));
+            }
+
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.',
@@ -59,6 +64,10 @@ class Handler extends ExceptionHandler
 
     protected function unauthenticated($request, AuthenticationException $exception)
     {
+        if ($request->inertia()) {
+            return Inertia::location(route('login', ['expired' => 1]));
+        }
+
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'message' => 'No autenticado.',

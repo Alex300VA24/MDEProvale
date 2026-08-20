@@ -23,7 +23,7 @@ class ReparticionController extends Controller
         $racion = $this->reparticionService->getActiveRacion($currentYear);
         if (!$racion) {
             return redirect()->route('movimientos.index')
-                ->with('error', 'No hay ración configurada para el año ' . $currentYear . '. Configure las raciones en Mantenimiento.');
+                ->with('error', 'No hay ración configurada para el año ' . $currentYear . '. Configure las raciones en Responsables y Raciones.');
         }
 
         $report = $this->reparticionService->buildReport($racion, $currentYear, $currentMonth);
@@ -49,7 +49,7 @@ class ReparticionController extends Controller
         $racion = $this->reparticionService->getActiveRacion($currentYear);
         if (!$racion) {
             return redirect()->route('movimientos.index')
-                ->with('error', 'No hay ración configurada para el año ' . $currentYear . '. Configure las raciones en Mantenimiento.');
+                ->with('error', 'No hay ración configurada para el año ' . $currentYear . '. Configure las raciones en Responsables y Raciones.');
         }
 
         $report = $this->reparticionService->buildReport($racion, $currentYear, $currentMonth);

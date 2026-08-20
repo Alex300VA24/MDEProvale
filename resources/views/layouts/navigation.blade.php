@@ -37,9 +37,9 @@
                         {{ __('Movimientos') }}
                     </x-nav-link>
 
-                    <!-- Mantenimiento -->
-                    <x-nav-link :href="route('mantenimiento.index')" :active="request()->routeIs('mantenimiento.*')">
-                        {{ __('Mantenimiento') }}
+                    <!-- Responsables y Raciones -->
+                    <x-nav-link :href="route('responsables-raciones.index')" :active="request()->routeIs('responsables-raciones.*')">
+                        {{ __('Responsables y Raciones') }}
                     </x-nav-link>
 
                     <!-- Sistema -->
@@ -109,8 +109,8 @@
                 <i class="fas fa-exchange-alt w-5 text-center mr-2"></i>{{ __('Movimientos') }}
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('mantenimiento.index')" :active="request()->routeIs('mantenimiento.*')">
-                <i class="fas fa-screwdriver-wrench w-5 text-center mr-2"></i>{{ __('Mantenimiento') }}
+            <x-responsive-nav-link :href="route('responsables-raciones.index')" :active="request()->routeIs('responsables-raciones.*')">
+                <i class="fas fa-sliders w-5 text-center mr-2"></i>{{ __('Responsables y Raciones') }}
             </x-responsive-nav-link>
 
             <x-responsive-nav-link :href="route('sistema.index')" :active="request()->routeIs('sistema.*')">

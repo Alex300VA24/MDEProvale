@@ -11,8 +11,8 @@ class UpdateResponsibleRequest extends FormRequest
     public function authorize(): bool
     {
         // No hay un modelo Responsible dedicado con Policy propia; el CRUD de
-        // Mantenimiento comparte el mismo nivel de acceso que Racion (módulo
-        // 'mantenimiento', sin restricción adicional de admin para editar).
+        // Responsables y Raciones comparte el mismo nivel de acceso que Racion
+        // (módulo 'responsables-raciones', sin restricción adicional de admin para editar).
         return Gate::allows('create', Racion::class);
     }
 

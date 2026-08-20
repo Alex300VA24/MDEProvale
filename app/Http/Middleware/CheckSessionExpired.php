@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class CheckSessionExpired
 {
@@ -36,6 +37,10 @@ class CheckSessionExpired
         if ($request->session()->has('user_was_authenticated')) {
             $request->session()->forget('user_was_authenticated');
             $request->session()->put('session_just_expired', true);
+
+            if ($request->inertia()) {
+                return Inertia::location(route('login', ['expired' => 1]));
+            }
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([

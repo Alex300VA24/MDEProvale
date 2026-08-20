@@ -9,8 +9,9 @@ const SociosBeneficiarios = lazy(() => import('../Sections/SociosBeneficiarios')
 const ProductosPecosas = lazy(() => import('../Sections/ProductosPecosas'));
 const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos'));
 const Movimientos = lazy(() => import('../Sections/Movimientos'));
-const Mantenimiento = lazy(() => import('../Sections/Mantenimiento'));
+const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
 const Sistema = lazy(() => import('../Sections/Sistema'));
+const Ayuda = lazy(() => import('../Sections/Ayuda'));
 
 const SECTION_COMPONENTS = {
     inicio: Inicio,
@@ -18,8 +19,9 @@ const SECTION_COMPONENTS = {
     productos: ProductosPecosas,
     comites: ClubReconocimientos,
     movimientos: Movimientos,
-    mantenimiento: Mantenimiento,
+    'responsables-raciones': ResponsablesRaciones,
     sistema: Sistema,
+    ayuda: Ayuda,
 };
 
 // Ítems del menú. `modules` = slugs permitidos que habilitan el ítem (vacío = siempre visible).
@@ -29,8 +31,9 @@ const NAV_ITEMS = [
     { key: 'productos', label: 'Productos y Pecosas', icon: 'fa-box', modules: ['productos', 'pecosas'] },
     { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'movimientos', label: 'Movimientos', icon: 'fa-exchange-alt', modules: ['movimientos'] },
-    { key: 'mantenimiento', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['mantenimiento'] },
+    { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
+    { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];
 
 function getSectionFromUrl() {
