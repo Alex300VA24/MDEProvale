@@ -1,3 +1,5 @@
+import { createPortal } from 'react-dom';
+
 export default function ConfirmDialog({
     open,
     onCancel,
@@ -12,10 +14,10 @@ export default function ConfirmDialog({
 }) {
     if (!open) return null;
 
-    return (
-        <div className="modal-overlay is-open" onClick={onCancel}>
+    return createPortal(
+        <div className="modal-overlay is-open animate-fade-in" onClick={onCancel}>
             <div className="modal-panel sm:max-w-md" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-card">
+                <div className="modal-card modal-enter">
                     <div className="p-6 text-center">
                         <div className="w-16 h-16 mx-auto rounded-full bg-clay-light flex items-center justify-center mb-4">
                             <i className="fas fa-exclamation-triangle text-clay text-2xl" />
@@ -48,6 +50,7 @@ export default function ConfirmDialog({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

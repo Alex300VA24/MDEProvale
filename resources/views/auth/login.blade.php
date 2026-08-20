@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - PROVALE</title>
-    <link rel="icon" href="{{ asset('img/logoPro.png') }}">
+    <title>Iniciar Sesión - PROVALE</title>
+    <link rel="icon" href="{{ asset('img/logo-provale-sin-fondo.png') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/400.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/500.css') }}">
     <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/600.css') }}">
@@ -16,141 +16,406 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
-        .login-bg {
-            background-image: url('{{ asset("img/banner.png") }}');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            position: relative;
-            overflow: hidden;
+        .login-shell {
+            min-height: 100vh;
+            display: flex;
+            background: #EEF4FC;
         }
-        
-        .login-bg::before {
+
+        /* ===== Panel de marca (izquierda) ===== */
+        .brand-panel {
+            position: relative;
+            display: none;
+            flex: 1.1;
+            background:
+                radial-gradient(1200px 600px at 10% -10%, rgba(74, 144, 217, 0.55), transparent 60%),
+                radial-gradient(900px 500px at 110% 110%, rgba(14, 138, 122, 0.45), transparent 55%),
+                linear-gradient(160deg, #1E5799 0%, #0F1E30 100%);
+            overflow: hidden;
+            padding: 4rem;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .brand-panel::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(15, 118, 110, 0.85) 0%, rgba(30, 41, 59, 0.9) 100%);
-            z-index: 1;
+            background-image: url('{{ asset("img/banner.png") }}');
+            background-size: cover;
+            background-position: center;
         }
-        
-        .login-bg > * {
+
+        .brand-content { display: none; }
+
+        /* ===== Panel del formulario (derecha) ===== */
+        .form-panel {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            position: relative;
+        }
+
+        .form-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(600px 400px at 100% 0%, rgba(74, 144, 217, 0.10), transparent 60%),
+                radial-gradient(600px 400px at 0% 100%, rgba(14, 138, 122, 0.10), transparent 60%);
+            pointer-events: none;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
             position: relative;
             z-index: 2;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 1.75rem;
+            box-shadow: 0 30px 60px -20px rgba(15, 30, 48, 0.25), 0 10px 30px -15px rgba(30, 87, 153, 0.15);
+            padding: 2.25rem 2rem;
+            animation: card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
-        
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            margin-bottom: 1.75rem;
         }
-        
-        .input-focus:focus {
-            box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+
+        .login-logo img {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            border-radius: 1rem;
+            padding: 0.35rem;
+            background: #EBF3FD;
+            box-shadow: 0 8px 20px -8px rgba(30, 87, 153, 0.4);
         }
-        
-        .btn-login {
-            background: linear-gradient(135deg, #1E5799 0%, #2E6DB4 100%);
+
+        .login-logo div strong {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #1A2E4A;
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+        }
+
+        .login-logo div span {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #0E8A7A;
+        }
+
+        .login-heading h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1A2E4A;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4rem;
+        }
+
+        .login-heading p {
+            font-size: 0.9rem;
+            color: #5A7FA8;
+            margin-bottom: 1.75rem;
+        }
+
+        .field {
+            margin-bottom: 1.25rem;
+            animation: field-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .field:nth-child(2) { animation-delay: 0.08s; }
+        .field:nth-child(3) { animation-delay: 0.16s; }
+        .field:nth-child(4) { animation-delay: 0.24s; }
+        .login-submit-wrap { animation: field-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; }
+
+        .field label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #5A7FA8;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrap {
             position: relative;
-            overflow: hidden;
         }
-        
+
+        .input-wrap > i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9DB7D4;
+            font-size: 0.95rem;
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .input-wrap input {
+            width: 100%;
+            padding: 0.95rem 1rem 0.95rem 2.85rem;
+            border: 2px solid #D4E4F7;
+            border-radius: 1rem;
+            background: #F8FBFE;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #1A2E4A;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .input-wrap input::placeholder { color: #A8BFD9; font-weight: 500; }
+
+        .input-wrap input:hover { border-color: #B7D0EA; }
+
+        .input-wrap input:focus {
+            border-color: #1E5799;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(30, 87, 153, 0.12);
+        }
+
+        .input-wrap:focus-within > i { color: #1E5799; }
+
+        .toggle-password {
+            position: absolute;
+            right: 0.6rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2.4rem;
+            height: 2.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.7rem;
+            color: #9DB7D4;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        .toggle-password:hover { color: #1E5799; background: #EBF3FD; }
+
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .remember label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2D3748;
+            cursor: pointer;
+        }
+
+        .remember input {
+            width: 1.1rem;
+            height: 1.1rem;
+            accent-color: #1E5799;
+            cursor: pointer;
+        }
+
+        .link-forgot {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #1E5799;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s ease;
+        }
+
+        .link-forgot:hover { color: #0E8A7A; text-decoration: underline; }
+
+        .btn-login {
+            position: relative;
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #1E5799 0%, #2E6DB4 100%);
+            color: #fff;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            overflow: hidden;
+            box-shadow: 0 12px 24px -10px rgba(30, 87, 153, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
         .btn-login::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
-            width: 100%;
+            left: -120%;
+            width: 60%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease;
         }
-        
-        .btn-login:hover::before {
-            left: 100%;
+
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 16px 32px -10px rgba(30, 87, 153, 0.6); filter: brightness(1.04); }
+        .btn-login:hover::before { left: 160%; }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(30, 87, 153, 0.25), 0 12px 24px -10px rgba(30, 87, 153, 0.5); }
+        .btn-login:disabled { opacity: 0.75; cursor: not-allowed; transform: none; }
+
+        .error-banner {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.9rem 1rem;
+            border-radius: 1rem;
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #B91C1C;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            animation: shake 0.4s ease both;
+        }
+
+        .login-copy {
+            margin-top: 1.75rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #9DB7D4;
+        }
+
+        @keyframes card-in {
+            from { opacity: 0; transform: translateY(24px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes field-in {
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        @media (min-width: 1024px) {
+            .brand-panel { display: flex; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .login-card, .field, .login-submit-wrap { animation: none; }
+            .btn-login::before { display: none; }
+            .error-banner { animation: none; }
         }
     </style>
 </head>
-<body class="login-bg min-h-screen flex items-center justify-center p-4 overflow-y-auto">
-    
+<body>
     <x-loading-screen subtitle="Programa Vaso de Leche" />
 
-    <div class="w-full max-w-md relative z-10 py-4">
+    <div class="login-shell">
+        <!-- Panel de marca -->
+        <aside class="brand-panel"></aside>
 
-        <div class="glass-card rounded-3xl p-6 sm:p-8">
-            <div class="text-center mb-6 sm:mb-8">
-            <div class="flex justify-center items-center w-full">
-                <img src="{{ asset('img/logoPro.png') }}" alt="PROVALE" class="w-[200px] h-[160px] object-contain">
-            </div>
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-slate-800">Bienvenido</h2>
-                <p class="text-slate-500 text-sm mt-1">Ingresa tus credenciales para continuar</p>
-            </div>
+        <!-- Panel del formulario -->
+        <main class="form-panel">
+            <div class="login-card">
+                <div class="login-logo">
+                    <img src="{{ asset('img/logo-provale-sin-fondo.png') }}" alt="PROVALE">
+                    <div>
+                        <strong>PROVALE</strong>
+                        <span>Vaso de Leche</span>
+                    </div>
+                </div>
 
-            @if ($errors->any())
-                <div class="mb-4 p-4 bg-red-50 border border-red-100 rounded-2xl">
-                    <div class="flex items-center gap-2 text-red-600">
+                <div class="login-heading">
+                    <h1>Bienvenido</h1>
+                    <p>Ingresa tus credenciales para continuar.</p>
+                </div>
+
+                @if ($errors->any())
+                    <div class="error-banner">
                         <i class="fas fa-exclamation-circle"></i>
-                        <span class="text-sm font-medium">Credenciales incorrectas</span>
+                        <span>Credenciales incorrectas. Verifica tus datos.</span>
                     </div>
-                </div>
-            @endif
+                @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-4 sm:space-y-5">
-                @csrf
+                <form method="POST" action="{{ route('login') }}" id="login-form">
+                    @csrf
 
-                <div>
-                    <label for="username" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Usuario</label>
-                    <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div class="field">
+                        <label for="username">Usuario</label>
+                        <div class="input-wrap">
                             <i class="fas fa-user"></i>
-                        </span>
-                        <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus
-                            class="w-full pl-12 pr-4 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-blue focus:bg-white transition-all"
-                            placeholder="Ingresa tu usuario">
+                            <input id="username" type="text" name="username" value="{{ old('username') }}" required autofocus
+                                placeholder="Ingresa tu usuario" autocomplete="username">
+                        </div>
                     </div>
-                </div>
 
-                <div>
-                    <label for="password" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Contraseña</label>
-                    <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div class="field">
+                        <label for="password">Contraseña</label>
+                        <div class="input-wrap">
                             <i class="fas fa-lock"></i>
+                            <input id="password" type="password" name="password" required
+                                placeholder="••••••••" autocomplete="current-password">
+                            <button type="button" id="togglePassword" class="toggle-password" aria-label="Mostrar contraseña">
+                                <i class="fas fa-eye-slash" id="eyeIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <span class="remember">
+                            <label for="remember_me">
+                                <input id="remember_me" type="checkbox" name="remember">
+                                <span>Recordarme</span>
+                            </label>
                         </span>
-                        <input id="password" type="password" name="password" required
-                            class="w-full pl-12 pr-14 py-3 sm:py-4 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 input-focus focus:outline-none focus:border-blue focus:bg-white transition-all"
-                            placeholder="••••••••">
-                        <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue transition-all">
-                            <i class="fas fa-eye-slash" id="eyeIcon"></i>
+                        @if (Route::has('password.request'))
+                            <button type="button" class="link-forgot" onclick="openModal('modal-forgot-password')">
+                                ¿Olvidaste tu contraseña?
+                            </button>
+                        @endif
+                    </div>
+
+                    <div class="login-submit-wrap">
+                        <button type="submit" id="login-submit" class="btn-login">
+                            <i class="fas fa-right-to-bracket"></i>
+                            <span>Iniciar Sesión</span>
                         </button>
                     </div>
-                </div>
+                </form>
 
-                <div class="flex items-center justify-between">
-                    <label for="remember_me" class="inline-flex items-center">
-                        <input id="remember_me" type="checkbox" name="remember" class="w-5 h-5 rounded border-slate-300 text-blue focus:ring-primary/20">
-                        <span class="ml-2 text-sm text-slate-600">Recordarme</span>
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-login w-full py-3 sm:py-4 text-white font-bold rounded-2xl hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span>Iniciar Sesión</span>
-                </button>
-            </form>
-
-            @if (Route::has('password.request'))
-                <div class="mt-6 text-center">
-                    <button type="button" class="text-sm text-slate-500 hover:text-blue transition-all" onclick="openModal('modal-forgot-password')">
-                        ¿Olvidaste tu contraseña?
-                    </button>
-                </div>
-            @endif
-        </div>
-
-        <div class="text-center mt-8">
-            <p class="text-slate-400 text-xs">© 2026 PROVALE - Todos los derechos reservados</p>
-        </div>
+                <p class="login-copy">
+                    <i class="fas fa-lock text-[0.7rem]"></i> Acceso restringido al personal autorizado.
+                </p>
+            </div>
+        </main>
     </div>
 
     @if(session('session_expired') || request()->get('expired') == 1)
@@ -176,7 +441,7 @@
     @endif
 
     <div id="modal-forgot-password" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style="display: none;">
-        <div class="glass-card w-full max-w-sm rounded-3xl p-6">
+        <div class="glass-card w-full max-w-sm rounded-3xl p-6" style="background: #fff; border: 1px solid #D4E4F7;">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center text-blue">
@@ -212,15 +477,10 @@
                 window.Swal.fire(config);
                 return;
             }
-
             if (retries > 0) {
                 setTimeout(() => showSwalWhenReady(config, retries - 1), 150);
             }
         }
-
-        window.addEventListener('load', function() {
-            // No mostrar loading al cargar la página
-        });
 
         document.addEventListener('DOMContentLoaded', function() {
             const statusMessage = @json(session('status'));
@@ -235,11 +495,16 @@
                 });
             }
 
-            // Mostrar loading al enviar el formulario de login
-            const loginForm = document.querySelector('form[action*="login"]');
+            // Mostrar loading y estado del botón al enviar el formulario de login
+            const loginForm = document.getElementById('login-form');
+            const loginSubmit = document.getElementById('login-submit');
             if (loginForm) {
                 loginForm.addEventListener('submit', function() {
                     document.getElementById('loading-screen').classList.add('active');
+                    if (loginSubmit) {
+                        loginSubmit.disabled = true;
+                        loginSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Ingresando...';
+                    }
                 });
             }
 
@@ -257,7 +522,7 @@
             const togglePassword = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
-            
+
             if (togglePassword && passwordInput) {
                 togglePassword.addEventListener('click', function() {
                     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -265,15 +530,16 @@
                     if (type === 'text') {
                         eyeIcon.classList.remove('fa-eye-slash');
                         eyeIcon.classList.add('fa-eye');
+                        togglePassword.setAttribute('aria-label', 'Ocultar contraseña');
                     } else {
                         eyeIcon.classList.remove('fa-eye');
                         eyeIcon.classList.add('fa-eye-slash');
+                        togglePassword.setAttribute('aria-label', 'Mostrar contraseña');
                     }
                 });
             }
         });
 
-        // Funciones para modales
         function openModal(id) {
             document.getElementById(id).style.display = 'flex';
         }
@@ -291,7 +557,6 @@
             });
         });
 
-        // Enviar solicitud de recuperación de contraseña
         async function submitForgotPassword(e) {
             e.preventDefault();
             const form = e.target;

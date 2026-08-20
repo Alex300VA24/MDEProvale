@@ -559,3 +559,112 @@
         display: none !important;
     }
 }
+
+/* ==================== Sistema de animación de la SPA ====================
+   Utilidades de entrada/transición usadas por los componentes React
+   (Secciones, modales, tablas). Respeta prefers-reduced-motion. */
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out both;
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-scale-in {
+    animation: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Transición entre secciones del dashboard (remonta el contenido por clave) */
+.section-enter {
+    animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Skeleton shimmer — sustituye al animate-pulse plano */
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #EEF2F8;
+}
+
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 30%, rgba(255, 255, 255, 0.65) 50%, transparent 70%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* Entrada escalonada de filas de tabla (máx. 12 ítems) */
+.stagger-enter {
+    animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stagger-enter:nth-child(1) { animation-delay: 0.02s; }
+.stagger-enter:nth-child(2) { animation-delay: 0.05s; }
+.stagger-enter:nth-child(3) { animation-delay: 0.08s; }
+.stagger-enter:nth-child(4) { animation-delay: 0.11s; }
+.stagger-enter:nth-child(5) { animation-delay: 0.14s; }
+.stagger-enter:nth-child(6) { animation-delay: 0.17s; }
+.stagger-enter:nth-child(7) { animation-delay: 0.2s; }
+.stagger-enter:nth-child(8) { animation-delay: 0.23s; }
+.stagger-enter:nth-child(9) { animation-delay: 0.26s; }
+.stagger-enter:nth-child(10) { animation-delay: 0.29s; }
+.stagger-enter:nth-child(11) { animation-delay: 0.32s; }
+.stagger-enter:nth-child(12) { animation-delay: 0.35s; }
+
+/* Transición de modales (entrada suave + escalado) */
+.modal-enter {
+    animation: modal-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes modal-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Tarjetas del dashboard: micro-interacción de elevación */
+.panel-card {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.panel-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px -12px rgba(15, 30, 48, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-fade-in-up,
+    .animate-scale-in,
+    .section-enter,
+    .stagger-enter,
+    .modal-enter,
+    .skeleton::after {
+        animation: none !important;
+    }
+
+    .panel-card {
+        transition: none;
+    }
+}

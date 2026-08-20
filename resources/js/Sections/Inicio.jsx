@@ -8,9 +8,9 @@ const CHART_FONT = { family: 'Plus Jakarta Sans', size: 11 };
 const GRID_COLOR = '#D4E4F7';
 const TICK_COLOR = '#5A7FA8';
 
-function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label }) {
+function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, className = '' }) {
     return (
-        <div className="stat-card bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
+        <div className={`stat-card stagger-enter bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden ${className}`}>
             <div className={`absolute top-0 left-0 right-0 h-1 ${barClass}`} />
             <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg ${iconClass}`}>
@@ -306,7 +306,7 @@ export default function Inicio({ onNavigate }) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
+                <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base">PECOSAs por Mes</h3>
@@ -326,7 +326,7 @@ export default function Inicio({ onNavigate }) {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
+                <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base">Productos Distribuidos</h3>
@@ -351,7 +351,7 @@ export default function Inicio({ onNavigate }) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
+                <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
                     <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-1">Socios vs Beneficiarios</h3>
                     <p className="text-slate text-xs sm:text-sm mb-3">Comparativa total</p>
                     <div className="chart-wrap h-32 sm:h-36">
@@ -369,7 +369,7 @@ export default function Inicio({ onNavigate }) {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
+                <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
                     <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-1">Top Comités</h3>
                     <p className="text-slate text-xs sm:text-sm mb-3">Con más beneficiarios</p>
                     <div className="chart-wrap h-36 sm:h-44">
@@ -384,7 +384,7 @@ export default function Inicio({ onNavigate }) {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
+                <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
                     <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-4">Acciones Rápidas</h3>
                     <div className="grid grid-cols-2 gap-2">
                         <QuickButton

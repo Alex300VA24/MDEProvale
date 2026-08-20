@@ -1,6 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
-import SectionSkeleton from '../Components/SectionSkeleton';
+import LoadingScreen from '../Components/LoadingScreen';
 import http from '../http';
 
 // Secciones cargadas bajo demanda (React.lazy => chunk separado por sección).
@@ -42,6 +42,19 @@ function getSectionFromUrl() {
     return SECTION_COMPONENTS[section] ? section : 'inicio';
 }
 
+// Envuelve la sección activa para ocultar la pantalla de carga una vez montada.
+// Muestra la misma pantalla de carga del login, con una duración mínima para
+// que el cambio de panel no parpadee.
+function PanelContainer({ onReady, children }) {
+    const started = useRef(Date.now());
+    useEffect(() => {
+        const delay = Math.max(0, 450 - (Date.now() - started.current));
+        const t = setTimeout(onReady, delay);
+        return () => clearTimeout(t);
+    }, [onReady]);
+    return children;
+}
+
 export default function Dashboard() {
     const { auth, modules } = usePage().props;
     const user = auth?.user ?? null;
@@ -54,6 +67,7 @@ export default function Dashboard() {
     );
 
     const [activeSection, setActiveSection] = useState(getSectionFromUrl);
+    const [panelLoading, setPanelLoading] = useState(true);
     const [navigationIntent, setNavigationIntent] = useState(null);
     const [sidebarExpanded, setSidebarExpanded] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,8 +79,10 @@ export default function Dashboard() {
     const notifLoaded = useRef(false);
 
     const navigate = (key, action = null) => {
+        if (key === activeSection) return;
         setNavigationIntent(action ? { section: key, action } : null);
         setActiveSection(key);
+        setPanelLoading(true);
         const url = new URL(window.location.href);
         if (key === 'inicio') {
             url.searchParams.delete('section');
@@ -77,11 +93,14 @@ export default function Dashboard() {
         window.history.pushState({ section: key }, '', url.pathname + url.search);
     };
 
+    const hidePanelLoading = useCallback(() => setPanelLoading(false), []);
+
     // Botón "atrás" del navegador también cambia de sección.
     useEffect(() => {
         const onPop = () => {
             setNavigationIntent(null);
             setActiveSection(getSectionFromUrl());
+            setPanelLoading(true);
         };
         window.addEventListener('popstate', onPop);
         return () => window.removeEventListener('popstate', onPop);
@@ -222,7 +241,7 @@ export default function Dashboard() {
                     <header id="top-header" className="relative flex items-center justify-between px-4 sm:px-8 h-16 sm:h-20">
                         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                             <img 
-                            src="/img/logoPro.png" 
+                            src="/img/logo-provale-sin-fondo.png" 
                             alt="PROVALE" 
                             className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" 
                             />
@@ -279,26 +298,32 @@ export default function Dashboard() {
                     </header>
 
                     <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-100">
-                        <Suspense fallback={<SectionSkeleton />}>
-                            <ActiveComponent
-                                onNavigate={activeSection === 'inicio' ? navigate : undefined}
-                                initialAction={navigationIntent?.section === activeSection ? navigationIntent.action : null}
-                            />
+                        <Suspense fallback={<LoadingScreen subtitle="Cargando panel..." />}>
+                            <PanelContainer key={activeSection} onReady={hidePanelLoading}>
+                                <div key={activeSection} className="section-enter">
+                                    <ActiveComponent
+                                        onNavigate={activeSection === 'inicio' ? navigate : undefined}
+                                        initialAction={navigationIntent?.section === activeSection ? navigationIntent.action : null}
+                                    />
+                                </div>
+                            </PanelContainer>
                         </Suspense>
                     </main>
                 </div>
             </div>
 
+            {panelLoading && <LoadingScreen subtitle="Cargando panel..." />}
+
             {notifOpen && (
                 <div
-                    className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50"
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 animate-fade-in"
                     onClick={closeNotifications}
                 >
                     <div
                         className="relative mx-auto w-full max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
+                        <div className="modal-enter bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
                             <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-mist">
                                 <h3 className="font-extrabold text-navy text-base sm:text-lg flex items-center gap-2">
                                     <i className="fas fa-bell text-blue" /> <span className="hidden sm:inline">Bandeja de </span>Notificaciones
