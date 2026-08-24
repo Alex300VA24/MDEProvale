@@ -14,16 +14,16 @@ class RacionPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('responsables-raciones');
+        return $user->canCreateModule('responsables-raciones');
     }
 
     public function update(User $user, Racion $racion): bool
     {
-        return $user->hasModuleAccess('responsables-raciones');
+        return $user->canEditModule('responsables-raciones');
     }
 
     public function delete(User $user, Racion $racion): bool
     {
-        return $user->hasModuleAccess('responsables-raciones') && $user->isAdmin();
+        return $user->canDeleteModule('responsables-raciones');
     }
 }

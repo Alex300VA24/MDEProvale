@@ -53,6 +53,7 @@
             <thead>
                 <tr>
                     <th class="px-3 sm:px-4 py-4 text-left">ID</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Nº Documento</th>
                     <th class="px-3 sm:px-4 py-4 text-left">Producto</th>
                     <th class="px-3 sm:px-4 py-4 text-left">Tipo</th>
                     <th class="px-3 sm:px-4 py-4 text-left">Cantidad</th>
@@ -66,7 +67,11 @@
                 @forelse($transactions as $transaction)
                 <tr>
                     <td class="px-3 sm:px-4 text-earth font-mono text-sm">#{{ $transaction->id }}</td>
-                    <td class="px-3 sm:px-4 font-semibold">{{ $transaction->product->title ?? 'Sin producto' }}</td>
+                    <td class="px-3 sm:px-4 font-mono text-sm">
+                        @php $docNum = trim((string) $transaction->document_number); @endphp
+                        {{ ($docNum !== '' && $docNum !== '0') ? $docNum : '-' }}
+                    </td>
+                    <td class="px-3 sm:px-4 font-semibold">{{ $transaction->product_name ?: ($transaction->product->title ?? 'Sin producto') }}</td>
                     <td class="px-3 sm:px-4">
                         @if($transaction->typeTransaction)
                             @if($transaction->typeTransaction->title == 'Ingreso')
@@ -79,7 +84,7 @@
                     <td class="px-3 sm:px-4 text-earth font-mono">{{ $transaction->quantity }}</td>
                     <td class="px-3 sm:px-4 text-earth font-mono">S/ {{ number_format($transaction->unit_price, 2) }}</td>
                     <td class="px-3 sm:px-4 font-bold text-charcoal">S/ {{ number_format($transaction->total_price, 2) }}</td>
-                    <td class="px-3 sm:px-4 text-earth text-sm">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y') }}</td>
+                    <td class="px-3 sm:px-4 text-earth text-sm">{{ \Carbon\Carbon::parse($transaction->transaction_date ?? $transaction->created_at)->format('d/m/Y') }}</td>
                     <td class="px-3 sm:px-4">
                         <div class="flex gap-1 sm:gap-2">
                             <button onclick="openModal('modal-ver-movimiento-{{ $transaction->id }}')" class="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white" title="Ver">
@@ -104,7 +109,7 @@
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="8" class="px-3 sm:px-4 py-8 text-center text-earth">No hay registros</td></tr>
+                <tr><td colspan="9" class="px-3 sm:px-4 py-8 text-center text-earth">No hay registros</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -133,8 +138,13 @@
                     <p class="font-semibold text-charcoal">#{{ $transaction->id }}</p>
                 </div>
                 <div>
+                    <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Nº Documento</p>
+                    @php $docNumVer = trim((string) $transaction->document_number); @endphp
+                    <p class="font-semibold text-charcoal">{{ ($docNumVer !== '' && $docNumVer !== '0') ? $docNumVer : '-' }}</p>
+                </div>
+                <div>
                     <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Producto</p>
-                    <p class="font-semibold text-charcoal">{{ $transaction->product->title ?? '-' }}</p>
+                    <p class="font-semibold text-charcoal">{{ $transaction->product_name ?: ($transaction->product->title ?? '-') }}</p>
                 </div>
                 <div>
                     <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Tipo</p>
@@ -154,7 +164,7 @@
                 </div>
                 <div class="col-span-2">
                     <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha</p>
-                    <p class="font-semibold text-charcoal">{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y H:i') }}</p>
+                    <p class="font-semibold text-charcoal">{{ \Carbon\Carbon::parse($transaction->transaction_date ?? $transaction->created_at)->format('d/m/Y') }}</p>
                 </div>
             </div>
             <div class="flex justify-end gap-3 px-6 pb-6">

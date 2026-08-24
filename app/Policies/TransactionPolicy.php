@@ -14,16 +14,16 @@ class TransactionPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('movimientos');
+        return $user->canCreateModule('movimientos');
     }
 
     public function update(User $user, Transaction $transaction): bool
     {
-        return $user->hasModuleAccess('movimientos');
+        return $user->canEditModule('movimientos');
     }
 
     public function delete(User $user, Transaction $transaction): bool
     {
-        return $user->hasModuleAccess('movimientos') && $user->isAdmin();
+        return $user->canDeleteModule('movimientos');
     }
 }

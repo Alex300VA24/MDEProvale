@@ -81,14 +81,10 @@
                         {{ $pecosa->president_name ?? '-' }}
                     </td>
                     <td class="px-3 sm:px-4 text-xs sm:text-sm">
-                        @if($pecosa->state)
-                            @if($pecosa->state->title == 'Activo')
-                                <span class="badge-active px-3 py-1 rounded-full text-xs font-bold">Activo</span>
-                            @else
-                                <span class="badge-inactive px-3 py-1 rounded-full text-xs font-bold">{{ $pecosa->state->title }}</span>
-                            @endif
+                        @if($pecosa->isVigente())
+                            <span class="badge-active px-3 py-1 rounded-full text-xs font-bold">Vigente</span>
                         @else
-                            <span class="badge-inactive px-3 py-1 rounded-full text-xs font-bold">Sin estado</span>
+                            <span class="badge-inactive px-3 py-1 rounded-full text-xs font-bold">Vencido</span>
                         @endif
                     </td>
                     <td class="px-3 sm:px-4 text-xs sm:text-sm">
@@ -147,7 +143,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Número</span><p class="font-semibold text-charcoal">{{ $pecosa->pecosa_number ?? '-' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Estado</span>
-                        <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $pecosa->state && $pecosa->state->title == 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $pecosa->state->title ?? 'N/A' }}</span></p>
+                        <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $pecosa->isVigente() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $pecosa->vigencia }}</span></p>
                     </div>
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Club de Madres</span><p>{{ $pecosa->association->name ?? '-' }}</p></div>

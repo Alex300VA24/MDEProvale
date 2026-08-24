@@ -14,16 +14,16 @@ class RolPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('sistema');
+        return $user->canCreateModule('sistema');
     }
 
     public function update(User $user, Rol $rol): bool
     {
-        return $user->hasModuleAccess('sistema');
+        return $user->canEditModule('sistema');
     }
 
     public function delete(User $user, Rol $rol): bool
     {
-        return $user->hasModuleAccess('sistema') && $user->isAdmin();
+        return $user->canDeleteModule('sistema');
     }
 }

@@ -18,16 +18,16 @@ class UserPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('sistema');
+        return $user->canCreateModule('sistema');
     }
 
     public function update(User $user, User $model): bool
     {
-        return $user->hasModuleAccess('sistema');
+        return $user->canEditModule('sistema');
     }
 
     public function delete(User $user, User $model): bool
     {
-        return $user->hasModuleAccess('sistema') && $user->isAdmin() && $user->id !== $model->id;
+        return $user->canDeleteModule('sistema') && $user->id !== $model->id;
     }
 }

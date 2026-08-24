@@ -180,7 +180,7 @@ class ResponsablesRacionesApiTest extends TestCase
         $this->assertDatabaseMissing('raciones', ['id' => $id]);
     }
 
-    public function test_destroy_racion_requires_admin(): void
+    public function test_destroy_racion_honors_role_delete_permission(): void
     {
         $rolId = DB::table('rols')->insertGetId(['title' => 'Basico', 'description' => 'Usuario básico']);
         DB::table('module_rol')->insert([
@@ -203,9 +203,9 @@ class ResponsablesRacionesApiTest extends TestCase
 
         $this->actingAs(\App\Models\User::find($userId))
             ->deleteJson(self::BASE . "/raciones/{$id}")
-            ->assertStatus(403);
+            ->assertNoContent();
 
-        $this->assertDatabaseHas('raciones', ['id' => $id]);
+        $this->assertDatabaseMissing('raciones', ['id' => $id]);
     }
 
     public function test_unauthenticated_request_gets_401(): void

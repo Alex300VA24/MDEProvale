@@ -382,7 +382,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                 onSubmit={(e) => e.preventDefault()}
                 className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
             >
-                <div className="w-full lg:flex-1 min-w-[180px]">
+                <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i
@@ -397,13 +397,13 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                         />
                     </div>
                 </div>
-                <div className="w-full sm:w-44 sm:w-44 lg:w-44 shrink-0">
+                <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
                     <label className={labelCls}>Socio (Titular)</label>
                     <Combobox
                         value={filters.partner_id}
                         onChange={(v) => setFilter('partner_id', v ?? '')}
                         options={partnerOptions}
-                        placeholder="Todos los Socios"
+                        placeholder="Socias"
                         allowClear
                     />
                 </div>
@@ -413,7 +413,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                         value={filters.relationship_id}
                         onChange={(v) => setFilter('relationship_id', v ?? '')}
                         options={relationshipOptions}
-                        placeholder="Todos los Parentescos"
+                        placeholder="Parentescos"
                         allowClear
                     />
                 </div>
@@ -424,11 +424,11 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                             setFilters({ search: '', partner_id: '', relationship_id: '' });
                             setPage(1);
                         }}
-                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
                     >
-                        <i className="fa-solid fa-sliders" /> Limpiar filtros
+                        <i className="fa-solid fa-eraser" /> Limpiar
                     </button>
-                    <p style={{ visibility: 'hidden', height: 15, margin: 0, padding: 0 }}>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
                         {/* Ocupa espacio pero no se ve */}
                         Hola
                     </p>

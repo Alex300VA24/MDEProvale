@@ -19,6 +19,7 @@ class StoreRolRequest extends FormRequest
             'title' => 'required|string|max:100|unique:rols,title',
             'description' => 'nullable|string|max:255',
             'modules' => 'nullable|array',
+            'modules.*' => 'array',
             'modules.*.can_view' => 'nullable|boolean',
             'modules.*.can_create' => 'nullable|boolean',
             'modules.*.can_edit' => 'nullable|boolean',

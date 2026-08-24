@@ -107,30 +107,110 @@ class Association extends Model
 
     public function getPresidenta(): ?Partner
     {
-        $resolutionId = $this->resolution_id;
-        if (!$resolutionId || !is_numeric($resolutionId)) {
-            return null;
-        }
-        
         static::loadStaticLookups();
 
-        $activeState = static::$cachedActiveState;
         $presidentPosition = static::$cachedPresidentPosition;
-        
-        if (!$activeState || !$presidentPosition) {
+        if (!$presidentPosition) {
             return null;
         }
-        
-        $directive = Directive::where('resolution_id', (int)$resolutionId)
+
+        $partnerIds = $this->partners()->pluck('id');
+        if ($partnerIds->isEmpty()) {
+            return null;
+        }
+
+        $today = now()->toDateString();
+
+        $directive = Directive::whereIn('partner_id', $partnerIds)
             ->where('position_id', $presidentPosition->id)
-            ->where('state_id', $activeState->id)
+            ->whereDate('date_start', '<=', $today)
+            ->whereDate('date_end', '>=', $today)
+            ->orderByDesc('date_start')
             ->first();
-            
+
+        if (!$directive) {
+            $directive = Directive::whereIn('partner_id', $partnerIds)
+                ->where('position_id', $presidentPosition->id)
+                ->orderByDesc('date_start')
+                ->first();
+        }
+
         if (!$directive) {
             return null;
         }
-        
+
         return Partner::with('people')->find($directive->partner_id);
+    }
+
+    public static function hydratePresidents($associations): void
+    {
+        if (!$associations || $associations->isEmpty()) {
+            return;
+        }
+
+        static::loadStaticLookups();
+
+        $presidentPosition = static::$cachedPresidentPosition;
+        if (!$presidentPosition) {
+            return;
+        }
+
+        $today = now()->toDateString();
+
+        $partnersByAssociation = Partner::whereIn('association_id', $associations->pluck('id'))
+            ->where('position_id', $presidentPosition->id)
+            ->with('people:id,names,father_lastname')
+            ->get()
+            ->groupBy('association_id');
+
+        $directivesByPartner = Directive::whereIn(
+                'partner_id',
+                $partnersByAssociation->flatMap(fn ($partners) => $partners->pluck('id'))->unique()->values()
+            )
+            ->where('position_id', $presidentPosition->id)
+            ->orderByDesc('date_start')
+            ->get()
+            ->groupBy('partner_id');
+
+        foreach ($associations as $association) {
+            $association->president_partner_id = null;
+            $association->president_name = null;
+
+            $partners = $partnersByAssociation->get($association->id);
+            if (!$partners || $partners->isEmpty()) {
+                continue;
+            }
+
+            $directive = null;
+
+            foreach ($partners as $partner) {
+                $directives = $directivesByPartner->get($partner->id) ?? collect();
+
+                $covering = $directives->first(function ($d) use ($today) {
+                    return $d->date_start && $d->date_end
+                        && $d->date_start <= $today && $d->date_end >= $today;
+                });
+                if ($covering) {
+                    $directive = $covering;
+                    break;
+                }
+
+                $latest = $directives->first();
+                if ($latest && (!$directive || $latest->date_start > $directive->date_start)) {
+                    $directive = $latest;
+                }
+            }
+
+            if (!$directive) {
+                continue;
+            }
+
+            $partner = $partners->firstWhere('id', $directive->partner_id);
+            if ($partner && $partner->people) {
+                $association->president_partner_id = $partner->id;
+                $association->president_name = trim($partner->people->names . ' ' . $partner->people->father_lastname);
+            }
+        }
     }
 
     public function getPresidentName(): ?string

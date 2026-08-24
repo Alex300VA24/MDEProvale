@@ -948,7 +948,7 @@ class ProductosPecosasController extends Controller
 
         $startDate = Carbon::create((int) $anio, (int) $mes, 1)->startOfMonth()->toDateString();
         $endDate = Carbon::create((int) $anio, (int) $mes, 1)->endOfMonth()->toDateString();
-        $estadoActivo = State::where('abbreviation', 'ACTI')->first();
+        $estadoActivo = State::where('abbreviation', 'A')->first();
         $associations = Association::with(['placeSector.place', 'partners.beneficiaries.person:id,birthdate'])
             ->when($estadoActivo, function ($q) use ($estadoActivo) {
                 $q->where('state_id', $estadoActivo->id);

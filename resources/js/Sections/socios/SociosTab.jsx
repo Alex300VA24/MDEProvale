@@ -353,7 +353,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                     className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
                 >
                     {/* Buscar – ocupa el espacio restante */}
-                    <div className="w-full lg:flex-1 min-w-[180px]">
+                    <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"/>
@@ -368,7 +368,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                     </div>
 
                     {/* Club – ancho fijo */}
-                    <div className="w-full sm:w-44 lg:w-44 shrink-0">
+                    <div className="w-full sm:w-[400px] lg:w-[400px] shrink-0">
                     <label className={labelCls}>Club</label>
                     <Combobox
                         value={filters.association_id}
@@ -400,11 +400,11 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                         setFilters({ search: '', association_id: '', state_id: '' });
                         setPage(1);
                         }}
-                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap"
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
                     >
-                        <i className="fa-solid fa-sliders" /> Limpiar filtros
+                        <i className="fa-solid fa-eraser" /> Limpiar
                     </button>
-                    <p style={{ visibility: 'hidden', height: 15, margin: 0, padding: 0 }}>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
                         {/* Ocupa espacio pero no se ve */}
                         Hola
                     </p>

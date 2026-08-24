@@ -1,4 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import { router } from '@inertiajs/react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
@@ -17,6 +18,7 @@ function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
     const [slug, setSlug] = useState(modulo?.slug || '');
     const [description, setDescription] = useState(modulo?.description || '');
     const [icon, setIcon] = useState(modulo?.icon || '');
+    const [route, setRoute] = useState(modulo?.route || '');
     const [order, setOrder] = useState(modulo?.order ?? 0);
     const [isActive, setIsActive] = useState(modulo ? modulo.is_active : true);
     const [submitting, setSubmitting] = useState(false);
@@ -29,7 +31,7 @@ function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
         }
         setSubmitting(true);
         try {
-            const payload = { name, slug, description: description || null, icon: icon || null, order: Number(order), is_active: isActive };
+            const payload = { name, slug, description: description || null, icon: icon || null, route: route || null, order: Number(order), is_active: isActive };
             if (mode === 'edit') {
                 await http.put(`${BASE}/modulos/${modulo.id}`, payload);
                 toast.success('Módulo actualizado correctamente.');
@@ -63,6 +65,10 @@ function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
                 <div>
                     <label className={labelCls}>Ícono (FontAwesome)</label>
                     <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} className={inputCls} placeholder="fa-box" />
+                </div>
+                <div>
+                    <label className={labelCls}>Ruta o sección</label>
+                    <input type="text" value={route} onChange={(e) => setRoute(e.target.value)} className={inputCls} placeholder="reportes o /reportes" />
                 </div>
                 <div>
                     <label className={labelCls}>Orden</label>
@@ -123,6 +129,8 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
             toast.success('Módulo eliminado correctamente.');
             setDeleting(null);
             load();
+            window.dispatchEvent(new CustomEvent('modules:changed'));
+            router.reload({ only: ['modules'], preserveState: true, preserveScroll: true });
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar el módulo.'));
             setDeleting(null);
@@ -210,6 +218,8 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                     onSaved={() => {
                         setFormOpen(false);
                         load();
+                        window.dispatchEvent(new CustomEvent('modules:changed'));
+                        router.reload({ only: ['modules'], preserveState: true, preserveScroll: true });
                     }}
                 />
             )}

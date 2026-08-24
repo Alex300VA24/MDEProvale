@@ -14,16 +14,16 @@ class ResolutionPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('club-madres');
+        return $user->canCreateModule('club-madres');
     }
 
     public function update(User $user, Resolution $resolution): bool
     {
-        return $user->hasModuleAccess('club-madres');
+        return $user->canEditModule('club-madres');
     }
 
     public function delete(User $user, Resolution $resolution): bool
     {
-        return $user->hasModuleAccess('club-madres') && $user->isAdmin();
+        return $user->canDeleteModule('club-madres');
     }
 }

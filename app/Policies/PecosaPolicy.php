@@ -14,16 +14,16 @@ class PecosaPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('pecosas');
+        return $user->canCreateModule('pecosas');
     }
 
     public function update(User $user, Pecosa $pecosa): bool
     {
-        return $user->hasModuleAccess('pecosas');
+        return $user->canEditModule('pecosas');
     }
 
     public function delete(User $user, Pecosa $pecosa): bool
     {
-        return $user->hasModuleAccess('pecosas') && $user->isAdmin();
+        return $user->canDeleteModule('pecosas');
     }
 }

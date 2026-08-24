@@ -27,7 +27,7 @@ class SchedulingService
     {
         $startDate = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-        $estadoActivo = State::where('abbreviation', 'ACTI')->first();
+        $estadoActivo = State::where('abbreviation', 'A')->first();
 
         $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries(
             $estadoActivo ? $estadoActivo->id : null, $sector

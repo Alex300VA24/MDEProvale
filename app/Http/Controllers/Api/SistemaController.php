@@ -20,6 +20,7 @@ use App\Models\State;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class SistemaController extends Controller
 {
@@ -84,6 +85,10 @@ class SistemaController extends Controller
 
     public function destroyUsuario(Request $request, User $usuario)
     {
+        if ($request->user()->is($usuario)) {
+            return response()->json(['message' => 'No puedes eliminar tu propio usuario.'], 403);
+        }
+
         $this->authorize('delete', $usuario);
 
         $usuario->delete();
@@ -114,6 +119,7 @@ class SistemaController extends Controller
         $validated = $request->validated();
         $modules = $validated['modules'] ?? [];
         unset($validated['modules']);
+        $this->validateModuleIds($modules);
 
         $rol = Rol::create($validated);
         $this->syncRolModules($rol, $modules);
@@ -126,6 +132,7 @@ class SistemaController extends Controller
         $validated = $request->validated();
         $modules = $validated['modules'] ?? [];
         unset($validated['modules']);
+        $this->validateModuleIds($modules);
 
         $rol->update($validated);
         $this->syncRolModules($rol, $modules);
@@ -161,14 +168,25 @@ class SistemaController extends Controller
 
         $modulesData = [];
         foreach ($modules as $moduleId => $permissions) {
+            $canView = (bool) ($permissions['can_view'] ?? false);
             $modulesData[$moduleId] = [
-                'can_view' => (bool) ($permissions['can_view'] ?? false),
-                'can_create' => (bool) ($permissions['can_create'] ?? false),
-                'can_edit' => (bool) ($permissions['can_edit'] ?? false),
-                'can_delete' => (bool) ($permissions['can_delete'] ?? false),
+                'can_view' => $canView,
+                'can_create' => $canView && (bool) ($permissions['can_create'] ?? false),
+                'can_edit' => $canView && (bool) ($permissions['can_edit'] ?? false),
+                'can_delete' => $canView && (bool) ($permissions['can_delete'] ?? false),
             ];
         }
         $rol->modules()->attach($modulesData);
+    }
+
+    private function validateModuleIds(array $modules): void
+    {
+        $requestedIds = array_map('intval', array_keys($modules));
+        $validIds = Module::whereKey($requestedIds)->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        if (count(array_diff($requestedIds, $validIds)) > 0) {
+            throw ValidationException::withMessages(['modules' => 'Uno o más módulos seleccionados no existen.']);
+        }
     }
 
     // ==================== MÓDULOS ====================

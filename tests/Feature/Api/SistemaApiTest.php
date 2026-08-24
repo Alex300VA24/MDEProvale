@@ -359,6 +359,58 @@ class SistemaApiTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_module_permissions_block_backend_actions_independently(): void
+    {
+        $rolId = DB::table('rols')->insertGetId(['title' => 'Solo lectura', 'description' => null]);
+        DB::table('module_rol')->insert([
+            'module_id' => DB::table('modules')->where('slug', 'sistema')->value('id'),
+            'rol_id' => $rolId,
+            'can_view' => true,
+            'can_create' => false,
+            'can_edit' => false,
+            'can_delete' => false,
+        ]);
+        $userId = DB::table('users')->insertGetId([
+            'names' => 'Lector', 'father_surname' => 'Sistema', 'mother_surname' => 'Test', 'username' => 'lector',
+            'email' => 'lector@example.com', 'dni' => '00000009', 'cui' => '0', 'state_id' => 1, 'rol_id' => $rolId,
+            'password' => bcrypt('password'),
+        ]);
+        $user = User::findOrFail($userId);
+
+        $this->actingAs($user)->getJson(self::BASE . '/usuarios')->assertOk();
+        $this->actingAs($user)->postJson(self::BASE . '/usuarios', [])->assertStatus(403);
+        $this->actingAs($user)->putJson(self::BASE . "/usuarios/{$user->id}", [])->assertStatus(403);
+        $this->actingAs($user)->deleteJson(self::BASE . "/usuarios/{$user->id}")->assertStatus(403);
+    }
+
+    public function test_inactive_module_blocks_non_admin_access(): void
+    {
+        $user = $this->createBasicUser(true);
+        DB::table('modules')->where('slug', 'sistema')->update(['is_active' => false]);
+
+        $this->actingAs($user)->getJson(self::BASE . '/usuarios')->assertStatus(403);
+    }
+
+    public function test_role_sync_clears_action_permissions_when_view_is_disabled(): void
+    {
+        $moduleId = DB::table('modules')->where('slug', 'sistema')->value('id');
+        $response = $this->actingAs($this->adminUser())->postJson(self::BASE . '/roles', [
+            'title' => 'Sin vista',
+            'modules' => [
+                $moduleId => ['can_view' => false, 'can_create' => true, 'can_edit' => true, 'can_delete' => true],
+            ],
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('module_rol', [
+            'rol_id' => $response->json('data.id'),
+            'module_id' => $moduleId,
+            'can_view' => false,
+            'can_create' => false,
+            'can_edit' => false,
+            'can_delete' => false,
+        ]);
+    }
+
     public function test_unauthenticated_request_gets_401(): void
     {
         $this->getJson(self::BASE . '/usuarios')->assertStatus(401);

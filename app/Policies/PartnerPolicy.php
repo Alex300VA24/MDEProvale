@@ -19,16 +19,16 @@ class PartnerPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('socios-beneficiarios');
+        return $user->canCreateModule('socios-beneficiarios');
     }
 
     public function update(User $user, Partner $partner): bool
     {
-        return $user->hasModuleAccess('socios-beneficiarios');
+        return $user->canEditModule('socios-beneficiarios');
     }
 
     public function delete(User $user, Partner $partner): bool
     {
-        return $user->hasModuleAccess('socios-beneficiarios') && $user->isAdmin();
+        return $user->canDeleteModule('socios-beneficiarios');
     }
 }

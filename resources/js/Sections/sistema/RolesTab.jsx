@@ -1,4 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import { router } from '@inertiajs/react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
@@ -170,6 +171,12 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
         load();
     }, [load]);
 
+    useEffect(() => {
+        const refresh = () => load();
+        window.addEventListener('modules:changed', refresh);
+        return () => window.removeEventListener('modules:changed', refresh);
+    }, [load]);
+
     useImperativeHandle(ref, () => ({
         openCreate: () => {
             setFormMode('create');
@@ -266,6 +273,7 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                     onSaved={() => {
                         setFormOpen(false);
                         load();
+                        router.reload({ only: ['modules'], preserveState: true, preserveScroll: true });
                     }}
                 />
             )}

@@ -36,10 +36,31 @@ const NAV_ITEMS = [
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];
 
+const BUILT_IN_MODULES = new Set(NAV_ITEMS.flatMap((item) => item.modules));
+
 function getSectionFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const section = params.get('section');
-    return SECTION_COMPONENTS[section] ? section : 'inicio';
+    return SECTION_COMPONENTS[section] || section?.startsWith('module:') ? section : 'inicio';
+}
+
+function DynamicModule({ module }) {
+    return (
+        <section className="bg-white rounded-2xl border-2 border-mist p-6 sm:p-8 shadow-sm">
+            <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-sky-light text-blue flex items-center justify-center flex-shrink-0">
+                    <i className={`fas ${module?.icon || 'fa-puzzle-piece'} text-xl`} />
+                </div>
+                <div>
+                    <h1 className="text-xl font-extrabold text-navy">{module?.name}</h1>
+                    <p className="text-earth mt-1">{module?.description || 'Módulo disponible en navegación.'}</p>
+                    {module?.route?.startsWith('/') && (
+                        <a href={module.route} className="btn-primary inline-flex mt-5">Abrir módulo</a>
+                    )}
+                </div>
+            </div>
+        </section>
+    );
 }
 
 // Envuelve la sección activa para ocultar la pantalla de carga una vez montada.
@@ -62,14 +83,31 @@ export default function Dashboard() {
     const allowedSlugs = new Set(
         (modules ?? []).filter((m) => m.can_view).map((m) => m.slug)
     );
-    const navItems = NAV_ITEMS.filter(
+    const builtInItems = NAV_ITEMS.filter(
         (item) => item.modules.length === 0 || item.modules.some((slug) => allowedSlugs.has(slug))
     );
+    const dynamicItems = (modules ?? [])
+        .filter((module) => module.can_view && !BUILT_IN_MODULES.has(module.slug))
+        .map((module) => ({
+            key: `module:${module.slug}`,
+            label: module.name,
+            icon: module.icon || 'fa-puzzle-piece',
+            modules: [module.slug],
+            module,
+        }));
+    const helpItem = builtInItems.find((item) => item.key === 'ayuda');
+    const navItems = [
+        ...builtInItems.filter((item) => item.key !== 'ayuda'),
+        ...dynamicItems,
+        ...(helpItem ? [helpItem] : []),
+    ];
 
     const [activeSection, setActiveSection] = useState(getSectionFromUrl);
     const [panelLoading, setPanelLoading] = useState(true);
     const [navigationIntent, setNavigationIntent] = useState(null);
-    const [sidebarExpanded, setSidebarExpanded] = useState(false);
+    const [sidebarExpanded, setSidebarExpanded] = useState(
+        () => typeof window !== 'undefined' && localStorage.getItem('provale-sidebar-expanded') === 'true'
+    );
     const [mobileOpen, setMobileOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
     const [notifCount, setNotifCount] = useState(0);
@@ -78,7 +116,16 @@ export default function Dashboard() {
     const [notifLoading, setNotifLoading] = useState(false);
     const notifLoaded = useRef(false);
 
+    const toggleSidebar = () => {
+        setSidebarExpanded((expanded) => {
+            const next = !expanded;
+            localStorage.setItem('provale-sidebar-expanded', String(next));
+            return next;
+        });
+    };
+
     const navigate = (key, action = null) => {
+        if (window.innerWidth <= 768) setMobileOpen(false);
         if (key === activeSection) return;
         setNavigationIntent(action ? { section: key, action } : null);
         setActiveSection(key);
@@ -105,6 +152,12 @@ export default function Dashboard() {
         window.addEventListener('popstate', onPop);
         return () => window.removeEventListener('popstate', onPop);
     }, []);
+
+    useEffect(() => {
+        if (activeSection.startsWith('module:') && !navItems.some((item) => item.key === activeSection)) {
+            navigate('inicio');
+        }
+    }, [activeSection, modules]);
 
     // Contador de notificaciones no leídas (poll cada 30s, como el original).
     useEffect(() => {
@@ -151,7 +204,8 @@ export default function Dashboard() {
         router.post('/logout');
     };
 
-    const ActiveComponent = SECTION_COMPONENTS[activeSection];
+    const activeDynamicModule = dynamicItems.find((item) => item.key === activeSection)?.module;
+    const ActiveComponent = SECTION_COMPONENTS[activeSection] || DynamicModule;
 
     return (
         <>
@@ -159,18 +213,20 @@ export default function Dashboard() {
             <div id="app-shell">
                 <aside
                     id="sidebar"
-                    className={sidebarExpanded ? 'expanded' : ''}
-                    onMouseEnter={() => {
-                        if (window.innerWidth > 768) setSidebarExpanded(true);
-                    }}
-                    onMouseLeave={() => {
-                        if (window.innerWidth > 768) {
-                            setTimeout(() => {
-                                if (!mobileOpen) setSidebarExpanded(false);
-                            }, 200);
-                        }
-                    }}
+                    className={`${sidebarExpanded ? 'expanded' : ''} ${mobileOpen ? 'mobile-open' : ''}`}
                 >
+                    <button
+                        type="button"
+                        className="sidebar-edge-toggle"
+                        onClick={toggleSidebar}
+                        aria-label={sidebarExpanded ? 'Contraer menú lateral' : 'Expandir menú lateral'}
+                        aria-controls="sidebar-navigation"
+                        aria-expanded={sidebarExpanded}
+                        title={sidebarExpanded ? 'Contraer menú' : 'Expandir menú'}
+                    >
+                        <i className={`fas ${sidebarExpanded ? 'fa-chevron-left' : 'fa-chevron-right'}`} aria-hidden="true" />
+                    </button>
+
                     <div className="flex items-center gap-4 px-5 py-6 border-b border-white/10 min-h-[88px]">
                         <div className="w-12 h-12 bg-blue rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
                             <img src="/img/muni2.png" alt="PROVALE" className="w-9 h-9 object-contain" />
@@ -181,13 +237,16 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <nav className="px-3 py-4 overflow-y-auto flex flex-col" style={{ height: 'calc(100% - 88px)' }}>
+                    <nav id="sidebar-navigation" className="px-3 py-4 overflow-y-auto overflow-x-hidden flex flex-col" style={{ height: 'calc(100% - 88px)' }}>
                         <div className="flex-1">
                             {navItems.map((item) => (
                                 <button
                                     key={item.key}
                                     type="button"
                                     onClick={() => navigate(item.key)}
+                                    title={!sidebarExpanded ? item.label : undefined}
+                                    aria-label={item.label}
+                                    aria-current={activeSection === item.key ? 'page' : undefined}
                                     className={`nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all w-full text-left ${
                                         activeSection === item.key
                                             ? 'active bg-white/10 text-white'
@@ -221,7 +280,6 @@ export default function Dashboard() {
                         id="mobile-overlay"
                         className={mobileOpen ? 'visible' : ''}
                         onClick={() => {
-                            setSidebarExpanded(false);
                             setMobileOpen(false);
                         }}
                     />
@@ -230,9 +288,11 @@ export default function Dashboard() {
                         id="mobile-toggle"
                         type="button"
                         onClick={() => {
-                            setSidebarExpanded(true);
                             setMobileOpen(true);
                         }}
+                        aria-label="Abrir menú lateral"
+                        aria-controls="sidebar-navigation"
+                        aria-expanded={mobileOpen}
                         className="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border-2 border-mist shadow-md flex items-center justify-center text-slate hover:bg-mist transition-all"
                     >
                         <i className="fas fa-bars text-sm sm:text-base" />
@@ -302,6 +362,7 @@ export default function Dashboard() {
                             <PanelContainer key={activeSection} onReady={hidePanelLoading}>
                                 <div key={activeSection} className="section-enter">
                                     <ActiveComponent
+                                        module={activeDynamicModule}
                                         onNavigate={activeSection === 'inicio' ? navigate : undefined}
                                         initialAction={navigationIntent?.section === activeSection ? navigationIntent.action : null}
                                     />

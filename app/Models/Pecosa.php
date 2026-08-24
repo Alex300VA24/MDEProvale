@@ -41,6 +41,22 @@ class Pecosa extends Model
         'beneficiaries_count' => 'integer',
     ];
 
+    public function isVigente(): bool
+    {
+        return $this->delivery_date !== null
+            && \Carbon\Carbon::parse($this->delivery_date)->isSameMonth(now());
+    }
+
+    public function getVigenciaAttribute(): string
+    {
+        return $this->isVigente() ? 'Vigente' : 'Vencido';
+    }
+
+    public function scopeVigentes($query)
+    {
+        return $query->whereBetween('delivery_date', [now()->startOfMonth(), now()->endOfMonth()]);
+    }
+
     public function state()
     {
         return $this->belongsTo(State::class);

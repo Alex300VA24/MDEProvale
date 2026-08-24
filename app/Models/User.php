@@ -100,6 +100,7 @@ class User extends Authenticatable
         $permissions = DB::table('module_rol')
             ->join('modules', 'modules.id', '=', 'module_rol.module_id')
             ->where('module_rol.rol_id', $this->rol_id)
+            ->where('modules.is_active', true)
             ->select('modules.slug', 'module_rol.can_view', 'module_rol.can_create', 'module_rol.can_edit', 'module_rol.can_delete')
             ->get()
             ->keyBy('slug');
@@ -140,7 +141,7 @@ class User extends Authenticatable
             return true;
         }
         $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_create;
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view && $perms[$moduleSlug]->can_create;
     }
 
     public function canEditModule($moduleSlug)
@@ -149,7 +150,7 @@ class User extends Authenticatable
             return true;
         }
         $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_edit;
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view && $perms[$moduleSlug]->can_edit;
     }
 
     public function canDeleteModule($moduleSlug)
@@ -158,6 +159,6 @@ class User extends Authenticatable
             return true;
         }
         $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_delete;
+        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view && $perms[$moduleSlug]->can_delete;
     }
 }

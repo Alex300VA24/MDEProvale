@@ -321,7 +321,7 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                 onSubmit={(e) => e.preventDefault()}
                 className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
             >
-                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i
@@ -337,7 +337,17 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                         />
                     </div>
                 </div>
-                <div className="w-full sm:w-44">
+                <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
+                    <label className={labelCls}>Barrio / Sector</label>
+                    <Combobox
+                        value={filters.place_sector_id}
+                        onChange={(v) => setFilter('place_sector_id', v ?? '')}
+                        options={placeSectorOptions}
+                        placeholder="Barrio / Sector"
+                        allowClear
+                    />
+                </div>
+                <div className="w-full sm:w-40 lg:w-40 shrink-0">
                     <label className={labelCls}>Género</label>
                     <Combobox
                         value={filters.gender}
@@ -346,30 +356,26 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                             { id: 'F', label: 'Femenino' },
                             { id: 'M', label: 'Masculino' },
                         ]}
-                        placeholder="Todos los Géneros"
+                        placeholder="Género"
                         allowClear
                     />
                 </div>
-                <div className="w-full sm:w-44">
-                    <label className={labelCls}>Barrio / Sector</label>
-                    <Combobox
-                        value={filters.place_sector_id}
-                        onChange={(v) => setFilter('place_sector_id', v ?? '')}
-                        options={placeSectorOptions}
-                        placeholder="Todos los Barrios / Sectores"
-                        allowClear
-                    />
+                <div className="w-full sm:w-auto shrink-0 flex flex-col">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilters({ search: '', gender: '', place_sector_id: '' });
+                            setPage(1);
+                        }}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                    >
+                        <i className="fa-solid fa-eraser" /> Limpiar
+                    </button>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFilters({ search: '', gender: '', place_sector_id: '' });
-                        setPage(1);
-                    }}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
-                >
-                    <i className="fa-solid fa-sliders" /> Limpiar filtros
-                </button>
             </form>
             </div>
 

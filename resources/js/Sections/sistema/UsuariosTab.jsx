@@ -246,7 +246,7 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
         <>
             <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
                 <div className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3">
-                    <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                    <div className="w-full lg:flex-1 min-w-[160px]">
                         <label className={labelCls}>Buscar</label>
                         <div className="relative">
                             <i
@@ -269,7 +269,7 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                             onChange={(e) => setFilters((prev) => ({ ...prev, rol_id: e.target.value }))}
                             className={inputCls}
                         >
-                            <option value="">Todos los Roles</option>
+                            <option value="">Roles</option>
                             {(data?.roles || []).map((r) => (
                                 <option key={r.id} value={r.id}>{r.title}</option>
                             ))}
@@ -282,19 +282,25 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                             onChange={(e) => setFilters((prev) => ({ ...prev, state_id: e.target.value }))}
                             className={inputCls}
                         >
-                            <option value="">Todos los Estados</option>
+                            <option value="">Estados</option>
                             {(data?.estados || []).map((s) => (
                                 <option key={s.id} value={s.id}>{s.title}</option>
                             ))}
                         </select>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => setFilters({ search: '', rol_id: '', state_id: '' })}
-                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
-                    >
-                        <i className="fa-solid fa-sliders" /> Limpiar filtros
-                    </button>
+                    <div className="w-full sm:w-auto shrink-0 flex flex-col">
+                        <button
+                            type="button"
+                            onClick={() => setFilters({ search: '', rol_id: '', state_id: '' })}
+                            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                        >
+                            <i className="fa-solid fa-eraser" /> Limpiar
+                        </button>
+                        <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                            {/* Ocupa espacio pero no se ve */}
+                            Hola
+                        </p>
+                    </div>
                 </div>
             </div>
 

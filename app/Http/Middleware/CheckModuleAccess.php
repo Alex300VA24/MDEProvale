@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckModuleAccess
 {
-    public function handle(Request $request, Closure $next, $moduleSlug)
+    public function handle(Request $request, Closure $next, $moduleSlug, $ability = null)
     {
         $user = Auth::user();
 
@@ -20,20 +20,32 @@ class CheckModuleAccess
             return redirect('/login');
         }
 
-        if ($user->isAdmin()) {
-            return $next($request);
-        }
+        $ability = $ability ?: $this->abilityFor($request);
+        $allowed = match ($ability) {
+            'create' => $user->canCreateModule($moduleSlug),
+            'edit' => $user->canEditModule($moduleSlug),
+            'delete' => $user->canDeleteModule($moduleSlug),
+            default => $user->canAccessModule($moduleSlug),
+        };
 
-        // Delegates to User::canAccessModule() which uses a per-request
-        // cached permissions query (single JOIN, loaded once per request).
-        if (!$user->canAccessModule($moduleSlug)) {
+        if (!$allowed) {
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'No tienes acceso a este módulo'], 403);
+                return response()->json(['message' => 'No tienes permiso para realizar esta acción'], 403);
             }
 
-            return redirect()->route('dashboard')->with('error', 'No tienes acceso a este módulo');
+            return redirect()->route('dashboard')->with('error', 'No tienes permiso para realizar esta acción');
         }
 
         return $next($request);
     }
-}
+
+    private function abilityFor(Request $request): string
+    {
+        return match ($request->method()) {
+            'POST' => str_ends_with((string) $request->route()?->getName(), '.store') ? 'create' : 'edit',
+            'PUT', 'PATCH' => 'edit',
+            'DELETE' => 'delete',
+            default => 'view',
+        };
+    }
+}

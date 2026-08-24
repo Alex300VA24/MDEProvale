@@ -1,4 +1,6 @@
+import { useCallback, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import Modal from '../Components/Modal';
 
 const MODULE_DOCS = {
     'socios-beneficiarios': {
@@ -105,10 +107,38 @@ export default function Ayuda() {
     const { auth, modules } = usePage().props;
     const user = auth?.user ?? null;
     const roleName = user?.rol ?? 'Usuario';
+    const [selectedGuide, setSelectedGuide] = useState(null);
+    const closeGuide = useCallback(() => setSelectedGuide(null), []);
 
     const accessible = (modules ?? [])
         .filter((m) => m.can_view)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const guides = [
+        {
+            slug: 'inicio',
+            title: 'Inicio',
+            icon: 'fa-home',
+            summary: 'Panel de control con indicadores, accesos rápidos y gráficas del programa.',
+            steps: [
+                'Revisa los indicadores generales de socios, beneficiarios, comités y stock.',
+                'Usa los accesos rápidos para registrar una pecosa o consultar los comités.',
+                'Consulta las gráficas para comparar pecosas mensuales y productos distribuidos.',
+            ],
+            module: null,
+        },
+        ...accessible.map((module) => {
+            const doc = MODULE_DOCS[module.slug];
+            return {
+                slug: module.slug,
+                title: doc?.title ?? module.name,
+                icon: doc?.icon ?? module.icon ?? 'fa-cube',
+                summary: doc?.summary ?? module.description ?? 'Módulo del sistema PROVALE.',
+                steps: doc?.steps ?? ['Ingresa al módulo desde el menú lateral y utiliza las opciones disponibles.'],
+                module,
+            };
+        }),
+    ];
 
     return (
         <div className="space-y-6">
@@ -124,77 +154,85 @@ export default function Ayuda() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-                <div className="px-4 sm:px-6 py-5">
-                    <h4 className="font-extrabold text-charcoal text-lg flex items-center gap-2 mb-2">
-                        <i className="fas fa-home text-leaf" /> Inicio
-                    </h4>
-                    <p className="text-earth text-sm">
-                        Panel de control con los indicadores del programa: total de socios, beneficiarios, comités y stock.
-                        Desde aquí puedes acceder rápido a una nueva pecosa o a los comités. Las gráficas muestran las
-                        pecosas por mes y los productos distribuidos (leche y hojuelas).
-                    </p>
+            {accessible.length === 0 ? (
+                <div className="bg-sun-light border-2 border-sun/30 rounded-2xl px-4 py-3 flex items-start gap-3">
+                    <i className="fas fa-info-circle text-sun mt-0.5" aria-hidden="true" />
+                    <p className="text-earth text-sm font-semibold">Tu rol no tiene módulos asignados. Contacta al administrador del sistema.</p>
+                </div>
+            ) : null}
+
+            <div>
+                <h4 className="font-extrabold text-charcoal text-lg mb-3">Guías disponibles</h4>
+                <p className="text-earth text-sm mb-5">Selecciona una opción para abrir instrucciones y permisos.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {guides.map((guide) => (
+                        <button
+                            key={guide.slug}
+                            type="button"
+                            onClick={() => setSelectedGuide(guide)}
+                            className="group min-h-[148px] bg-white rounded-2xl border-2 border-wheat shadow-sm hover:border-leaf/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-leaf/25 transition-all text-left p-5 flex flex-col"
+                            aria-label={`Abrir guía de ${guide.title}`}
+                        >
+                            <div className="flex items-start gap-3 w-full">
+                                <span className="w-11 h-11 rounded-xl bg-leaf-light flex items-center justify-center text-leaf flex-shrink-0 group-hover:bg-leaf group-hover:text-white transition-colors">
+                                    <i className={`fas ${guide.icon}`} aria-hidden="true" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block font-extrabold text-charcoal leading-tight">{guide.title}</span>
+                                    <span className="block text-earth text-xs mt-1.5 leading-relaxed line-clamp-3">{guide.summary}</span>
+                                </span>
+                            </div>
+                            <span className="mt-auto pt-4 text-blue text-xs font-extrabold flex items-center gap-2">
+                                Ver guía <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+                            </span>
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {accessible.length === 0 ? (
-                <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm p-8 text-center">
-                    <i className="fas fa-info-circle text-4xl text-earth mb-3" />
-                    <p className="text-earth font-semibold">Tu rol no tiene módulos asignados. Contacta al administrador del sistema.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {accessible.map((mod) => {
-                        const doc = MODULE_DOCS[mod.slug];
-                        const title = doc?.title ?? mod.name;
-                        const icon = doc?.icon ?? mod.icon ?? 'fa-cube';
-                        const summary = doc?.summary ?? mod.description ?? 'Módulo del sistema PROVALE.';
-                        const steps = doc?.steps ?? ['Ingresa al módulo desde el menú lateral y utiliza las opciones disponibles.'];
-
-                        return (
-                            <div key={mod.slug} className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden flex flex-col">
-                                <div className="flex items-start gap-3 px-4 sm:px-5 py-4 border-b-2 border-wheat">
-                                    <div className="w-10 h-10 rounded-xl bg-leaf-light flex items-center justify-center text-leaf flex-shrink-0">
-                                        <i className={`fas ${icon}`} />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h4 className="font-extrabold text-charcoal text-base leading-tight">{title}</h4>
-                                        <p className="text-earth text-xs mt-1 leading-relaxed">{summary}</p>
-                                    </div>
-                                </div>
-
-                                <div className="px-4 sm:px-5 py-4 flex-1">
-                                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-3">Cómo usar este módulo</p>
-                                    <ol className="space-y-2">
-                                        {steps.map((step, i) => (
-                                            <li key={i} className="flex items-start gap-2 text-sm text-charcoal">
-                                                <span className="w-5 h-5 rounded-full bg-blue-light text-blue text-[11px] font-extrabold flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                    {i + 1}
-                                                </span>
-                                                <span className="leading-relaxed">{step}</span>
-                                            </li>
-                                        ))}
-                                    </ol>
-                                </div>
-
-                                <div className="px-4 sm:px-5 py-3 bg-gray-50 border-t border-wheat">
-                                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Permisos de tu rol en este módulo</p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {PERM_LABELS.filter((p) => mod[p.key]).map((p) => (
-                                            <span key={p.key} className={`px-2.5 py-1 text-xs font-bold rounded-full ${p.cls}`}>
-                                                {p.label}
-                                            </span>
-                                        ))}
-                                        {PERM_LABELS.every((p) => !mod[p.key]) && (
-                                            <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gray-200 text-gray-600">Solo lectura</span>
-                                        )}
-                                    </div>
+            <Modal
+                open={Boolean(selectedGuide)}
+                onClose={closeGuide}
+                title={selectedGuide?.title ?? 'Guía'}
+                icon={selectedGuide?.icon}
+                maxWidth="sm:max-w-3xl"
+            >
+                {selectedGuide && (
+                    <div className="max-h-[70vh] overflow-y-auto">
+                        <div className="px-4 sm:px-6 py-5 border-b border-wheat">
+                            <p className="text-earth text-sm leading-relaxed">{selectedGuide.summary}</p>
+                        </div>
+                        <div className="px-4 sm:px-6 py-5">
+                            <p className="text-xs font-extrabold text-earth uppercase tracking-wider mb-4">Cómo usar esta sección</p>
+                            <ol className="space-y-3">
+                                {selectedGuide.steps.map((step, index) => (
+                                    <li key={step} className="flex items-start gap-3 text-sm text-charcoal">
+                                        <span className="w-7 h-7 rounded-full bg-blue-light text-blue text-xs font-extrabold flex items-center justify-center flex-shrink-0">
+                                            {index + 1}
+                                        </span>
+                                        <span className="leading-relaxed pt-0.5">{step}</span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
+                        {selectedGuide.module && (
+                            <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-wheat">
+                                <p className="text-xs font-extrabold text-earth uppercase tracking-wider mb-3">Permisos de tu rol</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {PERM_LABELS.filter((permission) => selectedGuide.module[permission.key]).map((permission) => (
+                                        <span key={permission.key} className={`px-3 py-1.5 text-xs font-bold rounded-full ${permission.cls}`}>
+                                            {permission.label}
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
-            )}
+                        )}
+                        <div className="px-4 sm:px-6 py-4 flex justify-end border-t border-wheat">
+                            <button type="button" onClick={closeGuide} className="btn-secondary min-h-[44px]">Entendido</button>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }

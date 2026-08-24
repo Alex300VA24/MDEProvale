@@ -19,6 +19,7 @@ class UpdateRolRequest extends FormRequest
             'title' => ['required', 'string', 'max:100', Rule::unique('rols')->ignore($this->route('rol')->id)],
             'description' => 'nullable|string|max:255',
             'modules' => 'nullable|array',
+            'modules.*' => 'array',
             'modules.*.can_view' => 'nullable|boolean',
             'modules.*.can_create' => 'nullable|boolean',
             'modules.*.can_edit' => 'nullable|boolean',

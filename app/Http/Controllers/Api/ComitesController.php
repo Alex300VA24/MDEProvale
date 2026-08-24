@@ -428,40 +428,7 @@ class ComitesController extends Controller
 
     private function hydratePresidentData($associations): void
     {
-        $activeState = State::where('abbreviation', 'A')->first();
-        $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
-
-        if (!$activeState || !$presidentPosition) {
-            return;
-        }
-
-        $resolutionIds = $associations->pluck('resolution_id')->filter()->unique();
-
-        $directivesByResolution = Directive::whereIn('resolution_id', $resolutionIds)
-            ->where('position_id', $presidentPosition->id)
-            ->where('state_id', $activeState->id)
-            ->get()
-            ->keyBy('resolution_id');
-
-        $partnerIds = $directivesByResolution->pluck('partner_id')->unique();
-        $partners = Partner::whereIn('id', $partnerIds)
-            ->with('people:id,names,father_lastname')
-            ->get()
-            ->keyBy('id');
-
-        foreach ($associations as $association) {
-            $association->president_partner_id = null;
-            $association->president_name = null;
-
-            $directive = $directivesByResolution->get($association->resolution_id);
-            if ($directive) {
-                $partner = $partners->get($directive->partner_id);
-                if ($partner && $partner->people) {
-                    $association->president_partner_id = $partner->id;
-                    $association->president_name = $partner->people->names . ' ' . $partner->people->father_lastname;
-                }
-            }
-        }
+        Association::hydratePresidents($associations);
     }
 
     private function setPresidentForSingle(Association $association): void

@@ -17,55 +17,34 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
 
         .login-shell {
+            position: relative;
             min-height: 100vh;
             display: flex;
+            align-items: center;
+            justify-content: flex-end;
             background: #EEF4FC;
-        }
-
-        /* ===== Panel de marca (izquierda) ===== */
-        .brand-panel {
-            position: relative;
-            display: none;
-            flex: 1.1;
-            background:
-                radial-gradient(1200px 600px at 10% -10%, rgba(74, 144, 217, 0.55), transparent 60%),
-                radial-gradient(900px 500px at 110% 110%, rgba(14, 138, 122, 0.45), transparent 55%),
-                linear-gradient(160deg, #1E5799 0%, #0F1E30 100%);
             overflow: hidden;
-            padding: 4rem;
-            flex-direction: column;
-            justify-content: space-between;
         }
-
-        .brand-panel::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: url('{{ asset("img/banner.png") }}');
-            background-size: cover;
-            background-position: center;
-        }
-
-        .brand-content { display: none; }
 
         /* ===== Panel del formulario (derecha) ===== */
         .form-panel {
-            flex: 1;
+            flex: 0 1 560px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 1.5rem;
+            padding: 2rem 5vw 2rem 1.5rem;
             position: relative;
+            z-index: 2;
         }
 
-        .form-panel::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(600px 400px at 100% 0%, rgba(74, 144, 217, 0.10), transparent 60%),
-                radial-gradient(600px 400px at 0% 100%, rgba(14, 138, 122, 0.10), transparent 60%);
-            pointer-events: none;
+        /* ===== Banner completo de fondo (cortado tras la niña, resto atenuado) ===== */
+        @media (min-width: 1024px) {
+            .login-shell {
+                background-image: url('{{ asset("img/banner.jfif") }}');
+                background-size: cover;
+                background-position: left center;
+                background-repeat: no-repeat;
+            }
         }
 
         .login-card {
@@ -324,10 +303,6 @@
             80% { transform: translateX(4px); }
         }
 
-        @media (min-width: 1024px) {
-            .brand-panel { display: flex; }
-        }
-
         @media (prefers-reduced-motion: reduce) {
             .login-card, .field, .login-submit-wrap { animation: none; }
             .btn-login::before { display: none; }
@@ -339,9 +314,6 @@
     <x-loading-screen subtitle="Programa Vaso de Leche" />
 
     <div class="login-shell">
-        <!-- Panel de marca -->
-        <aside class="brand-panel"></aside>
-
         <!-- Panel del formulario -->
         <main class="form-panel">
             <div class="login-card">

@@ -242,7 +242,7 @@
         @apply flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat;
     }
     .modal-close-btn {
-        @apply w-8 h-8 rounded-xl bg-clay-light border-2 border-transparent flex items-center justify-center text-clay transition-all duration-200;
+        @apply w-11 h-11 rounded-xl bg-clay-light border-2 border-transparent flex items-center justify-center text-clay transition-all duration-200 flex-shrink-0;
     }
     .modal-close-btn:hover {
         @apply bg-clay text-white;
@@ -420,8 +420,38 @@
     background: linear-gradient(180deg, #1E5799 0%, #0F1E30 100%);
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 50;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 4px 0 20px rgba(44, 36, 32, 0.15);
+}
+
+.sidebar-edge-toggle {
+    position: absolute;
+    right: -22px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #fff;
+    border-radius: 9999px;
+    background: #1E5799;
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(15, 30, 48, 0.28);
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 2;
+}
+
+.sidebar-edge-toggle:hover {
+    background: #4A90D9;
+    transform: translateY(-50%) scale(1.06);
+    box-shadow: 0 10px 24px rgba(15, 30, 48, 0.34);
+}
+
+.sidebar-edge-toggle:focus-visible {
+    outline: 3px solid #FBBF24;
+    outline-offset: 3px;
 }
 
 #sidebar.expanded {
@@ -522,14 +552,42 @@
 }
 
 @media (max-width: 768px) {
+    .sidebar-edge-toggle {
+        display: none;
+    }
+
     #sidebar {
         position: fixed;
         z-index: 60;
-        width: 0;
+        width: 260px;
+        overflow: hidden;
+        transform: translateX(-100%);
+        visibility: hidden;
+        pointer-events: none;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.3s;
     }
 
     #sidebar.expanded {
         width: 260px;
+    }
+
+    #sidebar.mobile-open {
+        width: 260px;
+        transform: translateX(0);
+        visibility: visible;
+        pointer-events: auto;
+        transition-delay: 0s;
+    }
+
+    #sidebar.mobile-open .logo-text,
+    #sidebar.mobile-open .nav-text,
+    #sidebar.mobile-open .section-title {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    #sidebar.mobile-open .nav-text {
+        transform: translateX(0);
     }
 
     #sidebar-spacer {

@@ -14,16 +14,16 @@ class ProductPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('productos');
+        return $user->canCreateModule('productos');
     }
 
     public function update(User $user, Product $product): bool
     {
-        return $user->hasModuleAccess('productos');
+        return $user->canEditModule('productos');
     }
 
     public function delete(User $user, Product $product): bool
     {
-        return $user->hasModuleAccess('productos') && $user->isAdmin();
+        return $user->canDeleteModule('productos');
     }
 }

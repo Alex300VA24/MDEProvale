@@ -14,16 +14,16 @@ class AssociationPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasModuleAccess('club-madres');
+        return $user->canCreateModule('club-madres');
     }
 
     public function update(User $user, Association $association): bool
     {
-        return $user->hasModuleAccess('club-madres');
+        return $user->canEditModule('club-madres');
     }
 
     public function delete(User $user, Association $association): bool
     {
-        return $user->hasModuleAccess('club-madres') && $user->isAdmin();
+        return $user->canDeleteModule('club-madres');
     }
 }
