@@ -658,6 +658,7 @@
                 title: '<span class="font-extrabold text-navy text-xl">¿Cerrar sesión?</span>',
                 text: '¿Estás seguro de que deseas cerrar sesión?', icon: 'question',
                 confirmButtonText: '<i class="fas fa-power-off mr-1"></i> Sí, cerrar sesión',
+                customClass: { confirmButton: 'btn-primary', cancelButton: 'btn-secondary', actions: 'gap-3' },
             }).then((result) => { if (result.isConfirmed) document.getElementById('logout-form').submit(); });
         }
 
@@ -667,6 +668,7 @@
                 html: '¿Estás seguro de que deseas restablecer la contraseña del usuario <strong>' + userName + '</strong>?<br><br><span class="text-red-500 font-bold">La contraseña será su DNI: ' + dni + '</span>',
                 icon: 'warning',
                 confirmButtonText: '<i class="fas fa-key mr-1"></i> Sí, restablecer',
+                customClass: { confirmButton: 'btn-primary', cancelButton: 'btn-secondary', actions: 'gap-3' },
             }).then((result) => { if (result.isConfirmed) document.getElementById('form-reset-password-' + userId).submit(); });
         }
 

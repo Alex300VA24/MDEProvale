@@ -138,10 +138,12 @@
     }
 
     .btn-danger {
-        @apply bg-clay-light text-clay font-bold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+        @apply bg-clay text-white font-bold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+        box-shadow: 0 2px 8px rgba(217, 79, 61, 0.25);
     }
     .btn-danger:hover {
-        @apply bg-clay text-white;
+        @apply brightness-90 -translate-y-px;
+        box-shadow: 0 4px 12px rgba(217, 79, 61, 0.35);
     }
 
     .btn-action {
@@ -206,15 +208,24 @@
         .data-table th { font-size: 10px; padding: 8px 10px; }
     }
 
-    /* Badges de estado — antes cada módulo inventaba su propio verde/rojo ad hoc */
+    /* Estados semánticos: cada significado mantiene un color propio y accesible. */
     .badge-active {
-        @apply bg-teal-light text-teal;
+        @apply bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200;
+    }
+    .badge-current {
+        @apply bg-lime-100 text-lime-800 ring-1 ring-inset ring-lime-200;
     }
     .badge-pending {
-        @apply bg-amber-light text-amber-dark;
+        @apply bg-orange-100 text-orange-800 ring-1 ring-inset ring-orange-200;
     }
     .badge-inactive {
-        @apply bg-clay-light text-clay;
+        @apply bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200;
+    }
+    .badge-expired {
+        @apply bg-red-100 text-red-800 ring-1 ring-inset ring-red-200;
+    }
+    .badge-unknown {
+        @apply bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200;
     }
     .badge {
         @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold;

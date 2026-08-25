@@ -22,8 +22,8 @@ class SistemaController extends Controller
     public function usuarios()
     {
         $usuarios = User::with(['rol', 'state'])->get();
-        $roles = Rol::all();
-        $estados = State::all();
+        $roles = Rol::where('is_active', true)->get();
+        $estados = State::administrative()->get();
         return view('sistema.usuarios.index', compact('usuarios', 'roles', 'estados'));
     }
 
@@ -37,8 +37,8 @@ class SistemaController extends Controller
             'email' => 'required|email|unique:users',
             'dni' => 'required|string|size:8|unique:users',
             'cui' => 'nullable|string|max:1',
-            'rol_id' => 'required|exists:rols,id',
-            'state_id' => 'required|exists:states,id',
+            'rol_id' => ['required', Rule::exists('rols', 'id')->where('is_active', true)],
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::ACTIVE, State::INACTIVE]))],
             'password' => 'required|string|min:8',
         ]);
 
@@ -59,8 +59,8 @@ class SistemaController extends Controller
             'email' => ['required', 'email', Rule::unique('users')->ignore($usuario->id)],
             'dni' => ['required', 'string', 'size:8', Rule::unique('users')->ignore($usuario->id)],
             'cui' => 'nullable|string|max:1',
-            'rol_id' => 'required|exists:rols,id',
-            'state_id' => 'required|exists:states,id',
+            'rol_id' => ['required', Rule::exists('rols', 'id')->where('is_active', true)],
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::ACTIVE, State::INACTIVE]))],
             'password' => 'nullable|string|min:8',
         ]);
 
@@ -278,6 +278,7 @@ class SistemaController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:100|unique:rols',
             'description' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $rol = Rol::create($validated);
@@ -303,7 +304,12 @@ class SistemaController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:100', Rule::unique('rols')->ignore($rol->id)],
             'description' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
         ]);
+
+        if ($rol->id === 1 && array_key_exists('is_active', $validated) && !$validated['is_active']) {
+            return back()->with('error', 'No se puede inactivar el rol Administrador.');
+        }
 
         $rol->update($validated);
 

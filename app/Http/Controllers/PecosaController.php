@@ -40,9 +40,9 @@ class PecosaController extends Controller
         $pecosas = $this->pecosaService->searchWithFilters($filters);
 
         $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
 
-        $activeState = State::where('abbreviation', 'A')->select(['id'])->first();
+        $activeState = State::where('abbreviation', State::CURRENT)->select(['id'])->first();
         $associationsForModal = $activeState
             ? Association::select(['id', 'name', 'code', 'state_id'])
                 ->where('state_id', $activeState->id)->get()
@@ -104,12 +104,12 @@ class PecosaController extends Controller
 
     public function create()
     {
-        $estadoActivo = State::where('abbreviation', 'A')->first();
+        $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
         $associations = $estadoActivo
             ? Association::where('state_id', $estadoActivo->id)->get()
             : Association::all();
 
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         $responsibles = Responsible::with('person')->where('active', true)->get();
 
@@ -153,7 +153,7 @@ class PecosaController extends Controller
     public function edit(Pecosa $pecosa)
     {
         $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         return view('productos-pecosas.pecosas.edit', compact('pecosa', 'associations', 'states', 'partners'));
     }

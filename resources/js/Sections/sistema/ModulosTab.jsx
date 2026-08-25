@@ -4,6 +4,7 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
+import IconSelect from '../../Components/IconSelect';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
@@ -12,7 +13,7 @@ const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wide
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
-function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
+function ModuloFormModal({ mode, modulo, iconOptions, iconsLoading, onClose, onSaved }) {
     const toast = useToast();
     const [name, setName] = useState(modulo?.name || '');
     const [slug, setSlug] = useState(modulo?.slug || '');
@@ -63,8 +64,18 @@ function ModuloFormModal({ mode, modulo, onClose, onSaved }) {
                     <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className={inputCls} />
                 </div>
                 <div>
-                    <label className={labelCls}>Ícono (FontAwesome)</label>
-                    <input type="text" value={icon} onChange={(e) => setIcon(e.target.value)} className={inputCls} placeholder="fa-box" />
+                    <label id="module-icon-label" className={labelCls}>Ícono (Font Awesome)</label>
+                    <IconSelect
+                        id="module-icon"
+                        value={icon}
+                        onChange={setIcon}
+                        options={iconOptions}
+                        disabled={iconsLoading}
+                        labelledBy="module-icon-label"
+                    />
+                    <p className="mt-1.5 text-[11px] font-medium text-earth">
+                        {iconsLoading ? 'Cargando catálogo de iconos...' : `${iconOptions.length} iconos temáticos disponibles.`}
+                    </p>
                 </div>
                 <div>
                     <label className={labelCls}>Ruta o sección</label>
@@ -97,6 +108,8 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
     const [formMode, setFormMode] = useState('create');
     const [editing, setEditing] = useState(null);
     const [deleting, setDeleting] = useState(null);
+    const [iconOptions, setIconOptions] = useState([]);
+    const [iconsLoading, setIconsLoading] = useState(true);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -113,6 +126,24 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
     useEffect(() => {
         load();
     }, [load]);
+
+    useEffect(() => {
+        let active = true;
+
+        const loadIcons = async () => {
+            try {
+                const res = await http.get(`${BASE}/module-icons`);
+                if (active) setIconOptions(res.data.data || []);
+            } catch {
+                if (active) toast.error('No se pudo cargar el catálogo de iconos.');
+            } finally {
+                if (active) setIconsLoading(false);
+            }
+        };
+
+        loadIcons();
+        return () => { active = false; };
+    }, [toast]);
 
     useImperativeHandle(ref, () => ({
         openCreate: () => {
@@ -176,7 +207,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                                     </span>
                                 </td>
                                 <td className="px-3 sm:px-4 py-3 text-center">
-                                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                    <div className="inline-grid grid-cols-[repeat(2,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                         {can.edit && (
                                             <button
                                                 type="button"
@@ -185,7 +216,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                                                     setFormMode('edit');
                                                     setFormOpen(true);
                                                 }}
-                                                className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                className="btn-action col-start-1 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                 title="Editar"
                                             >
                                                 <i className="fas fa-edit" />
@@ -195,7 +226,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                                             <button
                                                 type="button"
                                                 onClick={() => setDeleting(m)}
-                                                className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                className="btn-action col-start-2 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                 title="Eliminar"
                                             >
                                                 <i className="fas fa-trash" />
@@ -214,6 +245,8 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                     key={editing ? editing.id : 'create'}
                     mode={formMode}
                     modulo={editing}
+                    iconOptions={iconOptions}
+                    iconsLoading={iconsLoading}
                     onClose={() => setFormOpen(false)}
                     onSaved={() => {
                         setFormOpen(false);

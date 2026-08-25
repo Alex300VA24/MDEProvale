@@ -47,7 +47,7 @@
                         </span>
                     </td>
                     <td class="px-3 sm:px-4">
-                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $usuario->state_id == 1 ? 'badge-active' : 'badge-inactive' }}">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $usuario->state?->abbreviation === 'ACT' ? 'badge-active' : 'badge-inactive' }}">
                             {{ $usuario->state->title ?? 'Sin estado' }}
                         </span>
                     </td>

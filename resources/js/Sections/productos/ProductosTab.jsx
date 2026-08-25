@@ -37,9 +37,9 @@ function productStatus(dp) {
     today.setHours(0, 0, 0, 0);
     const end = dp.end_date ? new Date(`${dateValue(dp.end_date)}T00:00:00`) : null;
     const start = dp.start_date ? new Date(`${dateValue(dp.start_date)}T00:00:00`) : null;
-    if (end && end < today) return { label: 'Vencido', cls: 'bg-red-100 text-red-800' };
+    if (end && end < today) return { label: 'Vencido', cls: 'badge-expired' };
     if (start && start > today) return { label: 'Por venir', cls: 'bg-yellow-100 text-yellow-800' };
-    return { label: 'Vigente', cls: 'bg-green-100 text-green-800' };
+    return { label: 'Vigente', cls: 'badge-current' };
 }
 
 function dateValue(d) {
@@ -122,9 +122,9 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                         </select>
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-                    <button type="submit" disabled={submitting} className="btn-primary">
+                <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" disabled={submitting} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
@@ -134,34 +134,18 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
     );
 }
 
-function ProductViewModal({ product, onClose, onEdit }) {
+function ProductViewModal({ product, onClose }) {
     if (!product) return null;
     return (
         <Modal open onClose={onClose} title="Detalle del Producto" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-lg">
             <div className="p-6 grid grid-cols-2 gap-4">
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">ID</p>
-                    <p className="font-semibold text-charcoal">#{product.id}</p>
-                </div>
-                <div>
                     <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Nombre</p>
                     <p className="font-semibold text-charcoal">{product.title}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Código</p>
-                    <p className="font-semibold text-charcoal">{product.code || '-'}</p>
-                </div>
-                <div>
                     <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Abreviatura</p>
                     <p className="font-semibold text-charcoal">{product.abbreviation || '-'}</p>
-                </div>
-                <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Stock</p>
-                    <p className="font-semibold text-charcoal">{product.stock} {product.uom?.title ?? ''}</p>
-                </div>
-                <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Precio Unitario</p>
-                    <p className="font-semibold text-charcoal">S/ {money(product.unit_price)}</p>
                 </div>
                 <div>
                     <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Unidad de Medida</p>
@@ -169,16 +153,10 @@ function ProductViewModal({ product, onClose, onEdit }) {
                 </div>
                 <div>
                     <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado</p>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${product.state && product.state.title === 'Activo' ? 'badge-active' : 'badge-inactive'}`}>
+                    <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
                         {product.state?.title || 'Sin estado'}
                     </span>
                 </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
-                <button type="button" onClick={() => { onClose(); onEdit(); }} className="btn-primary">
-                    <i className="fas fa-edit mr-2" /> Editar
-                </button>
             </div>
         </Modal>
     );
@@ -304,9 +282,9 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
             <div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
             <form
                 onSubmit={(e) => e.preventDefault()}
-                className="mb-5 flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
+                className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
             >
-                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i
@@ -322,34 +300,40 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         />
                     </div>
                 </div>
-                <div className="w-full sm:w-40">
+                <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
                     <label className={labelCls}>Estado</label>
                     <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Estados</option>
+                        <option value="">Estados</option>
                         {(options.states || []).map((s) => (
                             <option key={s.id} value={s.id}>{s.title}</option>
                         ))}
                     </select>
                 </div>
-                <div className="w-full sm:w-44">
+                <div className="w-full sm:w-44 lg:w-40 shrink-0">
                     <label className={labelCls}>Unidad de Medida</label>
                     <select value={filters.uom_id} onChange={(e) => setFilter('uom_id', e.target.value)} className={inputCls}>
-                        <option value="">Todas las UOM</option>
+                        <option value="">Unidades de Medida</option>
                         {(options.uoms || []).map((u) => (
                             <option key={u.id} value={u.id}>{u.title}</option>
                         ))}
                     </select>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFilters({ search: '', state_id: '', uom_id: '' });
-                        setPage(1);
-                    }}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 sm:shrink-0 sm:self-center"
-                >
-                    <i className="fa-solid fa-sliders" /> Limpiar filtros
-                </button>
+                <div className="w-full sm:w-auto shrink-0 flex flex-col">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilters({ search: '', state_id: '', uom_id: '' });
+                            setPage(1);
+                        }}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-lead rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                    >
+                        <i className="fa-solid fa-eraser" /> Limpiar
+                    </button>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
+                </div>
             </form>
             </div>
 
@@ -386,16 +370,16 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                         <td className="px-3 sm:px-4 py-3 font-semibold">{product.title || 'Sin nombre'}</td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{product.abbreviation || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3">
-                                            <span className={`badge ${product.state && product.state.title === 'Activo' ? 'badge-active' : 'badge-inactive'}`}>
+                                            <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
                                                 {product.state?.title || 'Sin estado'}
                                             </span>
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
-                                            <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                            <div className="inline-grid grid-cols-[repeat(3,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => setViewing(product)}
-                                                    className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                    className="btn-action col-start-1 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
                                                     title="Ver"
                                                 >
                                                     <i className="fas fa-eye" />
@@ -404,7 +388,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(product)}
-                                                        className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                        className="btn-action col-start-2 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                         title="Editar"
                                                     >
                                                         <i className="fas fa-edit" />
@@ -414,7 +398,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                                     <button
                                                         type="button"
                                                         onClick={() => setDeleting(product)}
-                                                        className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                        className="btn-action col-start-3 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                         title="Eliminar"
                                                     >
                                                         <i className="fas fa-trash" />
@@ -488,7 +472,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                 </select>
                             </div>
                             <div className="w-full sm:w-32">
-                                <label className={labelCls}>Vigencia</label>
+                                <label className={labelCls}>Estado</label>
                                 <select
                                     value={detFilters.periodo}
                                     onChange={(e) => setDetFilters((p) => ({ ...p, periodo: e.target.value }))}
@@ -605,7 +589,6 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
             <ProductViewModal
                 product={viewing}
                 onClose={() => setViewing(null)}
-                onEdit={() => viewing && openEdit(viewing)}
             />
 
             <ConfirmDialog

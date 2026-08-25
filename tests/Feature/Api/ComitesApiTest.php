@@ -25,11 +25,10 @@ class ComitesApiTest extends TestCase
     {
         $now = now();
 
-        // Estado Inhabilitado (el seed base crea 'Activo' con id 1)
         DB::table('states')->insert([
-            'id' => 2,
-            'title' => 'Inhabilitado',
-            'abbreviation' => 'I',
+            ['id' => 2, 'title' => 'Vigente', 'abbreviation' => 'VIG'],
+            ['id' => 3, 'title' => 'Pendiente', 'abbreviation' => 'PEN'],
+            ['id' => 4, 'title' => 'Vencido', 'abbreviation' => 'VEN'],
         ]);
 
         $moduleId = DB::table('modules')->insertGetId([
@@ -85,7 +84,7 @@ class ComitesApiTest extends TestCase
                 'date_document' => '2024-01-15 10:00:00',
                 'date_start' => '2024-01-15',
                 'date_end' => '2026-12-31',
-                'state_id' => 1,
+                'state_id' => 2,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
@@ -95,7 +94,7 @@ class ComitesApiTest extends TestCase
                 'date_document' => '2025-02-20 10:00:00',
                 'date_start' => '2025-02-20',
                 'date_end' => '2026-12-31',
-                'state_id' => 1,
+                'state_id' => 2,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
@@ -109,7 +108,7 @@ class ComitesApiTest extends TestCase
                 'company_name' => 'Comité Demo SAC',
                 'address' => 'Av. Demo 123',
                 'resolution_id' => 1,
-                'state_id' => 1,
+                'state_id' => 2,
                 'place_sector_id' => 1,
                 'type_premises_id' => 1,
                 'created_at' => $now,
@@ -194,7 +193,7 @@ class ComitesApiTest extends TestCase
             'resolution_id' => 1,
             'partner_id' => 1,
             'position_id' => 1,
-            'state_id' => 1,
+            'state_id' => 2,
             'date_start' => $now->toDateString(),
             'created_at' => $now,
             'updated_at' => $now,
@@ -287,18 +286,13 @@ class ComitesApiTest extends TestCase
             ->assertJsonCount(2, 'data.1.all_resolutions');
     }
 
-    public function test_clubs_endpoint_filters_by_state_and_vigencia(): void
+    public function test_clubs_endpoint_filters_by_state(): void
     {
         $this->actingAs($this->userWithAccess())
             ->getJson(self::BASE . '/clubs?state_id=2')
             ->assertOk()
-            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('meta.total', 2)
             ->assertJsonPath('data.0.code', 'CDM2');
-
-        $this->actingAs($this->userWithAccess())
-            ->getJson(self::BASE . '/clubs?vigencia=vencido')
-            ->assertOk()
-            ->assertJsonPath('meta.total', 0);
     }
 
     public function test_clubs_options_endpoint(): void
@@ -325,7 +319,7 @@ class ComitesApiTest extends TestCase
             ->assertJsonCount(2, 'data.all_resolutions');
     }
 
-    public function test_store_club_creates_inhabilitado_club(): void
+    public function test_store_club_derives_current_state_from_resolution(): void
     {
         $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/clubs', $this->clubPayload())
@@ -431,7 +425,7 @@ class ComitesApiTest extends TestCase
             'storekeeper_id' => 1,
             'managing_partner_id' => null,
             'president_id' => null,
-            'state_id' => 1,
+            'state_id' => 2,
             'association_id' => $clubId,
             'created_at' => now(),
             'updated_at' => now(),
@@ -539,12 +533,12 @@ class ComitesApiTest extends TestCase
 
     // ==================== ASIGNAR PRESIDENTA ====================
 
-    public function test_asignar_presidenta_habilita_comite(): void
+    public function test_asignar_presidenta_keeps_resolution_state(): void
     {
         $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/clubs/2/asignar-presidenta', ['partner_id' => 2])
             ->assertOk()
-            ->assertJsonPath('data.state_id', 1)
+            ->assertJsonPath('data.state_id', 2)
             ->assertJsonPath('data.president_partner_id', 2)
             ->assertJsonPath('data.president_name', 'Juan Apellido');
 
@@ -552,10 +546,10 @@ class ComitesApiTest extends TestCase
             'resolution_id' => 2,
             'partner_id' => 2,
             'position_id' => 1,
-            'state_id' => 1,
+            'state_id' => 2,
         ]);
 
-        $this->assertDatabaseHas('associations', ['id' => 2, 'state_id' => 1]);
+        $this->assertDatabaseHas('associations', ['id' => 2, 'state_id' => 2]);
     }
 
     public function test_asignar_presidenta_rejects_partner_of_other_club(): void

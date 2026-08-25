@@ -21,6 +21,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\PDF;
+use Illuminate\Validation\Rule;
 
 class ProductosPecosasController extends Controller
 {
@@ -48,10 +49,10 @@ class ProductosPecosasController extends Controller
         }
 
         $products = $query->orderBy('id', 'desc')->paginate(10);
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         $uoms = Uom::select(['id', 'title'])->get();
         
-        $estadoActivo = State::where('abbreviation', 'A')->first();
+        $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
         $associationsForModal = $estadoActivo 
             ? Association::select(['id', 'name', 'code', 'state_id', 'resolution_id'])->where('state_id', $estadoActivo->id)->get() 
             : Association::select(['id', 'name', 'code', 'state_id', 'resolution_id'])->get();
@@ -107,7 +108,7 @@ class ProductosPecosasController extends Controller
         }
 
         $products = $query->orderBy('id')->paginate(10);
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         $uoms = Uom::select(['id', 'title'])->get();
 
         $detailQuery = DetailProduct::query()
@@ -150,7 +151,7 @@ class ProductosPecosasController extends Controller
                 'code' => 'required|string|max:20|unique:products,code',
                 'title' => 'required|string|max:255',
                 'abbreviation' => 'nullable|string|max:50',
-                'state_id' => 'required|exists:states,id',
+                'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
                 'uom_id' => 'required|exists:uoms,id',
             ]);
 
@@ -171,7 +172,7 @@ class ProductosPecosasController extends Controller
 
     public function createProducto()
     {
-        $states = State::all();
+        $states = State::temporal()->get();
         $uoms = Uom::all();
         return view('productos-pecosas.productos.create', compact('states', 'uoms'));
     }
@@ -182,7 +183,7 @@ class ProductosPecosasController extends Controller
             'code' => 'required|string|max:20|unique:products,code',
             'title' => 'required|string|max:255',
             'abbreviation' => 'nullable|string|max:50',
-            'state_id' => 'required|exists:states,id',
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'uom_id' => 'required|exists:uoms,id',
         ]);
         Product::create($validated);
@@ -199,7 +200,7 @@ class ProductosPecosasController extends Controller
 
     public function editProducto(Product $product)
     {
-        $states = State::all();
+        $states = State::temporal()->get();
         $uoms = Uom::all();
         return view('productos-pecosas.productos.edit', compact('product', 'states', 'uoms'));
     }
@@ -210,7 +211,7 @@ class ProductosPecosasController extends Controller
             'code' => 'required|string|max:20|unique:products,code,' . $product->id,
             'title' => 'required|string|max:255',
             'abbreviation' => 'nullable|string|max:50',
-            'state_id' => 'required|exists:states,id',
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'uom_id' => 'required|exists:uoms,id',
         ]);
         $product->update($validated);
@@ -259,16 +260,16 @@ class ProductosPecosasController extends Controller
 
         $pecosas = $query->orderBy('id', 'desc')->paginate(10);
         $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         
-        $estadoActivo = State::where('abbreviation', 'A')->select(['id'])->first();
+        $estadoActivo = State::where('abbreviation', State::CURRENT)->select(['id'])->first();
         $associationsForModal = $estadoActivo
             ? Association::select(['id', 'name', 'code', 'state_id'])
                 ->where('state_id', $estadoActivo->id)->get()
             : Association::select(['id', 'name', 'code', 'state_id'])->get();
         
         $associationIds = $associationsForModal->pluck('id');
-        $activeState = State::where('abbreviation', 'A')->first();
+        $activeState = State::where('abbreviation', State::CURRENT)->first();
         $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
         
         $directives = Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id']);
@@ -326,7 +327,7 @@ class ProductosPecosasController extends Controller
 
     public function createPecosa()
     {
-        $estadoActivo = State::where('abbreviation', 'A')->first();
+        $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
         $associations = $estadoActivo
             ? Association::where('state_id', $estadoActivo->id)->get()
             : Association::all();
@@ -354,7 +355,7 @@ class ProductosPecosasController extends Controller
             }
         }
 
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         $products = Product::with(['uom', 'detailProducts' => function ($q) {
             $q->withSum('stocks as used_quantity', 'quantity');
@@ -390,7 +391,7 @@ class ProductosPecosasController extends Controller
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
             'managing_partner_id' => 'required|exists:partners,id',
-            'state_id' => 'required|exists:states,id',
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'association_id' => 'required|exists:associations,id',
             'details' => 'required|array|min:1',
             'details.*.detail_product_id' => 'required|exists:detail_products,id',
@@ -399,7 +400,7 @@ class ProductosPecosasController extends Controller
 
         $association = Association::findOrFail($request->association_id);
         if (!$association->isHabilitado() && !$request->filled('managing_partner_id')) {
-            return back()->withInput()->with('error', 'El comité no está habilitado. Debe asignar una presidenta primero.');
+            return back()->withInput()->with('error', 'La asociación no está vigente. Renueve su resolución antes de registrar la PECOSA.');
         }
 
         $detailProductIds = collect($request->details)->pluck('detail_product_id');
@@ -647,7 +648,7 @@ class ProductosPecosasController extends Controller
     private function countBeneficiariesForAssociationAtDate($associationId, $date): int
     {
         $targetDate = Carbon::parse($date)->toDateString();
-        $activeStateIds = State::whereIn('abbreviation', ['A', 'ACTI'])
+        $activeStateIds = State::where('abbreviation', State::CURRENT)
             ->orWhereRaw('LOWER(title) = ?', ['activo'])
             ->pluck('id');
 
@@ -761,7 +762,7 @@ class ProductosPecosasController extends Controller
     public function editPecosa(Pecosa $pecosa)
     {
         $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
         return view('productos-pecosas.pecosas.edit', compact('pecosa', 'associations', 'states', 'partners'));
     }
@@ -775,7 +776,7 @@ class ProductosPecosasController extends Controller
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
             'managing_partner_id' => 'nullable|exists:partners,id',
-            'state_id' => 'required|exists:states,id',
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'association_id' => 'required|exists:associations,id',
             'details' => 'required|array|min:1',
             'details.*.detail_product_id' => 'required|exists:detail_products,id',
@@ -948,7 +949,7 @@ class ProductosPecosasController extends Controller
 
         $startDate = Carbon::create((int) $anio, (int) $mes, 1)->startOfMonth()->toDateString();
         $endDate = Carbon::create((int) $anio, (int) $mes, 1)->endOfMonth()->toDateString();
-        $estadoActivo = State::where('abbreviation', 'A')->first();
+        $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
         $associations = Association::with(['placeSector.place', 'partners.beneficiaries.person:id,birthdate'])
             ->when($estadoActivo, function ($q) use ($estadoActivo) {
                 $q->where('state_id', $estadoActivo->id);
@@ -1176,7 +1177,7 @@ class ProductosPecosasController extends Controller
             ->with(['state:id,title', 'uom:id,title'])
             ->get();
         $uoms = Uom::select(['id', 'title'])->get();
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
 
         return view('productos-pecosas.productos-detalle', compact('detailProducts', 'products', 'uoms', 'states'));
     }

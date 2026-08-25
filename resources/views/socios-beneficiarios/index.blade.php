@@ -89,7 +89,7 @@
                         <td class="px-3 sm:px-4 py-3">{{ $partner->people->dni ?? 'Sin DNI' }}</td>
                         <td class="px-3 sm:px-4 py-3">{{ $partner->association->name ?? 'Sin club' }}</td>
                         <td class="px-3 sm:px-4 py-3">
-                            <span class="badge {{ $partner->state && $partner->state->title == 'Activo' ? 'badge-active' : 'badge-inactive' }}">
+                            <span class="badge {{ $partner->state?->abbreviation === 'VIG' ? 'badge-current' : ($partner->state?->abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown') }}">
                                 {{ $partner->state->title ?? 'Sin estado' }}
                             </span>
                         </td>

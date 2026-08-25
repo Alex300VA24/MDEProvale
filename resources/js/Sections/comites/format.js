@@ -22,21 +22,18 @@ export function fmtDateTime(dt) {
     return `${day}/${m}/${y}${time ? ' ' + time.slice(0, 5) : ''}`;
 }
 
-export function vigenciaBadge(resolution) {
-    const endRaw = resolution?.date_end;
-    if (!endRaw) return { label: 'Sin vigencia', cls: 'bg-gray-100 text-gray-600' };
-    const end = new Date(`${dateValue(endRaw)}T00:00:00`);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (Number.isNaN(end.getTime())) return { label: 'Sin vigencia', cls: 'bg-gray-100 text-gray-600' };
-    if (end < today) return { label: 'Vencido', cls: 'bg-red-100 text-red-800' };
-    return { label: 'Vigente', cls: 'bg-green-100 text-green-800' };
-}
-
 export function stateBadge(state) {
-    if (!state) return { label: 'Sin estado', cls: 'badge-inactive' };
-    const active = state.abbreviation === 'A' || state.title === 'Activo';
-    return { label: state.title || 'Sin estado', cls: active ? 'badge-active' : 'badge-inactive' };
+    if (!state) return { label: 'Sin estado', cls: 'badge-unknown' };
+
+    const classes = {
+        ACT: 'badge-active',
+        VIG: 'badge-current',
+        PEN: 'badge-pending',
+        INA: 'badge-inactive',
+        VEN: 'badge-expired',
+    };
+
+    return { label: state.title || 'Sin estado', cls: classes[state.abbreviation] || 'badge-unknown' };
 }
 
 export function datetimeInputValue(dt) {

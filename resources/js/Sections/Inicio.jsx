@@ -24,6 +24,36 @@ function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, 
     );
 }
 
+function StockCard({ products = [] }) {
+    const formatStock = (value) => Number(value || 0).toLocaleString('es-PE');
+
+    return (
+        <div className="stat-card stagger-enter bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal to-[#5ec4b3]" />
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg bg-teal-light text-teal">
+                    <i className="fas fa-box" aria-hidden="true" />
+                </div>
+                <span className="text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full text-teal bg-teal-light whitespace-nowrap">
+                    Último ingreso
+                </span>
+            </div>
+            <div className="divide-y divide-mist">
+                {products.map((product) => (
+                    <div key={product.key} className="flex items-baseline justify-between gap-2 py-1.5 first:pt-0 last:pb-0">
+                        <span className="text-[10px] sm:text-xs font-semibold text-slate truncate">{product.name}</span>
+                        <span className="text-sm sm:text-lg font-extrabold text-navy whitespace-nowrap">
+                            {formatStock(product.stock)}
+                            {product.unit && <span className="ml-1 text-[8px] sm:text-[10px] font-semibold text-slate">{product.unit}</span>}
+                        </span>
+                    </div>
+                ))}
+            </div>
+            <div className="text-[9px] sm:text-[11px] font-medium text-slate mt-2">Stock disponible</div>
+        </div>
+    );
+}
+
 function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
     return (
         <button
@@ -294,15 +324,7 @@ export default function Inicio({ onNavigate }) {
                     value={stats.total_comites}
                     label="Club de Madres"
                 />
-                <StatCard
-                    icon="fa-box"
-                    iconClass="bg-teal-light text-teal"
-                    barClass="bg-gradient-to-r from-teal to-[#5ec4b3]"
-                    badge="-3%"
-                    badgeClass="text-teal bg-teal-light"
-                    value={stats.stock_total}
-                    label="Stock Total"
-                />
+                <StockCard products={stats.stock_productos} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">

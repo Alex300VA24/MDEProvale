@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Resolution;
+use App\Models\State;
+use Illuminate\Validation\Rule;
 
 class StoreResolutionRequest extends FormRequest
 {
@@ -19,7 +21,7 @@ class StoreResolutionRequest extends FormRequest
             'title' => 'required|string|max:100',
             'number' => 'required|string|max:50|unique:resolutions,number',
             'date' => 'required|date',
-            'state_id' => 'required|exists:states,id',
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
         ];
     }
 

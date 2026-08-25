@@ -97,6 +97,11 @@ class User extends Authenticatable
             return $this->modulePermissionsCache;
         }
 
+
+        if (!$this->rol || !$this->rol->is_active) {
+            return $this->modulePermissionsCache = collect();
+        }
+
         $permissions = DB::table('module_rol')
             ->join('modules', 'modules.id', '=', 'module_rol.module_id')
             ->where('module_rol.rol_id', $this->rol_id)
@@ -119,7 +124,7 @@ class User extends Authenticatable
 
     public function hasModuleAccess($moduleSlug)
     {
-        if ($this->isAdmin()) {
+        if ($this->isAdmin() && $this->rol?->is_active) {
             return true;
         }
         $perms = $this->getModulePermissions();
@@ -128,7 +133,7 @@ class User extends Authenticatable
 
     public function canAccessModule($moduleSlug)
     {
-        if ($this->isAdmin()) {
+        if ($this->isAdmin() && $this->rol?->is_active) {
             return true;
         }
         $perms = $this->getModulePermissions();
@@ -137,7 +142,7 @@ class User extends Authenticatable
 
     public function canCreateModule($moduleSlug)
     {
-        if ($this->isAdmin()) {
+        if ($this->isAdmin() && $this->rol?->is_active) {
             return true;
         }
         $perms = $this->getModulePermissions();
@@ -146,7 +151,7 @@ class User extends Authenticatable
 
     public function canEditModule($moduleSlug)
     {
-        if ($this->isAdmin()) {
+        if ($this->isAdmin() && $this->rol?->is_active) {
             return true;
         }
         $perms = $this->getModulePermissions();
@@ -155,7 +160,7 @@ class User extends Authenticatable
 
     public function canDeleteModule($moduleSlug)
     {
-        if ($this->isAdmin()) {
+        if ($this->isAdmin() && $this->rol?->is_active) {
             return true;
         }
         $perms = $this->getModulePermissions();

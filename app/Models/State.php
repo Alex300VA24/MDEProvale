@@ -9,10 +9,36 @@ class State extends Model
 {
     use HasFactory;
 
+    public const ACTIVE = 'ACT';
+    public const INACTIVE = 'INA';
+    public const CURRENT = 'VIG';
+    public const EXPIRED = 'VEN';
+    public const PENDING = 'PEN';
+
     protected $fillable = [
         'title',
         'abbreviation',
     ];
+
+    public function scopeAdministrative($query)
+    {
+        return $query->whereIn('abbreviation', [self::ACTIVE, self::INACTIVE]);
+    }
+
+    public function scopeTemporal($query)
+    {
+        return $query->whereIn('abbreviation', [self::CURRENT, self::EXPIRED]);
+    }
+
+    public function scopeForAssociations($query)
+    {
+        return $query->whereIn('abbreviation', [self::CURRENT, self::PENDING, self::EXPIRED]);
+    }
+
+    public static function idFor(string $abbreviation): ?int
+    {
+        return static::where('abbreviation', $abbreviation)->value('id');
+    }
 
     public function users()
     {

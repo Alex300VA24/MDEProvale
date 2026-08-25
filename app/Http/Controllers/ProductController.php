@@ -28,7 +28,7 @@ class ProductController extends Controller
     {
         $filters = $request->only(['search', 'state_id', 'uom_id']);
         $products = $this->productRepo->searchWithFilters($filters);
-        $states = State::select(['id', 'title', 'abbreviation'])->get();
+        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
         $uoms = Uom::select(['id', 'title'])->get();
 
         $detailQuery = DetailProduct::query()
@@ -66,7 +66,7 @@ class ProductController extends Controller
 
     public function create()
     {
-        $states = State::all();
+        $states = State::temporal()->get();
         $uoms = Uom::all();
         return view('productos-pecosas.productos.create', compact('states', 'uoms'));
     }
@@ -104,7 +104,7 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $states = State::all();
+        $states = State::temporal()->get();
         $uoms = Uom::all();
         return view('productos-pecosas.productos.edit', compact('product', 'states', 'uoms'));
     }

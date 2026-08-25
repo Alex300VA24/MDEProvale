@@ -33,6 +33,48 @@ class InicioController extends Controller
             )
             ->value('stock');
 
+        // Stock visible en Inicio: saldo del ingreso más reciente de cada
+        // alimento, descontando las salidas registradas para ese mismo lote.
+        $salidasPorLote = DB::table('product_stocks')
+            ->selectRaw('detail_product_id, SUM(quantity) as total_used')
+            ->groupBy('detail_product_id');
+
+        $ultimosIngresos = DB::table('detail_products')
+            ->join('products', 'detail_products.product_id', '=', 'products.id')
+            ->leftJoin('uoms', 'products.uom_id', '=', 'uoms.id')
+            ->leftJoinSub($salidasPorLote, 'used', function ($join) {
+                $join->on('detail_products.id', '=', 'used.detail_product_id');
+            })
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(products.title) LIKE ?', ['%hojuela%'])
+                    ->orWhereRaw('LOWER(products.title) LIKE ?', ['%leche%']);
+            })
+            ->orderByDesc('detail_products.start_date')
+            ->orderByDesc('detail_products.id')
+            ->get([
+                'products.title as product',
+                'uoms.title as unit',
+                'detail_products.start_date',
+                DB::raw('(detail_products.quantity - COALESCE(used.total_used, 0)) as available_stock'),
+            ]);
+
+        $stockProductos = collect([
+            ['key' => 'hojuelas', 'name' => 'Hojuelas', 'needle' => 'hojuela'],
+            ['key' => 'leche', 'name' => 'Leche', 'needle' => 'leche'],
+        ])->map(function ($definition) use ($ultimosIngresos) {
+            $entry = $ultimosIngresos->first(
+                fn ($item) => stripos((string) $item->product, $definition['needle']) !== false
+            );
+
+            return [
+                'key' => $definition['key'],
+                'name' => $definition['name'],
+                'stock' => $entry ? (int) $entry->available_stock : 0,
+                'unit' => $entry ? (string) $entry->unit : '',
+                'last_entry_date' => $entry ? $entry->start_date : null,
+            ];
+        })->values();
+
         $currentYear = now()->year;
         $yearStart = $currentYear . '-01-01';
         $yearEnd = $currentYear . '-12-31';
@@ -98,6 +140,7 @@ class InicioController extends Controller
                 'total_beneficiarios' => $totalBeneficiarios,
                 'total_comites' => $totalComites,
                 'stock_total' => $stockTotal,
+                'stock_productos' => $stockProductos,
             ],
             'pecosas_por_mes' => [
                 'data' => $pecosaData,

@@ -73,7 +73,7 @@ class Association extends Model
 
     public function isHabilitado(): bool
     {
-        return $this->state && $this->state->abbreviation === 'A';
+        return $this->state && $this->state->abbreviation === State::CURRENT;
     }
 
     /**
@@ -91,7 +91,7 @@ class Association extends Model
     {
         if (static::$staticCacheLoaded) return;
 
-        static::$cachedActiveState = State::where('abbreviation', 'A')->first();
+        static::$cachedActiveState = State::where('abbreviation', State::CURRENT)->first();
         static::$cachedPresidentPosition = Position::where('title', 'PRESIDENTA')->first();
         static::$staticCacheLoaded = true;
     }
@@ -158,7 +158,6 @@ class Association extends Model
         $today = now()->toDateString();
 
         $partnersByAssociation = Partner::whereIn('association_id', $associations->pluck('id'))
-            ->where('position_id', $presidentPosition->id)
             ->with('people:id,names,father_lastname')
             ->get()
             ->groupBy('association_id');

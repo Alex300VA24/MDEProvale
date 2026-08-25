@@ -368,12 +368,12 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                                             <div><span className="font-semibold text-charcoal">Hasta:</span> {fmtDate(tx.detail_product?.end_date) || '-'}</div>
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
-                                            <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                            <div className="inline-grid grid-cols-[repeat(2,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                 {can.edit && (
                                                     <button
                                                         type="button"
                                                         onClick={() => setEditing(tx)}
-                                                        className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                        className="btn-action col-start-1 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                         title="Editar"
                                                     >
                                                         <i className="fas fa-edit" />
@@ -383,7 +383,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                                                     <button
                                                         type="button"
                                                         onClick={() => setDeleting(tx)}
-                                                        className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                        className="btn-action col-start-2 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                         title="Eliminar"
                                                     >
                                                         <i className="fas fa-trash" />

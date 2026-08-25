@@ -25,7 +25,7 @@
 
     <div class="p-4 sm:p-6">
         <form id="filtro-comites" method="GET" class="mb-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 <div>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nombre o código..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
                 </div>
@@ -35,13 +35,6 @@
                         @foreach($states as $state)
                         <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
                         @endforeach
-                    </select>
-                </div>
-                <div>
-                    <select name="vigencia" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                        <option value="">Todas las Vigencias</option>
-                        <option value="vigente" {{ request('vigencia') == 'vigente' ? 'selected' : '' }}>Vigente</option>
-                        <option value="vencido" {{ request('vigencia') == 'vencido' ? 'selected' : '' }}>Vencido</option>
                     </select>
                 </div>
                 <div>
@@ -66,7 +59,6 @@
                         <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Código</th>
                         <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Nombre del Comité</th>
                         <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Última Resolución</th>
-                        <th class="px-3 sm:px-4 py-3 text-left font-bold text-earth">Vigencia</th>
                         <th class="px-3 sm:px-4 py-3 text-center font-bold text-earth">Estado</th>
                         <th class="px-3 sm:px-4 py-3 text-center font-bold text-earth">Acciones</th>
                     </tr>
@@ -89,15 +81,8 @@
                             <span class="text-gray-400">-</span>
                             @endif
                         </td>
-                        <td class="px-3 sm:px-4 py-3 text-xs">
-                            @if($latestResolution)
-                            <div>{{ \Carbon\Carbon::parse($latestResolution->date_start)->format('d/m/Y') }}</div>
-                            <div class="text-earth font-bold">al {{ \Carbon\Carbon::parse($latestResolution->date_end)->format('d/m/Y') }}</div>
-                            @else -
-                            @endif
-                        </td>
                         <td class="px-3 sm:px-4 py-3 text-center">
-                            <span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $association->state && $association->state->title == 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $association->state->title ?? 'N/A' }}</span>
+                            <span class="badge {{ $association->state?->abbreviation === 'VIG' ? 'badge-current' : ($association->state?->abbreviation === 'PEN' ? 'badge-pending' : ($association->state?->abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown')) }}">{{ $association->state->title ?? 'N/A' }}</span>
                         </td>
                         <td class="px-3 sm:px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-2">
@@ -134,7 +119,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
                             <i class="fas fa-building text-4xl mb-3"></i>
                             <p>No hay comités registrados</p>
                         </td>
@@ -154,7 +139,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-building text-leaf"></i> Detalle del Comité
                 </h3>
-                <button onclick="closeModal('modal-ver-comite-{{ $association->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button type="button" onclick="closeModal('modal-ver-comite-{{ $association->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -162,7 +147,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Código</span><p class="font-semibold text-charcoal">{{ $association->code ?? 'S/C' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Estado</span>
-                        <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $association->state && $association->state->title == 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $association->state->title ?? 'N/A' }}</span></p>
+                        <p><span class="badge {{ $association->state?->abbreviation === 'VIG' ? 'badge-current' : ($association->state?->abbreviation === 'PEN' ? 'badge-pending' : ($association->state?->abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown')) }}">{{ $association->state->title ?? 'N/A' }}</span></p>
                     </div>
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Nombre</span><p class="font-semibold text-charcoal">{{ $association->name }}</p></div>
@@ -187,9 +172,6 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Socios</span><p class="font-bold text-leaf text-lg">{{ $association->partners->count() }}</p></div>
                 </div>
-            </div>
-            <div class="px-6 pb-6">
-                <button onclick="closeModal('modal-ver-comite-{{ $association->id }}')" class="btn-secondary w-full">Cerrar</button>
             </div>
         </div>
     </div>
@@ -266,8 +248,8 @@
                     <textarea name="observation" rows="2" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">{{ $association->observation ?? '' }}</textarea>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                     <button type="button" onclick="closeModal('modal-editar-comite-{{ $association->id }}')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                 </div>
             </form>
         </div>
@@ -312,8 +294,8 @@
                     @endif
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="confirmPresidenta('{{ $association->id }}', '{{ $association->name }}')" class="btn-primary flex-1" {{ $association->partners->isEmpty() ? 'disabled' : '' }}><i class="fas fa-save mr-2"></i> {{ $association->getPresidentName() ? 'Cambiar' : 'Asignar' }}</button>
                     <button type="button" onclick="closeModal('modal-presidenta-{{ $association->id }}')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="button" onclick="confirmPresidenta('{{ $association->id }}', '{{ $association->name }}')" class="btn-primary flex-1" {{ $association->partners->isEmpty() ? 'disabled' : '' }}><i class="fas fa-save mr-2"></i> {{ $association->getPresidentName() ? 'Cambiar' : 'Asignar' }}</button>
                 </div>
             </form>
         </div>
@@ -422,8 +404,8 @@
                     <textarea name="observation" rows="2" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"></textarea>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                     <button type="button" onclick="closeModal('modal-crear-comite')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                 </div>
             </form>
         </div>
@@ -488,10 +470,11 @@ function confirmPresidenta(associationId, associationName) {
         text: 'Se asignará una nueva presidenta al comité "' + associationName + '"',
         icon: 'question',
         showCancelButton: true,
+        reverseButtons: true,
+        buttonsStyling: false,
         confirmButtonText: 'Sí, actualizar',
         cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#16a34a',
-        cancelButtonColor: '#64748b'
+        customClass: { confirmButton: 'btn-primary', cancelButton: 'btn-secondary', actions: 'gap-3' }
     }).then((result) => {
         if (result.isConfirmed) {
             document.getElementById('form-presidenta-' + associationId).submit();

@@ -71,7 +71,7 @@ class AppServiceProvider extends ServiceProvider
                     $user = auth()->user();
 
                     if (!$user->relationLoaded('rol')) {
-                        $user->load('rol:id,title');
+                        $user->load('rol:id,title,is_active');
                     }
 
                     $cacheKey = 'unread_notifications_user_' . $user->id;

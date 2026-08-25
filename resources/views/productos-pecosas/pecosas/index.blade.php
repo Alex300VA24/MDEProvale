@@ -82,9 +82,9 @@
                     </td>
                     <td class="px-3 sm:px-4 text-xs sm:text-sm">
                         @if($pecosa->isVigente())
-                            <span class="badge-active px-3 py-1 rounded-full text-xs font-bold">Vigente</span>
+                            <span class="badge badge-current">Vigente</span>
                         @else
-                            <span class="badge-inactive px-3 py-1 rounded-full text-xs font-bold">Vencido</span>
+                            <span class="badge badge-expired">Vencido</span>
                         @endif
                     </td>
                     <td class="px-3 sm:px-4 text-xs sm:text-sm">
@@ -135,7 +135,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-file-alt text-leaf"></i> Detalle de Pecosa
                 </h3>
-                <button onclick="closeModal('modal-ver-pecosa-{{ $pecosa->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button type="button" onclick="closeModal('modal-ver-pecosa-{{ $pecosa->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -143,7 +143,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Número</span><p class="font-semibold text-charcoal">{{ $pecosa->pecosa_number ?? '-' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Estado</span>
-                        <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $pecosa->isVigente() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $pecosa->vigencia }}</span></p>
+                        <p><span class="badge {{ $pecosa->isVigente() ? 'badge-current' : 'badge-expired' }}">{{ $pecosa->vigencia }}</span></p>
                     </div>
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Club de Madres</span><p>{{ $pecosa->association->name ?? '-' }}</p></div>
@@ -161,10 +161,6 @@
                 <div><span class="text-[11px] font-bold text-earth uppercase">Productos</span>
                     <p class="font-bold text-leaf text-lg">{{ $pecosa->detailPecosas ? $pecosa->detailPecosas->count() : 0 }}</p>
                 </div>
-            </div>
-            <div class="px-6 pb-6 flex gap-3">
-                <a href="{{ route('productos-pecosas.pecosas.comprobante', $pecosa) }}" target="_blank" class="btn-secondary flex-1 text-center"><i class="fas fa-file-pdf mr-2"></i> Comprobante</a>
-                <button onclick="closeModal('modal-ver-pecosa-{{ $pecosa->id }}')" class="btn-secondary flex-1">Cerrar</button>
             </div>
         </div>
     </div>
@@ -303,10 +299,10 @@
                     </div>
 
                     <div class="flex gap-3 mt-10">
+                        <button type="button" onclick="closeModal('modal-editar-pecosa-{{ $pecosa->id }}')" class="btn-secondary">Cancelar</button>
                         <button type="submit" class="btn-primary">
                             <i class="fas fa-save mr-2"></i> Actualizar Pecosa
                         </button>
-                        <button type="button" onclick="closeModal('modal-editar-pecosa-{{ $pecosa->id }}')" class="btn-secondary">Cancelar</button>
                     </div>
                 </div>
             </form>
@@ -404,10 +400,10 @@
                     </div>
 
                     <div class="flex gap-3 mt-10">
+                        <button type="button" onclick="closeModal('modal-crear-pecosa')" class="btn-secondary">Cancelar</button>
                         <button type="submit" class="btn-primary">
                             <i class="fas fa-save mr-2"></i> Guardar Pecosa
                         </button>
-                        <button type="button" onclick="closeModal('modal-crear-pecosa')" class="btn-secondary">Cancelar</button>
                     </div>
                 </div>
             </form>

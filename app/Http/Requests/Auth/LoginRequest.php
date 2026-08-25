@@ -53,6 +53,19 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user()->loadMissing(['state', 'rol']);
+        $userIsActive = $user->state && in_array($user->state->abbreviation, ['ACT', 'A'], true);
+        $roleIsActive = $user->rol && (bool) $user->rol->is_active;
+
+        if (!$userIsActive || !$roleIsActive) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'username' => 'Usuario o rol inactivo. Contacte al administrador.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

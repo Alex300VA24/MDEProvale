@@ -68,9 +68,9 @@
                     <td class="px-3 sm:px-4 text-earth">{{ $product->abbreviation ?? '-' }}</td>
                     <td class="px-3 sm:px-4">
                         @if($product->state)
-                            <span class="px-3 py-1 rounded-full text-xs font-bold {{ $product->state->title == 'Activo' ? 'badge-active' : 'badge-inactive' }}">{{ $product->state->title }}</span>
+                            <span class="badge {{ $product->state?->abbreviation === 'VIG' ? 'badge-current' : 'badge-expired' }}">{{ $product->state->title }}</span>
                         @else
-                            <span class="badge-inactive px-3 py-1 rounded-full text-xs font-bold">Sin estado</span>
+                            <span class="badge badge-unknown">Sin estado</span>
                         @endif
                     </td>
                     <td class="px-3 sm:px-4">
@@ -116,7 +116,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-eye text-[#0284C7]"></i> Detalle del Producto
                 </h3>
-                <button onclick="closeModal('modal-ver-producto-{{ $product->id }}')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button type="button" onclick="closeModal('modal-ver-producto-{{ $product->id }}')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -151,16 +151,10 @@
                 </div>
                 <div>
                     <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado</p>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $product->state && $product->state->title == 'Activo' ? 'badge-active' : 'badge-inactive' }}">
+                    <span class="badge {{ $product->state?->abbreviation === 'VIG' ? 'badge-current' : ($product->state?->abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown') }}">
                         {{ $product->state->title ?? 'Sin estado' }}
                     </span>
                 </div>
-            </div>
-            <div class="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onclick="closeModal('modal-ver-producto-{{ $product->id }}')" class="btn-secondary">Cerrar</button>
-                <button onclick="closeModal('modal-ver-producto-{{ $product->id }}'); openModal('modal-editar-producto-{{ $product->id }}')" class="btn-primary">
-                    <i class="fas fa-edit mr-2"></i> Editar
-                </button>
             </div>
         </div>
     </div>
@@ -293,13 +287,13 @@
                         $today = now()->toDateString();
                         if ($detail->end_date < $today) {
                             $estado = 'Vencido';
-                            $estadoClass = 'bg-red-100 text-red-800';
+                            $estadoClass = 'badge-expired';
                         } elseif ($detail->start_date > $today) {
                             $estado = 'Por venir';
                             $estadoClass = 'bg-yellow-100 text-yellow-800';
                         } else {
                             $estado = 'Vigente';
-                            $estadoClass = 'bg-green-100 text-green-800';
+                            $estadoClass = 'badge-current';
                         }
                     @endphp
                     <tr class="hover:bg-gray-50">

@@ -15,6 +15,15 @@ const MONTHS = [
 
 const PAGE_SIZE = 15;
 
+function quantityLabel(value, singular, plural) {
+    const quantity = Number(value ?? 0);
+    return `${quantity} ${quantity === 1 ? singular : plural}`;
+}
+
+function packageBreakdown(primaryValue, primarySingular, primaryPlural, secondaryValue, secondarySingular, secondaryPlural) {
+    return `${quantityLabel(primaryValue, primarySingular, primaryPlural)} y ${quantityLabel(secondaryValue, secondarySingular, secondaryPlural)}`;
+}
+
 export default function ReparticionTab() {
     const toast = useToast();
     const now = new Date();
@@ -83,7 +92,7 @@ export default function ReparticionTab() {
                     </span>
                 )}
                 {report && (
-                    <a href={report.pdf_url} target="_blank" rel="noreferrer" className="btn-secondary text-xs sm:text-sm">
+                    <a href={report.pdf_url} target="_blank" rel="noreferrer" className="btn-primary text-xs sm:text-sm">
                         <i className="fas fa-file-pdf mr-2" /> Descargar Repartición
                     </a>
                 )}
@@ -121,8 +130,8 @@ export default function ReparticionTab() {
                                     <th className="px-3 sm:px-4 py-3 text-left">Comité</th>
                                     <th className="px-3 sm:px-4 py-3 text-left">Presidenta</th>
                                     <th className="px-3 sm:px-4 py-3 text-right">Beneficiarios</th>
-                                    <th className="px-3 sm:px-4 py-3 text-right">Leche (cajas/tarros)</th>
-                                    <th className="px-3 sm:px-4 py-3 text-right">Hojuelas (sacos/kg)</th>
+                                    <th className="px-3 sm:px-4 py-3 text-right">Leche</th>
+                                    <th className="px-3 sm:px-4 py-3 text-right">Hojuelas</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -142,8 +151,12 @@ export default function ReparticionTab() {
                                             <td className="px-3 sm:px-4 py-3 font-semibold">{a.nombre}</td>
                                             <td className="px-3 sm:px-4 py-3">{a.presidenta || '-'}</td>
                                             <td className="px-3 sm:px-4 py-3 text-right font-bold">{a.beneficiarios}</td>
-                                            <td className="px-3 sm:px-4 py-3 text-right">{a.leche_cajas} / {a.leche_tarros}</td>
-                                            <td className="px-3 sm:px-4 py-3 text-right">{a.hojuelas_sacos} / {a.hojuelas_kilos}</td>
+                                            <td className="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">
+                                                {packageBreakdown(a.leche_cajas, 'caja', 'cajas', a.leche_tarros, 'tarro', 'tarros')}
+                                            </td>
+                                            <td className="px-3 sm:px-4 py-3 text-right font-semibold whitespace-nowrap">
+                                                {packageBreakdown(a.hojuelas_sacos, 'saco', 'sacos', a.hojuelas_kilos, 'kg', 'kg')}
+                                            </td>
                                         </tr>
                                     ))
                                 )}

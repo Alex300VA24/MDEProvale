@@ -18,6 +18,7 @@ class StoreRolRequest extends FormRequest
         return [
             'title' => 'required|string|max:100|unique:rols,title',
             'description' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
             'modules' => 'nullable|array',
             'modules.*' => 'array',
             'modules.*.can_view' => 'nullable|boolean',

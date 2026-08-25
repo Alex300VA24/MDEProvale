@@ -346,17 +346,17 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                                         <span className="px-2 py-1 rounded-lg bg-leaf-light text-leaf text-xs font-bold">{usuario.rol?.title || '-'}</span>
                                     </td>
                                     <td className="px-3 sm:px-4 py-3">
-                                        <span className={`badge ${usuario.state?.title === 'Activo' ? 'badge-active' : 'badge-inactive'} px-3 py-1 rounded-full text-xs font-bold`}>
+                                        <span className={`badge ${usuario.state?.abbreviation === 'ACT' ? 'badge-active' : 'badge-inactive'} px-3 py-1 rounded-full text-xs font-bold`}>
                                             {usuario.state?.title || 'N/A'}
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-4 py-3 text-center">
-                                        <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                        <div className="inline-grid grid-cols-[repeat(3,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                             {can.edit && (
                                                 <button
                                                     type="button"
                                                     onClick={() => openEdit(usuario)}
-                                                    className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                    className="btn-action col-start-1 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                     title="Editar"
                                                 >
                                                     <i className="fas fa-edit" />
@@ -366,7 +366,7 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                                                 <button
                                                     type="button"
                                                     onClick={() => setResetting(usuario)}
-                                                    className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                    className="btn-action col-start-2 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
                                                     title="Restaurar contraseña al DNI"
                                                 >
                                                     <i className="fas fa-key" />
@@ -376,7 +376,7 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                                                 <button
                                                     type="button"
                                                     onClick={() => setDeleting(usuario)}
-                                                    className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                    className="btn-action col-start-3 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                     title="Eliminar"
                                                 >
                                                     <i className="fas fa-trash" />

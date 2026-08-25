@@ -6,7 +6,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-user text-leaf"></i> Detalle de Persona
                 </h3>
-                <button onclick="closeModal('modal-ver-persona')" class="modal-close-btn">
+                <button type="button" onclick="closeModal('modal-ver-persona')" class="modal-close-btn" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -24,9 +24,6 @@
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Dirección</span><p id="ver-persona-direccion"></p></div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Sector</span><p id="ver-persona-sector"></p></div>
-            </div>
-            <div class="px-6 pb-6">
-                <button onclick="closeModal('modal-ver-persona')" class="btn-secondary w-full">Cerrar</button>
             </div>
         </div>
     </div>

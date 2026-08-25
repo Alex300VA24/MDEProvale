@@ -151,10 +151,12 @@ function SocioViewModal({ partner, onClose }) {
                         <span className="text-[11px] font-bold text-earth uppercase">Estado</span>
                         <p>
                             <span
-                                className={`px-2 py-1 text-[10px] font-bold rounded-full ${
-                                    partner.state && partner.state.title === 'Activo'
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-red-100 text-red-800'
+                                className={`badge ${
+                                    partner.state?.abbreviation === 'VIG'
+                                        ? 'badge-current'
+                                        : partner.state?.abbreviation === 'VEN'
+                                            ? 'badge-expired'
+                                            : 'badge-unknown'
                                 }`}
                             >
                                 {partner.state?.title || 'N/A'}
@@ -258,11 +260,6 @@ function SocioViewModal({ partner, onClose }) {
                         <p className="text-earth">{partner.observations}</p>
                     </div>
                 )}
-            </div>
-            <div className="px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary w-full text-xs sm:text-sm">
-                    Cerrar
-                </button>
             </div>
         </Modal>
     );
@@ -454,11 +451,11 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                                             <span className="font-bold text-leaf">{partner.beneficiaries_count ?? 0}</span>
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
-                                            <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                            <div className="inline-grid grid-cols-[repeat(3,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => setViewing(partner)}
-                                                    className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                    className="btn-action col-start-1 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
                                                     title="Ver"
                                                 >
                                                     <i className="fas fa-eye" />
@@ -467,7 +464,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(partner)}
-                                                        className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                        className="btn-action col-start-2 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                         title="Editar"
                                                     >
                                                         <i className="fas fa-edit" />
@@ -477,7 +474,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                                                     <button
                                                         type="button"
                                                         onClick={() => setDeleting(partner)}
-                                                        className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                        className="btn-action col-start-3 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                         title="Eliminar"
                                                     >
                                                         <i className="fas fa-trash" />

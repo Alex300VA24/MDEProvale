@@ -6,7 +6,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-user text-leaf"></i> Detalle del Socio
                 </h3>
-                <button onclick="closeModal('modal-ver-socio-{{ $partner->id }}')" class="modal-close-btn">
+                <button type="button" onclick="closeModal('modal-ver-socio-{{ $partner->id }}')" class="modal-close-btn" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -17,7 +17,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">DNI</span><p>{{ $partner->people->dni ?? '-' }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Estado</span>
-                        <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $partner->state && $partner->state->title == 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $partner->state->title ?? 'N/A' }}</span></p>
+                        <p><span class="badge {{ $partner->state?->abbreviation === 'VIG' ? 'badge-current' : ($partner->state?->abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown') }}">{{ $partner->state->title ?? 'N/A' }}</span></p>
                     </div>
                 </div>
                 <div><span class="text-[11px] font-bold text-earth uppercase">Club</span><p>{{ $partner->association->name ?? '-' }}</p></div>
@@ -77,9 +77,6 @@
                 @if($partner->observations)
                 <div><span class="text-[11px] font-bold text-earth uppercase">Observaciones</span><p class="text-earth">{{ $partner->observations }}</p></div>
                 @endif
-            </div>
-            <div class="px-6 pb-6">
-                <button onclick="closeModal('modal-ver-socio-{{ $partner->id }}')" class="btn-secondary w-full text-xs sm:text-sm">Cerrar</button>
             </div>
         </div>
     </div>

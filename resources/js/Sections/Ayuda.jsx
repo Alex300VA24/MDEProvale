@@ -227,9 +227,6 @@ export default function Ayuda() {
                                 </div>
                             </div>
                         )}
-                        <div className="px-4 sm:px-6 py-4 flex justify-end border-t border-wheat">
-                            <button type="button" onClick={closeGuide} className="btn-secondary min-h-[44px]">Entendido</button>
-                        </div>
                     </div>
                 )}
             </Modal>

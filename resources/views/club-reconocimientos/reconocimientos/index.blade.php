@@ -20,7 +20,7 @@
 
     <div class="p-4 sm:p-6">
         <form id="filtro-resoluciones" method="GET" class="mb-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 <div>
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Buscar</label>
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por documento..." class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
@@ -32,14 +32,6 @@
                         @foreach($states as $state)
                             <option value="{{ $state->id }}" {{ request('state_id') == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
                         @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Vigencia</label>
-                    <select name="vigencia" class="select2-filter w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all">
-                        <option value="vigentes" {{ request('vigencia') == 'vigentes' ? 'selected' : '' }}>Vigentes</option>
-                        <option value="vencidas" {{ request('vigencia') == 'vencidas' ? 'selected' : '' }}>Vencidas</option>
-                        <option value="" {{ request('vigencia') == '' ? 'selected' : '' }}>Todas</option>
                     </select>
                 </div>
                 <div class="flex gap-2 mt-4">
@@ -56,7 +48,6 @@
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Comités</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Documento</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Fecha Emisión</th>
-                        <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Vigencia</th>
                         <th class="px-4 py-3 text-left text-xs font-bold text-earth uppercase tracking-wider">Estado</th>
                         <th class="px-4 py-3 text-center text-xs font-bold text-earth uppercase tracking-wider">Acciones</th>
                     </tr>
@@ -65,10 +56,11 @@
                     @forelse($resolutions as $resolution)
                     <tr class="hover:bg-wheat/10 transition-colors">
                         <td class="px-4 py-3 text-sm text-charcoal">
-                            @if($resolution->associations->count() > 0)
+                            @php $resolutionAssociations = $resolution->getAllAssociations(); @endphp
+                            @if($resolutionAssociations->count() > 0)
                                 <div class="flex flex-col gap-1">
-                                    @foreach($resolution->associations as $association)
-                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold"><i class="fas fa-users mr-1"></i>{{ $association->name }}</span>
+                                    @foreach($resolutionAssociations as $association)
+                                        <span class="badge badge-unknown"><i class="fas fa-users mr-1"></i>{{ $association->code ? $association->code . ' · ' : '' }}{{ $association->name }}</span>
                                     @endforeach
                                 </div>
                             @else
@@ -77,19 +69,8 @@
                         </td>
                         <td class="px-4 py-3 text-sm font-semibold text-charcoal">{{ $resolution->document }}</td>
                         <td class="px-4 py-3 text-sm text-charcoal">{{ \Carbon\Carbon::parse($resolution->date_document)->format('d/m/Y') }}</td>
-                        <td class="px-4 py-3 text-sm text-charcoal">
-                            <div class="flex flex-col">
-                                <span>{{ \Carbon\Carbon::parse($resolution->date_start)->format('d/m/Y') }}</span>
-                                <span class="text-xs text-earth">al {{ \Carbon\Carbon::parse($resolution->date_end)->format('d/m/Y') }}</span>
-                            </div>
-                            @if(\Carbon\Carbon::parse($resolution->date_end)->isFuture())
-                                <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-green-100 text-green-700"><i class="fas fa-check-circle mr-1"></i>Vigente</span>
-                            @else
-                                <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-gray-100 text-gray-700"><i class="fas fa-clock mr-1"></i>Vencida</span>
-                            @endif
-                        </td>
                         <td class="px-4 py-3">
-                            <span class="px-3 py-1 text-xs font-bold rounded-full {{ $resolution->state && $resolution->state->abbreviation == 'A' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                            <span class="badge {{ $resolution->state?->abbreviation === 'VIG' ? 'badge-current' : ($resolution->state?->abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown') }}">
                                 {{ $resolution->state->title ?? 'N/A' }}
                             </span>
                         </td>
@@ -114,7 +95,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="5" class="px-4 py-8 text-center text-gray-500">
                             <i class="fas fa-inbox text-4xl mb-2"></i>
                             <p>No hay resoluciones registradas</p>
                         </td>
@@ -134,7 +115,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-file-contract text-leaf"></i> Detalle de Resolución
                 </h3>
-                <button onclick="closeModal('modal-ver-resolucion-{{ $resolution->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button type="button" onclick="closeModal('modal-ver-resolucion-{{ $resolution->id }}')" class="w-8 h-8 rounded-xl bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -143,17 +124,25 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Emisión</span><p>{{ \Carbon\Carbon::parse($resolution->date_document)->format('d/m/Y') }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Estado</span>
-                        <p><span class="px-2 py-1 text-[10px] font-bold rounded-full {{ $resolution->state && $resolution->state->abbreviation == 'A' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $resolution->state->title ?? 'N/A' }}</span></p>
+                        <p><span class="badge {{ $resolution->state?->abbreviation === 'VIG' ? 'badge-current' : ($resolution->state?->abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown') }}">{{ $resolution->state->title ?? 'N/A' }}</span></p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Inicio</span><p>{{ \Carbon\Carbon::parse($resolution->date_start)->format('d/m/Y') }}</p></div>
                     <div><span class="text-[11px] font-bold text-earth uppercase">Fecha Fin</span><p>{{ \Carbon\Carbon::parse($resolution->date_end)->format('d/m/Y') }}</p></div>
                 </div>
-                <div><span class="text-[11px] font-bold text-earth uppercase">Comités asociados</span><p class="font-bold text-leaf">{{ $resolution->associations->count() }}</p></div>
-            </div>
-            <div class="px-6 pb-6">
-                <button onclick="closeModal('modal-ver-resolucion-{{ $resolution->id }}')" class="btn-secondary w-full">Cerrar</button>
+                <div><span class="text-[11px] font-bold text-earth uppercase">Comités asociados</span>
+                    @php $modalAssociations = $resolution->getAllAssociations(); @endphp
+                    @if($modalAssociations->isNotEmpty())
+                        <div class="flex flex-wrap gap-2 mt-1">
+                            @foreach($modalAssociations as $association)
+                                <span class="badge badge-unknown">{{ $association->code ? $association->code . ' · ' : '' }}{{ $association->name }}</span>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-earth">Sin comités asociados</p>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
@@ -179,17 +168,9 @@
                     <input type="text" name="document" value="{{ $resolution->document }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
+                    <div class="col-span-2">
                         <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Emisión *</label>
                         <input type="date" name="date_document" value="{{ $resolution->date_document ? \Carbon\Carbon::parse($resolution->date_document)->format('Y-m-d') : '' }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado *</label>
-                        <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                            @foreach($states as $state)
-                            <option value="{{ $state->id }}" {{ $resolution->state_id == $state->id ? 'selected' : '' }}>{{ $state->title }}</option>
-                            @endforeach
-                        </select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -203,8 +184,8 @@
                     </div>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                     <button type="button" onclick="closeModal('modal-editar-resolucion-{{ $resolution->id }}')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                 </div>
             </form>
         </div>
@@ -235,18 +216,9 @@
                     <input type="text" name="document" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
+                    <div class="col-span-2">
                         <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha Emisión *</label>
                         <input type="date" name="date_document" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado *</label>
-                        <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                            <option value="">Seleccionar...</option>
-                            @foreach($states as $state)
-                            <option value="{{ $state->id }}">{{ $state->title }}</option>
-                            @endforeach
-                        </select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
@@ -260,8 +232,8 @@
                     </div>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                     <button type="button" onclick="closeModal('modal-crear-resolucion')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                 </div>
             </form>
         </div>

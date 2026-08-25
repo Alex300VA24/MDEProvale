@@ -58,7 +58,7 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
 
     public function countBeneficiariesForAssociationAtDate(int $associationId, string $date): int
     {
-        $activeStateIds = State::whereIn('abbreviation', ['A', 'ACTI'])
+        $activeStateIds = State::where('abbreviation', State::CURRENT)
             ->orWhereRaw('LOWER(title) = ?', ['activo'])
             ->pluck('id');
 

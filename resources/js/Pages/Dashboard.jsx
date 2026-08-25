@@ -30,7 +30,7 @@ const NAV_ITEMS = [
     { key: 'socios', label: 'Socios y Beneficiarios', icon: 'fa-user-friends', modules: ['socios-beneficiarios'] },
     { key: 'productos', label: 'Productos y Pecosas', icon: 'fa-box', modules: ['productos', 'pecosas'] },
     { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
-    { key: 'movimientos', label: 'Movimientos', icon: 'fa-exchange-alt', modules: ['movimientos'] },
+    { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },

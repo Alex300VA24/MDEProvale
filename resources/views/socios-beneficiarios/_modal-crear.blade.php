@@ -65,8 +65,8 @@
                 </div>
 
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1 text-xs sm:text-sm"><i class="fas fa-save mr-2"></i> Guardar</button>
                     <button type="button" onclick="closeModal('modal-crear-socio')" class="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1 text-xs sm:text-sm"><i class="fas fa-save mr-2"></i> Guardar</button>
                 </div>
             </form>
         </div>

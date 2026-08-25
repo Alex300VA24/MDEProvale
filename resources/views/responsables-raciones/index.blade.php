@@ -103,8 +103,8 @@
                             <td class="px-3 sm:px-4 py-3">{{ $racion->racion_hojuelas_gramos }} g</td>
                             <td class="px-3 sm:px-4 py-3">{{ $racion->racion_leche_militros }} ml</td>
                             <td class="px-3 sm:px-4 py-3 text-center">
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $racion->active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                    {{ $racion->active ? 'Activo' : 'Inactivo' }}
+                                <span class="badge {{ $racion->active ? 'badge-current' : 'badge-expired' }}">
+                                    {{ $racion->active ? 'Vigente' : 'Vencido' }}
                                 </span>
                             </td>
                             <td class="px-3 sm:px-4 py-3 text-center">
@@ -163,8 +163,8 @@
                     </select>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                     <button type="button" onclick="closeModal('modal-chief')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                 </div>
             </form>
         </div>
@@ -197,8 +197,8 @@
                     </select>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                     <button type="button" onclick="closeModal('modal-storekeeper')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                 </div>
             </form>
         </div>
@@ -232,8 +232,8 @@
                     <input type="number" step="0.01" name="racion_leche_militros" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required min="0" placeholder="Ej: 1000.00">
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                     <button type="button" onclick="closeModal('modal-crear-racion')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                 </div>
             </form>
         </div>
@@ -269,8 +269,8 @@
                     <input type="number" step="0.01" name="racion_leche_militros" value="{{ $racion->racion_leche_militros }}" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required min="0">
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                     <button type="button" onclick="closeModal('modal-editar-racion-{{ $racion->id }}')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                 </div>
             </form>
         </div>

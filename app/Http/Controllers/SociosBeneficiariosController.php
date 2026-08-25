@@ -12,6 +12,7 @@ use App\Models\PlaceSector;
 use App\Services\BeneficiaryReportService;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\PDF;
+use Illuminate\Validation\Rule;
 
 
 class SociosBeneficiariosController extends Controller
@@ -56,7 +57,7 @@ class SociosBeneficiariosController extends Controller
 
         $partners = $query->orderBy('id', 'desc')->paginate(10);
         $associations = Association::select(['id', 'name'])->get();
-        $states = State::select(['id', 'title'])->get();
+        $states = State::temporal()->get(['id', 'title']);
         
         // Get a sample of people for the dropdown - limit to avoid query timeout
         // Note: Since we have too many partners, it's not practical to exclude all of them
@@ -201,7 +202,7 @@ class SociosBeneficiariosController extends Controller
             'date_begin' => 'required|date',
             'date_end' => 'required|date',
             'observations' => 'nullable|string',
-            'state_id' => 'required|exists:states,id',
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'person_id' => 'required|exists:people,id',
             'association_id' => 'required|exists:associations,id',
             'beneficiaries' => 'nullable|array',
@@ -213,7 +214,7 @@ class SociosBeneficiariosController extends Controller
             'beneficiaries.*.date_begin' => 'nullable|date',
             'beneficiaries.*.date_end' => 'nullable|date',
             'beneficiaries.*.type_benefit_id' => 'nullable|exists:type_benefits,id',
-            'beneficiaries.*.history_state_id' => 'nullable|exists:states,id',
+            'beneficiaries.*.history_state_id' => ['nullable', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'beneficiaries.*.reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
         ]);
 
@@ -256,7 +257,7 @@ class SociosBeneficiariosController extends Controller
             'date_begin' => 'required|date',
             'date_end' => 'required|date',
             'observations' => 'nullable|string',
-            'state_id' => 'required|exists:states,id',
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'person_id' => 'required|exists:people,id',
             'association_id' => 'required|exists:associations,id',
             'beneficiaries' => 'nullable|array',

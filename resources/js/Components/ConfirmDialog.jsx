@@ -19,8 +19,8 @@ export default function ConfirmDialog({
             <div className="modal-panel sm:max-w-md" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-card modal-enter">
                     <div className="p-6 text-center">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-clay-light flex items-center justify-center mb-4">
-                            <i className="fas fa-exclamation-triangle text-clay text-2xl" />
+                        <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${danger ? 'bg-clay-light' : 'bg-sky-light'}`}>
+                            <i className={`fas fa-exclamation-triangle text-2xl ${danger ? 'text-clay' : 'text-sky'}`} />
                         </div>
                         <h3 className="font-extrabold text-charcoal text-lg mb-2">{title}</h3>
                         <p className="text-sm text-earth mb-4">{message}</p>
@@ -38,7 +38,7 @@ export default function ConfirmDialog({
                             <button type="button" onClick={onCancel} disabled={loading} className="btn-secondary flex-1">
                                 {cancelLabel}
                             </button>
-                            <button type="button" onClick={onConfirm} disabled={loading} className="btn-danger flex-1">
+                            <button type="button" onClick={onConfirm} disabled={loading} className={`${danger ? 'btn-danger' : 'btn-primary'} flex-1`}>
                                 {loading ? (
                                     <i className="fas fa-spinner fa-spin mr-2" />
                                 ) : (

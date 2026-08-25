@@ -28,6 +28,7 @@
                     <th class="px-3 sm:px-4 py-4 text-left">Descripción</th>
                     <th class="px-3 sm:px-4 py-4 text-left">Módulos Asignados</th>
                     <th class="px-3 sm:px-4 py-4 text-left">Usuarios</th>
+                    <th class="px-3 sm:px-4 py-4 text-left">Estado</th>
                     <th class="px-3 sm:px-4 py-4 text-left">Acciones</th>
                 </tr>
             </thead>
@@ -40,6 +41,11 @@
                         <span class="px-2 py-1 rounded-lg bg-purple-100 text-purple-700 text-xs font-bold">{{ $rol->modules->count() }} módulos</span>
                     </td>
                     <td class="px-3 sm:px-4 text-earth text-sm">{{ $rol->users->count() }} usuarios</td>
+                    <td class="px-3 sm:px-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $rol->is_active ? 'badge-active' : 'badge-inactive' }}">
+                            {{ $rol->is_active ? 'Activo' : 'Inactivo' }}
+                        </span>
+                    </td>
                     <td class="px-3 sm:px-4">
                         <div class="flex gap-2">
                             @if(Auth::user()->canEditModule('sistema'))
@@ -87,6 +93,13 @@
                 <div class="mb-4">
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Descripción</label>
                     <textarea name="description" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-purple-500 transition-all" rows="2"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
+                    <select name="is_active" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-purple-500 transition-all">
+                        <option value="1">Activo</option>
+                        <option value="0">Inactivo</option>
+                    </select>
                 </div>
                 <div class="mb-4">
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Asignar Módulos y Permisos</label>
@@ -147,6 +160,14 @@
                 <div class="mb-4">
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Descripción</label>
                     <textarea name="description" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-purple-500 transition-all" rows="2">{{ $rol->description }}</textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
+                    @if($rol->id === 1)<input type="hidden" name="is_active" value="1">@endif
+                    <select name="is_active" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-purple-500 transition-all" {{ $rol->id === 1 ? 'disabled' : '' }}>
+                        <option value="1" {{ $rol->is_active ? 'selected' : '' }}>Activo</option>
+                        <option value="0" {{ !$rol->is_active ? 'selected' : '' }}>Inactivo</option>
+                    </select>
                 </div>
                 <div class="mb-4">
                     <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Asignar Módulos y Permisos</label>

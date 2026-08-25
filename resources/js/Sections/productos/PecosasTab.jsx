@@ -301,7 +301,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                     <div>
                         <span className="text-[11px] font-bold text-earth uppercase">Estado</span>
                         <p>
-                            <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${pecosa.state && pecosa.state.title === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            <span className={`badge ${pecosa.state?.abbreviation === 'VIG' ? 'badge-current' : pecosa.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
                                 {pecosa.state?.title || 'N/A'}
                             </span>
                         </p>
@@ -350,12 +350,6 @@ function PecosaViewModal({ pecosa, onClose }) {
                         </div>
                     </div>
                 )}
-            </div>
-            <div className="px-6 pb-6 flex gap-3">
-                <a href={`/productos-pecosas/pecosas/${pecosa.id}/comprobante`} target="_blank" rel="noreferrer" className="btn-secondary flex-1 text-center">
-                    <i className="fas fa-file-pdf mr-2" /> Comprobante
-                </a>
-                <button type="button" onClick={onClose} className="btn-secondary flex-1">Cerrar</button>
             </div>
         </Modal>
     );
@@ -442,7 +436,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                 onSubmit={(e) => e.preventDefault()}
                 className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
             >
-                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i
@@ -458,7 +452,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                         />
                     </div>
                 </div>
-                <div className="w-full sm:w-44">
+                <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
                     <label className={labelCls}>Club de Madres</label>
                     <Combobox
                         value={filters.association_id}
@@ -468,25 +462,31 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                         allowClear
                     />
                 </div>
-                <div className="w-full sm:w-40">
+                <div className="w-full sm:w-40 lg:w-40 shrink 0">
                     <label className={labelCls}>Estado</label>
                     <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Estados</option>
+                        <option value="">Estados</option>
                         {(options.states || []).map((s) => (
                             <option key={s.id} value={s.id}>{s.title}</option>
                         ))}
                     </select>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFilters({ search: '', association_id: '', state_id: '' });
-                        setPage(1);
-                    }}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
-                >
-                    <i className="fa-solid fa-sliders" /> Limpiar filtros
-                </button>
+                <div className="w-full sm:w-auto shrink-0 flex flex-col">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilters({ search: '', association_id: '', state_id: '' });
+                            setPage(1);
+                        }}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-lead rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                    >
+                        <i className="fa-solid fa-eraser" /> Limpiar
+                    </button>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
+                </div>
             </form>
             </div>
 
@@ -532,22 +532,22 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                         <td className="px-3 sm:px-4 py-3">{pecosa.managing_partner_name || pecosa.president_name || ''}</td>
                                         <td className="px-3 sm:px-4 py-3">
                                             {pecosa.state ? (
-                                                pecosa.state.title === 'Activo' ? (
-                                                    <span className="badge badge-active px-3 py-1 rounded-full text-xs font-bold">Activo</span>
+                                                pecosa.state.abbreviation === 'VIG' ? (
+                                                    <span className="badge badge-current">Vigente</span>
                                                 ) : (
-                                                    <span className="badge badge-inactive px-3 py-1 rounded-full text-xs font-bold">{pecosa.state.title}</span>
+                                                    <span className="badge badge-expired">{pecosa.state.title}</span>
                                                 )
                                             ) : (
-                                                <span className="badge badge-inactive px-3 py-1 rounded-full text-xs font-bold">Sin estado</span>
+                                                <span className="badge badge-unknown">Sin estado</span>
                                             )}
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
-                                            <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                            <div className="inline-grid grid-cols-[repeat(4,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                 <a
                                                     href={`/productos-pecosas/pecosas/${pecosa.id}/comprobante`}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
+                                                    className="btn-action col-start-1 bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
                                                     title="Generar Comprobante"
                                                 >
                                                     <i className="fas fa-file-pdf" />
@@ -555,7 +555,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                                 <button
                                                     type="button"
                                                     onClick={() => setViewing(pecosa)}
-                                                    className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                    className="btn-action col-start-2 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
                                                     title="Ver"
                                                 >
                                                     <i className="fas fa-eye" />
@@ -564,7 +564,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(pecosa)}
-                                                        className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                        className="btn-action col-start-3 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                         title="Editar"
                                                     >
                                                         <i className="fas fa-edit" />
@@ -574,7 +574,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                                     <button
                                                         type="button"
                                                         onClick={() => setDeleting(pecosa)}
-                                                        className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                        className="btn-action col-start-4 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                         title="Eliminar"
                                                     >
                                                         <i className="fas fa-trash" />

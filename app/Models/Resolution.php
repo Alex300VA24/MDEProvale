@@ -24,6 +24,24 @@ class Resolution extends Model
         'date_end'      => 'date:Y-m-d',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (Resolution $resolution) {
+            if (!$resolution->date_end) {
+                return;
+            }
+
+            $abbreviation = $resolution->date_end->copy()->startOfDay()->lt(now()->startOfDay())
+                ? State::EXPIRED
+                : State::CURRENT;
+            $stateId = State::idFor($abbreviation);
+
+            if ($stateId) {
+                $resolution->state_id = $stateId;
+            }
+        });
+    }
+
     public function state()
     {
         return $this->belongsTo(State::class);
@@ -37,6 +55,19 @@ class Resolution extends Model
     public function associations()
     {
         return $this->belongsToMany(Association::class, 'resolution_associations');
+    }
+
+    public function primaryAssociations()
+    {
+        return $this->hasMany(Association::class, 'resolution_id');
+    }
+
+    public function getAllAssociations(): \Illuminate\Support\Collection
+    {
+        return collect($this->primaryAssociations)
+            ->concat($this->associations)
+            ->unique('id')
+            ->values();
     }
 
     public function scopeActivas($query)

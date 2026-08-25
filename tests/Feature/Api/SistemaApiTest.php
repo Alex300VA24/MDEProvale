@@ -249,6 +249,50 @@ class SistemaApiTest extends TestCase
         $this->assertTrue($sistema['is_protected']);
     }
 
+    public function test_module_icons_endpoint_returns_the_100_thematic_options(): void
+    {
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/module-icons')
+            ->assertOk()
+            ->assertJsonCount(100, 'data')
+            ->assertJsonStructure([
+                'data' => [['id', 'name', 'class_name', 'category']],
+            ]);
+
+        $this->assertDatabaseHas('module_icons', [
+            'name' => 'Leche',
+            'class_name' => 'fa-cow',
+            'category' => 'Alimentos',
+        ]);
+    }
+
+    public function test_store_modulo_only_accepts_an_icon_from_the_catalog(): void
+    {
+        $payload = [
+            'name' => 'Distribución',
+            'slug' => 'distribucion',
+            'description' => 'Control de entregas',
+            'icon' => 'fa-truck',
+            'route' => 'distribucion',
+            'order' => 10,
+            'is_active' => true,
+        ];
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE . '/modulos', $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.icon', 'fa-truck');
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE . '/modulos', array_merge($payload, [
+                'name' => 'Módulo inválido',
+                'slug' => 'modulo-invalido',
+                'icon' => 'fa-icono-inexistente',
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('icon');
+    }
+
     public function test_destroy_modulo_rejects_protected_sistema_module(): void
     {
         $moduleId = DB::table('modules')->where('slug', 'sistema')->value('id');

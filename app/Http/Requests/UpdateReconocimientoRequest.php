@@ -20,7 +20,6 @@ class UpdateReconocimientoRequest extends FormRequest
             'date_document' => 'sometimes|required|date',
             'date_start' => 'sometimes|required|date',
             'date_end' => 'sometimes|required|date|after_or_equal:date_start',
-            'state_id' => 'sometimes|required|exists:states,id',
         ];
     }
 

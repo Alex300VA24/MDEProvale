@@ -117,14 +117,17 @@ export default function PadronModal({ open, onClose, options }) {
                         </select>
                     </div>
                 </div>
-                <div className="flex justify-center pt-2">
+                <div className="flex gap-3 pt-2">
+                    <button type="button" onClick={onClose} disabled={loading} className="btn-secondary flex-1">
+                        Cerrar
+                    </button>
                     <button
                         type="button"
                         onClick={handleGenerate}
                         disabled={loading}
-                        className="btn-primary px-8 py-3 text-lg flex items-center gap-3 disabled:opacity-60"
+                        className="btn-primary flex-1 disabled:opacity-60"
                     >
-                        <i className={`fas ${loading ? 'fa-spinner fa-spin' : 'fa-file-pdf'}`} />
+                        <i className={`fas ${loading ? 'fa-spinner fa-spin' : 'fa-file-pdf'} mr-2`} />
                         Generar Padrón de Beneficiarios
                     </button>
                 </div>

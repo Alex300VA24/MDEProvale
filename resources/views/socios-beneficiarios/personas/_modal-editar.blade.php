@@ -65,8 +65,8 @@
                     </div>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                     <button type="button" onclick="closeModal('modal-editar-persona')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                 </div>
             </form>
         </div>

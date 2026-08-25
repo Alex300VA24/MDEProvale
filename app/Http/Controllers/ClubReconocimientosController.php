@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Client\ConnectionException;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\PDF;
+use App\Services\AssociationStateService;
+use App\Services\ResolutionStateService;
 
 class ClubReconocimientosController extends Controller
 {
@@ -24,6 +26,7 @@ class ClubReconocimientosController extends Controller
 
     public function index(Request $request)
     {
+        app(AssociationStateService::class)->syncAll();
         $query = Association::with(['state', 'resolution', 'resolutionsHistory', 'partners.people']);
 
         if ($request->has('search') && $request->search != '') {
@@ -34,19 +37,6 @@ class ClubReconocimientosController extends Controller
 
         if ($request->has('state_id') && $request->state_id != '') {
             $query->where('state_id', $request->state_id);
-        }
-
-        if ($request->has('vigencia') && $request->vigencia != '') {
-            $today = now()->toDateString();
-            if ($request->vigencia == 'vigente') {
-                $query->whereHas('resolution', function($q) use ($today) {
-                    $q->where('date_end', '>=', $today);
-                });
-            } elseif ($request->vigencia == 'vencido') {
-                $query->whereHas('resolution', function($q) use ($today) {
-                    $q->where('date_end', '<', $today);
-                });
-            }
         }
 
         if ($request->has('resolution_id') && $request->resolution_id != '') {
@@ -77,7 +67,7 @@ class ClubReconocimientosController extends Controller
             $association->latestResolution = isset($resolutionsAll[0]) ? $resolutionsAll[0] : null;
         }
 
-        $states = State::all();
+        $states = State::forAssociations()->get();
         $placeSectors = PlaceSector::with(['place', 'sector'])->get();
         $typePremises = TypePremises::all();
         $resolutions = Resolution::orderBy('date_document', 'desc')->get();
@@ -105,15 +95,9 @@ class ClubReconocimientosController extends Controller
         try {
             DB::beginTransaction();
 
-            // Obtener estados
-            $estadoInhabilitado = State::where('abbreviation', 'I')->first();
-            
-            if (!$estadoInhabilitado) {
-                $estadoInhabilitado = State::where('abbreviation', 'I')->first();
-            }
+            $estadoVigente = State::where('abbreviation', State::CURRENT)->firstOrFail();
 
             // Crear el comité vinculado a la resolución existente
-            // El comité se crea INHABILITADO hasta que se asigne una presidenta
             $association = Association::create([
                 'name' => $request->name,
                 'code' => $request->code,
@@ -122,12 +106,14 @@ class ClubReconocimientosController extends Controller
                 'place_sector_id' => $request->place_sector_id,
                 'type_premises_id' => $request->type_premises_id,
                 'resolution_id' => $request->resolution_id,
-                'state_id' => $estadoInhabilitado->id,
+                'state_id' => $estadoVigente->id,
                 'observation' => $request->observation,
             ]);
 
+            app(AssociationStateService::class)->sync($association);
+
             DB::commit();
-            return redirect()->route('club-reconocimientos.index')->with('success', 'Comité registrado exitosamente. Debe asignar una presidenta para habilitar el comité.');
+            return redirect()->route('club-reconocimientos.index')->with('success', 'Comité registrado exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
@@ -149,6 +135,7 @@ class ClubReconocimientosController extends Controller
         ]);
 
         $association->update($validated);
+        app(AssociationStateService::class)->sync($association->fresh('resolution'));
         Association::clearPresidentaCache($association->id);
         return redirect()->route('club-reconocimientos.index')->with('success', 'Club de Madres actualizado exitosamente');
     }
@@ -174,7 +161,8 @@ class ClubReconocimientosController extends Controller
 
     public function indexReconocimientos(Request $request)
     {
-        $query = Resolution::with(['state', 'associations']);
+        app(ResolutionStateService::class)->syncAll();
+        $query = Resolution::with(['state', 'associations', 'primaryAssociations']);
 
         // Filtro de búsqueda por documento
         if ($request->has('search') && $request->search != '') {
@@ -187,17 +175,6 @@ class ClubReconocimientosController extends Controller
             $query->where('state_id', $request->state_id);
         }
 
-        // Filtro por vigencia (por defecto vigentes)
-        $vigencia = $request->vigencia ?: 'vigentes';
-        if ($vigencia != '') {
-            $today = date('Y-m-d');
-            if ($vigencia == 'vigentes') {
-                $query->where('date_end', '>=', $today);
-            } elseif ($vigencia == 'vencidas') {
-                $query->where('date_end', '<', $today);
-            }
-        }
-
         // Filtro por año
         if ($request->has('anio') && $request->anio != '') {
             $query->whereBetween('date_start', [
@@ -207,7 +184,7 @@ class ClubReconocimientosController extends Controller
         }
 
         $resolutions = $query->orderBy('date_document', 'desc')->paginate(10);
-        $states = State::all();
+        $states = State::temporal()->get();
         
         return view('club-reconocimientos.reconocimientos.index', compact('resolutions', 'states'));
     }
@@ -219,10 +196,10 @@ class ClubReconocimientosController extends Controller
             'date_document' => 'required|date',
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
-            'state_id' => 'required|exists:states,id',
         ]);
         
-        Resolution::create($validated);
+        $resolution = Resolution::create($validated);
+        app(ResolutionStateService::class)->sync($resolution);
         
         return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución creada exitosamente');
     }
@@ -234,10 +211,15 @@ class ClubReconocimientosController extends Controller
             'date_document' => 'required|date',
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
-            'state_id' => 'required|exists:states,id',
         ]);
         
         $resolution->update($validated);
+        app(ResolutionStateService::class)->sync($resolution);
+        Association::where('resolution_id', $resolution->id)
+            ->orWhereHas('resolutionsHistory', fn ($query) => $query->whereKey($resolution->id))
+            ->with(['resolution', 'resolutionsHistory'])
+            ->get()
+            ->each(fn ($association) => app(AssociationStateService::class)->sync($association));
         
         return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución actualizada exitosamente');
     }
@@ -262,7 +244,7 @@ class ClubReconocimientosController extends Controller
 
     /**
      * Asignar presidenta a un comité.
-     * Al asignarse, el comité queda habilitado para operar.
+     * La vigencia de la asociación depende únicamente de su resolución.
      */
     public function asignarPresidenta(Request $request, Association $association)
     {
@@ -285,8 +267,8 @@ class ClubReconocimientosController extends Controller
                 ['title' => 'PRESIDENTA']
             );
 
-            $estadoActivo = State::where('abbreviation', 'A')->first();
-            $estadoInhabilitado = State::where('abbreviation', 'I')->first();
+            $estadoVigente = State::where('abbreviation', State::CURRENT)->firstOrFail();
+            $estadoVencido = State::where('abbreviation', State::EXPIRED)->firstOrFail();
 
             $resolutionIds = DB::table('resolution_associations')
                 ->where('association_id', $association->id)
@@ -303,7 +285,7 @@ class ClubReconocimientosController extends Controller
             Directive::whereIn('partner_id', $partnerIds)
                 ->whereIn('resolution_id', $resolutionIds)
                 ->where('position_id', $posicionPresidenta->id)
-                ->update(['state_id' => $estadoInhabilitado->id ?? 1]);
+                ->update(['state_id' => $estadoVencido->id]);
 
             $resolutionId = $association->resolution_id 
                 ?? $resolutionIds->first() 
@@ -317,19 +299,15 @@ class ClubReconocimientosController extends Controller
                 'resolution_id' => $resolutionId,
                 'partner_id'    => $request->partner_id,
                 'position_id'   => $posicionPresidenta->id,
-                'state_id'      => $estadoActivo->id,
+                'state_id'      => $estadoVigente->id,
                 'date_start'    => now()->toDateString(),
-            ]);
-
-            $association->update([
-                'state_id' => $estadoActivo->id,
             ]);
 
             Association::clearPresidentaCache($association->id);
 
             DB::commit();
             return redirect()->route('club-reconocimientos.index')
-                ->with('success', 'Presidenta asignada. El comité ahora está habilitado para operar.');
+                ->with('success', 'Presidenta asignada exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()->with('error', 'Error al asignar presidenta: ' . $e->getMessage());

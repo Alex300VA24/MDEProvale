@@ -6,7 +6,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import ResolucionExternaModal from './ResolucionExternaModal';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, fmtDateTime, vigenciaBadge, stateBadge, datetimeInputValue, datetimeToSubmit } from './format';
+import { fmtDate, fmtDateTime, stateBadge, datetimeInputValue, datetimeToSubmit } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
@@ -15,7 +15,7 @@ const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wide
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
-function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }) {
+function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
     const toast = useToast();
     const [document, setDocument] = useState(mode === 'edit' && resolution ? resolution.document || '' : '');
     const [dateDocument, setDateDocument] = useState(
@@ -23,12 +23,11 @@ function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }
     );
     const [dateStart, setDateStart] = useState(mode === 'edit' && resolution ? resolution.date_start || '' : '');
     const [dateEnd, setDateEnd] = useState(mode === 'edit' && resolution ? resolution.date_end || '' : '');
-    const [stateId, setStateId] = useState(mode === 'edit' && resolution ? resolution.state_id ?? '' : '');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!document || !dateDocument || !dateStart || !dateEnd || !stateId) {
+        if (!document || !dateDocument || !dateStart || !dateEnd) {
             toast.error('Complete los campos obligatorios de la resolución.');
             return;
         }
@@ -43,7 +42,6 @@ function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }
                 date_document: datetimeToSubmit(dateDocument),
                 date_start: dateStart,
                 date_end: dateEnd,
-                state_id: stateId,
             };
             if (mode === 'edit') {
                 await http.put(`${BASE}/reconocimientos/${resolution.id}`, payload);
@@ -75,18 +73,9 @@ function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }
                         <label className={labelCls}>Documento *</label>
                         <input type="text" value={document} onChange={(e) => setDocument(e.target.value)} className={inputCls} required maxLength={100} />
                     </div>
-                    <div>
+                    <div className="sm:col-span-2">
                         <label className={labelCls}>Fecha de Documento *</label>
                         <input type="datetime-local" value={dateDocument} onChange={(e) => setDateDocument(e.target.value)} className={inputCls} required />
-                    </div>
-                    <div>
-                        <label className={labelCls}>Estado *</label>
-                        <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
-                            <option value="">Seleccione</option>
-                            {(options.states || []).map((s) => (
-                                <option key={s.id} value={s.id}>{s.title}</option>
-                            ))}
-                        </select>
                     </div>
                     <div>
                         <label className={labelCls}>Fecha de Inicio *</label>
@@ -97,9 +86,9 @@ function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }
                         <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className={inputCls} required />
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-                    <button type="submit" disabled={submitting} className="btn-primary">
+                <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" disabled={submitting} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
@@ -109,9 +98,8 @@ function ReconocimientoFormModal({ mode, resolution, options, onClose, onSaved }
     );
 }
 
-function ReconocimientoViewModal({ resolution, onClose, onEdit, onOpenExterna }) {
+function ReconocimientoViewModal({ resolution, onClose }) {
     if (!resolution) return null;
-    const status = vigenciaBadge(resolution);
     return (
         <Modal open onClose={onClose} title="Detalle de la Resolución" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-lg">
             <div className="p-6 grid grid-cols-2 gap-4">
@@ -136,15 +124,19 @@ function ReconocimientoViewModal({ resolution, onClose, onEdit, onOpenExterna })
                     <p className="font-semibold text-charcoal">{fmtDate(resolution.date_end)}</p>
                 </div>
                 <div className="col-span-2">
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Vigencia</p>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.cls}`}>{status.label}</span>
+                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Comités asociados</p>
+                    {(resolution.associations || []).length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                            {resolution.associations.map((association) => (
+                                <span key={association.id} className="badge badge-unknown">
+                                    {association.code ? `${association.code} · ` : ''}{association.name}
+                                </span>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-earth">Sin comités asociados</p>
+                    )}
                 </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
-                <button type="button" onClick={() => { onClose(); onOpenExterna(); }} className="btn-primary">
-                    <i className="fas fa-external-link-alt mr-2" /> Consultar en Portal
-                </button>
             </div>
         </Modal>
     );
@@ -154,7 +146,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', vigencia: 'vigentes', anio: '' });
+    const [filters, setFilters] = useState({ search: '', state_id: '', anio: '' });
     const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -172,8 +164,9 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const params = { per_page: 10, page, vigencia: debouncedFilters.vigencia };
+            const params = { per_page: 10, page };
             if (debouncedFilters.search) params.search = debouncedFilters.search;
+            if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
             if (debouncedFilters.anio) params.anio = debouncedFilters.anio;
             const res = await http.get(`${BASE}/reconocimientos`, { params });
             setData(res.data);
@@ -248,11 +241,12 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                     </div>
                 </div>
                 <div className="w-full sm:w-40">
-                    <label className={labelCls}>Vigencia</label>
-                    <select value={filters.vigencia} onChange={(e) => setFilter('vigencia', e.target.value)} className={inputCls}>
-                        <option value="vigentes">Vigentes</option>
-                        <option value="vencidas">Vencidas</option>
-                        <option value="">Todas</option>
+                    <label className={labelCls}>Estado</label>
+                    <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
+                        <option value="">Todos los Estados</option>
+                        {(options.states || []).map((state) => (
+                            <option key={state.id} value={state.id}>{state.title}</option>
+                        ))}
                     </select>
                 </div>
                 <div className="w-full sm:w-28">
@@ -267,7 +261,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                 <button
                     type="button"
                     onClick={() => {
-                        setFilters({ search: '', vigencia: 'vigentes', anio: '' });
+                        setFilters({ search: '', state_id: '', anio: '' });
                         setPage(1);
                     }}
                     className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
@@ -285,12 +279,12 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
 
             {data && (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="data-table w-full text-xs sm:text-sm min-w-[660px]">
+                    <table className="data-table w-full text-xs sm:text-sm min-w-[760px]">
                         <thead>
                             <tr>
                                 <th className="px-3 sm:px-4 py-3 text-left">Documento</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">F. Documento</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Vigencia</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Comités</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
@@ -307,23 +301,32 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                                 </tr>
                             ) : (
                                 data.data.map((resolution) => {
-                                    const status = vigenciaBadge(resolution);
                                     return (
                                         <tr key={resolution.id} className="row-enter">
                                             <td className="px-3 sm:px-4 py-3 font-semibold">{resolution.document || '-'}</td>
                                             <td className="px-3 sm:px-4 py-3 text-earth">{fmtDateTime(resolution.date_document)}</td>
                                             <td className="px-3 sm:px-4 py-3">
-                                                <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${status.cls}`}>{status.label}</span>
+                                                {(resolution.associations || []).length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {resolution.associations.map((association) => (
+                                                            <span key={association.id} className="badge badge-unknown">
+                                                                {association.code || association.name}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-earth">Sin comités</span>
+                                                )}
                                             </td>
                                             <td className="px-3 sm:px-4 py-3">
                                                 <span className={`badge ${stateBadge(resolution.state).cls}`}>{stateBadge(resolution.state).label}</span>
                                             </td>
                                             <td className="px-3 sm:px-4 py-3 text-center">
-                                                <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                                <div className="inline-grid grid-cols-[repeat(4,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                     <button
                                                         type="button"
                                                         onClick={() => setExterna(resolution)}
-                                                        className="btn-action bg-blue-light text-[#1E5799] hover:bg-blue hover:text-white"
+                                                        className="btn-action col-start-1 bg-blue-light text-[#1E5799] hover:bg-blue hover:text-white"
                                                         title="Consultar en el portal municipal"
                                                     >
                                                         <i className="fas fa-external-link-alt" />
@@ -331,7 +334,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                                                     <button
                                                         type="button"
                                                         onClick={() => setViewing(resolution)}
-                                                        className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                        className="btn-action col-start-2 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
                                                         title="Ver"
                                                     >
                                                         <i className="fas fa-eye" />
@@ -340,7 +343,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                                                         <button
                                                             type="button"
                                                             onClick={() => openEdit(resolution)}
-                                                            className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                            className="btn-action col-start-3 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                             title="Editar"
                                                         >
                                                             <i className="fas fa-edit" />
@@ -350,7 +353,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                                                         <button
                                                             type="button"
                                                             onClick={() => setDeleting(resolution)}
-                                                            className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                            className="btn-action col-start-4 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                             title="Eliminar"
                                                         >
                                                             <i className="fas fa-trash" />
@@ -381,7 +384,6 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                     key={editing ? editing.id : 'create'}
                     mode={formMode}
                     resolution={editing}
-                    options={options}
                     onClose={() => setFormOpen(false)}
                     onSaved={() => {
                         setFormOpen(false);
@@ -393,8 +395,6 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
             <ReconocimientoViewModal
                 resolution={viewing}
                 onClose={() => setViewing(null)}
-                onEdit={() => viewing && openEdit(viewing)}
-                onOpenExterna={() => viewing && setExterna(viewing)}
             />
 
             <ResolucionExternaModal

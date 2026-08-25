@@ -19,6 +19,11 @@ yarn-error.log
 /migracion_productos/
 /migracion_socios/
 /database/seeders/
+!/database/seeders/
+/database/seeders/*
+!/database/seeders/DatabaseSeeder.php
+!/database/seeders/RolSeeder.php
+!/database/seeders/StateSeeder.php
 .agent/
 .agents/
 .claude/

@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
+use App\Models\State;
 
 class StoreUserRequest extends FormRequest
 {
@@ -24,8 +26,8 @@ class StoreUserRequest extends FormRequest
             'email' => 'required|email|unique:users,email',
             'dni' => 'required|string|size:8|unique:users,dni',
             'cui' => 'nullable|string|max:1',
-            'rol_id' => 'required|exists:rols,id',
-            'state_id' => 'required|exists:states,id',
+            'rol_id' => ['required', Rule::exists('rols', 'id')->where('is_active', true)],
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::ACTIVE, State::INACTIVE]))],
             'password' => ['required', 'string', Password::min(8)->numbers()->symbols()],
         ];
     }

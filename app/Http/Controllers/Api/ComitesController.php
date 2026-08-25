@@ -24,6 +24,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use App\Services\AssociationStateService;
+use App\Services\ResolutionStateService;
 
 class ComitesController extends Controller
 {
@@ -41,6 +43,7 @@ class ComitesController extends Controller
 
     public function clubs(Request $request)
     {
+        app(AssociationStateService::class)->syncAll();
         $query = Association::with(self::CLUB_WITH);
 
         if ($request->filled('search')) {
@@ -53,15 +56,6 @@ class ComitesController extends Controller
 
         if ($request->filled('state_id')) {
             $query->where('state_id', $request->state_id);
-        }
-
-        if ($request->filled('vigencia')) {
-            $today = now()->toDateString();
-            if ($request->vigencia === 'vigente') {
-                $query->whereHas('resolution', fn ($q) => $q->where('date_end', '>=', $today));
-            } elseif ($request->vigencia === 'vencido') {
-                $query->whereHas('resolution', fn ($q) => $q->where('date_end', '<', $today));
-            }
         }
 
         if ($request->filled('place_id')) {
@@ -83,7 +77,7 @@ class ComitesController extends Controller
     public function clubsOptions()
     {
         return response()->json([
-            'states' => State::select(['id', 'title', 'abbreviation'])->get(),
+            'states' => State::forAssociations()->get(['id', 'title', 'abbreviation']),
             'place_sectors' => PlaceSector::with(['place:id,title', 'sector:id,title'])->get(),
             'type_premises' => TypePremises::select(['id', 'title'])->get(),
             'resolutions' => Resolution::select(['id', 'document', 'date_document', 'date_start', 'date_end', 'state_id'])
@@ -94,6 +88,7 @@ class ComitesController extends Controller
 
     public function club(Association $association)
     {
+        app(AssociationStateService::class)->sync($association);
         $association->load(self::CLUB_WITH);
         $association->load(['partners.people:id,names,father_lastname,mother_lastname,dni']);
 
@@ -106,9 +101,10 @@ class ComitesController extends Controller
     public function storeClub(StoreClubRequest $request)
     {
         $data = $request->validated();
-        $data['state_id'] = State::where('abbreviation', 'I')->value('id') ?? State::first()->id;
+        $data['state_id'] = State::idFor(State::CURRENT);
 
         $association = Association::create($data);
+        app(AssociationStateService::class)->sync($association);
         $association->load(self::CLUB_WITH);
 
         $this->setPresidentForSingle($association);
@@ -120,6 +116,7 @@ class ComitesController extends Controller
     public function updateClub(UpdateClubRequest $request, Association $association)
     {
         $association->update($request->validated());
+        app(AssociationStateService::class)->sync($association->fresh('resolution'));
         Association::clearPresidentaCache($association->id);
 
         $association->load(self::CLUB_WITH);
@@ -151,7 +148,7 @@ class ComitesController extends Controller
 
     /**
      * Asigna la presidenta al comité. Solo se acepta una socia que pertenezca
-     * al comité; al asignarse, el comité queda habilitado para operar.
+     * al comité. La vigencia depende únicamente de su resolución.
      */
     public function asignarPresidenta(AsignarPresidentaRequest $request, Association $association)
     {
@@ -171,8 +168,8 @@ class ComitesController extends Controller
             DB::transaction(function () use ($association, $partnerId) {
                 $posicionPresidenta = Position::firstOrCreate(['title' => 'PRESIDENTA']);
 
-                $estadoActivo = State::where('abbreviation', 'A')->first();
-                $estadoInhabilitado = State::where('abbreviation', 'I')->first();
+                $estadoVigente = State::where('abbreviation', State::CURRENT)->firstOrFail();
+                $estadoVencido = State::where('abbreviation', State::EXPIRED)->firstOrFail();
 
                 $resolutionIds = DB::table('resolution_associations')
                     ->where('association_id', $association->id)
@@ -189,7 +186,7 @@ class ComitesController extends Controller
                 Directive::whereIn('partner_id', $partnerIds)
                     ->whereIn('resolution_id', $resolutionIds)
                     ->where('position_id', $posicionPresidenta->id)
-                    ->update(['state_id' => $estadoInhabilitado->id ?? 1]);
+                    ->update(['state_id' => $estadoVencido->id]);
 
                 $resolutionId = $association->resolution_id ?? $resolutionIds->first() ?? null;
 
@@ -201,12 +198,8 @@ class ComitesController extends Controller
                     'resolution_id' => $resolutionId,
                     'partner_id'    => $partnerId,
                     'position_id'   => $posicionPresidenta->id,
-                    'state_id'      => $estadoActivo->id,
+                    'state_id'      => $estadoVigente->id,
                     'date_start'    => now()->toDateString(),
-                ]);
-
-                $association->update([
-                    'state_id' => $estadoActivo->id,
                 ]);
 
                 Association::clearPresidentaCache($association->id);
@@ -234,7 +227,12 @@ class ComitesController extends Controller
 
     public function reconocimientos(Request $request)
     {
-        $query = Resolution::with(['state:id,title,abbreviation']);
+        app(ResolutionStateService::class)->syncAll();
+        $query = Resolution::with([
+            'state:id,title,abbreviation',
+            'associations:id,code,name',
+            'primaryAssociations:id,code,name,resolution_id',
+        ]);
 
         if ($request->filled('search')) {
             $query->where('document', 'like', "%{$request->search}%");
@@ -242,16 +240,6 @@ class ComitesController extends Controller
 
         if ($request->filled('state_id')) {
             $query->where('state_id', $request->state_id);
-        }
-
-        $vigencia = $request->input('vigencia', 'vigentes');
-        if ($vigencia !== '') {
-            $today = now()->toDateString();
-            if ($vigencia === 'vigentes') {
-                $query->where('date_end', '>=', $today);
-            } elseif ($vigencia === 'vencidas') {
-                $query->where('date_end', '<', $today);
-            }
         }
 
         if ($request->filled('anio')) {
@@ -269,7 +257,7 @@ class ComitesController extends Controller
     public function reconocimientosOptions()
     {
         return response()->json([
-            'states' => State::select(['id', 'title', 'abbreviation'])->get(),
+            'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
             'years' => Resolution::selectRaw('YEAR(date_start) as year')
                 ->whereNotNull('date_start')
                 ->distinct()
@@ -281,8 +269,13 @@ class ComitesController extends Controller
     public function storeReconocimiento(StoreReconocimientoRequest $request)
     {
         $resolution = Resolution::create($request->validated());
+        app(ResolutionStateService::class)->sync($resolution);
 
-        return (new ReconocimientoResource($resolution->load(['state:id,title,abbreviation'])))
+        return (new ReconocimientoResource($resolution->load([
+            'state:id,title,abbreviation',
+            'associations:id,code,name',
+            'primaryAssociations:id,code,name,resolution_id',
+        ])))
             ->response()
             ->setStatusCode(201);
     }
@@ -290,8 +283,18 @@ class ComitesController extends Controller
     public function updateReconocimiento(UpdateReconocimientoRequest $request, Resolution $resolution)
     {
         $resolution->update($request->validated());
+        app(ResolutionStateService::class)->sync($resolution);
+        Association::where('resolution_id', $resolution->id)
+            ->orWhereHas('resolutionsHistory', fn ($query) => $query->whereKey($resolution->id))
+            ->with(['resolution', 'resolutionsHistory'])
+            ->get()
+            ->each(fn ($association) => app(AssociationStateService::class)->sync($association));
 
-        return new ReconocimientoResource($resolution->load(['state:id,title,abbreviation']));
+        return new ReconocimientoResource($resolution->load([
+            'state:id,title,abbreviation',
+            'associations:id,code,name',
+            'primaryAssociations:id,code,name,resolution_id',
+        ]));
     }
 
     public function destroyReconocimiento(Resolution $resolution)

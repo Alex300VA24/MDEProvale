@@ -35,6 +35,7 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
     const toast = useToast();
     const [title, setTitle] = useState(rol?.title || '');
     const [description, setDescription] = useState(rol?.description || '');
+    const [isActive, setIsActive] = useState(rol?.is_active ?? true);
     const [permissions, setPermissions] = useState(() => permissionsFromRol(rol, modulos));
     const [submitting, setSubmitting] = useState(false);
 
@@ -66,7 +67,7 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
                     modulesPayload[moduleId] = perms;
                 }
             });
-            const payload = { title, description: description || null, modules: modulesPayload };
+            const payload = { title, description: description || null, is_active: isActive, modules: modulesPayload };
 
             if (mode === 'edit') {
                 await http.put(`${BASE}/roles/${rol.id}`, payload);
@@ -94,6 +95,13 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
                     <div>
                         <label className={labelCls}>Descripción</label>
                         <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className={inputCls} />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Estado</label>
+                        <select value={isActive ? '1' : '0'} onChange={(e) => setIsActive(e.target.value === '1')} className={inputCls} disabled={rol?.is_protected}>
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
                     </div>
                 </div>
 
@@ -217,6 +225,7 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                             <th className="px-3 sm:px-4 py-3 text-left">Rol</th>
                             <th className="px-3 sm:px-4 py-3 text-left">Descripción</th>
                             <th className="px-3 sm:px-4 py-3 text-right">Usuarios</th>
+                            <th className="px-3 sm:px-4 py-3 text-center">Estado</th>
                             <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -230,7 +239,12 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                                 <td className="px-3 sm:px-4 py-3 text-earth">{rol.description || '-'}</td>
                                 <td className="px-3 sm:px-4 py-3 text-right">{rol.users_count}</td>
                                 <td className="px-3 sm:px-4 py-3 text-center">
-                                    <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                    <span className={`badge ${rol.is_active ? 'badge-active' : 'badge-inactive'} px-3 py-1 rounded-full text-xs font-bold`}>
+                                        {rol.is_active ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                                <td className="px-3 sm:px-4 py-3 text-center">
+                                    <div className="inline-grid grid-cols-[repeat(2,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                         {can.edit && (
                                             <button
                                                 type="button"
@@ -239,7 +253,7 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                                                     setFormMode('edit');
                                                     setFormOpen(true);
                                                 }}
-                                                className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                className="btn-action col-start-1 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                 title="Editar"
                                             >
                                                 <i className="fas fa-edit" />
@@ -249,7 +263,7 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                                             <button
                                                 type="button"
                                                 onClick={() => setDeleting(rol)}
-                                                className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                className="btn-action col-start-2 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                 title="Eliminar"
                                             >
                                                 <i className="fas fa-trash" />

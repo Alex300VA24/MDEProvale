@@ -98,7 +98,41 @@ class InicioApiTest extends TestCase
             ->assertJsonPath('stats.total_beneficiarios', 0)
             ->assertJsonPath('stats.total_comites', 0)
             ->assertJsonPath('stats.stock_total', 0)
+            ->assertJsonPath('stats.stock_productos.0.key', 'hojuelas')
+            ->assertJsonPath('stats.stock_productos.0.stock', 0)
+            ->assertJsonPath('stats.stock_productos.1.key', 'leche')
+            ->assertJsonPath('stats.stock_productos.1.stock', 0)
             ->assertJsonPath('top_comites', []);
+    }
+
+    public function test_panel_uses_balance_from_latest_entry_for_each_food(): void
+    {
+        $now = now();
+
+        DB::table('uoms')->insert(['id' => 1, 'title' => 'UNIDADES', 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('products')->insert([
+            ['id' => 1, 'title' => 'Hojuelas de quinua', 'abbreviation' => 'HOJ', 'code' => 'P001', 'state_id' => 1, 'uom_id' => 1, 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'title' => 'Leche evaporada', 'abbreviation' => 'LEC', 'code' => 'P002', 'state_id' => 1, 'uom_id' => 1, 'created_at' => $now, 'updated_at' => $now],
+        ]);
+        DB::table('detail_products')->insert([
+            ['id' => 1, 'product_id' => 1, 'quantity' => 900, 'unit_price' => 1, 'start_date' => $now->copy()->subMonths(2)->toDateString(), 'end_date' => $now->copy()->subMonth()->toDateString(), 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'product_id' => 1, 'quantity' => 120, 'unit_price' => 1, 'start_date' => $now->copy()->subDay()->toDateString(), 'end_date' => $now->copy()->addMonth()->toDateString(), 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 3, 'product_id' => 2, 'quantity' => 200, 'unit_price' => 1, 'start_date' => $now->toDateString(), 'end_date' => $now->copy()->addMonth()->toDateString(), 'created_at' => $now, 'updated_at' => $now],
+        ]);
+        DB::table('product_stocks')->insert([
+            ['detail_product_id' => 2, 'quantity' => 35, 'observation' => 'Salida por Pecosa', 'created_at' => $now, 'updated_at' => $now],
+            ['detail_product_id' => 3, 'quantity' => 80, 'observation' => 'Salida por Pecosa', 'created_at' => $now, 'updated_at' => $now],
+        ]);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/panel')
+            ->assertOk()
+            ->assertJsonPath('stats.stock_productos.0.key', 'hojuelas')
+            ->assertJsonPath('stats.stock_productos.0.stock', 85)
+            ->assertJsonPath('stats.stock_productos.0.unit', 'UNIDADES')
+            ->assertJsonPath('stats.stock_productos.1.key', 'leche')
+            ->assertJsonPath('stats.stock_productos.1.stock', 120)
+            ->assertJsonPath('stats.stock_productos.1.unit', 'UNIDADES');
     }
 
     public function test_panel_available_to_any_authenticated_user_without_module_access(): void

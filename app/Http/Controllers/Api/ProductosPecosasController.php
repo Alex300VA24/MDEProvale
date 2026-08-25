@@ -69,7 +69,7 @@ class ProductosPecosasController extends Controller
     public function productsOptions()
     {
         return response()->json([
-            'states' => State::select(['id', 'title', 'abbreviation'])->get(),
+            'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
             'uoms' => Uom::select(['id', 'title'])->get(),
         ]);
     }
@@ -176,7 +176,7 @@ class ProductosPecosasController extends Controller
 
     public function pecosasOptions()
     {
-        $activeState = State::where('abbreviation', 'A')->select(['id'])->first();
+        $activeState = State::where('abbreviation', State::CURRENT)->select(['id'])->first();
 
         $associations = ($activeState
             ? Association::select(['id', 'name', 'code', 'state_id'])->where('state_id', $activeState->id)
@@ -237,7 +237,7 @@ class ProductosPecosasController extends Controller
             ]);
 
         return response()->json([
-            'states' => State::select(['id', 'title', 'abbreviation'])->get(),
+            'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
             'associations' => $associations,
             'responsibles' => $responsibles,
             'detail_products' => $detailProducts,

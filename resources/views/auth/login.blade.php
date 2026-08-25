@@ -421,7 +421,7 @@
                     </div>
                     <h3 class="text-lg font-bold text-slate-800">Restablecer Contraseña</h3>
                 </div>
-                <button onclick="closeModal('modal-forgot-password')" class="text-slate-400 hover:text-slate-600">
+                <button type="button" onclick="closeModal('modal-forgot-password')" class="text-slate-400 hover:text-slate-600" aria-label="Cerrar modal">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
@@ -435,10 +435,13 @@
                         placeholder="correo@ejemplo.com">
                 </div>
                 <div id="forgot-message" class="mb-4 p-3 rounded-xl text-sm" style="display: none;"></div>
-                <button type="submit" id="forgot-submit" class="w-full py-3 bg-blue text-white font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
-                    <i class="fas fa-paper-plane"></i>
-                    <span>Enviar Solicitud</span>
-                </button>
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeModal('modal-forgot-password')" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all">Cerrar</button>
+                    <button type="submit" id="forgot-submit" class="flex-1 px-4 py-3 bg-blue text-white font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Enviar Solicitud</span>
+                    </button>
+                </div>
             </form>
         </div>
     </div>

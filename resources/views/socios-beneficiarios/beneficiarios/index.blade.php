@@ -171,8 +171,8 @@
                     </select>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                     <button type="button" onclick="closeModal('modal-crear-beneficiario')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Guardar</button>
                 </div>
             </form>
         </div>
@@ -187,7 +187,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-hand-holding-heart text-leaf"></i> Detalle del Beneficiario
                 </h3>
-                <button onclick="closeModal('modal-ver-beneficiario')" class="modal-close-btn">
+                <button type="button" onclick="closeModal('modal-ver-beneficiario')" class="modal-close-btn" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -206,9 +206,6 @@
                     <span class="text-[11px] font-bold text-earth uppercase">Fecha Nacimiento</span>
                     <p id="ver-benef-nacimiento"></p>
                 </div>
-            </div>
-            <div class="px-6 pb-6">
-                <button onclick="closeModal('modal-ver-beneficiario')" class="btn-secondary w-full">Cerrar</button>
             </div>
         </div>
     </div>
@@ -250,8 +247,8 @@
                     </select>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                     <button type="button" onclick="closeModal('modal-editar-beneficiario')" class="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" class="btn-primary flex-1"><i class="fas fa-save mr-2"></i> Actualizar</button>
                 </div>
             </form>
         </div>

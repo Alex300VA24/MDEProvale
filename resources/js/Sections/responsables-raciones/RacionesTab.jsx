@@ -200,12 +200,12 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                                     <td className="px-3 sm:px-4 py-3">{r.racion_hojuelas_gramos} g</td>
                                     <td className="px-3 sm:px-4 py-3">{r.racion_leche_militros} ml</td>
                                     <td className="px-3 sm:px-4 py-3 text-center">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${r.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                            {r.active ? 'Activo' : 'Inactivo'}
+                                        <span className={`badge ${r.active ? 'badge-current' : 'badge-expired'}`}>
+                                            {r.active ? 'Vigente' : 'Vencido'}
                                         </span>
                                     </td>
                                     <td className="px-3 sm:px-4 py-3 text-center">
-                                        <div className="flex items-center justify-center gap-2">
+                                        <div className="inline-grid grid-cols-[repeat(2,2.25rem)] items-center justify-items-center gap-2">
                                             {can.edit && (
                                                 <button
                                                     type="button"
@@ -214,7 +214,7 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                                                         setEditing(r);
                                                         setFormOpen(true);
                                                     }}
-                                                    className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                    className="btn-action col-start-1 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                     title="Editar"
                                                 >
                                                     <i className="fas fa-edit" />
@@ -224,7 +224,7 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                                                 <button
                                                     type="button"
                                                     onClick={() => setDeleting(r)}
-                                                    className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                    className="btn-action col-start-2 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                     title="Eliminar"
                                                 >
                                                     <i className="fas fa-trash" />

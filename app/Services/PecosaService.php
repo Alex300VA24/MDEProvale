@@ -44,7 +44,7 @@ class PecosaService
     {
         $association = Association::findOrFail($data['association_id']);
         if (!$association->isHabilitado() && empty($data['managing_partner_id'])) {
-            throw new \DomainException('El comité no está habilitado. Debe asignar una presidenta primero.');
+            throw new \DomainException('La asociación no está vigente. Renueve su resolución antes de registrar la PECOSA.');
         }
 
         $detailProductIds = collect($data['details'])->pluck('detail_product_id');

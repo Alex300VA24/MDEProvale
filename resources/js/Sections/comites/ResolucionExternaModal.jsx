@@ -111,24 +111,27 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
                                 <p className="font-semibold text-charcoal text-sm">{result?.fecha || '-'}</p>
                             </div>
                         </div>
-                        <div className="flex justify-center gap-3 mt-6">
-                            <button
-                                type="button"
-                                onClick={() => loadPdf('preview')}
-                                disabled={!!pdfLoading}
-                                className="btn-primary flex items-center gap-2 disabled:opacity-60"
-                            >
-                                <i className={`fas ${pdfLoading === 'preview' ? 'fa-spinner fa-spin' : 'fa-eye'} mr-1`} />
-                                Ver PDF
+                        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                            <button type="button" onClick={onClose} disabled={!!pdfLoading} className="btn-secondary sm:flex-1">
+                                Cerrar
                             </button>
                             <button
                                 type="button"
                                 onClick={() => loadPdf('descargar')}
                                 disabled={!!pdfLoading}
-                                className="btn-secondary flex items-center gap-2 disabled:opacity-60"
+                                className="btn-secondary sm:flex-1 disabled:opacity-60"
                             >
-                                <i className={`fas ${pdfLoading === 'descargar' ? 'fa-spinner fa-spin' : 'fa-download'} mr-1`} />
+                                <i className={`fas ${pdfLoading === 'descargar' ? 'fa-spinner fa-spin' : 'fa-download'} mr-2`} />
                                 Descargar PDF
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => loadPdf('preview')}
+                                disabled={!!pdfLoading}
+                                className="btn-primary sm:flex-1 disabled:opacity-60"
+                            >
+                                <i className={`fas ${pdfLoading === 'preview' ? 'fa-spinner fa-spin' : 'fa-eye'} mr-2`} />
+                                Ver PDF
                             </button>
                         </div>
                         <p className="text-xs text-earth text-center mt-4">

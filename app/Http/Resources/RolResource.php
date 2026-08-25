@@ -12,6 +12,7 @@ class RolResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
+            'is_active' => (bool) $this->is_active,
             'users_count' => $this->whenCounted('users'),
             'is_protected' => $this->id === 1,
             'modules' => $this->whenLoaded('modules', fn () => $this->modules->map(fn ($m) => [

@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Pecosa;
+use App\Models\State;
+use Illuminate\Validation\Rule;
 
 class UpdatePecosaRequest extends FormRequest
 {
@@ -23,7 +25,7 @@ class UpdatePecosaRequest extends FormRequest
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
             'managing_partner_id' => 'sometimes|required|exists:partners,id',
-            'state_id' => 'sometimes|required|exists:states,id',
+            'state_id' => ['sometimes', 'required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'association_id' => 'sometimes|required|exists:associations,id',
             'details' => 'sometimes|required|array|min:1',
             'details.*.detail_product_id' => 'required|exists:detail_products,id',

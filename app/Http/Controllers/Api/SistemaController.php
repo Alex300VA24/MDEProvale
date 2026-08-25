@@ -14,6 +14,7 @@ use App\Http\Resources\NotificationResource;
 use App\Http\Resources\RolResource;
 use App\Http\Resources\UserResource;
 use App\Models\Module;
+use App\Models\ModuleIcon;
 use App\Models\Notification;
 use App\Models\Rol;
 use App\Models\State;
@@ -53,8 +54,8 @@ class SistemaController extends Controller
 
         return response()->json([
             'data' => UserResource::collection($usuarios),
-            'roles' => Rol::orderBy('title')->get(['id', 'title']),
-            'estados' => State::orderBy('title')->get(['id', 'title']),
+            'roles' => Rol::where('is_active', true)->orderBy('title')->get(['id', 'title']),
+            'estados' => State::administrative()->orderBy('title')->get(['id', 'title']),
         ]);
     }
 
@@ -130,6 +131,11 @@ class SistemaController extends Controller
     public function updateRol(UpdateRolRequest $request, Rol $rol)
     {
         $validated = $request->validated();
+
+        if ($rol->id === 1 && array_key_exists('is_active', $validated) && !$validated['is_active']) {
+            return response()->json(['message' => 'No se puede inactivar el rol Administrador.'], 422);
+        }
+
         $modules = $validated['modules'] ?? [];
         unset($validated['modules']);
         $this->validateModuleIds($modules);
@@ -196,6 +202,16 @@ class SistemaController extends Controller
         $modulos = Module::orderBy('order')->get();
 
         return response()->json(['data' => ModuleResource::collection($modulos)]);
+    }
+
+    public function moduleIcons()
+    {
+        $icons = ModuleIcon::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['id', 'name', 'class_name', 'category']);
+
+        return response()->json(['data' => $icons]);
     }
 
     public function storeModulo(StoreModuleRequest $request)

@@ -8,6 +8,9 @@ class ReconocimientoResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $associationsLoaded = $this->relationLoaded('associations')
+            && $this->relationLoaded('primaryAssociations');
+
         return [
             'id' => $this->id,
             'document' => $this->document,
@@ -20,7 +23,14 @@ class ReconocimientoResource extends JsonResource
                 'title' => $this->state->title,
                 'abbreviation' => $this->state->abbreviation,
             ]),
-            'associations_count' => $this->associations_count ?? null,
+            'associations' => $this->when($associationsLoaded, fn () => $this->getAllAssociations()->map(fn ($association) => [
+                'id' => $association->id,
+                'code' => $association->code,
+                'name' => $association->name,
+            ])),
+            'associations_count' => $associationsLoaded
+                ? $this->getAllAssociations()->count()
+                : ($this->associations_count ?? null),
         ];
     }
 }

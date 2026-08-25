@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use App\Models\State;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -26,8 +27,8 @@ class UpdateUserRequest extends FormRequest
             'email' => ['required', 'email', Rule::unique('users')->ignore($usuario->id)],
             'dni' => ['required', 'string', 'size:8', Rule::unique('users')->ignore($usuario->id)],
             'cui' => 'nullable|string|max:1',
-            'rol_id' => 'required|exists:rols,id',
-            'state_id' => 'required|exists:states,id',
+            'rol_id' => ['required', Rule::exists('rols', 'id')->where('is_active', true)],
+            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::ACTIVE, State::INACTIVE]))],
             'password' => ['nullable', 'string', Password::min(8)->numbers()->symbols()],
         ];
     }

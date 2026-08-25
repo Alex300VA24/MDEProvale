@@ -128,7 +128,7 @@
                 <h3 class="font-extrabold text-charcoal text-lg flex items-center gap-2">
                     <i class="fas fa-eye text-[#0284C7]"></i> Detalle del Movimiento
                 </h3>
-                <button onclick="closeModal('modal-ver-movimiento-{{ $transaction->id }}')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all">
+                <button type="button" onclick="closeModal('modal-ver-movimiento-{{ $transaction->id }}')" class="w-8 h-8 rounded bg-cream border-2 border-wheat flex items-center justify-center text-earth hover:bg-wheat transition-all" aria-label="Cerrar modal">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -166,12 +166,6 @@
                     <p class="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha</p>
                     <p class="font-semibold text-charcoal">{{ \Carbon\Carbon::parse($transaction->transaction_date ?? $transaction->created_at)->format('d/m/Y') }}</p>
                 </div>
-            </div>
-            <div class="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onclick="closeModal('modal-ver-movimiento-{{ $transaction->id }}')" class="btn-secondary">Cerrar</button>
-                <button onclick="closeModal('modal-ver-movimiento-{{ $transaction->id }}'); openModal('modal-editar-movimiento-{{ $transaction->id }}')" class="btn-primary">
-                    <i class="fas fa-edit mr-2"></i> Editar
-                </button>
             </div>
         </div>
     </div>

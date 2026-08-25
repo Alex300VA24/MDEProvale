@@ -6,7 +6,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, fmtDateTime, vigenciaBadge, stateBadge } from './format';
+import { fmtDate, fmtDateTime, stateBadge } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
@@ -143,9 +143,9 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                         />
                     </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                    <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-                    <button type="submit" disabled={submitting} className="btn-primary">
+                <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
+                    <button type="submit" disabled={submitting} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
@@ -157,7 +157,6 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
 
 function ClubViewModal({ club, onClose }) {
     if (!club) return null;
-    const status = vigenciaBadge(club.latest_resolution || club.resolution);
     return (
         <Modal open onClose={onClose} title="Detalle del Comité" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-2xl">
             <div className="p-6">
@@ -200,10 +199,6 @@ function ClubViewModal({ club, onClose }) {
                         <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado</p>
                         <span className={`badge ${stateBadge(club.state).cls}`}>{stateBadge(club.state).label}</span>
                     </div>
-                    <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Vigencia</p>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.cls}`}>{status.label}</span>
-                    </div>
                 </div>
 
                 <div className="mt-5">
@@ -235,9 +230,6 @@ function ClubViewModal({ club, onClose }) {
                         </div>
                     )}
                 </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 pb-6">
-                <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
             </div>
         </Modal>
     );
@@ -334,9 +326,9 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
                                 ))}
                             </select>
                         )}
-                        <div className="flex justify-end gap-3 mt-6 pt-4 border-t-2 border-wheat">
-                            <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
-                            <button type="submit" disabled={submitting || partners.length === 0} className="btn-primary">
+                        <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                            <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
+                            <button type="submit" disabled={submitting || partners.length === 0} className="btn-primary flex-1">
                                 <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-check'} mr-2`} />
                                 Asignar
                             </button>
@@ -352,7 +344,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', vigencia: '', place_id: '', sector_id: '' });
+    const [filters, setFilters] = useState({ search: '', state_id: '', place_id: '', sector_id: '' });
     const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -372,7 +364,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
         try {
             const params = { per_page: 10, page };
             if (debouncedFilters.search) params.search = debouncedFilters.search;
-            if (debouncedFilters.vigencia) params.vigencia = debouncedFilters.vigencia;
+            if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
             if (debouncedFilters.place_id) params.place_id = debouncedFilters.place_id;
             if (debouncedFilters.sector_id) params.sector_id = debouncedFilters.sector_id;
             const res = await http.get(`${BASE}/clubs`, { params });
@@ -447,7 +439,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                 onSubmit={(e) => e.preventDefault()}
                 className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
             >
-                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[22rem] min-w-0">
+                <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i
@@ -463,15 +455,16 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                         />
                     </div>
                 </div>
-                <div className="w-full sm:w-32">
-                    <label className={labelCls}>Vigencia</label>
-                    <select value={filters.vigencia} onChange={(e) => setFilter('vigencia', e.target.value)} className={inputCls}>
-                        <option value="">Todas las Vigencias</option>
-                        <option value="vigente">Vigentes</option>
-                        <option value="vencido">Vencidos</option>
+                <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
+                    <label className={labelCls}>Estado</label>
+                    <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
+                        <option value="">Todos los Estados</option>
+                        {(options.states || []).map((state) => (
+                            <option key={state.id} value={state.id}>{state.title}</option>
+                        ))}
                     </select>
                 </div>
-                <div className="w-full sm:w-40">
+                <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
                     <label className={labelCls}>Zona</label>
                     <select
                         value={filters.place_id}
@@ -496,7 +489,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                 <button
                     type="button"
                     onClick={() => {
-                        setFilters({ search: '', vigencia: '', place_id: '', sector_id: '' });
+                        setFilters({ search: '', state_id: '', place_id: '', sector_id: '' });
                         setPage(1);
                     }}
                     className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
@@ -521,7 +514,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                                 <th className="px-3 sm:px-4 py-3 text-left">Nombre</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Zona / Sector</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Presidenta</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Vigencia</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -537,7 +530,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                                 </tr>
                             ) : (
                                 data.data.map((club) => {
-                                    const status = vigenciaBadge(club.latest_resolution || club.resolution);
+                                    const status = stateBadge(club.state);
                                     return (
                                         <tr key={club.id} className="row-enter">
                                             <td className="px-3 sm:px-4 py-3 font-semibold">{club.code || '-'}</td>
@@ -556,14 +549,14 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                                                 )}
                                             </td>
                                             <td className="px-3 sm:px-4 py-3">
-                                                <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${status.cls}`}>{status.label}</span>
+                                                <span className={`badge ${status.cls}`}>{status.label}</span>
                                             </td>
                                             <td className="px-3 sm:px-4 py-3 text-center">
-                                                <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                                <div className="inline-grid grid-cols-[repeat(4,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                     <button
                                                         type="button"
                                                         onClick={() => setViewing(club)}
-                                                        className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                        className="btn-action col-start-1 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
                                                         title="Ver"
                                                     >
                                                         <i className="fas fa-eye" />
@@ -572,7 +565,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                                                         <button
                                                             type="button"
                                                             onClick={() => openEdit(club)}
-                                                            className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                            className="btn-action col-start-2 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                             title="Editar"
                                                         >
                                                             <i className="fas fa-edit" />
@@ -582,7 +575,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                                                         <button
                                                             type="button"
                                                             onClick={() => setAssigning(club)}
-                                                            className="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
+                                                            className="btn-action col-start-3 bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
                                                             title="Asignar Presidenta"
                                                         >
                                                             <i className="fas fa-user-tie" />
@@ -592,7 +585,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                                                         <button
                                                             type="button"
                                                             onClick={() => setDeleting(club)}
-                                                            className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                            className="btn-action col-start-4 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                             title="Eliminar"
                                                         >
                                                             <i className="fas fa-trash" />

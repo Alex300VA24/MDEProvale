@@ -88,7 +88,7 @@ class SociosBeneficiariosController extends Controller
     {
         return response()->json([
             'associations' => Association::select(['id', 'name', 'code'])->orderBy('name')->get(),
-            'states' => State::select(['id', 'title'])->get(),
+            'states' => State::temporal()->get(['id', 'title']),
             'people' => People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
                 ->orderBy('id', 'desc')
                 ->limit(100)

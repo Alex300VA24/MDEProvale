@@ -20,7 +20,6 @@ class StoreReconocimientoRequest extends FormRequest
             'date_document' => 'required|date',
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
-            'state_id' => 'required|exists:states,id',
         ];
     }
 
