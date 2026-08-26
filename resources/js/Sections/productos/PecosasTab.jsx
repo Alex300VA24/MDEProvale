@@ -11,7 +11,7 @@ import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/productos-pecosas';
 
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 const readonlyCls = inputCls.replace('bg-white', 'bg-gray-100');
@@ -295,11 +295,11 @@ function PecosaViewModal({ pecosa, onClose }) {
             <div className="p-4 sm:p-6 space-y-3 text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Número</span>
-                        <p className="font-semibold text-charcoal">{pecosa.pecosa_number || '-'}</p>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Número</span>
+                        <p className="text-base font-bold text-charcoal">{pecosa.pecosa_number || '-'}</p>
                     </div>
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Estado</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Estado</span>
                         <p>
                             <span className={`badge ${pecosa.state?.abbreviation === 'VIG' ? 'badge-current' : pecosa.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
                                 {pecosa.state?.title || 'N/A'}
@@ -308,37 +308,37 @@ function PecosaViewModal({ pecosa, onClose }) {
                     </div>
                 </div>
                 <div>
-                    <span className="text-[11px] font-bold text-earth uppercase">Club de Madres</span>
+                    <span className="text-xs font-bold text-slate-600 uppercase">Club de Madres</span>
                     <p>{pecosa.association_name || pecosa.association?.name || '-'}</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Fecha Entrega</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Fecha Entrega</span>
                         <p>{fmtDate(pecosa.delivery_date) || '-'}</p>
                     </div>
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Presidenta</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Presidenta</span>
                         <p>{pecosa.managing_partner_name || pecosa.president_name || ''}</p>
                     </div>
                 </div>
                 {pecosa.observation && (
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Observación</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Observación</span>
                         <p className="text-earth">{pecosa.observation}</p>
                     </div>
                 )}
                 <div>
-                    <span className="text-[11px] font-bold text-earth uppercase">Productos</span>
+                    <span className="text-xs font-bold text-slate-600 uppercase">Productos</span>
                     <p className="font-bold text-leaf text-lg">{details.length}</p>
                 </div>
                 {details.length > 0 && (
                     <div className="mt-3">
-                        <span className="text-[11px] font-bold text-earth uppercase">Lista de Productos</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Lista de Productos</span>
                         <div className="mt-2 space-y-2">
                             {details.map((d) => (
                                 <div key={d.id} className="p-3 bg-gray-50 rounded-lg border border-wheat flex items-center justify-between">
                                     <div>
-                                        <p className="font-semibold text-charcoal">{d.product_name || d.product?.title || `Producto #${d.detail_product_id}`}</p>
+                                        <p className="text-base font-bold text-charcoal">{d.product_name || d.product?.title || `Producto #${d.detail_product_id}`}</p>
                                         <p className="text-xs text-earth">{d.product_abbreviation || d.product?.abbreviation || ''}</p>
                                     </div>
                                     <div className="text-right">
@@ -478,7 +478,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                             setFilters({ search: '', association_id: '', state_id: '' });
                             setPage(1);
                         }}
-                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-lead rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
                     >
                         <i className="fa-solid fa-eraser" /> Limpiar
                     </button>

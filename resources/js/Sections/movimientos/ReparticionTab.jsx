@@ -6,7 +6,7 @@ import errorMessage from '../../errorMessage';
 
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 
 const MONTHS = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -109,15 +109,15 @@ export default function ReparticionTab() {
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                         <div className="p-4 rounded-xl border-2 border-wheat bg-cream">
-                            <p className="text-[11px] font-bold text-earth uppercase tracking-wider">Total Beneficiarios</p>
+                            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Total Beneficiarios</p>
                             <p className="text-2xl font-extrabold text-charcoal">{report.total_beneficiarios}</p>
                         </div>
                         <div className="p-4 rounded-xl border-2 border-wheat bg-cream">
-                            <p className="text-[11px] font-bold text-earth uppercase tracking-wider">Leche (tarros)</p>
+                            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Leche (tarros)</p>
                             <p className="text-2xl font-extrabold text-charcoal">{report.total_leche_litros}</p>
                         </div>
                         <div className="p-4 rounded-xl border-2 border-wheat bg-cream">
-                            <p className="text-[11px] font-bold text-earth uppercase tracking-wider">Hojuelas (kg)</p>
+                            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Hojuelas (kg)</p>
                             <p className="text-2xl font-extrabold text-charcoal">{report.total_hojuelas_kg}</p>
                         </div>
                     </div>

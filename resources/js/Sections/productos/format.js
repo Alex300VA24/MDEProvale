@@ -15,6 +15,11 @@ export function money(n) {
     return v.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+export function stockInt(n) {
+    const v = Math.round(Math.abs(Number(n || 0)));
+    return v.toLocaleString('es-PE');
+}
+
 export function periodLabel(dp) {
     return dp ? `${fmtDate(dp.start_date)} al ${fmtDate(dp.end_date)}` : '';
 }

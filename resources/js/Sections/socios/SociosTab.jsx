@@ -13,7 +13,7 @@ const BASE = '/api/dashboard/socios-beneficiarios';
 
 const selectCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls = selectCls;
 
 const peopleSearch = async (q) => {
@@ -139,16 +139,16 @@ function SocioViewModal({ partner, onClose }) {
         <Modal open onClose={onClose} title="Detalle del Socio" icon="fa-user" iconClass="text-leaf" maxWidth="sm:max-w-4xl">
             <div className="p-4 sm:p-6 space-y-3 text-sm">
                 <div>
-                    <span className="text-[11px] font-bold text-earth uppercase">Nombre</span>
-                    <p className="font-semibold text-charcoal">{personFullName(partner.person) || 'Sin nombre'}</p>
+                    <span className="text-xs font-bold text-slate-600 uppercase">Nombre</span>
+                    <p className="text-base font-bold text-charcoal">{personFullName(partner.person) || 'Sin nombre'}</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">DNI</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">DNI</span>
                         <p>{partner.person?.dni || '-'}</p>
                     </div>
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Estado</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Estado</span>
                         <p>
                             <span
                                 className={`badge ${
@@ -165,26 +165,26 @@ function SocioViewModal({ partner, onClose }) {
                     </div>
                 </div>
                 <div>
-                    <span className="text-[11px] font-bold text-earth uppercase">Club</span>
+                    <span className="text-xs font-bold text-slate-600 uppercase">Club</span>
                     <p>{partner.association?.name || '-'}</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Fecha Inicio</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Fecha Inicio</span>
                         <p>{formatDate(partner.date_begin) || '-'}</p>
                     </div>
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Fecha Fin</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Fecha Fin</span>
                         <p>{formatDate(partner.date_end) || '-'}</p>
                     </div>
                 </div>
                 <div>
-                    <span className="text-[11px] font-bold text-earth uppercase">Beneficiarios</span>
+                    <span className="text-xs font-bold text-slate-600 uppercase">Beneficiarios</span>
                     <p className="font-bold text-leaf text-lg">{partner.beneficiaries_count ?? 0}</p>
                 </div>
                 {partner.beneficiaries_count > 0 && (
                     <div className="mt-3">
-                        <span className="text-[11px] font-bold text-earth uppercase">Lista de Beneficiarios</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Lista de Beneficiarios</span>
                         <div className="mt-2 space-y-2">
                             {(partner.beneficiaries || []).map((b) => {
                                 const h = latestHistory(b);
@@ -256,7 +256,7 @@ function SocioViewModal({ partner, onClose }) {
                 )}
                 {partner.observations && (
                     <div>
-                        <span className="text-[11px] font-bold text-earth uppercase">Observaciones</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase">Observaciones</span>
                         <p className="text-earth">{partner.observations}</p>
                     </div>
                 )}

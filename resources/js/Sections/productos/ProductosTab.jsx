@@ -5,12 +5,12 @@ import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, money } from './format';
+import { fmtDate, money, stockInt } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/productos-pecosas';
 
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
@@ -140,19 +140,19 @@ function ProductViewModal({ product, onClose }) {
         <Modal open onClose={onClose} title="Detalle del Producto" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-lg">
             <div className="p-6 grid grid-cols-2 gap-4">
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Nombre</p>
-                    <p className="font-semibold text-charcoal">{product.title}</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nombre</p>
+                    <p className="text-base font-bold text-charcoal">{product.title}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Abreviatura</p>
-                    <p className="font-semibold text-charcoal">{product.abbreviation || '-'}</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Abreviatura</p>
+                    <p className="text-base font-bold text-charcoal">{product.abbreviation || '-'}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Unidad de Medida</p>
-                    <p className="font-semibold text-charcoal">{product.uom?.title || '-'}</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Unidad de Medida</p>
+                    <p className="text-base font-bold text-charcoal">{product.uom?.title || '-'}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Estado</p>
                     <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
                         {product.state?.title || 'Sin estado'}
                     </span>
@@ -325,7 +325,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                             setFilters({ search: '', state_id: '', uom_id: '' });
                             setPage(1);
                         }}
-                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-lead rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
                     >
                         <i className="fa-solid fa-eraser" /> Limpiar
                     </button>
@@ -445,27 +445,27 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                     ))}
                                 </select>
                             </div>
-                            <div className="w-full sm:w-28">
+                            <div className="w-full sm:w-40 lg:w-40 shrink-0">
                                 <label className={labelCls}>Año</label>
                                 <select
                                     value={detFilters.year}
                                     onChange={(e) => setDetFilters((p) => ({ ...p, year: e.target.value }))}
                                     className={inputCls}
                                 >
-                                    <option value="">Todos los años</option>
+                                    <option value="">Años</option>
                                     {ANIOS.map((y) => (
                                         <option key={y.value} value={y.value}>{y.label}</option>
                                     ))}
                                 </select>
                             </div>
-                            <div className="w-full sm:w-32">
+                            <div className="w-full sm:w-40 lg:w-40 shrink-0">
                                 <label className={labelCls}>Mes</label>
                                 <select
                                     value={detFilters.month}
                                     onChange={(e) => setDetFilters((p) => ({ ...p, month: e.target.value }))}
                                     className={inputCls}
                                 >
-                                    <option value="">Todos los meses</option>
+                                    <option value="">Meses</option>
                                     {MESES.map((m) => (
                                         <option key={m.value} value={m.value}>{m.label}</option>
                                     ))}
@@ -483,16 +483,22 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                     <option value="vencido">Vencido</option>
                                 </select>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setDetFilters({ product_id: '', year: '', month: '', periodo: '' });
-                                    setDetPage(1);
-                                }}
-                                className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
-                            >
-                                <i className="fa-solid fa-sliders" /> Limpiar filtros
-                            </button>
+                            <div className="w-full sm:w-auto shrink-0 flex flex-col">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setDetFilters({ product_id: '', year: '', month: '', periodo: '' });
+                                        setDetPage(1);
+                                    }}
+                                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                                >
+                                    <i className="fa-solid fa-eraser" /> Limpiar
+                                </button>
+                                <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                                    {/* Ocupa espacio pero no se ve */}
+                                    Hola
+                                </p>
+                            </div>
 </form>
 
                         {detData && (
@@ -538,14 +544,14 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                                                 <div className="font-medium">Hasta: {fmtDate(dp.end_date)}</div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 py-3 text-right font-bold">{money(stockInicial)}</td>
+                                                        <td className="px-4 py-3 text-right font-bold">{stockInt(stockInicial)}</td>
                                                         <td className="px-4 py-3 text-right">S/ {money(dp.unit_price)}</td>
                                                         <td className="px-4 py-3 text-right">S/ {money(totalEntrada)}</td>
                                                         <td className="px-4 py-3 text-right text-red-600">
-                                                            {stockUsado > 0 ? `-${money(stockUsado)}` : '-'}
+                                                            {stockUsado > 0 ? stockInt(stockUsado) : '-'}
                                                         </td>
                                                         <td className={`px-4 py-3 text-right font-bold ${stockActual > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {money(stockActual)}
+                                                            {stockInt(stockActual)}
                                                         </td>
                                                         <td className="px-4 py-3">
                                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${status.cls}`}>

@@ -5,12 +5,12 @@ import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, dateValue, money, typeBadgeClass } from './format';
+import { fmtDate, dateValue, money, stockInt, typeBadgeClass } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/movimientos';
 
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 const readonlyCls = inputCls.replace('bg-white', 'bg-gray-100');
@@ -263,7 +263,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                 onSubmit={(e) => e.preventDefault()}
                 className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
             >
-                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[22rem] min-w-0">
+                <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i
@@ -282,7 +282,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                 <div className="w-full sm:w-40">
                     <label className={labelCls}>Tipo</label>
                     <select value={filters.type_transaction_id} onChange={(e) => setFilter('type_transaction_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Tipos</option>
+                        <option value="">Tipos</option>
                         {(options.types || []).map((t) => (
                             <option key={t.id} value={t.id}>{t.title}</option>
                         ))}
@@ -291,7 +291,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                 <div className="w-full sm:w-28">
                     <label className={labelCls}>Año</label>
                     <select value={filters.year} onChange={(e) => setFilter('year', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Años</option>
+                        <option value="">Años</option>
                         {(options.years || []).map((year) => (
                             <option key={year} value={year}>{year}</option>
                         ))}
@@ -300,22 +300,28 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                 <div className="w-full sm:w-32">
                     <label className={labelCls}>Mes</label>
                     <select value={filters.month} onChange={(e) => setFilter('month', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Meses</option>
+                        <option value="">Meses</option>
                         {MONTHS.map((month, index) => (
                             <option key={month} value={index + 1}>{month}</option>
                         ))}
                     </select>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFilters({ search: '', type_transaction_id: '', year: '', month: '' });
-                        setPage(1);
-                    }}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
-                >
-                    <i className="fa-solid fa-sliders" /> Limpiar filtros
-                </button>
+                <div className="w-full sm:w-auto shrink-0 flex flex-col">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilters({ search: '', type_transaction_id: '', year: '', month: '' });
+                            setPage(1);
+                        }}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                    >
+                        <i className="fa-solid fa-eraser" /> Limpiar
+                    </button>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
+                </div>
             </form>
             </div>
 
@@ -359,13 +365,13 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                                             </span>
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 font-semibold">{tx.product_name || '-'}</td>
-                                        <td className="px-3 sm:px-4 py-3 text-right">{tx.quantity} {tx.uom_title || ''}</td>
+                                        <td className="px-3 sm:px-4 py-3 text-right">{stockInt(tx.quantity)} {tx.uom_title || ''}</td>
                                         <td className="px-3 sm:px-4 py-3 text-right">S/ {money(tx.unit_price)}</td>
                                         <td className="px-3 sm:px-4 py-3 text-right font-bold">S/ {money(tx.total_price)}</td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{tx.document_number || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3 text-earth whitespace-nowrap">
-                                            <div><span className="font-semibold text-charcoal">Desde:</span> {fmtDate(tx.detail_product?.start_date) || '-'}</div>
-                                            <div><span className="font-semibold text-charcoal">Hasta:</span> {fmtDate(tx.detail_product?.end_date) || '-'}</div>
+                                            <div><span className="text-base font-bold text-charcoal">Desde:</span> {fmtDate(tx.detail_product?.start_date) || '-'}</div>
+                                            <div><span className="text-base font-bold text-charcoal">Hasta:</span> {fmtDate(tx.detail_product?.end_date) || '-'}</div>
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
                                             <div className="inline-grid grid-cols-[repeat(2,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">

@@ -103,12 +103,12 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
                     <div>
                         <div className="bg-cream border-2 border-wheat rounded-xl p-4 space-y-2">
                             <div>
-                                <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Título encontrado</p>
-                                <p className="font-semibold text-charcoal text-sm">{result?.titulo || '-'}</p>
+                                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Título encontrado</p>
+                                <p className="text-base font-bold text-charcoal">{result?.titulo || '-'}</p>
                             </div>
                             <div>
-                                <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fecha de publicación</p>
-                                <p className="font-semibold text-charcoal text-sm">{result?.fecha || '-'}</p>
+                                <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Fecha de publicación</p>
+                                <p className="text-base font-bold text-charcoal">{result?.fecha || '-'}</p>
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3 mt-6">

@@ -7,7 +7,7 @@ import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/responsables-raciones';
 
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 
 function ResponsibleCard({ title, subtitle, icon, iconClass, responsible, people, canEdit, onSaved }) {
     const toast = useToast();

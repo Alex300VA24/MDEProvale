@@ -11,7 +11,7 @@ import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
 
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
@@ -104,27 +104,27 @@ function ReconocimientoViewModal({ resolution, onClose }) {
         <Modal open onClose={onClose} title="Detalle de la Resolución" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-lg">
             <div className="p-6 grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Documento</p>
-                    <p className="font-semibold text-charcoal">{resolution.document || '-'}</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Documento</p>
+                    <p className="text-base font-bold text-charcoal">{resolution.document || '-'}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">F. Documento</p>
-                    <p className="font-semibold text-charcoal">{fmtDateTime(resolution.date_document)}</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">F. Documento</p>
+                    <p className="text-base font-bold text-charcoal">{fmtDateTime(resolution.date_document)}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Estado</p>
                     <span className={`badge ${stateBadge(resolution.state).cls}`}>{stateBadge(resolution.state).label}</span>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Inicio</p>
-                    <p className="font-semibold text-charcoal">{fmtDate(resolution.date_start)}</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Inicio</p>
+                    <p className="text-base font-bold text-charcoal">{fmtDate(resolution.date_start)}</p>
                 </div>
                 <div>
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Fin</p>
-                    <p className="font-semibold text-charcoal">{fmtDate(resolution.date_end)}</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Fin</p>
+                    <p className="text-base font-bold text-charcoal">{fmtDate(resolution.date_end)}</p>
                 </div>
                 <div className="col-span-2">
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Comités asociados</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Comités asociados</p>
                     {(resolution.associations || []).length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                             {resolution.associations.map((association) => (
@@ -224,7 +224,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                 onSubmit={(e) => e.preventDefault()}
                 className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
             >
-                <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[24rem] min-w-0">
+                <div className="w-full lg:flex-1 min-w-[160px]">
                     <label className={labelCls}>Buscar</label>
                     <div className="relative">
                         <i
@@ -240,34 +240,41 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                         />
                     </div>
                 </div>
-                <div className="w-full sm:w-40">
-                    <label className={labelCls}>Estado</label>
-                    <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Estados</option>
-                        {(options.states || []).map((state) => (
-                            <option key={state.id} value={state.id}>{state.title}</option>
-                        ))}
-                    </select>
-                </div>
                 <div className="w-full sm:w-28">
                     <label className={labelCls}>Año</label>
                     <select value={filters.anio} onChange={(e) => setFilter('anio', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Años</option>
+                        <option value="">Años</option>
                         {(options.years || []).map((y) => (
                             <option key={y} value={y}>{y}</option>
                         ))}
                     </select>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFilters({ search: '', state_id: '', anio: '' });
-                        setPage(1);
-                    }}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
-                >
-                    <i className="fa-solid fa-sliders" /> Limpiar filtros
-                </button>
+                <div className="w-full sm:w-40 lg:w-40 shrink-0">
+                    <label className={labelCls}>Estado</label>
+                    <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
+                        <option value="">Estados</option>
+                        {(options.states || []).map((state) => (
+                            <option key={state.id} value={state.id}>{state.title}</option>
+                        ))}
+                    </select>
+                </div>
+                
+                <div className="w-full sm:w-auto shrink-0 flex flex-col">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setFilters({ search: '', state_id: '', anio: '' });
+                            setPage(1);
+                        }}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                    >
+                        <i className="fa-solid fa-eraser" /> Limpiar
+                    </button>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
+                </div>
             </form>
             </div>
 
@@ -310,7 +317,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                                                     <div className="flex flex-wrap gap-1.5">
                                                         {resolution.associations.map((association) => (
                                                             <span key={association.id} className="badge badge-unknown">
-                                                                {association.code || association.name}
+                                                                {association.name}
                                                             </span>
                                                         ))}
                                                     </div>

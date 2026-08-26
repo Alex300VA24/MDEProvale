@@ -1,4 +1,4 @@
-export { fmtDate, dateValue, money, periodLabel, detailOptionLabel } from '../productos/format';
+export { fmtDate, dateValue, money, stockInt, periodLabel, detailOptionLabel } from '../productos/format';
 
 export function typeBadgeClass(title) {
     return String(title).toLowerCase() === 'ingreso'

@@ -11,7 +11,7 @@ import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
 
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
@@ -162,47 +162,47 @@ function ClubViewModal({ club, onClose }) {
             <div className="p-6">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Código</p>
-                        <p className="font-semibold text-charcoal">{club.code || '-'}</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Código</p>
+                        <p className="text-base font-bold text-charcoal">{club.code || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Nombre</p>
-                        <p className="font-semibold text-charcoal">{club.name || '-'}</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nombre</p>
+                        <p className="text-base font-bold text-charcoal">{club.name || '-'}</p>
                     </div>
                     <div className="col-span-2">
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Razón Social</p>
-                        <p className="font-semibold text-charcoal">{club.company_name || '-'}</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Razón Social</p>
+                        <p className="text-base font-bold text-charcoal">{club.company_name || '-'}</p>
                     </div>
                     <div className="col-span-2">
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Dirección</p>
-                        <p className="font-semibold text-charcoal">{club.address || '-'}</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Dirección</p>
+                        <p className="text-base font-bold text-charcoal">{club.address || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Teléfono</p>
-                        <p className="font-semibold text-charcoal">{club.phone || '-'}</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Teléfono</p>
+                        <p className="text-base font-bold text-charcoal">{club.phone || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Presidenta</p>
-                        <p className="font-semibold text-charcoal">{club.president_name || 'Sin asignar'}</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Presidenta</p>
+                        <p className="text-base font-bold text-charcoal">{club.president_name || 'Sin asignar'}</p>
                     </div>
                     <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Zona / Sector</p>
-                        <p className="font-semibold text-charcoal">
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Zona / Sector</p>
+                        <p className="text-base font-bold text-charcoal">
                             {club.place_sector?.place?.title} - {club.place_sector?.sector?.title}
                         </p>
                     </div>
                     <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Tipo de Local</p>
-                        <p className="font-semibold text-charcoal">{club.type_premises?.title || '-'}</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Tipo de Local</p>
+                        <p className="text-base font-bold text-charcoal">{club.type_premises?.title || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-1">Estado</p>
+                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Estado</p>
                         <span className={`badge ${stateBadge(club.state).cls}`}>{stateBadge(club.state).label}</span>
                     </div>
                 </div>
 
                 <div className="mt-5">
-                    <p className="text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Resoluciones del Comité</p>
+                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Resoluciones del Comité</p>
                     {(club.all_resolutions || []).length === 0 ? (
                         <p className="text-sm text-earth">Sin resoluciones registradas.</p>
                     ) : (
@@ -344,7 +344,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', state_id: '', place_id: '', sector_id: '' });
+    const [filters, setFilters] = useState({ search: '', state_id: '', place_sector_id: '' });
     const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -365,8 +365,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
             const params = { per_page: 10, page };
             if (debouncedFilters.search) params.search = debouncedFilters.search;
             if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
-            if (debouncedFilters.place_id) params.place_id = debouncedFilters.place_id;
-            if (debouncedFilters.sector_id) params.sector_id = debouncedFilters.sector_id;
+            if (debouncedFilters.place_sector_id) params.place_sector_id = debouncedFilters.place_sector_id;
             const res = await http.get(`${BASE}/clubs`, { params });
             setData(res.data);
         } catch {
@@ -397,21 +396,19 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
 
     const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
 
-    const zoneOptions = Array.from(
-        new Map(
-            (options.place_sectors || [])
-                .filter((ps) => ps.place)
-                .map((ps) => [String(ps.place.id), ps.place])
-        ).values()
-    ).sort((a, b) => a.title.localeCompare(b.title, 'es'));
-
-    const sectorOptions = Array.from(
-        new Map(
-            (options.place_sectors || [])
-                .filter((ps) => ps.sector && (!filters.place_id || String(ps.place?.id) === String(filters.place_id)))
-                .map((ps) => [String(ps.sector.id), ps.sector])
-        ).values()
-    ).sort((a, b) => a.title.localeCompare(b.title, 'es'));
+    const placeSectorOptions = (options.place_sectors || [])
+        .filter((ps) => ps.place && ps.sector)
+        .map((ps) => ({
+            id: ps.id,
+            label: `${ps.place.title} - ${ps.sector.title}`,
+            placeTitle: ps.place.title,
+        }))
+        .sort((a, b) => {
+            const numA = parseInt(a.placeTitle.match(/\d+/)?.[0] || '0', 10);
+            const numB = parseInt(b.placeTitle.match(/\d+/)?.[0] || '0', 10);
+            if (numA !== numB) return numA - numB;
+            return a.placeTitle.localeCompare(b.placeTitle, 'es');
+        });
 
     const openEdit = (club) => {
         setEditing(club);
@@ -456,46 +453,43 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                     </div>
                 </div>
                 <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
+                    <label className={labelCls}>Zona / Sector</label>
+                    <select
+                        value={filters.place_sector_id}
+                        onChange={(e) => setFilter('place_sector_id', e.target.value)}
+                        className={inputCls}
+                    >
+                        <option value="">Todas las Zonas / Sectores</option>
+                        {placeSectorOptions.map((ps) => (
+                            <option key={ps.id} value={ps.id}>{ps.label}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="w-full sm:w-40 lg:w-40 shrink-0">
                     <label className={labelCls}>Estado</label>
                     <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Estados</option>
+                        <option value="">Estados</option>
                         {(options.states || []).map((state) => (
                             <option key={state.id} value={state.id}>{state.title}</option>
                         ))}
                     </select>
                 </div>
-                <div className="w-full sm:w-[300px] lg:w-[300px] shrink-0">
-                    <label className={labelCls}>Zona</label>
-                    <select
-                        value={filters.place_id}
-                        onChange={(e) => setFilters((prev) => ({ ...prev, place_id: e.target.value, sector_id: '' }))}
-                        className={inputCls}
-                    >
-                        <option value="">Todas las Zonas</option>
-                        {zoneOptions.map((zone) => (
-                            <option key={zone.id} value={zone.id}>{zone.title}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="w-full sm:w-40">
-                    <label className={labelCls}>Sector</label>
-                    <select value={filters.sector_id} onChange={(e) => setFilter('sector_id', e.target.value)} className={inputCls}>
-                        <option value="">Todos los Sectores</option>
-                        {sectorOptions.map((sector) => (
-                            <option key={sector.id} value={sector.id}>{sector.title}</option>
-                        ))}
-                    </select>
-                </div>
+                <div className="w-full sm:w-auto shrink-0 flex flex-col">
                 <button
-                    type="button"
-                    onClick={() => {
-                        setFilters({ search: '', state_id: '', place_id: '', sector_id: '' });
-                        setPage(1);
-                    }}
-                    className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf hover:opacity-80 whitespace-nowrap shrink-0 self-end"
-                >
-                    <i className="fa-solid fa-sliders" /> Limpiar filtros
-                </button>
+                        type="button"
+                        onClick={() => {
+                            setFilters({ search: '', state_id: '', place_sector_id: '' });
+                            setPage(1);
+                        }}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-lead rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                    >
+                        <i className="fa-solid fa-eraser" /> Limpiar
+                    </button>
+                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
+                        {/* Ocupa espacio pero no se ve */}
+                        Hola
+                    </p>
+                </div>
             </form>
             </div>
 

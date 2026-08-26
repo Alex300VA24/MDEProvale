@@ -66,6 +66,10 @@ class ComitesController extends Controller
             $query->whereHas('placeSector', fn ($q) => $q->where('sector_id', $request->sector_id));
         }
 
+        if ($request->filled('place_sector_id')) {
+            $query->where('place_sector_id', $request->place_sector_id);
+        }
+
         $associations = $query->orderByDesc('id')->paginate((int) $request->input('per_page', 10));
 
         $this->hydratePresidentData($associations);

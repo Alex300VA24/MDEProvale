@@ -83,43 +83,52 @@ class InicioController extends Controller
         // Nota: se usa el query builder (no el modelo Eloquent Pecosa) porque
         // Pecosa::getMonthAttribute() es un accessor que pisa el alias "month"
         // seleccionado aquí y lo devuelve siempre en null al hidratar el modelo.
-        $pecosasPorMes = DB::table('pecosas')
-            ->selectRaw('MONTH(delivery_date) as month, COUNT(*) as total')
+        // Rango ampliado (dic. del año anterior a dic. de este año) porque una
+        // entrega en la última semana de un mes se contabiliza en el mes
+        // siguiente (representa la PECOSA de ese mes siguiente), pudiendo
+        // desplazar diciembre hacia enero del año actual.
+        $pecosas = DB::table('pecosas')
+            ->select('delivery_date')
             ->whereNotNull('delivery_date')
-            ->whereBetween('delivery_date', [$yearStart, $yearEnd])
-            ->groupByRaw('MONTH(delivery_date)')
+            ->whereBetween('delivery_date', [($currentYear - 1) . '-12-01', $yearEnd])
             ->get();
 
         $pecosaData = array_fill(0, 12, 0);
-        foreach ($pecosasPorMes as $item) {
-            $month = (int) $item->month;
-            if ($month >= 1 && $month <= 12) {
-                $pecosaData[$month - 1] = (int) $item->total;
+        foreach ($pecosas as $item) {
+            $date = \Carbon\Carbon::parse($item->delivery_date);
+            $effective = $date->day > $date->daysInMonth - 7 ? $date->copy()->addMonth() : $date;
+
+            if ((int) $effective->year === $currentYear) {
+                $pecosaData[$effective->month - 1]++;
             }
         }
         $totalPecosasAnio = array_sum($pecosaData);
 
-        // Productos distribuidos por mes (Leche / Hojuelas)
-        $productosPorMes = DetailPecosa::selectRaw('MONTH(pecosas.delivery_date) as month, SUM(detail_pecosas.quantity) as total, products.title as product')
+        // Productos distribuidos por mes (Leche / Hojuelas).
+        // Mismo criterio que PECOSAs por mes: entrega en última semana del
+        // mes se contabiliza en el mes siguiente. Rango ampliado (dic. del
+        // año anterior a dic. de este año) para no perder ese desplazamiento.
+        $productosPorMes = DetailPecosa::selectRaw('pecosas.delivery_date, detail_pecosas.quantity as total, products.title as product')
             ->join('pecosas', 'detail_pecosas.pecosa_id', '=', 'pecosas.id')
             ->join('detail_products', 'detail_pecosas.detail_product_id', '=', 'detail_products.id')
             ->join('products', 'detail_products.product_id', '=', 'products.id')
-            ->whereBetween('pecosas.delivery_date', [$yearStart, $yearEnd])
-            ->groupByRaw('MONTH(pecosas.delivery_date), products.title')
+            ->whereBetween('pecosas.delivery_date', [($currentYear - 1) . '-12-01', $yearEnd])
             ->get();
 
         $lecheData = array_fill(0, 12, 0);
         $hojuelasData = array_fill(0, 12, 0);
         foreach ($productosPorMes as $item) {
-            $month = (int) $item->month;
-            if ($month < 1 || $month > 12) {
+            $date = \Carbon\Carbon::parse($item->delivery_date);
+            $effective = $date->day > $date->daysInMonth - 7 ? $date->copy()->addMonth() : $date;
+
+            if ((int) $effective->year !== $currentYear) {
                 continue;
             }
-            $mes = $month - 1;
+            $mes = $effective->month - 1;
             if (stripos($item->product, 'leche') !== false) {
-                $lecheData[$mes] = (int) $item->total;
+                $lecheData[$mes] += (int) $item->total;
             } elseif (stripos($item->product, 'hojuela') !== false) {
-                $hojuelasData[$mes] = (int) $item->total;
+                $hojuelasData[$mes] += (int) $item->total;
             }
         }
 

@@ -13,7 +13,7 @@ const BASE = '/api/dashboard/socios-beneficiarios';
 
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
-const labelCls = 'block text-[11px] font-bold text-earth uppercase tracking-wider mb-1';
+const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 
 function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
     const toast = useToast();
@@ -195,7 +195,7 @@ function PersonaViewModal({ persona, onClose }) {
             <div className="p-6 space-y-4 text-sm">
                 <div>
                     <span className={labelCls}>Nombre Completo</span>
-                    <p className="font-semibold text-charcoal">{personFullName(persona)}</p>
+                    <p className="text-base font-bold text-charcoal">{personFullName(persona)}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>

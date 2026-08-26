@@ -10,6 +10,7 @@ const ProductosPecosas = lazy(() => import('../Sections/ProductosPecosas'));
 const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos'));
 const Movimientos = lazy(() => import('../Sections/Movimientos'));
 const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
+const Reportes = lazy(() => import('../Sections/Reportes'));
 const Sistema = lazy(() => import('../Sections/Sistema'));
 const Ayuda = lazy(() => import('../Sections/Ayuda'));
 
@@ -20,6 +21,7 @@ const SECTION_COMPONENTS = {
     comites: ClubReconocimientos,
     movimientos: Movimientos,
     'responsables-raciones': ResponsablesRaciones,
+    reportes: Reportes,
     sistema: Sistema,
     ayuda: Ayuda,
 };
@@ -32,6 +34,7 @@ const NAV_ITEMS = [
     { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
+    { key: 'reportes', label: 'Reportes', icon: 'fa-chart-bar', modules: ['reportes'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];

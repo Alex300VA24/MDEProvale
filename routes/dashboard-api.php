@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
 use App\Http\Controllers\Api\SistemaController;
 use App\Http\Controllers\Api\SociosBeneficiariosController;
+use App\Http\Controllers\ReportGeneratorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -118,6 +119,11 @@ Route::prefix('dashboard/responsables-raciones')->middleware('module:responsable
     Route::post('raciones', [ResponsablesRacionesController::class, 'storeRacion'])->name('raciones.store');
     Route::put('raciones/{racion}', [ResponsablesRacionesController::class, 'updateRacion'])->name('raciones.update');
     Route::delete('raciones/{racion}', [ResponsablesRacionesController::class, 'destroyRacion'])->name('raciones.destroy');
+});
+
+// ==================== MÓDULO: REPORTES ====================
+Route::prefix('dashboard/reportes')->middleware('module:reportes')->name('api.reportes.')->group(function () {
+    Route::get('config', [ReportGeneratorController::class, 'config'])->name('config');
 });
 
 // ==================== MÓDULO: SISTEMA ====================
