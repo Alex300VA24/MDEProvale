@@ -6,9 +6,9 @@ import ModulosTab from './sistema/ModulosTab';
 import NotificacionesTab from './sistema/NotificacionesTab';
 
 const HEADERS = {
-    usuarios: { icon: 'fa-users', title: 'Gestión de Usuarios', newLabel: 'Nuevo Usuario', description: 'Administra los usuarios del sistema.' },
-    roles: { icon: 'fa-user-tag', title: 'Gestión de Roles', newLabel: 'Nuevo Rol', description: 'Administra los roles y permisos del sistema.' },
-    modulos: { icon: 'fa-puzzle-piece', title: 'Gestión de Módulos', newLabel: 'Nuevo Módulo', description: 'Administra los módulos del sistema.' },
+    usuarios: { icon: 'fa-users', title: 'Gestión de Usuarios', newLabel: 'Registrar Usuario', description: 'Administra los usuarios del sistema.' },
+    roles: { icon: 'fa-user-tag', title: 'Gestión de Roles', newLabel: 'Registrar Rol', description: 'Administra los roles y permisos del sistema.' },
+    modulos: { icon: 'fa-puzzle-piece', title: 'Gestión de Módulos', newLabel: 'Registrar Módulo', description: 'Administra los módulos del sistema.' },
     notificaciones: { icon: 'fa-bell', title: 'Notificaciones', description: 'Administra las notificaciones del sistema.' },
 };
 

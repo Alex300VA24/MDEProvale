@@ -49,7 +49,7 @@ function ModuloFormModal({ mode, modulo, iconOptions, iconsLoading, onClose, onS
     };
 
     return (
-        <Modal open onClose={onClose} title={mode === 'edit' ? 'Editar Módulo' : 'Nuevo Módulo'} icon="fa-puzzle-piece" iconClass="text-leaf">
+        <Modal open onClose={onClose} title={mode === 'edit' ? 'Editar Módulo' : 'Registrar Módulo'} icon="fa-puzzle-piece" iconClass="text-leaf">
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div>
                     <label className={labelCls}>Nombre *</label>

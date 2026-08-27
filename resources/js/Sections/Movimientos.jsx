@@ -93,7 +93,7 @@ export default function Movimientos({ initialAction }) {
                             onClick={() => kardexRef.current?.openCreate()}
                             className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                         >
-                            <i className="fas fa-plus" /> Nuevo Ingreso
+                            <i className="fas fa-plus" /> Registrar Ingreso
                         </button>
                     )}
                 </div>

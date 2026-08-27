@@ -5,7 +5,6 @@ import SociosTab from './socios/SociosTab';
 import BeneficiariosTab from './socios/BeneficiariosTab';
 import PersonasTab from './socios/PersonasTab';
 import PadronModal from './socios/PadronModal';
-import MoreActionsMenu from '../Components/MoreActionsMenu';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -101,23 +100,46 @@ export default function SociosBeneficiarios({ initialAction }) {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        {can.create && tab === 'socios' && (
-                            <button
-                                type="button"
-                                onClick={() => sociosRef.current?.openCreate()}
-                                className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-plus" /> Nuevo Socio
-                            </button>
+                        {tab === 'socios' && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setPadronOpen(true)}
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-clipboard-list" aria-hidden="true" /> Generar Padrón
+                                </button>
+                                {can.create && (
+                                    <button
+                                        type="button"
+                                        onClick={() => sociosRef.current?.openCreate()}
+                                        className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                                    >
+                                        <i className="fas fa-plus" aria-hidden="true" /> Registrar Socio
+                                    </button>
+                                )}
+                            </>
                         )}
-                        {can.create && tab === 'beneficiarios' && (
-                            <button
-                                type="button"
-                                onClick={() => beneficiariosRef.current?.openCreate()}
-                                className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-plus" /> Nuevo Beneficiario
-                            </button>
+                        {tab === 'beneficiarios' && (
+                            <>
+                                <a
+                                    href="/fichas/fichaBeneficiario.pdf"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-print" aria-hidden="true" /> Imprimir Ficha Beneficiario
+                                </a>
+                                {can.create && (
+                                    <button
+                                        type="button"
+                                        onClick={() => beneficiariosRef.current?.openCreate()}
+                                        className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                                    >
+                                        <i className="fas fa-plus" aria-hidden="true" /> Registrar Beneficiario
+                                    </button>
+                                )}
+                            </>
                         )}
                         {can.create && tab === 'personas' && (
                             <button
@@ -125,15 +147,9 @@ export default function SociosBeneficiarios({ initialAction }) {
                                 onClick={() => personasRef.current?.openCreate()}
                                 className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                             >
-                                <i className="fas fa-plus" /> Nueva Persona
+                                <i className="fas fa-plus" aria-hidden="true" /> Registrar Persona
                             </button>
                         )}
-                        <MoreActionsMenu
-                            items={[
-                                { icon: 'fa-print', label: 'Imprimir ficha', href: '/fichas/fichaBeneficiario.pdf', target: '_blank' },
-                                { icon: 'fa-clipboard-list', label: 'Generar padrón', onClick: () => setPadronOpen(true) },
-                            ]}
-                        />
                     </div>
                 </div>
 

@@ -46,7 +46,7 @@ function RacionFormModal({ mode, racion, onClose, onSaved }) {
     };
 
     return (
-        <Modal open onClose={onClose} title={mode === 'edit' ? `Editar Ración ${racion.year}` : 'Nueva Ración'} icon="fa-utensils" iconClass="text-leaf">
+        <Modal open onClose={onClose} title={mode === 'edit' ? `Editar Ración ${racion.year}` : 'Registrar Ración'} icon="fa-utensils" iconClass="text-leaf">
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div>
                     <label className={labelCls}>Año</label>

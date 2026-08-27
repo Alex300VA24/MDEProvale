@@ -120,7 +120,7 @@ export default function ClubReconocimientos({ initialAction }) {
                                     onClick={() => comitesRef.current?.openCreate()}
                                     className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                                 >
-                                    <i className="fas fa-plus" /> Nuevo Comité
+                                    <i className="fas fa-plus" /> Registrar Comité
                                 </button>
                             )}
                             {can.reconocimientos.view && tab === 'reconocimientos' && can.reconocimientos.create && (
@@ -129,7 +129,7 @@ export default function ClubReconocimientos({ initialAction }) {
                                     onClick={() => reconocimientosRef.current?.openCreate()}
                                     className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                                 >
-                                    <i className="fas fa-plus" /> Nuevo Reconocimiento
+                                    <i className="fas fa-plus" /> Registrar Reconocimiento
                                 </button>
                             )}
                             {can.comites.view && (

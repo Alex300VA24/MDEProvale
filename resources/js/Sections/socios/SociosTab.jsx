@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
@@ -71,7 +72,7 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Socio' : 'Nuevo Socio'}
+            title={mode === 'edit' ? 'Editar Socio' : 'Registrar Socio'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-user-plus'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
             maxWidth="sm:max-w-2xl"
@@ -136,134 +137,70 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
 function SocioViewModal({ partner, onClose }) {
     if (!partner) return null;
     const latestHistory = (b) => (b.histories && b.histories.length ? b.histories[0] : null);
+    const stateCls =
+        partner.state?.abbreviation === 'VIG'
+            ? 'badge-current'
+            : partner.state?.abbreviation === 'VEN'
+                ? 'badge-expired'
+                : 'badge-unknown';
 
     return (
-        <Modal open onClose={onClose} title="Detalle del Socio" icon="fa-user" iconClass="text-leaf" maxWidth="sm:max-w-4xl">
-            <div className="p-4 sm:p-6 space-y-5 text-sm">
-                <div>
-                    <span className="text-xs font-bold text-slate-600 uppercase">Nombre</span>
-                    <p className="text-base font-bold text-charcoal">{personFullName(partner.person) || 'Sin nombre'}</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">DNI</span>
-                        <p>{partner.person?.dni || '-'}</p>
-                    </div>
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Estado</span>
-                        <p>
-                            <span
-                                className={`badge ${
-                                    partner.state?.abbreviation === 'VIG'
-                                        ? 'badge-current'
-                                        : partner.state?.abbreviation === 'VEN'
-                                            ? 'badge-expired'
-                                            : 'badge-unknown'
-                                }`}
-                            >
-                                {partner.state?.title || 'N/A'}
-                            </span>
-                        </p>
-                    </div>
-                </div>
-                <div>
-                    <span className="text-xs font-bold text-slate-600 uppercase">Club</span>
-                    <p>{partner.association?.name || '-'}</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Fecha Inicio</span>
-                        <p>{formatDate(partner.date_begin) || '-'}</p>
-                    </div>
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Fecha Fin</span>
-                        <p>{formatDate(partner.date_end) || '-'}</p>
-                    </div>
-                </div>
-                <div>
-                    <span className="text-xs font-bold text-slate-600 uppercase">Beneficiarios</span>
-                    <p className="font-bold text-leaf text-lg">{partner.beneficiaries_count ?? 0}</p>
-                </div>
-                {partner.beneficiaries_count > 0 && (
-                    <div className="mt-3">
-                        <span className="text-xs font-bold text-slate-600 uppercase">Lista de Beneficiarios</span>
-                        <div className="mt-2 space-y-2">
-                            {(partner.beneficiaries || []).map((b) => {
-                                const h = latestHistory(b);
-                                return (
-                                    <div key={b.id} className="p-3 bg-gray-50 rounded-lg border border-wheat text-sm">
-                                        <span className="text-xs font-bold text-leaf uppercase mb-2 block">Beneficiario</span>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                                            <div>
-                                                <span className="text-[10px] font-bold text-earth uppercase">Nombre</span>
-                                                <p className="font-semibold">{personFullName(b.person) || '-'}</p>
-                                            </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold text-earth uppercase">DNI</span>
-                                                <p>{b.person?.dni || '-'}</p>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-                                            <div>
-                                                <span className="text-[10px] font-bold text-earth uppercase">Parentesco</span>
-                                                <p>{b.relationship?.title || '-'}</p>
-                                            </div>
-                                        </div>
-                                        <div className="border-t border-wheat pt-2 mt-2">
-                                            <span className="text-[10px] font-bold text-earth uppercase">Datos Clínicos</span>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">Peso</span>
-                                                    <p className="text-xs">{h?.weight ?? '-'}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">Talla</span>
-                                                    <p className="text-xs">{h?.height ?? '-'}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">HMG</span>
-                                                    <p className="text-xs">{h?.hmg ?? '-'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">F. Inicio</span>
-                                                    <p className="text-xs">{formatDate(h?.date_begin) || '-'}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">F. Fin</span>
-                                                    <p className="text-xs">{formatDate(h?.date_end) || '-'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1">
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">Tipo Beneficio</span>
-                                                    <p className="text-xs">{h?.type_benefit?.title || '-'}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">Estado</span>
-                                                    <p className="text-xs">{h?.state?.title || '-'}</p>
-                                                </div>
-                                                <div>
-                                                    <span className="text-[9px] text-earth uppercase">Motivo Descalif.</span>
-                                                    <p className="text-xs">{h?.reason_disqualification?.title || 'Ninguno'}</p>
-                                                </div>
-                                            </div>
-                                        </div>
+        <DetailModal open onClose={onClose} title="Detalle del socio" icon="fa-user" maxWidth="sm:max-w-3xl">
+            <DetailGroup>
+                <Field label="Nombre" wide>
+                    <span className="text-base font-bold text-charcoal">{personFullName(partner.person) || 'Sin nombre'}</span>
+                </Field>
+                <FieldGrid>
+                    <Field label="DNI" value={partner.person?.dni} mono />
+                    <Field label="Estado">
+                        <span className={`badge ${stateCls}`}>{partner.state?.title || 'N/A'}</span>
+                    </Field>
+                    <Field label="Club" value={partner.association?.name} />
+                    <Field label="Beneficiarios">
+                        <span className="text-lg font-bold text-leaf">{partner.beneficiaries_count ?? 0}</span>
+                    </Field>
+                    <Field label="Fecha de inicio" value={formatDate(partner.date_begin)} />
+                    <Field label="Fecha de fin" value={formatDate(partner.date_end)} />
+                </FieldGrid>
+            </DetailGroup>
+
+            {partner.beneficiaries_count > 0 && (
+                <DetailGroup title="Lista de beneficiarios" icon="fa-hand-holding-heart">
+                    <div className="space-y-3">
+                        {(partner.beneficiaries || []).map((b) => {
+                            const h = latestHistory(b);
+                            return (
+                                <div key={b.id} className="rounded-xl border border-mist bg-base/60 p-4">
+                                    <FieldGrid>
+                                        <Field label="Nombre" value={personFullName(b.person)} />
+                                        <Field label="DNI" value={b.person?.dni} mono />
+                                        <Field label="Parentesco" value={b.relationship?.title} />
+                                    </FieldGrid>
+                                    <div className="mt-3 border-t border-mist pt-3">
+                                        <FieldGrid cols={3}>
+                                            <Field label="Peso" value={h?.weight} />
+                                            <Field label="Talla" value={h?.height} />
+                                            <Field label="Hemoglobina (HMG)" value={h?.hmg} />
+                                            <Field label="Fecha de inicio" value={formatDate(h?.date_begin)} />
+                                            <Field label="Fecha de fin" value={formatDate(h?.date_end)} />
+                                            <Field label="Tipo de beneficio" value={h?.type_benefit?.title} />
+                                            <Field label="Estado" value={h?.state?.title} />
+                                            <Field label="Motivo de descalificación" value={h?.reason_disqualification?.title || 'Ninguno'} />
+                                        </FieldGrid>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
-                )}
-                {partner.observations && (
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Observaciones</span>
-                        <p className="text-earth">{partner.observations}</p>
-                    </div>
-                )}
-            </div>
-        </Modal>
+                </DetailGroup>
+            )}
+
+            {partner.observations && (
+                <DetailGroup title="Observaciones" icon="fa-comment-dots">
+                    <p className="text-sm text-earth leading-relaxed">{partner.observations}</p>
+                </DetailGroup>
+            )}
+        </DetailModal>
     );
 }
 
@@ -425,7 +362,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                                 <th className="px-3 sm:px-4 py-3 text-left">Socio</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">DNI</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Club</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Benef.</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Beneficiarios</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>

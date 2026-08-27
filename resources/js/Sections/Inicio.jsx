@@ -4,7 +4,7 @@ import http from '../http';
 
 const BASE = '/api/dashboard/inicio';
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const CHART_FONT = { family: 'Plus Jakarta Sans', size: 11 };
+const CHART_FONT = { family: 'Source Sans 3', size: 11 };
 const GRID_COLOR = '#D4E4F7';
 const TICK_COLOR = '#5A7FA8';
 
@@ -223,7 +223,7 @@ export default function Inicio({ onNavigate }) {
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { grid: { color: GRID_COLOR }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
-                        y: { grid: { display: false }, ticks: { font: { family: 'Plus Jakarta Sans', size: 10 }, color: TICK_COLOR } },
+                        y: { grid: { display: false }, ticks: { font: { family: 'Source Sans 3', size: 10 }, color: TICK_COLOR } },
                     },
                 },
             });
@@ -282,7 +282,7 @@ export default function Inicio({ onNavigate }) {
                                 onClick={() => onNavigate?.('productos', 'new-pecosa')}
                                 className="px-3 sm:px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-xs sm:text-sm hover:bg-white/30 transition-all border border-white/20"
                             >
-                                <i className="fas fa-plus mr-1" />Nueva Pecosa
+                                <i className="fas fa-plus mr-1" />Registrar Pecosa
                             </button>
                             <button
                                 type="button"

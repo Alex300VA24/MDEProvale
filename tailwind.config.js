@@ -11,8 +11,11 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
-                jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
+                // Cuerpo, formularios y tablas: Source Sans 3 (legibilidad institucional).
+                sans: ['"Source Sans 3"', ...defaultTheme.fontFamily.sans],
+                // Títulos, encabezados de sección y de modal: Lexend.
+                heading: ['"Lexend"', '"Source Sans 3"', 'sans-serif'],
+                jakarta: ['"Source Sans 3"', 'sans-serif'],
             },
             colors: {
                 base:  '#EEF4FC',

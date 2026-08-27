@@ -3,6 +3,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==================== Sistema tipográfico institucional ====================
+   Cuerpo, formularios y tablas: Source Sans 3 (legibilidad, uso en gobierno).
+   Títulos y encabezados: Lexend. Ambas familias se cargan auto-alojadas
+   (resources/js/app.jsx en la SPA; public/fonts/* en las vistas Blade). */
+@layer base {
+    body {
+        font-family: 'Source Sans 3', ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+    h1, h2, h3, h4, h5, h6,
+    .font-heading {
+        font-family: 'Lexend', 'Source Sans 3', sans-serif;
+        letter-spacing: -0.01em;
+    }
+}
+
 /* ==================== Pantalla de carga (components/loading-screen.blade.php) ====================
    Antes había 3 copias divergentes (main.blade.php, auth/login.blade.php,
    layouts/guest.blade.php). Ahora es un solo componente Blade con un solo
@@ -123,11 +140,17 @@
 @layer components {
     .btn-primary {
         @apply bg-gradient-to-r from-sky to-blue text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
-        box-shadow: 0 2px 8px rgba(74, 144, 217, 0.25);
+        box-shadow: 0 1px 2px rgba(15, 30, 48, 0.12), 0 2px 8px rgba(30, 87, 153, 0.20);
     }
     .btn-primary:hover {
         @apply -translate-y-px;
-        box-shadow: 0 4px 12px rgba(74, 144, 217, 0.35);
+        box-shadow: 0 2px 4px rgba(15, 30, 48, 0.14), 0 6px 16px rgba(30, 87, 153, 0.28);
+    }
+    .btn-primary:active,
+    .btn-secondary:active,
+    .btn-danger:active {
+        transform: translateY(0) scale(0.985);
+        box-shadow: 0 1px 2px rgba(15, 30, 48, 0.16);
     }
 
     .btn-secondary {
@@ -192,13 +215,13 @@
 
     /* Tabla de datos */
     .data-table th {
-        @apply bg-base text-[11px] font-bold uppercase tracking-wider text-slate;
+        @apply bg-base text-[11px] font-heading font-semibold uppercase tracking-wider text-slate border-b-2 border-mist;
     }
     .data-table tr {
         @apply border-b border-mist transition-colors duration-200;
     }
-    .data-table tr:hover {
-        @apply bg-base;
+    .data-table tbody tr:hover {
+        @apply bg-blue-light;
     }
     .data-table td {
         @apply text-sm text-navy px-4 py-3;
@@ -247,10 +270,47 @@
         @apply relative mx-auto w-full max-w-full sm:max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4;
     }
     .modal-card {
-        @apply bg-white rounded-2xl shadow-2xl border-2 border-wheat overflow-hidden;
+        @apply bg-white rounded-2xl shadow-2xl border border-mist overflow-hidden;
     }
+    /* Encabezado de modal: barra de acento institucional + separación clara
+       respecto del contenido (fondo tenue y borde inferior marcado). */
     .modal-header {
-        @apply flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat;
+        @apply relative flex items-center justify-between gap-3 px-5 sm:px-7 py-4 sm:py-5 border-b border-mist;
+        background: linear-gradient(180deg, #F4F8FD 0%, #FFFFFF 100%);
+    }
+    /* Filete superior azul institucional (motivo de documento oficial). */
+    .modal-header::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 2px;
+        background: #1E5799;
+    }
+    .modal-header h3 {
+        @apply font-heading;
+    }
+
+    /* Grupo de campos en modales de detalle: título de sección con acento y
+       borde, contenido claramente subordinado. Usado por Components/DetailModal. */
+    .detail-group + .detail-group {
+        @apply mt-6 pt-6 border-t border-mist;
+    }
+    .detail-group-title {
+        @apply flex items-center gap-2 text-[13px] font-heading font-semibold uppercase tracking-wide text-blue mb-3;
+    }
+    .detail-group-title::before {
+        content: '';
+        width: 3px;
+        height: 0.95em;
+        border-radius: 2px;
+        background: #1E5799;
+        flex-shrink: 0;
+    }
+    .detail-label {
+        @apply block text-[11px] font-semibold uppercase tracking-wider text-slate;
+    }
+    .detail-value {
+        @apply mt-0.5 text-sm text-charcoal font-medium leading-snug;
     }
     .modal-close-btn {
         @apply w-11 h-11 rounded-xl bg-clay-light border-2 border-transparent flex items-center justify-center text-clay transition-all duration-200 flex-shrink-0;
@@ -344,7 +404,7 @@
     border-radius: 0.75rem;
     overflow: hidden;
     box-shadow: 0 10px 25px -5px rgba(45, 55, 72, 0.12), 0 4px 6px -2px rgba(45, 55, 72, 0.05);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Source Sans 3', sans-serif;
 }
 .select2-search--dropdown {
     padding: 0.5rem;

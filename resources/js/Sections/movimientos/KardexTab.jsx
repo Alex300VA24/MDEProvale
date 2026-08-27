@@ -65,7 +65,7 @@ function IngresoFormModal({ options, onClose, onSaved }) {
     };
 
     return (
-        <Modal open onClose={onClose} title="Nuevo Ingreso" icon="fa-plus-circle" iconClass="text-leaf" maxWidth="sm:max-w-2xl">
+        <Modal open onClose={onClose} title="Registrar Ingreso" icon="fa-plus-circle" iconClass="text-leaf" maxWidth="sm:max-w-2xl">
             <form onSubmit={handleSubmit} className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div className="sm:col-span-2">
@@ -82,7 +82,7 @@ function IngresoFormModal({ options, onClose, onSaved }) {
                         <input type="number" step="0.01" min="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} className={inputCls} required />
                     </div>
                     <div>
-                        <label className={labelCls}>P. Unitario (S/) *</label>
+                        <label className={labelCls}>Precio unitario (S/) *</label>
                         <input type="number" step="0.01" min="0" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className={inputCls} required />
                     </div>
                     <div>
@@ -105,7 +105,7 @@ function IngresoFormModal({ options, onClose, onSaved }) {
                 <div className="flex gap-3">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
-                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> Guardar Ingreso
+                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> Guardar
                     </button>
                 </div>
             </form>
@@ -165,7 +165,7 @@ function EditTransactionModal({ transaction, onClose, onSaved }) {
                         <input type="number" step="0.01" min="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} className={inputCls} required />
                     </div>
                     <div>
-                        <label className={labelCls}>P. Unitario (S/) *</label>
+                        <label className={labelCls}>Precio unitario (S/) *</label>
                         <input type="number" step="0.01" min="0" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className={inputCls} required />
                     </div>
                     <div>
@@ -192,7 +192,7 @@ function EditTransactionModal({ transaction, onClose, onSaved }) {
                 <div className="flex gap-3">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
-                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} /> Guardar Cambios
+                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-rotate'} mr-2`} /> Actualizar
                     </button>
                 </div>
             </form>
@@ -339,7 +339,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                                 <th className="px-3 sm:px-4 py-3 text-left">Tipo</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Producto</th>
                                 <th className="px-3 sm:px-4 py-3 text-right">Cantidad</th>
-                                <th className="px-3 sm:px-4 py-3 text-right">P. Unit.</th>
+                                <th className="px-3 sm:px-4 py-3 text-right">Precio unitario</th>
                                 <th className="px-3 sm:px-4 py-3 text-right">Total</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Documento</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Período</th>

@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
@@ -158,7 +159,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Pecosa' : 'Nueva Pecosa'}
+            title={mode === 'edit' ? 'Editar Pecosa' : 'Registrar Pecosa'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-plus-circle'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
             maxWidth="sm:max-w-4xl"
@@ -269,7 +270,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                                         />
                                     </div>
                                     <div>
-                                        <label className={labelCls}>P. Unitario (S/)</label>
+                                        <label className={labelCls}>Precio unitario (S/)</label>
                                         <input type="number" step="0.01" min="0" value={d.unit_price} onChange={(e) => updateDetail(i, 'unit_price', e.target.value)} className={inputCls} />
                                     </div>
                                 </div>
@@ -281,8 +282,8 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                 <div className="flex gap-3 mt-10">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">Cancelar</button>
                     <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
-                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
-                        {mode === 'edit' ? 'Actualizar Pecosa' : 'Guardar Pecosa'}
+                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : mode === 'edit' ? 'fa-rotate' : 'fa-save'} mr-2`} />
+                        {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
                 </div>
             </form>
@@ -294,67 +295,44 @@ function PecosaViewModal({ pecosa, onClose }) {
     if (!pecosa) return null;
     const details = pecosa.detail_pecosas || [];
     return (
-        <Modal open onClose={onClose} title="Detalle de Pecosa" icon="fa-file-alt" iconClass="text-leaf" maxWidth="sm:max-w-lg">
-            <div className="p-4 sm:p-6 space-y-5 text-sm">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Número</span>
-                        <p className="text-base font-bold text-charcoal">{pecosa.pecosa_number || '-'}</p>
-                    </div>
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Estado</span>
-                        <p>
-                            <span className={`badge ${pecosa.state?.abbreviation === 'VIG' ? 'badge-current' : pecosa.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
-                                {pecosa.state?.title || 'N/A'}
-                            </span>
-                        </p>
-                    </div>
-                </div>
-                <div>
-                    <span className="text-xs font-bold text-slate-600 uppercase">Club de Madres</span>
-                    <p>{pecosa.association_name || pecosa.association?.name || '-'}</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Fecha Entrega</span>
-                        <p>{fmtDate(pecosa.delivery_date) || '-'}</p>
-                    </div>
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Presidenta</span>
-                        <p>{pecosa.managing_partner_name || pecosa.president_name || ''}</p>
-                    </div>
-                </div>
-                {pecosa.observation && (
-                    <div>
-                        <span className="text-xs font-bold text-slate-600 uppercase">Observación</span>
-                        <p className="text-earth">{pecosa.observation}</p>
-                    </div>
-                )}
-                <div>
-                    <span className="text-xs font-bold text-slate-600 uppercase">Productos</span>
-                    <p className="font-bold text-leaf text-lg">{details.length}</p>
-                </div>
-                {details.length > 0 && (
-                    <div className="mt-3">
-                        <span className="text-xs font-bold text-slate-600 uppercase">Lista de Productos</span>
-                        <div className="mt-2 space-y-2">
-                            {details.map((d) => (
-                                <div key={d.id} className="p-3 bg-gray-50 rounded-lg border border-wheat flex items-center justify-between">
-                                    <div>
-                                        <p className="text-base font-bold text-charcoal">{d.product_name || d.product?.title || `Producto #${d.detail_product_id}`}</p>
-                                        <p className="text-xs text-earth">{d.product_abbreviation || d.product?.abbreviation || ''}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-bold">{Number(d.quantity)}</p>
-                                        <p className="text-xs text-earth">S/ {Number(d.unit_price || 0).toFixed(2)}</p>
-                                    </div>
+        <DetailModal open onClose={onClose} title="Detalle de la pecosa" icon="fa-file-lines" maxWidth="sm:max-w-lg">
+            <DetailGroup>
+                <FieldGrid>
+                    <Field label="Número" value={pecosa.pecosa_number} />
+                    <Field label="Estado">
+                        <span className={`badge ${pecosa.state?.abbreviation === 'VIG' ? 'badge-current' : pecosa.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
+                            {pecosa.state?.title || 'N/A'}
+                        </span>
+                    </Field>
+                    <Field label="Club de madres" value={pecosa.association_name || pecosa.association?.name} wide />
+                    <Field label="Fecha de entrega" value={fmtDate(pecosa.delivery_date)} />
+                    <Field label="Presidenta" value={pecosa.managing_partner_name || pecosa.president_name} />
+                    <Field label="Productos">
+                        <span className="text-lg font-bold text-leaf">{details.length}</span>
+                    </Field>
+                </FieldGrid>
+                {pecosa.observation && <Field label="Observación" value={pecosa.observation} wide />}
+            </DetailGroup>
+
+            {details.length > 0 && (
+                <DetailGroup title="Lista de productos" icon="fa-boxes-stacked">
+                    <div className="space-y-2">
+                        {details.map((d) => (
+                            <div key={d.id} className="flex items-center justify-between rounded-xl border border-mist bg-base/60 p-3">
+                                <div>
+                                    <p className="text-sm font-bold text-charcoal">{d.product_name || d.product?.title || `Producto #${d.detail_product_id}`}</p>
+                                    <p className="text-xs text-earth">{d.product_abbreviation || d.product?.abbreviation || ''}</p>
                                 </div>
-                            ))}
-                        </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-bold text-charcoal">{Number(d.quantity)}</p>
+                                    <p className="text-xs text-earth">S/ {Number(d.unit_price || 0).toFixed(2)}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                )}
-            </div>
-        </Modal>
+                </DetailGroup>
+            )}
+        </DetailModal>
     );
 }
 

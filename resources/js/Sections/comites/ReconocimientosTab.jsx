@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import ResolucionExternaModal from './ResolucionExternaModal';
@@ -62,7 +63,7 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Resolución' : 'Nueva Resolución'}
+            title={mode === 'edit' ? 'Editar Resolución' : 'Registrar Resolución'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-plus-circle'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
             maxWidth="sm:max-w-2xl"
@@ -101,44 +102,34 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
 function ReconocimientoViewModal({ resolution, onClose }) {
     if (!resolution) return null;
     return (
-        <Modal open onClose={onClose} title="Detalle de la Resolución" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-lg">
-            <div className="p-6 grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Documento</p>
-                    <p className="text-base font-bold text-charcoal">{resolution.document || '-'}</p>
-                </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">F. Documento</p>
-                    <p className="text-base font-bold text-charcoal">{fmtDateTime(resolution.date_document)}</p>
-                </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Estado</p>
-                    <span className={`badge ${stateBadge(resolution.state).cls}`}>{stateBadge(resolution.state).label}</span>
-                </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Inicio</p>
-                    <p className="text-base font-bold text-charcoal">{fmtDate(resolution.date_start)}</p>
-                </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Fin</p>
-                    <p className="text-base font-bold text-charcoal">{fmtDate(resolution.date_end)}</p>
-                </div>
-                <div className="col-span-2">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Comités asociados</p>
-                    {(resolution.associations || []).length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                            {resolution.associations.map((association) => (
-                                <span key={association.id} className="badge badge-unknown">
-                                    {association.code ? `${association.code} · ` : ''}{association.name}
-                                </span>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-earth">Sin comités asociados</p>
-                    )}
-                </div>
-            </div>
-        </Modal>
+        <DetailModal open onClose={onClose} title="Detalle de la resolución" icon="fa-file-contract" maxWidth="sm:max-w-lg">
+            <DetailGroup>
+                <Field label="Documento" wide>
+                    <span className="text-base font-bold text-charcoal">{resolution.document || '—'}</span>
+                </Field>
+                <FieldGrid>
+                    <Field label="Fecha de documento" value={fmtDateTime(resolution.date_document)} />
+                    <Field label="Estado">
+                        <span className={`badge ${stateBadge(resolution.state).cls}`}>{stateBadge(resolution.state).label}</span>
+                    </Field>
+                    <Field label="Fecha de inicio" value={fmtDate(resolution.date_start)} />
+                    <Field label="Fecha de fin" value={fmtDate(resolution.date_end)} />
+                </FieldGrid>
+            </DetailGroup>
+            <DetailGroup title="Comités asociados" icon="fa-people-roof">
+                {(resolution.associations || []).length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                        {resolution.associations.map((association) => (
+                            <span key={association.id} className="badge badge-unknown">
+                                {association.code ? `${association.code} · ` : ''}{association.name}
+                            </span>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-earth">Sin comités asociados</p>
+                )}
+            </DetailGroup>
+        </DetailModal>
     );
 }
 
@@ -290,7 +281,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                         <thead>
                             <tr>
                                 <th className="px-3 sm:px-4 py-3 text-left">Documento</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">F. Documento</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Fecha de documento</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Comités</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>

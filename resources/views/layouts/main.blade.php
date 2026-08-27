@@ -7,11 +7,14 @@
     <title>@yield('title', 'PROVALE - Sistema de Gestión Social')</title>
     <link rel="icon" href="{{ asset('img/logo-provale-sin-fondo.png') }}" type="image/x-icon">
     {{-- Assets locales compilados (sin CDN) --}}
-    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/400.css') }}">
-    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/500.css') }}">
-    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/600.css') }}">
-    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/700.css') }}">
-    <link rel="stylesheet" href="{{ asset('fonts/plus-jakarta-sans/800.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/source-sans-3/400.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/source-sans-3/500.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/source-sans-3/600.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/source-sans-3/700.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/lexend/400.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/lexend/500.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/lexend/600.css') }}">
+    <link rel="stylesheet" href="{{ asset('fonts/lexend/700.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/select2.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
@@ -25,9 +28,14 @@
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Source Sans 3', sans-serif;
             background: #EEF4FC;
             color: #1A2E4A;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Lexend', 'Source Sans 3', sans-serif;
+            letter-spacing: -0.01em;
         }
 
         ::-webkit-scrollbar {

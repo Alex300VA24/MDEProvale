@@ -71,7 +71,7 @@ export default function ResponsablesRaciones() {
                             onClick={() => racionesRef.current?.openCreate()}
                             className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                         >
-                            <i className="fas fa-plus" /> Nueva Ración
+                            <i className="fas fa-plus" /> Registrar Ración
                         </button>
                     )}
                 </div>

@@ -112,25 +112,22 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3 mt-6">
-                            <button type="button" onClick={onClose} disabled={!!pdfLoading} className="btn-secondary sm:flex-1">
-                                Cerrar
-                            </button>
                             <button
                                 type="button"
                                 onClick={() => loadPdf('descargar')}
                                 disabled={!!pdfLoading}
-                                className="btn-secondary sm:flex-1 disabled:opacity-60"
+                                className="btn-secondary flex-1 text-xs sm:text-sm disabled:opacity-60"
                             >
-                                <i className={`fas ${pdfLoading === 'descargar' ? 'fa-spinner fa-spin' : 'fa-download'} mr-2`} />
+                                <i className={`fas ${pdfLoading === 'descargar' ? 'fa-spinner fa-spin' : 'fa-download'} mr-2`} aria-hidden="true" />
                                 Descargar PDF
                             </button>
                             <button
                                 type="button"
                                 onClick={() => loadPdf('preview')}
                                 disabled={!!pdfLoading}
-                                className="btn-primary sm:flex-1 disabled:opacity-60"
+                                className="btn-primary flex-1 text-xs sm:text-sm disabled:opacity-60"
                             >
-                                <i className={`fas ${pdfLoading === 'preview' ? 'fa-spinner fa-spin' : 'fa-eye'} mr-2`} />
+                                <i className={`fas ${pdfLoading === 'preview' ? 'fa-spinner fa-spin' : 'fa-eye'} mr-2`} aria-hidden="true" />
                                 Ver PDF
                             </button>
                         </div>

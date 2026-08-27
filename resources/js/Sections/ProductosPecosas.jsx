@@ -117,7 +117,7 @@ export default function ProductosPecosas({ initialAction }) {
                                     onClick={() => pecosasRef.current?.openCreate()}
                                     className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                                 >
-                                    <i className="fas fa-plus" /> Nueva Pecosa
+                                    <i className="fas fa-plus" /> Registrar Pecosa
                                 </button>
                             )}
                             {can.productos.view && tab === 'productos' && can.productos.create && (
@@ -126,7 +126,7 @@ export default function ProductosPecosas({ initialAction }) {
                                     onClick={() => productosRef.current?.openCreate()}
                                     className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                                 >
-                                    <i className="fas fa-plus" /> Nuevo Producto
+                                    <i className="fas fa-plus" /> Registrar Producto
                                 </button>
                             )}
                         </div>

@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
@@ -77,7 +78,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Comité' : 'Nuevo Comité'}
+            title={mode === 'edit' ? 'Editar Comité' : 'Registrar Comité'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-plus-circle'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
             maxWidth="sm:max-w-3xl"
@@ -163,80 +164,52 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
 function ClubViewModal({ club, onClose }) {
     if (!club) return null;
     return (
-        <Modal open onClose={onClose} title="Detalle del Comité" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-2xl">
-            <div className="p-6">
-                <div className="grid grid-cols-2 gap-6">
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Código</p>
-                        <p className="text-sm font-semibold text-charcoal">{club.code || '-'}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre</p>
-                        <p className="text-sm font-semibold text-charcoal">{club.name || '-'}</p>
-                    </div>
-                    <div className="col-span-2">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Razón Social</p>
-                        <p className="text-sm font-semibold text-charcoal">{club.company_name || '-'}</p>
-                    </div>
-                    <div className="col-span-2">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Dirección</p>
-                        <p className="text-sm font-semibold text-charcoal">{club.address || '-'}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Teléfono</p>
-                        <p className="text-sm font-semibold text-charcoal">{club.phone || '-'}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Presidenta</p>
-                        <p className="text-sm font-semibold text-charcoal">{club.president_name || 'Sin asignar'}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Zona / Sector</p>
-                        <p className="text-sm font-semibold text-charcoal">
-                            {club.place_sector?.place?.title} - {club.place_sector?.sector?.title}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo de Local</p>
-                        <p className="text-sm font-semibold text-charcoal">{club.type_premises?.title || '-'}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Estado</p>
+        <DetailModal open onClose={onClose} title="Detalle del comité" icon="fa-people-roof" maxWidth="sm:max-w-2xl">
+            <DetailGroup>
+                <FieldGrid>
+                    <Field label="Código" value={club.code} />
+                    <Field label="Nombre" value={club.name} />
+                    <Field label="Razón social" value={club.company_name} wide />
+                    <Field label="Dirección" value={club.address} wide />
+                    <Field label="Teléfono" value={club.phone} />
+                    <Field label="Presidenta" value={club.president_name || 'Sin asignar'} />
+                    <Field label="Zona / Sector" value={[club.place_sector?.place?.title, club.place_sector?.sector?.title].filter(Boolean).join(' - ')} />
+                    <Field label="Tipo de local" value={club.type_premises?.title} />
+                    <Field label="Estado">
                         <span className={`badge ${stateBadge(club.state).cls}`}>{stateBadge(club.state).label}</span>
-                    </div>
-                </div>
+                    </Field>
+                </FieldGrid>
+            </DetailGroup>
 
-                <div className="mt-5">
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Resoluciones del Comité</p>
-                    {(club.all_resolutions || []).length === 0 ? (
-                        <p className="text-sm text-earth">Sin resoluciones registradas.</p>
-                    ) : (
-                        <div className="overflow-x-auto border-2 border-wheat rounded-xl">
-                            <table className="w-full text-xs sm:text-sm">
-                                <thead className="bg-cream">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-bold text-earth">Documento</th>
-                                        <th className="px-3 py-2 text-left font-bold text-earth">F. Documento</th>
-                                        <th className="px-3 py-2 text-left font-bold text-earth">Inicio</th>
-                                        <th className="px-3 py-2 text-left font-bold text-earth">Fin</th>
+            <DetailGroup title="Resoluciones del comité" icon="fa-file-contract">
+                {(club.all_resolutions || []).length === 0 ? (
+                    <p className="text-sm text-earth">Sin resoluciones registradas.</p>
+                ) : (
+                    <div className="overflow-x-auto border border-mist rounded-xl">
+                        <table className="w-full text-xs sm:text-sm">
+                            <thead className="bg-base">
+                                <tr>
+                                    <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Documento</th>
+                                    <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Fecha de documento</th>
+                                    <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Fecha de inicio</th>
+                                    <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Fecha de fin</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-mist">
+                                {(club.all_resolutions || []).map((r) => (
+                                    <tr key={r.id} className="hover:bg-blue-light">
+                                        <td className="px-3 py-2 font-semibold text-charcoal">{r.document || '—'}</td>
+                                        <td className="px-3 py-2 text-charcoal">{fmtDateTime(r.date_document)}</td>
+                                        <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_start)}</td>
+                                        <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_end)}</td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-wheat">
-                                    {(club.all_resolutions || []).map((r) => (
-                                        <tr key={r.id} className="hover:bg-mist/50">
-                                            <td className="px-3 py-2 font-semibold">{r.document || '-'}</td>
-                                            <td className="px-3 py-2">{fmtDateTime(r.date_document)}</td>
-                                            <td className="px-3 py-2">{fmtDate(r.date_start)}</td>
-                                            <td className="px-3 py-2">{fmtDate(r.date_end)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </Modal>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </DetailGroup>
+        </DetailModal>
     );
 }
 

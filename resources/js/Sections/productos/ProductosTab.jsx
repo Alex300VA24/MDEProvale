@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
@@ -83,7 +84,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Producto' : 'Nuevo Producto'}
+            title={mode === 'edit' ? 'Editar Producto' : 'Registrar Producto'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-plus-circle'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
             maxWidth="sm:max-w-2xl"
@@ -134,28 +135,20 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
 function ProductViewModal({ product, onClose }) {
     if (!product) return null;
     return (
-        <Modal open onClose={onClose} title="Detalle del Producto" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-lg">
-            <div className="p-6 grid grid-cols-2 gap-6">
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre</p>
-                    <p className="text-sm font-semibold text-charcoal">{product.title}</p>
-                </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Abreviatura</p>
-                    <p className="text-sm font-semibold text-charcoal">{product.abbreviation || '-'}</p>
-                </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Unidad de Medida</p>
-                    <p className="text-sm font-semibold text-charcoal">{product.uom?.title || '-'}</p>
-                </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Estado</p>
-                    <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
-                        {product.state?.title || 'Sin estado'}
-                    </span>
-                </div>
-            </div>
-        </Modal>
+        <DetailModal open onClose={onClose} title="Detalle del producto" icon="fa-box" maxWidth="sm:max-w-lg">
+            <DetailGroup>
+                <FieldGrid>
+                    <Field label="Nombre" value={product.title} />
+                    <Field label="Abreviatura" value={product.abbreviation} />
+                    <Field label="Unidad de medida" value={product.uom?.title} />
+                    <Field label="Estado">
+                        <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
+                            {product.state?.title || 'Sin estado'}
+                        </span>
+                    </Field>
+                </FieldGrid>
+            </DetailGroup>
+        </DetailModal>
     );
 }
 
@@ -509,7 +502,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                             <th className="px-4 py-3 text-left font-bold text-earth text-xs uppercase">Producto</th>
                                             <th className="px-4 py-3 text-left font-bold text-earth text-xs uppercase">Período</th>
                                             <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Stock Inicial</th>
-                                            <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Precio Unit.</th>
+                                            <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Precio unitario</th>
                                             <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Total Entrada</th>
                                             <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Stock Usado</th>
                                             <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Stock Actual</th>

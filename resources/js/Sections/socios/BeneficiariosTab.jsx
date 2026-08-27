@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
@@ -87,7 +88,7 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Beneficiario' : 'Nuevo Beneficiario'}
+            title={mode === 'edit' ? 'Editar Beneficiario' : 'Registrar Beneficiario'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-hand-holding-heart'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
             maxWidth="sm:max-w-2xl"
@@ -155,11 +156,11 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label className={labelCls}>F. Inicio Beneficio</label>
+                            <label className={labelCls}>Fecha de inicio del beneficio</label>
                             <input type="date" value={dateBegin} onChange={(e) => setDateBegin(e.target.value)} className={inputCls} />
                         </div>
                         <div>
-                            <label className={labelCls}>F. Fin Beneficio</label>
+                            <label className={labelCls}>Fecha de fin del beneficio</label>
                             <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className={inputCls} />
                         </div>
                     </div>
@@ -215,82 +216,39 @@ function BeneficiarioFormModal({ mode, beneficiario, options, onClose, onSaved }
 function BeneficiarioViewModal({ beneficiario, onClose }) {
     if (!beneficiario) return null;
     const history = beneficiario.histories?.[0] ?? null;
+    const withUnit = (v, unit) => (v == null || v === '' ? '' : `${v} ${unit}`);
     return (
-        <Modal
-            open
-            onClose={onClose}
-            title="Detalle de Beneficiario"
-            icon="fa-hand-holding-heart"
-            iconClass="text-leaf"
-            maxWidth="sm:max-w-lg"
-        >
-            <div className="p-6 space-y-6 text-sm">
-                <div>
-                    <span className={labelCls}>Beneficiario</span>
-                    <p className="text-base font-bold text-charcoal">{personFullName(beneficiario.person)}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <span className={labelCls}>DNI</span>
-                        <p className="font-mono">{beneficiario.person?.dni || '-'}</p>
-                    </div>
-                    <div>
-                        <span className={labelCls}>Parentesco</span>
-                        <p>{beneficiario.relationship?.title || '-'}</p>
-                    </div>
-                </div>
-                <div>
-                    <span className={labelCls}>Socio (Titular)</span>
-                    <p className="font-medium">{beneficiario.partner?.name || '-'}</p>
-                </div>
-                <div>
-                    <span className={labelCls}>Fecha de Nacimiento</span>
-                    <p>{formatDate(beneficiario.person?.birthdate) || '-'}</p>
-                </div>
-
-                <div className="border-t-2 border-wheat pt-4">
-                    <span className={labelCls}>Datos Clínicos</span>
-                    <div className="grid grid-cols-3 gap-4 mt-2">
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">Peso</span>
-                            <p className="font-semibold">{history?.weight ?? '-'} {history?.weight != null ? 'kg' : ''}</p>
-                        </div>
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">Talla</span>
-                            <p className="font-semibold">{history?.height ?? '-'} {history?.height != null ? 'cm' : ''}</p>
-                        </div>
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">HMG</span>
-                            <p className="font-semibold">{history?.hmg ?? '-'} {history?.hmg != null ? 'g/dL' : ''}</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mt-3">
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">F. Inicio Beneficio</span>
-                            <p>{formatDate(history?.date_begin) || '-'}</p>
-                        </div>
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">F. Fin Beneficio</span>
-                            <p>{formatDate(history?.date_end) || '-'}</p>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">Tipo de Beneficio</span>
-                            <p>{history?.type_benefit?.title || '-'}</p>
-                        </div>
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">Estado</span>
-                            <p>{history?.state?.title || '-'}</p>
-                        </div>
-                        <div>
-                            <span className="text-[10px] text-earth uppercase">Motivo Descalif.</span>
-                            <p>{history?.reason_disqualification?.title || 'Ninguno'}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </Modal>
+        <DetailModal open onClose={onClose} title="Detalle del beneficiario" icon="fa-hand-holding-heart" maxWidth="sm:max-w-lg">
+            <DetailGroup>
+                <Field label="Beneficiario" wide>
+                    <span className="text-base font-bold text-charcoal">{personFullName(beneficiario.person)}</span>
+                </Field>
+                <FieldGrid>
+                    <Field label="DNI" value={beneficiario.person?.dni} mono />
+                    <Field label="Parentesco" value={beneficiario.relationship?.title} />
+                    <Field label="Socio titular" value={beneficiario.partner?.name} />
+                    <Field label="Fecha de nacimiento" value={formatDate(beneficiario.person?.birthdate)} />
+                </FieldGrid>
+            </DetailGroup>
+            <DetailGroup title="Datos clínicos" icon="fa-notes-medical">
+                <FieldGrid cols={3}>
+                    <Field label="Peso" value={withUnit(history?.weight, 'kg')} />
+                    <Field label="Talla" value={withUnit(history?.height, 'cm')} />
+                    <Field label="Hemoglobina (HMG)" value={withUnit(history?.hmg, 'g/dL')} />
+                </FieldGrid>
+            </DetailGroup>
+            <DetailGroup title="Beneficio" icon="fa-hand-holding-medical">
+                <FieldGrid>
+                    <Field label="Fecha de inicio del beneficio" value={formatDate(history?.date_begin)} />
+                    <Field label="Fecha de fin del beneficio" value={formatDate(history?.date_end)} />
+                </FieldGrid>
+                <FieldGrid cols={3}>
+                    <Field label="Tipo de beneficio" value={history?.type_benefit?.title} />
+                    <Field label="Estado" value={history?.state?.title} />
+                    <Field label="Motivo de descalificación" value={history?.reason_disqualification?.title || 'Ninguno'} />
+                </FieldGrid>
+            </DetailGroup>
+        </DetailModal>
     );
 }
 

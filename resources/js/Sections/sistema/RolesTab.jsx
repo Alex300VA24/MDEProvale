@@ -85,7 +85,7 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
     };
 
     return (
-        <Modal open onClose={onClose} title={mode === 'edit' ? 'Editar Rol' : 'Nuevo Rol'} icon="fa-user-tag" iconClass="text-leaf" maxWidth="sm:max-w-3xl">
+        <Modal open onClose={onClose} title={mode === 'edit' ? 'Editar Rol' : 'Registrar Rol'} icon="fa-user-tag" iconClass="text-leaf" maxWidth="sm:max-w-3xl">
             <form onSubmit={handleSubmit} className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div>

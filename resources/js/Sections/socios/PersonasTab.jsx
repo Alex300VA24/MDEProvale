@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
@@ -70,7 +71,7 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Persona' : 'Nueva Persona'}
+            title={mode === 'edit' ? 'Editar Persona' : 'Registrar Persona'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-user-plus'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
             maxWidth="sm:max-w-2xl"
@@ -190,49 +191,30 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
 
 function PersonaViewModal({ persona, onClose }) {
     if (!persona) return null;
+    const sector = persona.place_sector
+        ? [persona.place_sector.place_title, persona.place_sector.sector_title].filter(Boolean).join(' - ')
+        : '';
     return (
-        <Modal open onClose={onClose} title="Detalle de Persona" icon="fa-user" iconClass="text-leaf" maxWidth="sm:max-w-md">
-            <div className="p-6 space-y-6 text-sm">
-                <div>
-                    <span className={labelCls}>Nombre Completo</span>
-                    <p className="text-base font-bold text-charcoal">{personFullName(persona)}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <span className={labelCls}>DNI</span>
-                        <p className="font-mono">{persona.dni || '-'}</p>
-                    </div>
-                    <div>
-                        <span className={labelCls}>Género</span>
-                        <p>{persona.gender === 'F' ? 'Femenino' : persona.gender === 'M' ? 'Masculino' : '-'}</p>
-                    </div>
-                    <div>
-                        <span className={labelCls}>Edad</span>
-                        <p>{persona.age_formatted || '-'}</p>
-                    </div>
-                    <div>
-                        <span className={labelCls}>Celular</span>
-                        <p>{persona.phone_number || '-'}</p>
-                    </div>
-                </div>
-                <div>
-                    <span className={labelCls}>Barrio / Sector</span>
-                    <p>
-                        {persona.place_sector
-                            ? [persona.place_sector.place_title, persona.place_sector.sector_title].filter(Boolean).join(' - ')
-                            : '-'}
-                    </p>
-                </div>
-                <div>
-                    <span className={labelCls}>Dirección</span>
-                    <p>{persona.address || '-'}</p>
-                </div>
-                <div>
-                    <span className={labelCls}>Fecha de Nacimiento</span>
-                    <p>{formatDate(persona.birthdate) || '-'}</p>
-                </div>
-            </div>
-        </Modal>
+        <DetailModal open onClose={onClose} title="Detalle de la persona" icon="fa-user" maxWidth="sm:max-w-lg">
+            <DetailGroup>
+                <Field label="Nombre completo" wide>
+                    <span className="text-base font-bold text-charcoal">{personFullName(persona)}</span>
+                </Field>
+                <FieldGrid>
+                    <Field label="DNI" value={persona.dni} mono />
+                    <Field label="Género" value={persona.gender === 'F' ? 'Femenino' : persona.gender === 'M' ? 'Masculino' : ''} />
+                    <Field label="Edad" value={persona.age_formatted} />
+                    <Field label="Celular" value={persona.phone_number} />
+                </FieldGrid>
+            </DetailGroup>
+            <DetailGroup title="Ubicación y contacto" icon="fa-location-dot">
+                <Field label="Barrio / Sector" value={sector} wide />
+                <Field label="Dirección" value={persona.address} wide />
+            </DetailGroup>
+            <DetailGroup title="Datos personales" icon="fa-id-card">
+                <Field label="Fecha de nacimiento" value={formatDate(persona.birthdate)} />
+            </DetailGroup>
+        </DetailModal>
     );
 }
 

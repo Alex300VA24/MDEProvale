@@ -1,9 +1,14 @@
 import '../css/app.css';
-import '@fontsource/plus-jakarta-sans/400.css';
-import '@fontsource/plus-jakarta-sans/500.css';
-import '@fontsource/plus-jakarta-sans/600.css';
-import '@fontsource/plus-jakarta-sans/700.css';
-import '@fontsource/plus-jakarta-sans/800.css';
+// Sistema tipográfico institucional: Source Sans 3 para cuerpo/datos (alta
+// legibilidad, usado en gobierno/salud/finanzas) y Lexend para títulos.
+import '@fontsource/source-sans-3/400.css';
+import '@fontsource/source-sans-3/500.css';
+import '@fontsource/source-sans-3/600.css';
+import '@fontsource/source-sans-3/700.css';
+import '@fontsource/lexend/400.css';
+import '@fontsource/lexend/500.css';
+import '@fontsource/lexend/600.css';
+import '@fontsource/lexend/700.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import { createRoot } from 'react-dom/client';

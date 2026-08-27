@@ -33,3 +33,21 @@ yarn-error.log
 .impeccable/
 .kiro/
 .opencode/
+.codex_tmp/
+.windsurf/
+
+# Archivos generados / dumps / temporales que no van al repo
+/repomix-output.md
+/skills-lock.json
+/skills/
+/tmp/
+/temp/
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.log
+*.sql
+*.sqlite
+!database/*.sqlite.example
