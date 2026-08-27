@@ -240,7 +240,7 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <nav id="sidebar-navigation" className="px-3 py-4 overflow-y-auto overflow-x-hidden flex flex-col" style={{ height: 'calc(100% - 88px)' }}>
+                    <nav id="sidebar-navigation" className="px-3 py-4 overflow-y-auto overflow-x-hidden flex flex-col scrollbar-thin" style={{ height: 'calc(100% - 88px)' }}>
                         <div className="flex-1">
                             {navItems.map((item) => (
                                 <button

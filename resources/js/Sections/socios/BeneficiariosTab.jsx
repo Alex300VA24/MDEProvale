@@ -224,7 +224,7 @@ function BeneficiarioViewModal({ beneficiario, onClose }) {
             iconClass="text-leaf"
             maxWidth="sm:max-w-lg"
         >
-            <div className="p-6 space-y-4 text-sm">
+            <div className="p-6 space-y-6 text-sm">
                 <div>
                     <span className={labelCls}>Beneficiario</span>
                     <p className="text-base font-bold text-charcoal">{personFullName(beneficiario.person)}</p>

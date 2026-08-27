@@ -50,21 +50,20 @@ function dateValue(d) {
 function ProductFormModal({ mode, product, options, onClose, onSaved }) {
     const toast = useToast();
     const [title, setTitle] = useState(mode === 'edit' && product ? product.title : '');
-    const [code, setCode] = useState(mode === 'edit' && product ? product.code : '');
     const [abbreviation, setAbbreviation] = useState(mode === 'edit' && product ? product.abbreviation : '');
     const [uomId, setUomId] = useState(mode === 'edit' && product ? product.uom_id : '');
-    const [stateId, setStateId] = useState(mode === 'edit' && product ? product.state_id : '');
+    const [stateId, setStateId] = useState(mode === 'edit' && product ? product.state_id : ((options.states || []).find((s) => s.abbreviation === 'ACT')?.id ?? ''));
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!title || !code || !uomId || !stateId) {
+        if (!title || !uomId || !stateId) {
             toast.error('Complete los campos obligatorios del producto.');
             return;
         }
         setSubmitting(true);
         try {
-            const payload = { title, code, abbreviation, uom_id: uomId, state_id: stateId };
+            const payload = { title, abbreviation, uom_id: uomId, state_id: stateId };
             if (mode === 'edit') {
                 await http.put(`${BASE}/products/${product.id}`, payload);
                 toast.success('Producto actualizado correctamente.');
@@ -96,10 +95,6 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                         <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} required />
                     </div>
                     <div>
-                        <label className={labelCls}>Código *</label>
-                        <input type="text" value={code} onChange={(e) => setCode(e.target.value)} className={inputCls} required />
-                    </div>
-                    <div>
                         <label className={labelCls}>Abreviatura</label>
                         <input type="text" value={abbreviation} onChange={(e) => setAbbreviation(e.target.value)} className={inputCls} />
                     </div>
@@ -112,6 +107,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                             ))}
                         </select>
                     </div>
+                    {mode === 'edit' && (
                     <div>
                         <label className={labelCls}>Estado *</label>
                         <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
@@ -121,6 +117,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                             ))}
                         </select>
                     </div>
+                    )}
                 </div>
                 <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
@@ -138,21 +135,21 @@ function ProductViewModal({ product, onClose }) {
     if (!product) return null;
     return (
         <Modal open onClose={onClose} title="Detalle del Producto" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-lg">
-            <div className="p-6 grid grid-cols-2 gap-4">
+            <div className="p-6 grid grid-cols-2 gap-6">
                 <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nombre</p>
-                    <p className="text-base font-bold text-charcoal">{product.title}</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre</p>
+                    <p className="text-sm font-semibold text-charcoal">{product.title}</p>
                 </div>
                 <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Abreviatura</p>
-                    <p className="text-base font-bold text-charcoal">{product.abbreviation || '-'}</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Abreviatura</p>
+                    <p className="text-sm font-semibold text-charcoal">{product.abbreviation || '-'}</p>
                 </div>
                 <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Unidad de Medida</p>
-                    <p className="text-base font-bold text-charcoal">{product.uom?.title || '-'}</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Unidad de Medida</p>
+                    <p className="text-sm font-semibold text-charcoal">{product.uom?.title || '-'}</p>
                 </div>
                 <div>
-                    <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Estado</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Estado</p>
                     <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
                         {product.state?.title || 'Sin estado'}
                     </span>
@@ -345,11 +342,12 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
 
             {data && detData && (
                 <div className="overflow-x-auto -mx-4 sm:mx-0">
-                    <table className="data-table w-full text-xs sm:text-sm min-w-[520px]">
+                    <table className="data-table w-full text-xs sm:text-sm min-w-[600px]">
                         <thead>
                             <tr>
                                 <th className="px-3 sm:px-4 py-3 text-left">Nombre</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Abreviatura</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Unidad</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
@@ -357,7 +355,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         <tbody>
                             {data.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4}>
+                                    <td colSpan={5}>
                                         <div className="empty-state">
                                             <i className="fas fa-box" />
                                             <p>No hay productos registrados</p>
@@ -369,6 +367,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                     <tr key={product.id} className="row-enter">
                                         <td className="px-3 sm:px-4 py-3 font-semibold">{product.title || 'Sin nombre'}</td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{product.abbreviation || '-'}</td>
+                                        <td className="px-3 sm:px-4 py-3 text-earth">{product.uom?.title || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3">
                                             <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
                                                 {product.state?.title || 'Sin estado'}
@@ -507,14 +506,14 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                     <table className="w-full text-sm">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left font-bold text-earth">Producto</th>
-                                            <th className="px-4 py-3 text-left font-bold text-earth">Período</th>
-                                            <th className="px-4 py-3 text-right font-bold text-earth">Stock Inicial</th>
-                                            <th className="px-4 py-3 text-right font-bold text-earth">Precio Unit.</th>
-                                            <th className="px-4 py-3 text-right font-bold text-earth">Total Entrada</th>
-                                            <th className="px-4 py-3 text-right font-bold text-earth">Stock Usado</th>
-                                            <th className="px-4 py-3 text-right font-bold text-earth">Stock Actual</th>
-                                            <th className="px-4 py-3 text-left font-bold text-earth">Estado</th>
+                                            <th className="px-4 py-3 text-left font-bold text-earth text-xs uppercase">Producto</th>
+                                            <th className="px-4 py-3 text-left font-bold text-earth text-xs uppercase">Período</th>
+                                            <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Stock Inicial</th>
+                                            <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Precio Unit.</th>
+                                            <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Total Entrada</th>
+                                            <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Stock Usado</th>
+                                            <th className="px-4 py-3 text-right font-bold text-earth text-xs uppercase">Stock Actual</th>
+                                            <th className="px-4 py-3 text-left font-bold text-earth text-xs uppercase">Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
@@ -534,26 +533,26 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                                 const totalEntrada = stockInicial * dp.unit_price;
                                                 return (
                                                     <tr key={dp.id} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3">
-                                                            <div className="font-medium text-charcoal">{dp.product_title}</div>
-                                                            <div className="text-xs text-gray-500">{dp.product_abbreviation}</div>
+                                                        <td className="px-4 py-4">
+                                                            <div className="font-semibold text-sm text-charcoal">{dp.product_title}</div>
+                                                            <div className="text-xs text-earth mt-0.5">{dp.product_abbreviation}</div>
                                                         </td>
-                                                        <td className="px-4 py-3">
+                                                        <td className="px-4 py-4">
                                                             <div className="text-xs">
-                                                                <div className="font-medium">Desde: {fmtDate(dp.start_date)}</div>
-                                                                <div className="font-medium">Hasta: {fmtDate(dp.end_date)}</div>
+                                                                <div className="font-medium text-charcoal">Desde: {fmtDate(dp.start_date)}</div>
+                                                                <div className="font-medium text-charcoal">Hasta: {fmtDate(dp.end_date)}</div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 py-3 text-right font-bold">{stockInt(stockInicial)}</td>
-                                                        <td className="px-4 py-3 text-right">S/ {money(dp.unit_price)}</td>
-                                                        <td className="px-4 py-3 text-right">S/ {money(totalEntrada)}</td>
-                                                        <td className="px-4 py-3 text-right text-red-600">
+                                                        <td className="px-4 py-4 text-right font-bold text-sm">{stockInt(stockInicial)}</td>
+                                                        <td className="px-4 py-4 text-right text-sm">S/ {money(dp.unit_price)}</td>
+                                                        <td className="px-4 py-4 text-right text-sm">S/ {money(totalEntrada)}</td>
+                                                        <td className="px-4 py-4 text-right text-sm text-red-600">
                                                             {stockUsado > 0 ? stockInt(stockUsado) : '-'}
                                                         </td>
-                                                        <td className={`px-4 py-3 text-right font-bold ${stockActual > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                        <td className={`px-4 py-4 text-right font-bold text-sm ${stockActual > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                             {stockInt(stockActual)}
                                                         </td>
-                                                        <td className="px-4 py-3">
+                                                        <td className="px-4 py-4">
                                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${status.cls}`}>
                                                                 {status.label}
                                                             </span>

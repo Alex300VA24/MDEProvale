@@ -94,7 +94,12 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                     </div>
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Razón Social *</label>
-                        <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputCls} required maxLength={150} />
+                        <select value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputCls} required>
+                            <option value="">Seleccione...</option>
+                            <option value="CDM">CDM - Club de Madres</option>
+                            <option value="CVL">CVL - Centro de Vaso de Leche</option>
+                            <option value="OSB">OSB - Organización de Sociedades de Base</option>
+                        </select>
                     </div>
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Dirección *</label>
@@ -160,43 +165,43 @@ function ClubViewModal({ club, onClose }) {
     return (
         <Modal open onClose={onClose} title="Detalle del Comité" icon="fa-eye" iconClass="text-[#0284C7]" maxWidth="sm:max-w-2xl">
             <div className="p-6">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-6">
                     <div>
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Código</p>
-                        <p className="text-base font-bold text-charcoal">{club.code || '-'}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Código</p>
+                        <p className="text-sm font-semibold text-charcoal">{club.code || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nombre</p>
-                        <p className="text-base font-bold text-charcoal">{club.name || '-'}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nombre</p>
+                        <p className="text-sm font-semibold text-charcoal">{club.name || '-'}</p>
                     </div>
                     <div className="col-span-2">
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Razón Social</p>
-                        <p className="text-base font-bold text-charcoal">{club.company_name || '-'}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Razón Social</p>
+                        <p className="text-sm font-semibold text-charcoal">{club.company_name || '-'}</p>
                     </div>
                     <div className="col-span-2">
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Dirección</p>
-                        <p className="text-base font-bold text-charcoal">{club.address || '-'}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Dirección</p>
+                        <p className="text-sm font-semibold text-charcoal">{club.address || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Teléfono</p>
-                        <p className="text-base font-bold text-charcoal">{club.phone || '-'}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Teléfono</p>
+                        <p className="text-sm font-semibold text-charcoal">{club.phone || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Presidenta</p>
-                        <p className="text-base font-bold text-charcoal">{club.president_name || 'Sin asignar'}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Presidenta</p>
+                        <p className="text-sm font-semibold text-charcoal">{club.president_name || 'Sin asignar'}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Zona / Sector</p>
-                        <p className="text-base font-bold text-charcoal">
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Zona / Sector</p>
+                        <p className="text-sm font-semibold text-charcoal">
                             {club.place_sector?.place?.title} - {club.place_sector?.sector?.title}
                         </p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Tipo de Local</p>
-                        <p className="text-base font-bold text-charcoal">{club.type_premises?.title || '-'}</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Tipo de Local</p>
+                        <p className="text-sm font-semibold text-charcoal">{club.type_premises?.title || '-'}</p>
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Estado</p>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Estado</p>
                         <span className={`badge ${stateBadge(club.state).cls}`}>{stateBadge(club.state).label}</span>
                     </div>
                 </div>

@@ -96,6 +96,7 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
                         <label className={labelCls}>Descripción</label>
                         <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} className={inputCls} />
                     </div>
+                    {mode === 'edit' && (
                     <div>
                         <label className={labelCls}>Estado</label>
                         <select value={isActive ? '1' : '0'} onChange={(e) => setIsActive(e.target.value === '1')} className={inputCls} disabled={rol?.is_protected}>
@@ -103,6 +104,7 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
                             <option value="0">Inactivo</option>
                         </select>
                     </div>
+                    )}
                 </div>
 
                 <h4 className="font-extrabold text-charcoal text-sm mb-3 flex items-center gap-2">

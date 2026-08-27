@@ -28,7 +28,7 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
     const [associationId, setAssociationId] = useState(mode === 'edit' && partner ? partner.association_id : '');
     const [dateBegin, setDateBegin] = useState(partner?.date_begin || '');
     const [dateEnd, setDateEnd] = useState(partner?.date_end || '');
-    const [stateId, setStateId] = useState(mode === 'edit' && partner ? partner.state_id : '');
+    const [stateId, setStateId] = useState(mode === 'edit' && partner ? partner.state_id : ((options.states || []).find((s) => s.abbreviation === 'ACT')?.id ?? ''));
     const [observations, setObservations] = useState(partner?.observations || '');
     const [submitting, setSubmitting] = useState(false);
 
@@ -103,10 +103,12 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                         <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className={inputCls} />
                     </div>
                 </div>
+                {mode === 'edit' && (
                 <div>
                     <label className={labelCls}>Estado *</label>
                     <Combobox value={stateId} onChange={setStateId} options={stateOptions} placeholder="Seleccionar..." />
                 </div>
+                )}
                 <div>
                     <label className={labelCls}>Observaciones</label>
                     <textarea
@@ -137,7 +139,7 @@ function SocioViewModal({ partner, onClose }) {
 
     return (
         <Modal open onClose={onClose} title="Detalle del Socio" icon="fa-user" iconClass="text-leaf" maxWidth="sm:max-w-4xl">
-            <div className="p-4 sm:p-6 space-y-3 text-sm">
+            <div className="p-4 sm:p-6 space-y-5 text-sm">
                 <div>
                     <span className="text-xs font-bold text-slate-600 uppercase">Nombre</span>
                     <p className="text-base font-bold text-charcoal">{personFullName(partner.person) || 'Sin nombre'}</p>

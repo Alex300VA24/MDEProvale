@@ -16,10 +16,10 @@ function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, 
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg ${iconClass}`}>
                     <i className={`fas ${icon}`} />
                 </div>
-                <span className={`text-[9px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${badgeClass}`}>{badge}</span>
+                <span className={`text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${badgeClass}`}>{badge}</span>
             </div>
-            <div className="text-xl sm:text-3xl font-bold text-navy leading-none mb-1">{value}</div>
-            <div className="text-[10px] sm:text-xs font-medium text-slate">{label}</div>
+            <div className="text-2xl sm:text-4xl font-bold text-navy leading-none mb-1">{value}</div>
+            <div className="text-xs sm:text-sm font-medium text-slate">{label}</div>
         </div>
     );
 }
@@ -34,22 +34,22 @@ function StockCard({ products = [] }) {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg bg-teal-light text-teal">
                     <i className="fas fa-box" aria-hidden="true" />
                 </div>
-                <span className="text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full text-teal bg-teal-light whitespace-nowrap">
+                <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full text-teal bg-teal-light whitespace-nowrap">
                     Último ingreso
                 </span>
             </div>
             <div className="divide-y divide-mist">
                 {products.map((product) => (
                     <div key={product.key} className="flex items-baseline justify-between gap-2 py-1.5 first:pt-0 last:pb-0">
-                        <span className="text-[10px] sm:text-xs font-semibold text-slate truncate">{product.name}</span>
-                        <span className="text-sm sm:text-lg font-extrabold text-navy whitespace-nowrap">
+                        <span className="text-xs sm:text-sm font-semibold text-slate truncate">{product.name}</span>
+                        <span className="text-base sm:text-xl font-extrabold text-navy whitespace-nowrap">
                             {formatStock(product.stock)}
                             {product.unit && <span className="ml-1 text-[8px] sm:text-[10px] font-semibold text-slate">{product.unit}</span>}
                         </span>
                     </div>
                 ))}
             </div>
-            <div className="text-[9px] sm:text-[11px] font-medium text-slate mt-2">Stock disponible</div>
+            <div className="text-[10px] sm:text-xs font-medium text-slate mt-2">Stock disponible</div>
         </div>
     );
 }
@@ -64,7 +64,7 @@ function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
             <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all ${tileClass}`}>
                 <i className={`fas ${icon}`} />
             </div>
-            <span className={`text-[8px] sm:text-[10px] font-semibold text-center leading-tight ${textClass}`}>{label}</span>
+            <span className={`text-[10px] sm:text-xs font-semibold text-center leading-tight ${textClass}`}>{label}</span>
         </button>
     );
 }
@@ -441,7 +441,7 @@ export default function Inicio({ onNavigate }) {
                             <div className="w-7 h-7 sm:w-8 sm:h-8 bg-sky rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
                                 <i className="fas fa-box" />
                             </div>
-                            <span className="text-[8px] sm:text-[10px] font-semibold text-sky text-center leading-tight">Productos</span>
+                            <span className="text-[10px] sm:text-xs font-semibold text-sky text-center leading-tight">Productos</span>
                         </button>
                     </div>
                 </div>

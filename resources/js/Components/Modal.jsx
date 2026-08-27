@@ -53,7 +53,7 @@ export default function Modal({ open, onClose, title, icon, iconClass = 'text-le
             <div className={`modal-panel ${maxWidth}`} onClick={(e) => e.stopPropagation()}>
                 <div ref={dialogRef} className="modal-card modal-enter" role="dialog" aria-modal="true" aria-labelledby={titleId}>
                     <div className="modal-header">
-                        <h3 id={titleId} className="font-extrabold text-charcoal text-lg flex items-center gap-2">
+                        <h3 id={titleId} className="font-extrabold text-charcoal text-xl flex items-center gap-2">
                             {icon && <i className={`fas ${icon} ${iconClass}`} aria-hidden="true" />}
                             {title}
                         </h3>

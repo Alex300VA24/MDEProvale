@@ -14,7 +14,7 @@ const STATUS_LABEL = {
 
 function fmtDateTime(d) {
     if (!d) return '-';
-    return new Date(d).toLocaleString('es-PE');
+    return new Date(d).toLocaleDateString('es-PE');
 }
 
 export default function NotificacionesTab() {

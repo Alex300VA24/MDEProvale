@@ -362,7 +362,7 @@ class ComitesController extends Controller
         abort_if(!$match, 404, 'No se encontró esta resolución en el portal de la Municipalidad.');
 
         try {
-            $pdf = Http::timeout(20)->withHeaders(['User-Agent' => 'Mozilla/5.0'])->get($match['pdf_url']);
+            $pdf = $this->municipalHttpClient(20)->get($match['pdf_url']);
         } catch (ConnectionException $e) {
             abort(502, 'No se pudo conectar con el portal de la Municipalidad.');
         }
@@ -398,8 +398,7 @@ class ComitesController extends Controller
             $mes = $resolution->date_start->month;
 
             try {
-                $response = Http::timeout(15)
-                    ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
+                $response = $this->municipalHttpClient(15)
                     ->get(self::MUNI_SEARCH_URL, [
                         'd' => "{$anio}|{$mes}|{$numero}|" . self::MUNI_TIPO_RESOLUCION_ALCALDIA,
                     ]);
@@ -429,6 +428,17 @@ class ComitesController extends Controller
                 'fecha' => $fechaMatch[1] ?? null,
             ];
         });
+    }
+
+    /**
+     * El portal municipal no entrega una cadena de certificados completa.
+     * La excepción SSL queda limitada a este host externo conocido.
+     */
+    private function municipalHttpClient(int $timeout)
+    {
+        return Http::timeout($timeout)
+            ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
+            ->withoutVerifying();
     }
 
     // ==================== HELPERS ====================

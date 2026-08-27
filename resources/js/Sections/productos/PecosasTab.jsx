@@ -49,7 +49,8 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         mode === 'edit' && pecosa ? pecosa.managing_partner_id ?? pecosa.managing_partner?.id ?? '' : ''
     );
     const [stateId, setStateId] = useState(
-        mode === 'edit' && pecosa ? pecosa.state_id ?? pecosa.state?.id ?? '' : ''
+        mode === 'edit' && pecosa ? pecosa.state_id ?? pecosa.state?.id ?? ''
+        : (options.states || []).find((s) => s.abbreviation === 'ACT')?.id ?? ''
     );
     const [observation, setObservation] = useState(mode === 'edit' && pecosa ? pecosa.observation : '');
     const [details, setDetails] = useState(() =>
@@ -198,6 +199,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                         <label className={labelCls}>Programa Vaso de Leche</label>
                         <input type="text" readOnly value={storekeeperName || ''} className={readonlyCls} />
                     </div>
+                    {mode === 'edit' && (
                     <div>
                         <label className={labelCls}>Estado *</label>
                         <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
@@ -207,6 +209,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                             ))}
                         </select>
                     </div>
+                    )}
                     <div className="md:col-span-2">
                         <label className={labelCls}>Observaciones</label>
                         <textarea rows="2" value={observation} onChange={(e) => setObservation(e.target.value)} placeholder="Detalles adicionales de la entrega..." className={inputCls} />
@@ -292,7 +295,7 @@ function PecosaViewModal({ pecosa, onClose }) {
     const details = pecosa.detail_pecosas || [];
     return (
         <Modal open onClose={onClose} title="Detalle de Pecosa" icon="fa-file-alt" iconClass="text-leaf" maxWidth="sm:max-w-lg">
-            <div className="p-4 sm:p-6 space-y-3 text-sm">
+            <div className="p-4 sm:p-6 space-y-5 text-sm">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <span className="text-xs font-bold text-slate-600 uppercase">Número</span>

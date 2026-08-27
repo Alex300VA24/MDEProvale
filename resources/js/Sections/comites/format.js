@@ -15,11 +15,10 @@ export function fmtDate(d) {
 export function fmtDateTime(dt) {
     if (!dt) return '';
     const value = String(dt).replace('T', ' ');
-    const [datePart, timePart] = value.split(' ');
+    const [datePart] = value.split(' ');
     const [y, m, day] = (datePart || '').split('-');
-    const time = timePart || '';
     if (!y || !m || !day) return value;
-    return `${day}/${m}/${y}${time ? ' ' + time.slice(0, 5) : ''}`;
+    return `${day}/${m}/${y}`;
 }
 
 export function stateBadge(state) {

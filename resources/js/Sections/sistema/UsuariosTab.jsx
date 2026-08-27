@@ -49,7 +49,7 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
     const [dni, setDni] = useState(usuario?.dni || '');
     const [cui, setCui] = useState(usuario?.cui || '0');
     const [rolId, setRolId] = useState(usuario?.rol_id || '');
-    const [stateId, setStateId] = useState(usuario?.state_id || '');
+    const [stateId, setStateId] = useState(mode === 'edit' ? (usuario?.state_id || '') : (estados?.find((s) => s.abbreviation === 'ACT')?.id ?? ''));
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -126,6 +126,7 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
                             ))}
                         </select>
                     </div>
+                    {mode === 'edit' && (
                     <div>
                         <label className={labelCls}>Estado *</label>
                         <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
@@ -135,6 +136,7 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
                             ))}
                         </select>
                     </div>
+                    )}
                     <div>
                         <label className={labelCls}>{mode === 'edit' ? 'Nueva Contraseña' : 'Contraseña *'}</label>
                         <div className="relative">

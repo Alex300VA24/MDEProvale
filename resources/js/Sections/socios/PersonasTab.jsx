@@ -192,7 +192,7 @@ function PersonaViewModal({ persona, onClose }) {
     if (!persona) return null;
     return (
         <Modal open onClose={onClose} title="Detalle de Persona" icon="fa-user" iconClass="text-leaf" maxWidth="sm:max-w-md">
-            <div className="p-6 space-y-4 text-sm">
+            <div className="p-6 space-y-6 text-sm">
                 <div>
                     <span className={labelCls}>Nombre Completo</span>
                     <p className="text-base font-bold text-charcoal">{personFullName(persona)}</p>
