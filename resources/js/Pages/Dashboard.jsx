@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { Head, router, usePage } from '@inertiajs/react';
 import LoadingScreen from '../Components/LoadingScreen';
 import http from '../http';
+import AsistentePROVALE, { ASSISTANT_STORAGE_KEY } from '../Components/AsistentePROVALE';
 
 // Secciones cargadas bajo demanda (React.lazy => chunk separado por sección).
 const Inicio = lazy(() => import('../Sections/Inicio'));
@@ -204,6 +205,7 @@ export default function Dashboard() {
 
     const handleLogout = (e) => {
         e.preventDefault();
+        sessionStorage.removeItem(ASSISTANT_STORAGE_KEY);
         router.post('/logout');
     };
 
@@ -377,6 +379,8 @@ export default function Dashboard() {
             </div>
 
             {panelLoading && <LoadingScreen subtitle="Cargando panel..." />}
+
+            <AsistentePROVALE />
 
             {notifOpen && (
                 <div

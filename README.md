@@ -16,7 +16,7 @@ Aplicación **Laravel 10 + React/Inertia** para la gestión de socios, beneficia
 
 Extensiones PHP necesarias (vienen activas en XAMPP): `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `fileinfo`, `gd`.
 
-> El proyecto **no incluye seeders con datos reales** ni un dump. Migrar desde cero solo crea tablas vacías (sin roles, sin módulos de menú, sin estados, sin usuarios): no podrás iniciar sesión. Para datos reales necesitas un **dump SQL** que te comparta el equipo (ver sección 4.2).
+> El proyecto **no incluye seeders con datos reales** ni un dump. Migrar desde cero solo crea tablas vacías (sin roles, sin módulos de menú, sin estados, sin usuarios): no podrás iniciar sesión. Para datos reales necesitas un **dump SQL** que te comparta el equipo (ver sección 4.3).
 
 ---
 
@@ -71,7 +71,7 @@ Edita `.env` con los datos de tu base de datos:
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=mdeprovale
+DB_DATABASE=dbsysprovale
 DB_USERNAME=root
 DB_PASSWORD=
 ```
@@ -80,25 +80,43 @@ Con XAMPP por defecto: `DB_USERNAME=root` y `DB_PASSWORD=` (vacío).
 
 > `APP_URL`, `SANCTUM_STATEFUL_DOMAINS` y `SESSION_DOMAIN` se ajustan **en la sección 6**, según la opción que elijas. El login usa sesión + cookies (Sanctum SPA); si esos valores no coinciden con la URL real verás errores 419/401 o sesiones que "expiran" solas.
 
-### 4.2 Crear la base de datos e importar datos
+### 4.2 Configurar la API de Groq para el asistente
+
+El Asistente PROVALE necesita una clave de Groq para generar respuestas mediante IA. Cada persona que instale el proyecto debe crear su propia API key desde el panel de Groq, en la sección **API Keys**, y agregarla únicamente al archivo `.env`:
+
+```env
+GROQ_API_KEY=gsk_tu_clave_personal
+GROQ_MODEL=openai/gpt-oss-120b
+GROQ_API_URL=https://api.groq.com/openai/v1/chat/completions
+```
+
+Después de guardar la clave, limpia la configuración:
+
+```bash
+php artisan config:clear
+```
+
+> Nunca publiques la API key, no la agregues a Git y no uses una variable con prefijo `VITE_`. La clave debe permanecer solo en `.env` para que el navegador no pueda verla.
+
+### 4.3 Crear la base de datos e importar datos
 
 En XAMPP Control Panel arranca **MySQL**. Luego crea la base:
 
 ```sql
-CREATE DATABASE mdeprovale CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE dbsysprovale CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-(También sirve desde phpMyAdmin → **Nueva** → nombre `mdeprovale` → cotejamiento `utf8mb4_unicode_ci`.)
+(También sirve desde phpMyAdmin → **Nueva** → nombre `dbsysprovale` → cotejamiento `utf8mb4_unicode_ci`.)
 
 Importa el dump que te compartan:
 
 ```bash
-mysql -u root mdeprovale < dump.sql
+mysql -u root dbsysprovale < dump.sql
 ```
 
-O en phpMyAdmin: selecciona la base `mdeprovale` → pestaña **Importar** → elige el `.sql` → **Continuar**.
+O en phpMyAdmin: selecciona la base `dbsysprovale` → pestaña **Importar** → elige el `.sql` → **Continuar**.
 
-### 4.3 Ejecutar migraciones pendientes
+### 4.4 Ejecutar migraciones pendientes
 
 Siempre, tanto si importaste dump como si no:
 
@@ -277,7 +295,7 @@ php artisan test
 |---------|------------------|
 | Página en blanco / sin estilos / `Vite manifest not found` | Falta `npm install` + (`npm run dev` o `npm run build`). |
 | Los cambios de un `git pull` no se ven | Falta `npm run build` (o no tienes `npm run dev` corriendo). |
-| Menú lateral vacío / no puedo iniciar sesión | Base de datos sin datos: migraste sin importar el dump (sección 4.2). |
+| Menú lateral vacío / no puedo iniciar sesión | Base de datos sin datos: migraste sin importar el dump (sección 4.3). |
 | Error de conexión a BD | Revisa `.env` y que MySQL esté arrancado en XAMPP. |
 | Error 500 / permisos | Permisos de escritura en `storage/` y `bootstrap/cache/`. |
 | Sesión expira sola / error 419 al guardar | `APP_URL`, `SANCTUM_STATEFUL_DOMAINS` y `SESSION_DOMAIN` no coinciden con la URL real (sección 6). |
@@ -297,7 +315,8 @@ composer install
 npm install
 cp .env.example .env
 php artisan key:generate
-# crear BD mdeprovale + importar dump.sql (sección 4.2)
+# crear BD dbsysprovale + importar dump.sql (sección 4.3)
+# crear API key de Groq y agregar GROQ_API_KEY al .env (sección 4.2)
 php artisan migrate
 npm run build            # o `npm run dev` si vas a tocar frontend
 

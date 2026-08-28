@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AssistantChatController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -21,4 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Endpoints JSON del dashboard SPA (ver dashboard-api.php)
     require __DIR__ . '/dashboard-api.php';
+
+    Route::post('/asistente/chat', AssistantChatController::class)
+        ->middleware('throttle:assistant');
 });
