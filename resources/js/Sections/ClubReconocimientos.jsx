@@ -4,7 +4,6 @@ import http from '../http';
 import ComitesTab from './comites/ComitesTab';
 import ReconocimientosTab from './comites/ReconocimientosTab';
 import PadronModal from './comites/PadronModal';
-import MoreActionsMenu from '../Components/MoreActionsMenu';
 
 const BASE = '/api/dashboard/club-madres';
 
@@ -114,6 +113,15 @@ export default function ClubReconocimientos({ initialAction }) {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
+                            {can.comites.view && tab === 'comites' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPadronOpen(true)}
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-clipboard-list" aria-hidden="true" /> Generar Padrón
+                                </button>
+                            )}
                             {can.comites.view && tab === 'comites' && can.comites.create && (
                                 <button
                                     type="button"
@@ -131,11 +139,6 @@ export default function ClubReconocimientos({ initialAction }) {
                                 >
                                     <i className="fas fa-plus" /> Registrar Reconocimiento
                                 </button>
-                            )}
-                            {can.comites.view && (
-                                <MoreActionsMenu
-                                    items={[{ icon: 'fa-file-pdf', label: 'Padrón', onClick: () => setPadronOpen(true) }]}
-                                />
                             )}
                         </div>
                     </div>

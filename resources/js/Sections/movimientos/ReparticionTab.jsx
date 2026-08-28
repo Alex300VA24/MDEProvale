@@ -108,18 +108,20 @@ export default function ReparticionTab() {
             {report && (
                 <>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        <div className="p-4 rounded-xl border-2 border-wheat bg-cream">
-                            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Total Beneficiarios</p>
-                            <p className="text-2xl font-extrabold text-charcoal">{report.total_beneficiarios}</p>
-                        </div>
-                        <div className="p-4 rounded-xl border-2 border-wheat bg-cream">
-                            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Leche (tarros)</p>
-                            <p className="text-2xl font-extrabold text-charcoal">{report.total_leche_litros}</p>
-                        </div>
-                        <div className="p-4 rounded-xl border-2 border-wheat bg-cream">
-                            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Hojuelas (kg)</p>
-                            <p className="text-2xl font-extrabold text-charcoal">{report.total_hojuelas_kg}</p>
-                        </div>
+                        {[
+                            { icon: 'fa-users', bar: 'bg-gradient-to-r from-sky to-blue', chip: 'bg-blue-light text-blue', label: 'Total Beneficiarios', value: report.total_beneficiarios },
+                            { icon: 'fa-mug-hot', bar: 'bg-gradient-to-r from-teal to-[#5ec4b3]', chip: 'bg-teal-light text-teal', label: 'Leche (tarros)', value: report.total_leche_litros },
+                            { icon: 'fa-wheat-awn', bar: 'bg-gradient-to-r from-sun to-[#f0b35b]', chip: 'bg-sun-light text-[#D97706]', label: 'Hojuelas (kg)', value: report.total_hojuelas_kg },
+                        ].map((card) => (
+                            <div key={card.label} className="stat-card bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
+                                <div className={`absolute top-0 left-0 right-0 h-1 ${card.bar}`} />
+                                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg mb-3 sm:mb-4 ${card.chip}`}>
+                                    <i className={`fas ${card.icon}`} aria-hidden="true" />
+                                </div>
+                                <div className="text-2xl sm:text-4xl font-bold text-navy leading-none mb-1">{card.value}</div>
+                                <div className="text-xs sm:text-sm font-medium text-slate">{card.label}</div>
+                            </div>
+                        ))}
                     </div>
 
                     <div className="overflow-x-auto -mx-4 sm:mx-0">

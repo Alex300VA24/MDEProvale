@@ -847,6 +847,10 @@
 .assistant-answer-bullet i { width: 1.2rem; height: 1.2rem; margin-top: 0.1rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; color: #0E8A7A; background: #DDF4EF; font-size: 0.55rem; }
 .assistant-answer-note { color: #53677D; font-size: 0.77rem; line-height: 1.45; }
 .assistant-answer-step + .assistant-answer-note { margin-top: 0.15rem; padding: 0.55rem 0.65rem; border-left: 3px solid #E1A826; border-radius: 0.25rem 0.55rem 0.55rem 0.25rem; background: #FFF8E7; color: #6D5520; }
+.assistant-answer-content strong { font-weight: 800; color: #173A5E; }
+.assistant-answer-content em { font-style: italic; }
+.assistant-answer-content code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; padding: 0.08rem 0.32rem; border-radius: 0.35rem; background: #EEF2F7; color: #1E5799; }
+.assistant-answer-content a { color: #1E5799; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .assistant-error { padding: 0.7rem 0.8rem; border: 1px solid #FECACA; border-radius: 0.75rem; background: #FEF2F2; color: #B91C1C; font-size: 0.75rem; }
 .assistant-typing { display: flex; gap: 0.25rem; padding: 0.85rem 1rem; }
 .assistant-typing span { width: 0.4rem; height: 0.4rem; border-radius: 9999px; background: #6B7280; animation: assistant-dot 1.2s infinite ease-in-out; }

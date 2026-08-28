@@ -459,7 +459,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                             setFilters({ search: '', state_id: '', place_sector_id: '' });
                             setPage(1);
                         }}
-                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-lead rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap shrink-0 self-end"
+                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap shrink-0 self-end"
                     >
                         <i className="fa-solid fa-eraser" /> Limpiar
                     </button>

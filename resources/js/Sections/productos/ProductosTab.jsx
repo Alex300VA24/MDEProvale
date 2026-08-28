@@ -423,8 +423,9 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                         </h3>
                     </div>
                     <div className="p-4 sm:p-6">
-<form onSubmit={(e) => e.preventDefault()} className="mb-5 flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3">
-                            <div className="w-full lg:flex-[1_1_15rem] lg:max-w-[22rem] min-w-0">
+<div className="bg-gray-50 rounded-xl p-3 sm:p-4 mb-5">
+<form onSubmit={(e) => e.preventDefault()} className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3">
+                            <div className="w-full lg:flex-1 min-w-[160px]">
                                 <label className={labelCls}>Producto</label>
                                 <select
                                     value={detFilters.product_id}
@@ -492,6 +493,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                 </p>
                             </div>
 </form>
+</div>
 
                         {detData && (
                             <>

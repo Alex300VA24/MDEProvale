@@ -54,35 +54,87 @@ function loadHistory() {
     }
 }
 
+// Parser Markdown ligero para las respuestas del asistente.
+// Soporta: **negrita**, *cursiva*, `código`, [enlace](url), encabezados (#),
+// listas numeradas ("1. ") y viñetas ("- ", "* ", "• "). Los emojis se muestran tal cual.
+function renderInline(text, keyPrefix) {
+    const pattern = /(\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*|_([^_]+)_|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))/g;
+    const nodes = [];
+    let lastIndex = 0;
+    let match;
+    let i = 0;
+
+    while ((match = pattern.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            nodes.push(text.slice(lastIndex, match.index));
+        }
+        const key = `${keyPrefix}-i${i++}`;
+        if (match[2] || match[3]) {
+            nodes.push(<strong key={key}>{match[2] || match[3]}</strong>);
+        } else if (match[4] || match[5]) {
+            nodes.push(<em key={key}>{match[4] || match[5]}</em>);
+        } else if (match[6]) {
+            nodes.push(<code key={key}>{match[6]}</code>);
+        } else if (match[7] && match[8]) {
+            nodes.push(
+                <a key={key} href={match[8]} target="_blank" rel="noreferrer noopener">
+                    {match[7]}
+                </a>,
+            );
+        }
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+        nodes.push(text.slice(lastIndex));
+    }
+
+    return nodes.length ? nodes : [text];
+}
+
 function FormattedAnswer({ content }) {
     const lines = content.split('\n').map((line) => line.trim()).filter(Boolean);
 
     return (
         <div className="assistant-answer-content">
             {lines.map((line, index) => {
-                const step = line.match(/^(\d+)\.\s+(.+)$/);
-                const bullet = line.match(/^[-•]\s+(.+)$/);
+                const key = `${index}-${line.slice(0, 12)}`;
+                const heading = line.match(/^#{1,6}\s+(.+)$/);
+                const step = line.match(/^(\d+)[.)]\s+(.+)$/);
+                const bullet = line.match(/^[-*•]\s+(.+)$/);
                 const isTitle = index === 0 && line.endsWith(':');
+
+                if (heading) {
+                    return (
+                        <p key={key} className="assistant-answer-title">
+                            {renderInline(heading[1], key)}
+                        </p>
+                    );
+                }
 
                 if (step) {
                     return (
-                        <div key={`${line}-${index}`} className="assistant-answer-step">
+                        <div key={key} className="assistant-answer-step">
                             <span>{step[1]}</span>
-                            <p>{step[2]}</p>
+                            <p>{renderInline(step[2], key)}</p>
                         </div>
                     );
                 }
 
                 if (bullet) {
                     return (
-                        <div key={`${line}-${index}`} className="assistant-answer-bullet">
+                        <div key={key} className="assistant-answer-bullet">
                             <i className="fas fa-check" aria-hidden="true" />
-                            <p>{bullet[1]}</p>
+                            <p>{renderInline(bullet[1], key)}</p>
                         </div>
                     );
                 }
 
-                return <p key={`${line}-${index}`} className={isTitle ? 'assistant-answer-title' : 'assistant-answer-note'}>{line}</p>;
+                return (
+                    <p key={key} className={isTitle ? 'assistant-answer-title' : 'assistant-answer-note'}>
+                        {renderInline(line, key)}
+                    </p>
+                );
             })}
         </div>
     );

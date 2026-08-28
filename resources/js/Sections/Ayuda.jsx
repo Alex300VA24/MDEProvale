@@ -161,10 +161,14 @@ export default function Ayuda() {
                 </div>
             ) : null}
 
-            <div>
-                <h4 className="font-extrabold text-charcoal text-lg mb-3">Guías disponibles</h4>
-                <p className="text-earth text-sm mb-5">Selecciona una opción para abrir instrucciones y permisos.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
+                <div className="px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat">
+                    <h4 className="font-extrabold text-charcoal text-lg sm:text-xl flex items-center gap-3">
+                        <i className="fas fa-book-open text-leaf" /> Guías disponibles
+                    </h4>
+                    <p className="text-earth text-xs sm:text-sm mt-1">Selecciona una opción para abrir instrucciones y permisos.</p>
+                </div>
+                <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {guides.map((guide) => (
                         <button
                             key={guide.slug}
