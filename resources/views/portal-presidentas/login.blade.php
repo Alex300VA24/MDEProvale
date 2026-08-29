@@ -12,9 +12,9 @@
     <link rel="stylesheet" href="{{ asset('fonts/lexend/700.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
     <style>
-        :root { --navy:#1A2E4A; --blue:#1E5799; --teal:#0E8A7A; --sky:#EEF4FC; --line:#D4E4F7; --muted:#5A7FA8; --danger:#B91C1C; }
+        :root { --navy:#0B3A66; --blue:#175A91; --teal:#115E59; --sky:#F1F5F9; --line:#D6E1EC; --muted:#506E8D; --danger:#B4232D; }
         * { box-sizing:border-box; }
-        body { margin:0; min-height:100vh; background:linear-gradient(145deg,#EAF3FC,#F7FBFF); color:var(--navy); font:16px/1.5 'Source Sans 3',sans-serif; }
+        body { margin:0; min-height:100vh; background:#F3F6F9; color:var(--navy); font:16px/1.5 'Source Sans 3',sans-serif; }
         .shell { min-height:100vh; display:grid; place-items:center; padding:24px; }
         .card { width:min(100%,430px); padding:34px; border:1px solid rgba(212,228,247,.9); border-radius:24px; background:rgba(255,255,255,.96); box-shadow:0 28px 70px -38px rgba(26,46,74,.55); }
         .brand { display:flex; align-items:center; gap:13px; margin-bottom:26px; }
@@ -34,17 +34,18 @@
         .error { margin-top:7px; color:var(--danger); font-size:13px; font-weight:600; }
         .remember { display:flex; align-items:center; gap:8px; margin:18px 0; color:#425F7F; font-size:14px; font-weight:600; }
         .remember input { width:18px; min-height:18px; padding:0; accent-color:var(--blue); }
-        .submit { width:100%; min-height:48px; border:0; border-radius:13px; background:linear-gradient(135deg,var(--blue),#2E6DB4); color:#fff; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 12px 24px -14px rgba(30,87,153,.8); }
+        .submit { width:100%; min-height:48px; border:0; border-radius:6px; background:#0B3A66; color:#fff; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 12px 24px -14px rgba(11,58,102,.8); }
         .submit:hover { filter:brightness(1.05); }
         button:focus-visible,a:focus-visible { outline:3px solid rgba(30,87,153,.28); outline-offset:2px; }
         .help { margin:20px 0 0; text-align:center; color:var(--muted); font-size:13px; }
         @media(max-width:480px) { .shell { padding:14px; } .card { padding:26px 20px; border-radius:20px; } }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/president-portal.css') }}">
 </head>
-<body>
+<body class="portal-login">
     <main class="shell">
         <section class="card" aria-labelledby="login-title">
-            <div class="brand"><img src="{{ asset('img/logo-provale-sin-fondo.png') }}" alt="Logo PROVALE"><div><strong>PROVALE</strong><span>Portal de Presidentas</span></div></div>
+            <div class="brand"><img src="{{ asset('img/logo-provale-sin-fondo.png') }}" alt="Logo PROVALE"><div><strong>Municipalidad Distrital de La Esperanza</strong><span>PROVALE · Portal de Presidentas</span></div></div>
             <h1 id="login-title">Consulta de comité</h1>
             <p class="intro">Ingresa con las credenciales asignadas a tu cuenta de Socia Presidenta.</p>
 

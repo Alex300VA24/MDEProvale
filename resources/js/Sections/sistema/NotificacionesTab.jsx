@@ -7,9 +7,9 @@ import errorMessage from '../../errorMessage';
 const BASE = '/api/dashboard/sistema';
 
 const STATUS_LABEL = {
-    pending: { label: 'Pendiente', cls: 'bg-sun-light text-[#D97706]' },
-    approved: { label: 'Aprobada', cls: 'bg-leaf-light text-leaf' },
-    rejected: { label: 'Rechazada', cls: 'bg-clay-light text-clay' },
+    pending: { label: 'Pendiente', cls: 'badge-pending' },
+    approved: { label: 'Aprobada', cls: 'badge-current' },
+    rejected: { label: 'Rechazada', cls: 'badge-expired' },
 };
 
 function fmtDateTime(d) {
@@ -88,12 +88,12 @@ export default function NotificacionesTab() {
                 </div>
             ) : (
                 notifications.map((n) => {
-                    const status = STATUS_LABEL[n.status] || { label: n.status, cls: 'bg-gray-100 text-gray-800' };
+                    const status = STATUS_LABEL[n.status] || { label: n.status, cls: 'badge-unknown' };
                     return (
                         <div key={n.id} className="p-4 rounded-xl border-2 border-wheat bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className={`px-2 py-1 text-[10px] font-bold rounded-full ${status.cls}`}>{status.label}</span>
+                                    <span className={`badge ${status.cls}`}>{status.label}</span>
                                     <span className="font-bold text-charcoal text-sm">{n.title}</span>
                                 </div>
                                 <p className="text-sm text-earth">{n.description}</p>

@@ -7,7 +7,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from './hooks';
-import { formatDate, personFullName, personLabel } from './format';
+import { formatDate, personFullName, personLabel, stateClass } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
@@ -137,12 +137,7 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
 function SocioViewModal({ partner, onClose }) {
     if (!partner) return null;
     const latestHistory = (b) => (b.histories && b.histories.length ? b.histories[0] : null);
-    const stateCls =
-        partner.state?.abbreviation === 'VIG'
-            ? 'badge-current'
-            : partner.state?.abbreviation === 'VEN'
-                ? 'badge-expired'
-                : 'badge-unknown';
+    const stateCls = stateClass(partner.state);
 
     return (
         <DetailModal open onClose={onClose} title="Detalle del socio" icon="fa-user" maxWidth="sm:max-w-3xl">

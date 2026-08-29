@@ -12,9 +12,9 @@
     <link rel="stylesheet" href="{{ asset('fonts/lexend/700.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome.min.css') }}">
     <style>
-        :root { --navy:#1A2E4A; --blue:#1E5799; --teal:#0E8A7A; --sky:#EEF4FC; --line:#D4E4F7; --muted:#5A7FA8; --success:#15803D; --danger:#B91C1C; }
+        :root { --navy:#0B3A66; --blue:#175A91; --teal:#115E59; --sky:#F1F5F9; --line:#D6E1EC; --muted:#506E8D; --success:#166534; --danger:#B4232D; }
         * { box-sizing:border-box; }
-        body { margin:0; min-height:100vh; background:linear-gradient(145deg,#EAF3FC,#F7FBFF); color:var(--navy); font:16px/1.5 'Source Sans 3',sans-serif; }
+        body { margin:0; min-height:100vh; background:#F3F6F9; color:var(--navy); font:16px/1.5 'Source Sans 3',sans-serif; }
         .skip-link { position:fixed; left:12px; top:-60px; z-index:100; padding:10px 14px; border-radius:10px; background:var(--navy); color:#fff; font-weight:700; }
         .skip-link:focus { top:12px; }
         .topbar { position:sticky; top:0; z-index:10; background:rgba(255,255,255,.96); border-bottom:1px solid var(--line); backdrop-filter:blur(12px); }
@@ -24,8 +24,8 @@
         .brand img { width:48px; height:48px; object-fit:contain; }
         .brand strong { display:block; font:700 17px 'Lexend',sans-serif; }
         .brand span { color:var(--teal); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; }
-        .logout { min-width:112px; min-height:44px; border:1px solid var(--line); background:#fff; color:var(--blue); border-radius:13px; font-weight:700; cursor:pointer; }
-        .logout:hover { background:#F4F8FC; }
+        .logout { min-width:112px; min-height:44px; border:1px solid rgba(255,150,155,.55); background:rgba(210,60,66,.26); color:#FFD9DB; border-radius:8px; font-weight:700; cursor:pointer; }
+        .logout:hover { background:rgba(210,60,66,.4); border-color:rgba(255,170,174,.75); }
         button:focus-visible,a:focus-visible,input:focus-visible { outline:3px solid rgba(30,87,153,.28); outline-offset:2px; }
         .shell { min-height:calc(100vh - 76px); display:grid; place-items:center; padding:30px 0 50px; }
         .card { width:min(100%,460px); padding:34px; border:1px solid rgba(212,228,247,.9); border-radius:24px; background:rgba(255,255,255,.96); box-shadow:0 28px 70px -38px rgba(26,46,74,.55); }
@@ -44,17 +44,18 @@
         .toggle:hover { background:#EAF2FB; color:var(--blue); }
         .error { margin-top:7px; color:var(--danger); font-size:13px; font-weight:600; }
         .hint { margin-top:8px; color:var(--muted); font-size:13px; }
-        .submit { width:100%; min-height:48px; margin-top:22px; border:0; border-radius:13px; background:linear-gradient(135deg,var(--blue),#2E6DB4); color:#fff; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 12px 24px -14px rgba(30,87,153,.8); }
+        .submit { width:100%; min-height:48px; margin-top:22px; border:0; border-radius:6px; background:#0B3A66; color:#fff; font-size:15px; font-weight:700; cursor:pointer; box-shadow:0 12px 24px -14px rgba(11,58,102,.8); }
         .submit:hover { filter:brightness(1.05); }
         @media(max-width:480px) { .shell { padding:20px 0 40px; } .topbar-inner,.shell { width:min(100% - 20px,1180px); } .brand span { display:none; } .logout { min-width:48px; font-size:0; } .logout i { font-size:16px; } .card { padding:26px 20px; border-radius:20px; } }
         @media(prefers-reduced-motion:reduce) { * { transition:none!important; } }
     </style>
+    <link rel="stylesheet" href="{{ asset('css/president-portal.css') }}">
 </head>
-<body>
+<body class="portal-password">
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
     <header class="topbar">
         <div class="topbar-inner">
-            <div class="brand"><img src="{{ asset('img/logo-provale-sin-fondo.png') }}" width="48" height="48" alt="Logo PROVALE"><div><strong>PROVALE</strong><span>Portal de Presidentas</span></div></div>
+            <div class="brand"><img src="{{ asset('img/logo-provale-sin-fondo.png') }}" width="48" height="48" alt="Logo PROVALE"><div><strong>Municipalidad Distrital de La Esperanza</strong><span>PROVALE · Portal de Presidentas</span></div></div>
             <form method="POST" action="{{ route('president.logout') }}">@csrf<button class="logout" type="submit"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Cerrar sesión</button></form>
         </div>
     </header>

@@ -6,7 +6,7 @@ import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/Det
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, money, stockInt } from './format';
+import { fmtDate, money, stateClass, stockInt } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/productos-pecosas';
@@ -39,7 +39,7 @@ function productStatus(dp) {
     const end = dp.end_date ? new Date(`${dateValue(dp.end_date)}T00:00:00`) : null;
     const start = dp.start_date ? new Date(`${dateValue(dp.start_date)}T00:00:00`) : null;
     if (end && end < today) return { label: 'Vencido', cls: 'badge-expired' };
-    if (start && start > today) return { label: 'Por venir', cls: 'bg-yellow-100 text-yellow-800' };
+    if (start && start > today) return { label: 'Por venir', cls: 'badge-pending' };
     return { label: 'Vigente', cls: 'badge-current' };
 }
 
@@ -142,7 +142,7 @@ function ProductViewModal({ product, onClose }) {
                     <Field label="Abreviatura" value={product.abbreviation} />
                     <Field label="Unidad de medida" value={product.uom?.title} />
                     <Field label="Estado">
-                        <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
+                        <span className={`badge ${stateClass(product.state)}`}>
                             {product.state?.title || 'Sin estado'}
                         </span>
                     </Field>
@@ -362,7 +362,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                         <td className="px-3 sm:px-4 py-3 text-earth">{product.abbreviation || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{product.uom?.title || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3">
-                                            <span className={`badge ${product.state?.abbreviation === 'VIG' ? 'badge-current' : product.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
+                                            <span className={`badge ${stateClass(product.state)}`}>
                                                 {product.state?.title || 'Sin estado'}
                                             </span>
                                         </td>
@@ -548,7 +548,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                                                             {stockInt(stockActual)}
                                                         </td>
                                                         <td className="px-4 py-4">
-                                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${status.cls}`}>
+                                                            <span className={`badge ${status.cls}`}>
                                                                 {status.label}
                                                             </span>
                                                         </td>

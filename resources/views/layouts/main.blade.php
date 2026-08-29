@@ -57,7 +57,7 @@
             top: 0;
             height: 100vh;
             width: 70px;
-            background: linear-gradient(180deg, #1E5799 0%, #0F1E30 100%);
+            background: #0B3A66;
             transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 50;
             overflow: hidden;
@@ -416,8 +416,8 @@
                         <span class="notification-badge absolute -top-1 -right-1 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1" :style="notifCount > 0 ? 'display:flex' : 'display:none'" x-text="notifCount > 0 ? notifCount : ''">{{ $unreadNotificationsLabel }}</span>
                     </button>
 
-                    <div class="hidden sm:flex items-center gap-3 px-3 py-2 rounded-xl border-2 border-mist bg-base hover:bg-mist transition-all cursor-pointer">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-base">
+                    <div class="hidden sm:flex items-center gap-3 px-3 py-2 rounded-md border-2 border-mist bg-white hover:bg-blue-light transition-all cursor-pointer">
+                        <div class="w-9 h-9 rounded-md bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-base">
                             {{ substr(Auth::user()->username ?? 'A', 0, 1) }}
                         </div>
                         <div>
@@ -426,9 +426,9 @@
                         </div>
                     </div>
 
-                    <button type="button" onclick="confirmLogout()" class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-coral-light text-coral font-bold text-sm border-2 border-transparent hover:bg-coral hover:text-white transition-all">
-                            <i class="fas fa-power-off"></i>
-                            <span class="hidden md:inline">Salir</span>
+                    <button type="button" onclick="confirmLogout()" title="Cerrar sesión" class="group flex items-center gap-2 px-3 sm:px-4 py-2 rounded-md bg-coral-light text-coral font-bold text-sm border border-coral/30 hover:bg-coral/15 hover:border-coral/60 transition-colors">
+                            <i class="fas fa-power-off text-coral/80 group-hover:text-coral transition-colors"></i>
+                            <span class="hidden md:inline">Cerrar sesión</span>
                         </button>
                         <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">
                             @csrf

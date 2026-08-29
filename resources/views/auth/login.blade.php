@@ -22,46 +22,40 @@
 
         .login-shell {
             position: relative;
-            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            background: #EEF4FC;
+            background-color: #EEF4FC;
+            background-image: url('{{ asset("img/banner_vaso.jfif") }}');
+            background-size: cover;
+            background-position: left center;
+            background-repeat: no-repeat;
             overflow: hidden;
         }
 
         /* ===== Panel del formulario (derecha) ===== */
         .form-panel {
-            flex: 0 1 560px;
+            flex: 0 1 620px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 5vw 2rem 1.5rem;
+            padding: clamp(24px, 5vw, 76px);
             position: relative;
             z-index: 2;
-        }
-
-        /* ===== Banner completo de fondo (cortado tras la niña, resto atenuado) ===== */
-        @media (min-width: 1024px) {
-            .login-shell {
-                background-image: url('{{ asset("img/banner.jfif") }}');
-                background-size: cover;
-                background-position: left center;
-                background-repeat: no-repeat;
-            }
         }
 
         .login-card {
             width: 100%;
-            max-width: 420px;
+            max-width: 450px;
             position: relative;
             z-index: 2;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 1.75rem;
-            box-shadow: 0 30px 60px -20px rgba(15, 30, 48, 0.25), 0 10px 30px -15px rgba(30, 87, 153, 0.15);
-            padding: 2.25rem 2rem;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(174, 190, 206, 0.92);
+            border-top: 4px solid #D6A928;
+            border-radius: 8px;
+            box-shadow: 0 28px 60px -30px rgba(11, 58, 102, 0.58);
+            padding: 34px;
             animation: card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
@@ -73,13 +67,9 @@
         }
 
         .login-logo img {
-            width: 56px;
-            height: 56px;
+            width: 54px;
+            height: 54px;
             object-fit: contain;
-            border-radius: 1rem;
-            padding: 0.35rem;
-            background: #EBF3FD;
-            box-shadow: 0 8px 20px -8px rgba(30, 87, 153, 0.4);
         }
 
         .login-logo div strong {
@@ -96,7 +86,7 @@
             font-weight: 700;
             letter-spacing: 0.14em;
             text-transform: uppercase;
-            color: #0E8A7A;
+            color: #D6A928;
         }
 
         .login-heading h1 {
@@ -126,8 +116,7 @@
             display: block;
             font-size: 0.72rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0;
             color: #5A7FA8;
             margin-bottom: 0.5rem;
         }
@@ -151,7 +140,7 @@
             width: 100%;
             padding: 0.95rem 1rem 0.95rem 2.85rem;
             border: 2px solid #D4E4F7;
-            border-radius: 1rem;
+            border-radius: 6px;
             background: #F8FBFE;
             font-size: 0.92rem;
             font-weight: 600;
@@ -182,7 +171,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 0.7rem;
+            border-radius: 6px;
             color: #9DB7D4;
             background: transparent;
             border: none;
@@ -234,8 +223,8 @@
             width: 100%;
             padding: 1rem;
             border: none;
-            border-radius: 1rem;
-            background: linear-gradient(135deg, #1E5799 0%, #2E6DB4 100%);
+            border-radius: 0.375rem;
+            background: #0B3A66;
             color: #fff;
             font-weight: 800;
             font-size: 0.95rem;
@@ -272,7 +261,7 @@
             align-items: center;
             gap: 0.75rem;
             padding: 0.9rem 1rem;
-            border-radius: 1rem;
+            border-radius: 6px;
             background: #FEF2F2;
             border: 1px solid #FECACA;
             color: #B91C1C;
@@ -311,6 +300,23 @@
             .login-card, .field, .login-submit-wrap { animation: none; }
             .btn-login::before { display: none; }
             .error-banner { animation: none; }
+        }
+
+        @media (max-width: 640px) {
+            .login-shell::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: rgba(11, 58, 102, 0.4);
+                pointer-events: none;
+            }
+            .form-panel {
+                flex-basis: 100%;
+                padding: 18px;
+            }
+            .login-card {
+                padding: 26px 20px;
+            }
         }
     </style>
 </head>
@@ -396,9 +402,9 @@
 
     @if(session('session_expired') || request()->get('expired') == 1)
     <div id="session-expired-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border-2 border-red-200">
+        <div class="bg-white w-full max-w-sm rounded-lg p-6 shadow-2xl border-2 border-red-200">
             <div class="flex items-center gap-4 mb-4">
-                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center">
+                <div class="w-14 h-14 bg-red-50 rounded-md flex items-center justify-center">
                     <i class="fas fa-exclamation-triangle text-2xl text-red-600"></i>
                 </div>
                 <div>
@@ -409,7 +415,7 @@
             <p class="text-sm text-gray-600 mb-6 leading-relaxed">
                 Tu sesión ha expirado por inactividad. Por favor, inicia sesión nuevamente para continuar.
             </p>
-            <button id="session-expired-confirm" class="w-full py-3 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-lg" style="background-color: #DC2626 !important;">
+            <button id="session-expired-confirm" class="w-full py-3 text-white font-bold rounded-md hover:bg-red-700 transition-all shadow-lg" style="background-color: #DC2626 !important;">
                 Entendido
             </button>
         </div>
@@ -417,10 +423,10 @@
     @endif
 
     <div id="modal-forgot-password" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" style="display: none;">
-        <div class="glass-card w-full max-w-sm rounded-3xl p-6" style="background: #fff; border: 1px solid #D4E4F7;">
+        <div class="glass-card w-full max-w-sm rounded-lg p-6" style="background: #fff; border: 1px solid #D4E4F7;">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue/10 rounded-xl flex items-center justify-center text-blue">
+                    <div class="w-10 h-10 bg-blue/10 rounded-md flex items-center justify-center text-blue">
                         <i class="fas fa-key text-lg"></i>
                     </div>
                     <h3 class="text-lg font-bold text-slate-800">Restablecer Contraseña</h3>
@@ -435,13 +441,13 @@
                 <div class="mb-4">
                     <label for="forgot-email" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Correo Electrónico</label>
                     <input type="email" id="forgot-email" name="email" required
-                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl text-sm font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:border-blue focus:bg-white transition-all"
+                        class="w-full px-4 py-3 border-2 border-slate-200 rounded-md text-sm font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:border-blue focus:bg-white transition-all"
                         placeholder="correo@ejemplo.com">
                 </div>
                 <div id="forgot-message" class="mb-4 p-3 rounded-xl text-sm" style="display: none;"></div>
                 <div class="flex gap-3">
-                    <button type="button" onclick="closeModal('modal-forgot-password')" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all">Cerrar</button>
-                    <button type="submit" id="forgot-submit" class="flex-1 px-4 py-3 bg-blue text-white font-bold rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                    <button type="button" onclick="closeModal('modal-forgot-password')" class="flex-1 px-4 py-3 bg-white text-navy font-bold rounded-md border border-navy hover:bg-blue-light transition-all">Cerrar</button>
+                    <button type="submit" id="forgot-submit" class="flex-1 px-4 py-3 bg-blue text-white font-bold rounded-md hover:opacity-90 transition-all flex items-center justify-center gap-2">
                         <i class="fas fa-paper-plane"></i>
                         <span>Enviar Solicitud</span>
                     </button>

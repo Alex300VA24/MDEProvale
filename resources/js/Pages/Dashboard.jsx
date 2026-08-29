@@ -341,8 +341,8 @@ export default function Dashboard() {
 
                             <div className="hidden sm:block w-px h-9 bg-gradient-to-b from-transparent via-mist to-transparent" />
 
-                            <div className="hidden sm:flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-full border border-mist bg-white shadow-sm hover:shadow-md hover:border-sky/50 transition-all">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-sm ring-2 ring-white shadow-sm flex-shrink-0">
+                            <div className="hidden sm:flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-md border border-mist bg-white shadow-sm hover:shadow-md hover:border-sky/50 transition-all">
+                                <div className="w-9 h-9 rounded-md bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-sm ring-2 ring-white shadow-sm flex-shrink-0">
                                     {(user?.name || 'A').charAt(0).toUpperCase()}
                                 </div>
                                 <div className="leading-tight">
@@ -354,10 +354,11 @@ export default function Dashboard() {
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl bg-coral-light text-coral font-bold text-xs sm:text-sm border border-transparent hover:bg-coral hover:text-white hover:shadow-lg hover:shadow-coral/30 hover:-translate-y-0.5 transition-all"
+                                title="Cerrar sesión"
+                                className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-md bg-coral-light text-coral font-bold text-xs sm:text-sm border border-coral/30 hover:bg-coral/15 hover:border-coral/60 transition-colors"
                             >
-                                <i className="fas fa-power-off" />
-                                <span className="hidden md:inline">Salir</span>
+                                <i className="fas fa-power-off text-coral/80 group-hover:text-coral transition-colors" />
+                                <span className="hidden md:inline">Cerrar sesión</span>
                             </button>
                         </div>
                     </header>

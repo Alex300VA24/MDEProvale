@@ -3,6 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --institutional-navy: #0B3A66;
+    --institutional-navy-hover: #124C82;
+    --institutional-navy-deep: #072A4D;
+    --control-radius: 0.375rem;
+}
+
 /* ==================== Sistema tipográfico institucional ====================
    Cuerpo, formularios y tablas: Source Sans 3 (legibilidad, uso en gobierno).
    Títulos y encabezados: Lexend. Ambas familias se cargan auto-alojadas
@@ -139,7 +146,8 @@
    tailwind.config.js, así que un cambio de color se hace en un solo lugar. */
 @layer components {
     .btn-primary {
-        @apply bg-gradient-to-r from-sky to-blue text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+        @apply text-white font-semibold px-4 py-2.5 rounded-md text-sm transition-all duration-200;
+        background: var(--institutional-navy);
         box-shadow: 0 1px 2px rgba(15, 30, 48, 0.12), 0 2px 8px rgba(30, 87, 153, 0.20);
     }
     .btn-primary:hover {
@@ -154,14 +162,16 @@
     }
 
     .btn-secondary {
-        @apply bg-mist text-slate font-bold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+        @apply bg-white text-navy font-bold px-4 py-2.5 rounded-md text-sm transition-all duration-200;
+        border: 1px solid var(--institutional-navy);
     }
     .btn-secondary:hover {
-        @apply bg-slate text-white;
+        @apply bg-blue-light text-navy;
+        border-color: var(--institutional-navy-hover);
     }
 
     .btn-danger {
-        @apply bg-clay text-white font-bold px-4 py-2.5 rounded-lg text-sm transition-all duration-200;
+        @apply bg-clay text-white font-bold px-4 py-2.5 rounded-md text-sm transition-all duration-200;
         box-shadow: 0 2px 8px rgba(217, 79, 61, 0.25);
     }
     .btn-danger:hover {
@@ -170,7 +180,7 @@
     }
 
     .btn-action {
-        @apply w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all duration-200;
+        @apply w-8 h-8 rounded-md flex items-center justify-center text-sm transition-all duration-200;
     }
 
     .btn-primary:focus-visible,
@@ -215,7 +225,9 @@
 
     /* Tabla de datos */
     .data-table th {
-        @apply bg-base text-[11px] font-heading font-semibold uppercase tracking-wider text-slate border-b-2 border-mist;
+        @apply text-[11px] font-heading font-semibold uppercase tracking-wider text-white;
+        background: var(--institutional-navy);
+        border-bottom: 2px solid var(--institutional-navy-deep);
     }
     .data-table tr {
         @apply border-b border-mist transition-colors duration-200;
@@ -231,24 +243,36 @@
         .data-table th { font-size: 10px; padding: 8px 10px; }
     }
 
-    /* Estados semánticos: cada significado mantiene un color propio y accesible. */
+    /* Estados semánticos sólidos: color único por significado. */
     .badge-active {
-        @apply bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200;
+        color: #285A85;
+        background: #DCEAF6;
+        box-shadow: inset 0 0 0 1px #8CB4D4;
     }
     .badge-current {
-        @apply bg-lime-100 text-lime-800 ring-1 ring-inset ring-lime-200;
+        color: #1E6B38;
+        background: #DDF5D9;
+        box-shadow: inset 0 0 0 1px #8FD58A;
     }
     .badge-pending {
-        @apply bg-orange-100 text-orange-800 ring-1 ring-inset ring-orange-200;
+        color: #8F431F;
+        background: #FBE7D8;
+        box-shadow: inset 0 0 0 1px #D79A77;
     }
     .badge-inactive {
-        @apply bg-rose-100 text-rose-800 ring-1 ring-inset ring-rose-200;
+        color: #374151;
+        background: #E5E7EB;
+        box-shadow: inset 0 0 0 1px #AEB6C1;
     }
     .badge-expired {
-        @apply bg-red-100 text-red-800 ring-1 ring-inset ring-red-200;
+        color: #A92535;
+        background: #FCE1E3;
+        box-shadow: inset 0 0 0 1px #EE7A82;
     }
     .badge-unknown {
-        @apply bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200;
+        color: #5B3F8C;
+        background: #EDE9FE;
+        box-shadow: inset 0 0 0 1px #B7A7DE;
     }
     .badge {
         @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-bold;
@@ -489,7 +513,7 @@
     top: 0;
     height: 100vh;
     width: 70px;
-    background: linear-gradient(180deg, #1E5799 0%, #0F1E30 100%);
+    background: var(--institutional-navy);
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 50;
     overflow: visible;
@@ -508,7 +532,7 @@
     justify-content: center;
     border: 3px solid #fff;
     border-radius: 9999px;
-    background: #1E5799;
+    background: var(--institutional-navy-hover);
     color: #fff;
     box-shadow: 0 8px 20px rgba(15, 30, 48, 0.28);
     transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
@@ -516,7 +540,7 @@
 }
 
 .sidebar-edge-toggle:hover {
-    background: #4A90D9;
+    background: #1B6098;
     transform: translateY(-50%) scale(1.06);
     box-shadow: 0 10px 24px rgba(15, 30, 48, 0.34);
 }
@@ -778,12 +802,12 @@
 .assistant-launcher {
     width: 4rem;
     height: 4rem;
-    border-radius: 9999px;
+    border-radius: var(--control-radius);
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
-    background: linear-gradient(145deg, #2567A9, #10365E);
+    background: var(--institutional-navy);
     border: 3px solid rgba(255, 255, 255, 0.72);
     box-shadow: 0 14px 34px rgba(15, 48, 83, 0.34);
     font-size: 1.3rem;
@@ -806,13 +830,13 @@
     transform-origin: bottom right;
 }
 
-.assistant-header { min-height: 5rem; padding: 0.9rem 1.1rem; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(125deg, #225F9D 0%, #153C66 58%, #0F2947 100%); border-bottom: 3px solid #E1A826; }
+.assistant-header { min-height: 5rem; padding: 0.9rem 1.1rem; display: flex; align-items: center; justify-content: space-between; background: var(--institutional-navy); border-bottom: 3px solid #E1A826; }
 .assistant-avatar { width: 2.75rem; height: 2.75rem; border-radius: 0.85rem; display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(145deg, rgba(255,255,255,.24), rgba(255,255,255,.09)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); font-size: 1.05rem; }
 .assistant-heading { color: #fff; font-size: 0.95rem; line-height: 1.2; font-weight: 800; letter-spacing: -0.01em; }
 .assistant-status { margin-top: 0.25rem; color: rgba(255,255,255,.74); font-size: 0.68rem; display: flex; align-items: center; gap: 0.4rem; }
 .assistant-status span { width: 0.45rem; height: 0.45rem; border-radius: 9999px; background: #34D399; box-shadow: 0 0 0 3px rgba(52,211,153,.13); }
 .assistant-header-actions { display: flex; align-items: center; gap: 0.4rem; }
-.assistant-header-button { width: 2.25rem; height: 2.25rem; border-radius: 0.65rem; color: #fff; background: rgba(255,255,255,.1); transition: background .2s ease, transform .2s ease; }
+.assistant-header-button { width: 2.25rem; height: 2.25rem; border-radius: var(--control-radius); color: #fff; background: rgba(255,255,255,.1); transition: background .2s ease, transform .2s ease; }
 .assistant-header-button:hover { background: rgba(255,255,255,.2); }
 .assistant-header-button:active { transform: scale(.94); }
 
@@ -820,7 +844,7 @@
 .assistant-messages::-webkit-scrollbar { width: 6px; }
 .assistant-messages::-webkit-scrollbar-thumb { border-radius: 9999px; background: #AFC1D4; }
 .assistant-welcome { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.9rem; border: 1px solid #D8E6F4; border-radius: 1rem; background: linear-gradient(135deg, #FFFFFF, #EEF6FD); box-shadow: 0 4px 14px rgba(30,87,153,.06); }
-.assistant-welcome-icon { width: 2.2rem; height: 2.2rem; flex-shrink: 0; border-radius: 0.7rem; display: flex; align-items: center; justify-content: center; color: #fff; background: linear-gradient(145deg, #2E75B6, #1E5799); }
+.assistant-welcome-icon { width: 2.2rem; height: 2.2rem; flex-shrink: 0; border-radius: var(--control-radius); display: flex; align-items: center; justify-content: center; color: #fff; background: var(--institutional-navy); }
 .assistant-welcome h3 { color: #163A60; font-size: 0.9rem; font-weight: 800; }
 .assistant-welcome p { margin-top: 0.18rem; color: #61748A; font-size: 0.75rem; line-height: 1.4; }
 .assistant-suggestions > p { margin: 0 0 0.55rem 0.2rem; color: #718096; font-size: 0.65rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
@@ -837,7 +861,7 @@
 .assistant-bot-avatar { width: 1.75rem; height: 1.75rem; flex-shrink: 0; border-radius: 0.55rem; display: flex; align-items: center; justify-content: center; color: #fff; background: #1E5799; font-size: 0.68rem; box-shadow: 0 3px 8px rgba(30,87,153,.2); }
 .assistant-message { padding: 0.78rem 0.9rem; border-radius: 1rem; overflow-wrap: anywhere; font-size: 0.84rem; line-height: 1.45; }
 .assistant-message-bot { flex: 1; min-width: 0; color: #243449; background: #fff; border: 1px solid #E0E8F0; border-bottom-left-radius: 0.3rem; box-shadow: 0 3px 12px rgba(15,30,48,.07); }
-.assistant-message-user { max-width: 82%; align-self: flex-end; color: #fff; background: linear-gradient(135deg, #356DB4, #285A9B); border-bottom-right-radius: 0.3rem; box-shadow: 0 5px 13px rgba(46,95,163,.18); }
+.assistant-message-user { max-width: 82%; align-self: flex-end; color: #fff; background: var(--institutional-navy); border-bottom-right-radius: 0.3rem; box-shadow: 0 5px 13px rgba(46,95,163,.18); }
 .assistant-answer-content { display: flex; flex-direction: column; gap: 0.48rem; }
 .assistant-answer-title { color: #173A5E; font-size: 0.86rem; font-weight: 800; line-height: 1.35; }
 .assistant-answer-step { display: grid; grid-template-columns: 1.55rem 1fr; align-items: flex-start; gap: 0.5rem; }
@@ -861,7 +885,7 @@
 .assistant-form { padding: 0.8rem 0.85rem 0.45rem; display: flex; align-items: flex-end; gap: 0.55rem; border-top: 1px solid #DDE6EF; background: #fff; box-shadow: 0 -5px 15px rgba(15,30,48,.035); }
 .assistant-form textarea { flex: 1; max-height: 6rem; resize: none; border: 1px solid #C7D7E7; border-radius: 0.85rem; padding: 0.72rem 0.8rem; color: #243449; background: #FAFCFE; font-size: 0.83rem; line-height: 1.35; }
 .assistant-form textarea:focus { outline: none; border-color: #2E5FA3; background: #fff; box-shadow: 0 0 0 3px rgba(46,95,163,.12); }
-.assistant-form button { width: 2.8rem; height: 2.8rem; flex-shrink: 0; border-radius: 0.85rem; color: #fff; background: linear-gradient(145deg, #3B7ABB, #245A96); box-shadow: 0 5px 12px rgba(46,95,163,.2); transition: transform .2s ease, box-shadow .2s ease; }
+.assistant-form button { width: 2.8rem; height: 2.8rem; flex-shrink: 0; border-radius: var(--control-radius); color: #fff; background: var(--institutional-navy); box-shadow: 0 5px 12px rgba(46,95,163,.2); transition: transform .2s ease, box-shadow .2s ease; }
 .assistant-form button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 7px 15px rgba(46,95,163,.28); }
 .assistant-form button:disabled { cursor: not-allowed; opacity: .45; }
 .assistant-disclaimer { padding: 0 0.75rem 0.7rem; color: #7A8999; background: #fff; text-align: center; font-size: 0.62rem; }
@@ -911,4 +935,161 @@
     .panel-card {
         transition: none;
     }
+}
+
+/* Controles institucionales: geometría sobria y consistente en SPA y Blade. */
+:where(button, input[type="button"], input[type="submit"], input[type="reset"], a.btn-primary, a.btn-secondary, a.btn-danger, [role="button"]) {
+    border-radius: var(--control-radius) !important;
+}
+
+/* Controles de navegación compactos: más redondeados para distinguirlos de acciones. */
+.sidebar-edge-toggle {
+    border-radius: 9999px !important;
+}
+
+#mobile-toggle {
+    border-radius: 0.75rem !important;
+}
+
+/* Todos los encabezados de tabla usan azul institucional del sidebar. */
+#app-shell main table thead th {
+    color: #fff !important;
+    background: var(--institutional-navy) !important;
+    border-color: var(--institutional-navy-deep) !important;
+}
+
+.btn-secondary {
+    color: var(--institutional-navy) !important;
+    background: #fff !important;
+    border: 1px solid var(--institutional-navy) !important;
+}
+
+.btn-secondary:hover {
+    color: var(--institutional-navy) !important;
+    background: #E1EDF7 !important;
+    border-color: var(--institutional-navy-hover) !important;
+}
+
+/* Acciones densas: paleta sólida inspirada en referencia entregada. */
+.btn-action.bg-sky-light,
+.btn-action.bg-blue-light {
+    border: 1px solid #3D6990;
+    color: #fff !important;
+    background: #4B7EAB !important;
+}
+
+.btn-action.bg-sky-light:hover,
+.btn-action.bg-blue-light:hover {
+    background: #3D6990 !important;
+}
+
+.btn-action.bg-sun-light {
+    border: 1px solid #A95332;
+    color: #fff !important;
+    background: #C86A44 !important;
+}
+
+.btn-action.bg-sun-light:hover {
+    background: #A95332 !important;
+}
+
+.btn-action.bg-leaf-light,
+.btn-action.bg-teal-light {
+    border: 1px solid #1D8055;
+    color: #fff !important;
+    background: #28A16C !important;
+}
+
+.btn-action.bg-leaf-light:hover,
+.btn-action.bg-teal-light:hover {
+    background: #1D8055 !important;
+}
+
+.btn-action.bg-clay-light,
+.btn-action.bg-red-100 {
+    border: 1px solid #AD2E3A;
+    color: #fff !important;
+    background: #CF3C46 !important;
+}
+
+.btn-action.bg-clay-light:hover,
+.btn-action.bg-red-100:hover {
+    background: #AD2E3A !important;
+}
+
+@media (max-width: 640px) {
+    :where(button, input[type="button"], input[type="submit"], input[type="reset"], a.btn-primary, a.btn-secondary, a.btn-danger, [role="button"]) {
+        min-height: 44px;
+    }
+}
+
+/* ==================== Consistencia visual del sistema ====================
+   Estos bloques centralizan tres inconsistencias que estaban repartidas en
+   cientos de utilidades sueltas (`border-wheat`, `rounded-2xl`, `rounded-xl`,
+   `bg-gray-100`) por las vistas Blade y las secciones React. En vez de editar
+   cada archivo, se normaliza aquí referenciando los tokens institucionales.
+   -------------------------------------------------------------------------- */
+
+:root {
+    /* Radio de las superficies grandes (tarjetas de contenido, paneles). */
+    --surface-radius: 0.75rem;
+    /* Lienzo detrás del contenido: mismo tono que el <body>. */
+    --app-canvas: #EEF4FC;
+}
+
+/* 1. Color de borde: 'wheat' (arena, fuera de la paleta) pasa al neutro
+      institucional 'mist'. Cubre tarjetas, campos de formulario, dropdowns
+      del Combobox y separadores que usaban `border-wheat` / `border-b-2 border-wheat`. */
+.border-wheat {
+    border-color: #D6E1EC !important; /* mist */
+}
+
+/* 2. Radio de los controles de formulario: uno solo en todo el sistema.
+      Antes los <input>/<select> quedaban en `rounded-xl` (12px) mientras los
+      <button> ya estaban forzados a --control-radius (6px), por eso los
+      filtros se veían con esquinas distintas entre sí. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+select,
+textarea,
+.select2-container--default .select2-selection--single,
+.select2-dropdown {
+    border-radius: var(--control-radius) !important;
+}
+
+/* 3. Tarjetas de contenido: radio de superficie uniforme (antes rounded-2xl,
+      16px, se percibía excesivo). Los modales conservan su propio radio. */
+#content-wrapper main .rounded-2xl:not(.modal-card):not(.modal-enter):not(.modal-panel) {
+    border-radius: var(--surface-radius) !important;
+}
+
+/* 4. Lienzo del área de contenido: color consistente con el <body> en la SPA
+      y en las vistas Blade (ambas montan <main> dentro de #content-wrapper). */
+#content-wrapper main {
+    background-color: var(--app-canvas) !important;
+}
+
+/* Paneles internos (barras de filtro) que usaban grises de Tailwind sueltos. */
+#content-wrapper main .bg-gray-50 {
+    background-color: #F1F5F9 !important; /* base */
+}
+#content-wrapper main .bg-gray-100 {
+    background-color: var(--app-canvas) !important;
+}
+
+/* 5. Etiqueta de estado unica en todo el sistema. La clase .badge ya existe,
+      pero varias tablas React/Blade le anadian utilidades sueltas
+      (`px-3 py-1 rounded-full text-xs font-bold`, `text-[10px]`), asi que el
+      mismo estado se veia con tamano y forma distintos segun la pantalla.
+      Aqui se fija la geometria; el color lo sigue dando cada `.badge-*`. */
+.badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.375rem !important;
+    padding: 0.25rem 0.625rem !important;
+    border-radius: 9999px !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    vertical-align: middle;
 }

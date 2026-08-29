@@ -45,8 +45,8 @@
         .badge-valid { color:var(--success); background:#ECFDF3; }
         .badge-invalid { color:var(--danger); background:#FEF2F2; }
         .actions { display:grid; gap:10px; margin-top:20px; }
-        .button { min-height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; gap:9px; padding:10px 16px; text-decoration:none; font-weight:700; transition:filter .2s,box-shadow .2s; touch-action:manipulation; }
-        .button-primary { background:linear-gradient(135deg,var(--blue),#2E6DB4); color:#fff; box-shadow:0 12px 24px -14px rgba(30,87,153,.65); }
+        .button { min-height:48px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:9px; padding:10px 16px; text-decoration:none; font-weight:700; transition:filter .2s,box-shadow .2s; touch-action:manipulation; }
+        .button-primary { background:#0B3A66; color:#fff; box-shadow:0 12px 24px -14px rgba(11,58,102,.65); }
         .button-secondary { background:#F4F8FC; border:1px solid var(--line); color:var(--blue); }
         .button:hover { filter:brightness(.97); }
         .button:focus-visible { outline:3px solid rgba(30,87,153,.28); outline-offset:2px; }

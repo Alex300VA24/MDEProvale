@@ -7,7 +7,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
-import { dateValue, detailOptionLabel, fmtDate } from './format';
+import { dateValue, detailOptionLabel, fmtDate, stateClass } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/productos-pecosas';
@@ -300,7 +300,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                 <FieldGrid>
                     <Field label="Número" value={pecosa.pecosa_number} />
                     <Field label="Estado">
-                        <span className={`badge ${pecosa.state?.abbreviation === 'VIG' ? 'badge-current' : pecosa.state?.abbreviation === 'VEN' ? 'badge-expired' : 'badge-unknown'}`}>
+                        <span className={`badge ${stateClass(pecosa.state)}`}>
                             {pecosa.state?.title || 'N/A'}
                         </span>
                     </Field>
@@ -513,11 +513,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                         <td className="px-3 sm:px-4 py-3">{pecosa.managing_partner_name || pecosa.president_name || ''}</td>
                                         <td className="px-3 sm:px-4 py-3">
                                             {pecosa.state ? (
-                                                pecosa.state.abbreviation === 'VIG' ? (
-                                                    <span className="badge badge-current">Vigente</span>
-                                                ) : (
-                                                    <span className="badge badge-expired">{pecosa.state.title}</span>
-                                                )
+                                                <span className={`badge ${stateClass(pecosa.state)}`}>{pecosa.state.title || 'Sin estado'}</span>
                                             ) : (
                                                 <span className="badge badge-unknown">Sin estado</span>
                                             )}
