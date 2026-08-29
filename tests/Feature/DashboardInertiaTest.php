@@ -3,12 +3,13 @@
 namespace Tests\Feature;
 
 use Inertia\Testing\AssertableInertia as Assert;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\SeedsBaseData;
 
 class DashboardInertiaTest extends TestCase
 {
-    use SeedsBaseData;
+    use RefreshDatabase, SeedsBaseData;
 
     public function test_dashboard_renders_inertia_shell(): void
     {

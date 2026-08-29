@@ -525,7 +525,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                         <td className="px-3 sm:px-4 py-3 text-center">
                                             <div className="inline-grid grid-cols-[repeat(4,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                 <a
-                                                    href={`/productos-pecosas/pecosas/${pecosa.id}/comprobante`}
+                                                    href={`${window.APP_URL || ''}/productos-pecosas/pecosas/${pecosa.id}/comprobante`}
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     className="btn-action col-start-1 bg-leaf-light text-leaf hover:bg-leaf hover:text-white"

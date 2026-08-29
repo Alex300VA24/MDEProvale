@@ -84,6 +84,8 @@
         .sig-area { text-align: center; font-size: 7pt; margin-top: 2px; }
         .sig-dni { text-align: center; font-size: 7pt; margin-top: 3px; }
         .dni-write-line { display: inline-block; width: 110px; border-bottom: 1px solid #000; height: 10px; vertical-align: middle; margin-left: 4px; }
+        .verification-cell { width: 25mm; text-align: center; color: #1E5799; font-size: 5pt; line-height: 1.15; padding: 0 1mm !important; }
+        .verification-cell img { display: block; width: 17mm; height: 17mm; margin: 0 auto 0.8mm; }
     </style>
 </head>
 <body>
@@ -131,7 +133,14 @@
                     </tr>
                 </table>
             </td>
-            <td class="header-spacer">&nbsp;</td>
+            @if(!empty($qrDataUri))
+                <td class="verification-cell">
+                    <div><img src="{{ $qrDataUri }}" alt="Código QR de verificación"></div>
+                    <div>Escanee para verificar<br>autenticidad</div>
+                </td>
+            @else
+                <td class="header-spacer">&nbsp;</td>
+            @endif
         </tr>
     </table>
 

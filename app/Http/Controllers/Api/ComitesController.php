@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use App\Services\AssociationStateService;
+use App\Services\PresidentAccountService;
 use App\Services\ResolutionStateService;
 
 class ComitesController extends Controller
@@ -198,13 +199,18 @@ class ComitesController extends Controller
                     throw new \DomainException('No hay resolución asociada al comité');
                 }
 
-                Directive::create([
+Directive::create([
                     'resolution_id' => $resolutionId,
                     'partner_id'    => $partnerId,
                     'position_id'   => $posicionPresidenta->id,
                     'state_id'      => $estadoVigente->id,
                     'date_start'    => now()->toDateString(),
                 ]);
+
+                $partner = Partner::with('people')->find($partnerId);
+                if ($partner) {
+                    app(PresidentAccountService::class)->sync($partner);
+                }
 
                 Association::clearPresidentaCache($association->id);
             });

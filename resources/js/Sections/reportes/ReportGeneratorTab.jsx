@@ -107,7 +107,7 @@ export default function ReportGeneratorTab() {
                 });
             });
 
-            const res = await fetch(`/reportes/generar?${params.toString()}`, {
+            const res = await fetch(`${window.APP_URL || ''}/reportes/generar?${params.toString()}`, {
                 headers: { Accept: 'application/json' },
             });
             if (!res.ok) {

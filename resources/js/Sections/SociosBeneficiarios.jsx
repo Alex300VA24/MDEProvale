@@ -123,7 +123,7 @@ export default function SociosBeneficiarios({ initialAction }) {
                         {tab === 'beneficiarios' && (
                             <>
                                 <a
-                                    href="/fichas/fichaBeneficiario.pdf"
+                                    href={`${window.APP_URL || ''}/fichas/fichaBeneficiario.pdf`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"

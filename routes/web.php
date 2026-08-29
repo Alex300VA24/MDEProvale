@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\DocumentVerificationController;
+use App\Http\Controllers\PresidentPortalController;
+use App\Http\Controllers\PresidentPasswordController;
+use App\Http\Controllers\Auth\PresidentAuthenticatedSessionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +29,33 @@ Route::get('/refresh-csrf', function () {
 
 // Rutas públicas para recuperación de contraseña (SIN autenticación)
 Route::post('password-reset-request', [App\Http\Controllers\SistemaController::class, 'requestPasswordReset'])->name('password-reset-request');
+
+Route::middleware('throttle:30,1')->group(function () {
+    Route::get('verificar-documento/{token}', [DocumentVerificationController::class, 'show'])
+        ->where('token', '[a-f0-9]{64}')
+        ->name('documents.verify');
+    Route::get('verificar-documento/{token}/pdf', [DocumentVerificationController::class, 'pdf'])
+        ->where('token', '[a-f0-9]{64}')
+        ->name('documents.pdf');
+});
+
+Route::get('/portal-presidentas/login', [PresidentAuthenticatedSessionController::class, 'create'])
+    ->name('president.login');
+Route::post('/portal-presidentas/login', [PresidentAuthenticatedSessionController::class, 'store'])
+    ->name('president.login.store');
+Route::post('/portal-presidentas/logout', [PresidentAuthenticatedSessionController::class, 'destroy'])
+    ->name('president.logout');
+
+Route::get('/portal-presidentas', [PresidentPortalController::class, 'index'])
+    ->middleware('role.president')
+    ->name('president-portal.index');
+
+Route::middleware('role.president')->group(function () {
+    Route::get('/portal-presidentas/cambiar-contrasena', [PresidentPasswordController::class, 'edit'])
+        ->name('president.password.change');
+    Route::post('/portal-presidentas/cambiar-contrasena', [PresidentPasswordController::class, 'update'])
+        ->name('president.password.update');
+});
 
 // Rutas que requieren autenticación
 Route::middleware('auth')->group(function () {

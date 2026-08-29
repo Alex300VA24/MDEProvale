@@ -11,8 +11,11 @@ use App\Models\Relationship;
 use App\Models\State;
 use App\Models\Transaction;
 use App\Models\TypeTransaction;
+use App\Models\VerifiedDocument;
 use App\Services\PDFService;
+use App\Services\VerifiedDocumentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ReportGeneratorController extends Controller
 {
@@ -232,6 +235,29 @@ class ReportGeneratorController extends Controller
         ];
 
         $filename = 'reporte_' . implode('-', $seleccionadas) . '_' . date('Ymd_His') . '.pdf';
+
+        if (count($seleccionadas) === 1 && $seleccionadas[0] === 'pecosas') {
+            $identifier = 'PEC-' . now()->format('Ymd-His') . '-' . strtoupper(Str::random(6));
+            [, $contents, $safeFilename] = app(VerifiedDocumentService::class)->issue(
+                VerifiedDocument::TYPE_PECOSA_REGISTER,
+                $identifier,
+                [
+                    'filtros' => $filtrosInput['pecosas'] ?? [],
+                    'registros' => $data['total_general'],
+                ],
+                'reportes.padron_generico',
+                $data,
+                $filename,
+                $request->user()?->id,
+                'a4',
+                'landscape'
+            );
+
+            return response($contents, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $safeFilename . '"',
+            ]);
+        }
 
         return app(PDFService::class)->stream('reportes.padron_generico', $data, $filename, 'a4', 'landscape');
     }

@@ -139,12 +139,14 @@
             font-weight: bold;
             background-color: #e0e0e0;
         }
+
     </style>
 </head>
 <body>
     <footer>
         <strong>PÁG <span class="pagenum"></span></strong>
     </footer>
+
     <div class="page-container">
         <table class="header-table" style="border-collapse: collapse;">
             <tr>
@@ -161,9 +163,19 @@
                 <td style="text-align: center; vertical-align: middle; line-height: 1.2; padding: 0; width: 60%;">
                     <div style="font-size: 11pt; font-weight: bold;">{{ $titulo }}</div>
                 </td>
-                <td style="width: 120px; text-align: right; vertical-align: top; font-size: 7pt; padding: 0;">
-                    <div>FECHA: {{ $fecha }}</div>
-                    <div>HORA: {{ $hora }}</div>
+                <td style="width: {{ !empty($qrDataUri) ? '170px' : '120px' }}; text-align: right; vertical-align: top; font-size: 7pt; padding: 0;">
+                    @if(!empty($qrDataUri) && isset($verificationDocument))
+                        <div style="display:inline-block; width:78px; vertical-align:top; padding-top:4px;">
+                            <div>FECHA: {{ $fecha }}</div>
+                            <div>HORA: {{ $hora }}</div>
+                            <div style="font-size:5pt; color:#1E5799; font-weight:bold; margin-top:3px;">VERIFICABLE</div>
+                            <div style="font-size:4.5pt; font-family:monospace;">{{ $verificationDocument->identifier }}</div>
+                        </div>
+                        <img src="{{ $qrDataUri }}" alt="Código QR de verificación" style="display:inline-block; width:48px; height:48px; margin-left:3px; vertical-align:top;">
+                    @else
+                        <div>FECHA: {{ $fecha }}</div>
+                        <div>HORA: {{ $hora }}</div>
+                    @endif
                 </td>
             </tr>
         </table>
@@ -238,5 +250,6 @@
             </table>
         </div>
     </div>
+
 </body>
 </html>

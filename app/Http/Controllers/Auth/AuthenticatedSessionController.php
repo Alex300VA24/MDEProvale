@@ -39,10 +39,15 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         if ($request->get('expired') == 1) {
+            $request->session()->forget('session_just_expired');
             return redirect()->route('dashboard');
         }
 
         $request->session()->forget('session_just_expired');
+
+        if ($request->user()->isPresidentPortalUser()) {
+            return redirect()->route('president-portal.index');
+        }
 
         $intendedUrl = $request->session()->get('url.intended');
         if ($intendedUrl && $this->shouldIgnoreIntendedUrl($intendedUrl)) {

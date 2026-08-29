@@ -41,7 +41,7 @@ export default function PadronModal({ open, onClose }) {
         }
         try {
             const params = new URLSearchParams({ month, year });
-            const res = await fetch(`/club-reconocimientos/club-padron?${params.toString()}`, {
+            const res = await fetch(`${window.APP_URL || ''}/club-reconocimientos/club-padron?${params.toString()}`, {
                 headers: { Accept: 'application/json' },
             });
             if (!res.ok) {

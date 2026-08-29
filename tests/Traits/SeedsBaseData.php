@@ -16,7 +16,7 @@ trait SeedsBaseData
         DB::table('states')->insert([
             'id' => 1,
             'title' => 'Activo',
-            'abbreviation' => 'A',
+            'abbreviation' => \App\Models\State::ACTIVE,
         ]);
 
         DB::table('rols')->insert([

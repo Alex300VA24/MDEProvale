@@ -1,6 +1,24 @@
-# MDEProvale
+# MDEProvale — Sistema de Gestión PROVALE
 
-Aplicación **Laravel 10 + React/Inertia** para la gestión de socios, beneficiarios, comités, productos, pecosas, raciones y movimientos del Programa Vaso de Leche.
+Aplicación web para el **Programa Vaso de Leche** (MDE): gestión de socios y
+beneficiarios, clubes/reconocimientos, productos y pecosas, movimientos,
+raciones, reportes y portal de presidentas.
+
+**Stack:** Laravel 10.50 (PHP 8.1) · MySQL/MariaDB · Blade + Alpine.js y
+Tailwind para los módulos principales · React + Inertia para el dashboard ·
+Vite (SPA) y Laravel Mix (vistas Blade) · dompdf · QR (endroid).
+
+El proyecto se puede levantar de **dos formas**:
+
+| Modalidad | URL de acceso | Uso típico |
+|-----------|---------------|------------|
+| **A. `php artisan serve`** | `http://127.0.0.1:8000` | Desarrollo rápido, sin Apache |
+| **B. XAMPP (carpeta `htdocs`)** | `http://localhost/<CARPETA>/public` | Entorno tipo producción |
+
+Ambos modos funcionan con **las mismas rutas**, sin cambiar código: los enlaces,
+recursos (CSS/JS/fuentes/Vite) y peticiones AJAX se generan de forma relativa al
+request, así que sirven tanto en la raíz (`artisan serve`) como dentro de una
+subcarpeta de `htdocs`.
 
 ---
 
@@ -8,220 +26,246 @@ Aplicación **Laravel 10 + React/Inertia** para la gestión de socios, beneficia
 
 | Herramienta | Versión | Notas |
 |-------------|---------|-------|
-| PHP | **8.1.x** (`>=8.1 <8.2`) | Con PHP 8.2+ o 7.x, `composer install` falla. XAMPP 7.4 **no sirve**; necesitas un XAMPP/PHP 8.1. |
-| Composer | 2.x | |
-| MySQL / MariaDB | 5.7+ / 10.4+ | Incluido en XAMPP. |
-| Node.js | **18 LTS o superior** | Con npm, para compilar el frontend con Vite. |
-| Git | cualquiera | |
+| PHP | **8.1.x** (`>=8.1 <8.2`) | `composer.json` fija el rango; PHP 7.x u 8.2+ **no** funcionan |
+| Composer | 2.x | Necesario para `composer install` |
+| MySQL / MariaDB | 5.7+ / 10.4+ | Incluido en XAMPP |
+| Node.js | **20 LTS o superior** | Con npm, para compilar el frontend (Vite 8) |
+| Apache (solo para el modo B) | 2.4+ | Incluido en XAMPP; requiere `mod_rewrite` y `AllowOverride All` |
+| Git | opcional | Solo si clonas el repositorio |
 
-Extensiones PHP necesarias (vienen activas en XAMPP): `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `fileinfo`, `gd`.
+**Extensiones PHP obligatorias** (activas por defecto en un XAMPP con PHP 8.1):
+`pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`,
+`bcmath`, `fileinfo`, `gd`, `curl`, `zip`.
 
-> El proyecto **no incluye seeders con datos reales** ni un dump. Migrar desde cero solo crea tablas vacías (sin roles, sin módulos de menú, sin estados, sin usuarios): no podrás iniciar sesión. Para datos reales necesitas un **dump SQL** que te comparta el equipo (ver sección 4.3).
-
----
-
-## 2. Elegir cómo vas a levantar el proyecto
-
-Hay dos formas. Los pasos 3, 4 y 5 son **comunes**; solo cambia la sección 6.
-
-- **Opción A — `php artisan serve`** (recomendada para desarrollo). No usa Apache; Laravel levanta su propio servidor en `http://127.0.0.1:8000`.
-- **Opción B — Apache de XAMPP** (proyecto en `htdocs`). Más parecido a producción; requiere configurar un VirtualHost apuntando a `public/`.
+> ⚠️ Con **XAMPP 7.4** no se puede instalar (PHP 7.4). Usa un XAMPP con **PHP 8.1.x**.
 
 ---
 
-## 3. Clonar e instalar dependencias
+## 2. Cómo funcionan las rutas (importante)
 
-### Opción A (artisan serve)
+Laravel genera las URLs a partir del **request actual**, no de rutas absolutas
+“quemadas”:
 
-Clónalo donde quieras:
+- `route('...')`, `url(...)` y `asset(...)` en plantillas Blade → relativos al
+  request (funcionan en raíz y en subcarpeta).
+- El frontend SPA (React/Inertia) usa `window.APP_URL`, que la vista `app.blade.php`
+  inyecta automáticamente (`<script>window.APP_URL = ...</script>`). Con eso los
+  `fetch('/api/...')`, enlaces de PDF/comprobantes y el logout se resuelven
+  contra la base real del sitio.
+- Los assets de Vite (`public/build`) se sirven con el mismo prefijo en tiempo
+  de ejecución, así que **un solo `npm run build` sirve para ambos modos**.
+
+`APP_URL` del `.env` solo se usa **fuera del navegador** (cola, consola, tests).
+Aun así, conviene dejarla apuntando a la URL con la que entras al sistema.
+
+---
+
+## 3. Instalación (pasos comunes a ambos modos)
+
+### 3.1 Copiar el proyecto
+
+**Opción A (`artisan serve`) — donde quieras:**
 
 ```bash
 git clone <url-del-repositorio> MDEProvale
 cd MDEProvale
+```
+
+**Opción B (XAMPP) — dentro de `htdocs`:**
+
+Copia la carpeta completa del proyecto a `C:\xampp\htdocs\MDEProvale` (o el
+nombre que quieras; la URL usará ese nombre).
+
+> ⚠️ Si usas XAMPP, asegúrate de que el proyecto quede en `htdocs` y que sea **el
+> único XAMPP que Apache sirve** (si tienes dos instalaciones con copias, cada
+> instalación sirve su propia copia). También podes copiar el proyecto a un
+> subdirectorio de uno de los dos `htdocs` y acceder por URL con subcarpeta.
+
+### 3.2 Instalar dependencias
+
+```bash
 composer install
 npm install
 ```
 
-### Opción B (XAMPP)
-
-Clónalo **dentro de `htdocs`**:
+### 3.3 Archivo `.env` y clave de la aplicación
 
 ```bash
-cd C:\xampp\htdocs
-git clone <url-del-repositorio> MDEProvale
-cd MDEProvale
-composer install
-npm install
-```
-
----
-
-## 4. Configuración común
-
-### 4.1 Archivo `.env` y clave de aplicación
-
-```bash
-cp .env.example .env
+copy .env.example .env        # Windows
+# o: cp .env.example .env
 php artisan key:generate
 ```
 
-Edita `.env` con los datos de tu base de datos:
+Edita `.env` con los datos de tu base:
 
 ```env
+APP_NAME="Sistema PROVALE"
+APP_ENV=local
+APP_DEBUG=true
+
+# Modo A: http://localhost:8000
+# Modo B: http://localhost/MDEProvale/public   (tu nombre de carpeta)
+APP_URL=http://localhost:8000
+
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=dbsysprovale
+DB_DATABASE=DBSYSPROVALE
 DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-Con XAMPP por defecto: `DB_USERNAME=root` y `DB_PASSWORD=` (vacío).
+En **XAMPP** el usuario suele ser `root` y la clave vacía (`DB_PASSWORD=`). Si tu
+MySQL tiene clave, complétala.
 
-> `APP_URL`, `SANCTUM_STATEFUL_DOMAINS` y `SESSION_DOMAIN` se ajustan **en la sección 6**, según la opción que elijas. El login usa sesión + cookies (Sanctum SPA); si esos valores no coinciden con la URL real verás errores 419/401 o sesiones que "expiran" solas.
+### 3.4 Crear la base de datos
 
-### 4.2 Configurar la API de Groq para el asistente
-
-El Asistente PROVALE necesita una clave de Groq para generar respuestas mediante IA. Cada persona que instale el proyecto debe crear su propia API key desde el panel de Groq, en la sección **API Keys**, y agregarla únicamente al archivo `.env`:
-
-```env
-GROQ_API_KEY=gsk_tu_clave_personal
-GROQ_MODEL=openai/gpt-oss-120b
-GROQ_API_URL=https://api.groq.com/openai/v1/chat/completions
-```
-
-Después de guardar la clave, limpia la configuración:
-
-```bash
-php artisan config:clear
-```
-
-> Nunca publiques la API key, no la agregues a Git y no uses una variable con prefijo `VITE_`. La clave debe permanecer solo en `.env` para que el navegador no pueda verla.
-
-### 4.3 Crear la base de datos e importar datos
-
-En XAMPP Control Panel arranca **MySQL**. Luego crea la base:
+En XAMPP Control Panel arranca **MySQL** y crea la base (también desde phpMyAdmin):
 
 ```sql
-CREATE DATABASE dbsysprovale CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE DBSYSPROVALE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-(También sirve desde phpMyAdmin → **Nueva** → nombre `dbsysprovale` → cotejamiento `utf8mb4_unicode_ci`.)
+Con `php artisan` no hay comando para crearla; usa la consulta SQL o phpMyAdmin.
 
-Importa el dump que te compartan:
+### 3.5 Migraciones y datos iniciales
+
+**Si el proyecto trae la carpeta `database/seeders`** (porque lo copiaste como
+carpeta/zip completo, no como clon Git), puedes generar todo desde cero:
 
 ```bash
-mysql -u root dbsysprovale < dump.sql
+php artisan migrate:fresh --seed
 ```
 
-O en phpMyAdmin: selecciona la base `dbsysprovale` → pestaña **Importar** → elige el `.sql` → **Continuar**.
+Esto crea las tablas y deja datos: estados, roles, módulos y permisos, usuarios,
+productos, socio/asociaciones, etc.
 
-### 4.4 Ejecutar migraciones pendientes
+**Si clonaste solo con Git**, los seeders (a excepción de 4 manifiestos) están
+ignorados por diseño del `.gitignore`, así que importa el **dump SQL** que
+comparte el equipo:
 
-Siempre, tanto si importaste dump como si no:
+```bash
+mysql -u root DBSYSPROVALE < dump.sql
+# o en phpMyAdmin: Importar -> elegir el .sql -> Continuar
+```
+
+En ambos casos, aplica las migraciones pendientes con:
 
 ```bash
 php artisan migrate
 ```
 
-Laravel aplica solo las migraciones que falten (revisa la tabla `migrations`), sin duplicar nada.
+> ⚠️ **Nunca dejes config en caché.** Si existe `bootstrap/cache/config.php`, los
+> tests y algunos comandos pueden quedarse apuntando a la BD de desarrollo y
+> ejecutar `migrate:fresh` ahí (¡borra tus datos!). Antes de trabajar, sobre todo
+> antes de correr tests: `php artisan config:clear`. Y no ejecutes `config:cache`
+> en desarrollo.
 
-> Si clonas **sin dump** y solo quieres explorar el código: `php artisan migrate` crea las tablas, pero tendrás que insertar a mano al menos un registro en `states`, `rols`, `modules` / `module_rol` y `users` para poder entrar.
+### 3.6 Compilar el frontend (assets)
 
-### 4.4 Permisos de escritura
+El proyecto genera **dos builds** distintos:
 
-Asegúrate de que estas carpetas sean escribibles (en Windows normalmente ya lo son):
+| Build | Comando | A dónde va |
+|-------|---------|-----------|
+| SPA (React/Vite) | `npm run build` | `public/build/` (dashboard) |
+| Vistas Blade (Alpine/jQuery) | `npm run build:blade` | `public/css`, `public/js`, fuentes, webfonts |
 
-```
-storage/
-bootstrap/cache/
-```
-
-Si más adelante ves errores 500 de permisos:
-
-```bash
-php artisan storage:link
-```
-
-### 4.5 Compilar el frontend (Vite)
-
-`public/build` **no está versionado**, así que un clon nuevo no trae assets compilados. Elige un modo:
-
-- **Vas a tocar el frontend** (`.jsx` / `.css`) y quieres hot reload:
-
-  ```bash
-  npm run dev
-  ```
-
-  Deja esa terminal abierta mientras trabajas.
-
-- **Solo backend / solo levantar el sistema** (compilar una vez):
-
-  ```bash
-  npm run build
-  ```
-
-  ⚠️ Cada `git pull` que traiga cambios en `resources/js` o `resources/css` obliga a **volver a `npm run build`** (si no tienes `npm run dev` corriendo). Si no, seguirás viendo la interfaz vieja.
-
----
-
-## 5. Verificación rápida
+Para producción/levantarlo, compila ambos de una vez:
 
 ```bash
-php artisan about        # muestra versión de PHP, entorno, conexión BD
-php artisan migrate:status
+npm run build:assets
+```
+
+Para desarrollo con recarga en caliente del frontend:
+
+```bash
+npm run dev        # Vite (SPA)          — dejar la terminal abierta
+npm run dev:blade  # Mix watch (Blade)   — en otra terminal, opcional
+```
+
+> ⚠️ Cada `git pull` (o actualización) que toque `resources/js` o `resources/css`
+> obliga a **volver a compilar** (`npm run build:assets`), o verás la interfaz vieja.
+
+### 3.7 Verificación rápida
+
+```bash
+php artisan about           # versión de PHP, entorno, conexión a BD
+php artisan migrate:status  # estado de las migraciones
 ```
 
 ---
 
-## 6. Levantar el proyecto
+## 4. Opción A — Levantar con `php artisan serve`
 
-### Opción A — `php artisan serve`
+No usa Apache; Laravel levanta su propio servidor:
 
-1. En `.env` deja:
+```bash
+php artisan serve
+```
+
+Abre **http://127.0.0.1:8000**. Para otro puerto/host:
+
+```bash
+php artisan serve --host=127.0.0.1 --port=8080
+```
+
+En `.env` deja las variables del servidor de desarrollo (puerto = 8000):
+
+```env
+APP_URL=http://localhost:8000
+SANCTUM_STATEFUL_DOMAINS=localhost,localhost:*,127.0.0.1,127.0.0.1:*,::1,[::1]:*
+SESSION_DOMAIN=
+SESSION_COOKIE=provale_session
+```
+
+Si cambias cualquier cosa del `.env`, limpia config:
+
+```bash
+php artisan config:clear
+```
+
+---
+
+## 5. Opción B — Levantar con XAMPP (carpeta `htdocs`)
+
+### 5.1 Sin VirtualHost (subcarpeta — funciona igual)
+
+Con el proyecto en `C:\xampp\htdocs\MDEProvale`:
+
+1. En XAMPP Control Panel arranca **Apache** y **MySQL**.
+2. Edita `.env`:
 
    ```env
-   APP_URL=http://127.0.0.1:8000
-   SANCTUM_STATEFUL_DOMAINS=localhost:8000,127.0.0.1:8000
-   SESSION_DOMAIN=localhost
+   APP_URL=http://localhost/MDEProvale/public
+   SANCTUM_STATEFUL_DOMAINS=localhost,localhost:*,127.0.0.1,127.0.0.1:*,::1,[::1]:*
+   SESSION_DOMAIN=
+   SESSION_COOKIE=provale_session
    ```
 
-2. Limpia config si cambiaste `.env`:
+   Luego: `php artisan config:clear`.
+3. Entra a:
 
-   ```bash
-   php artisan config:clear
+   ```
+   http://localhost/MDEProvale/public
    ```
 
-3. Arranca:
+Todo funciona en subcarpeta: rutas, assets (Mix y Vite), AJAX del SPA, PDFs y
+comprobantes se generan con el prefijo correcto. Si quieres otra URL más corta,
+cambia el nombre de la carpeta (y el `APP_URL`).
 
-   ```bash
-   php artisan serve
-   ```
+> Nota: nunca apuntes Apache al directorio del proyecto, sino a la subcarpeta
+> `public/`, y revisa que ese directorio tenga `AllowOverride All` (por defecto
+> en XAMPP para `htdocs`).
 
-   Si vas a tocar frontend, en **otra terminal**:
+### 5.2 (Opcional) VirtualHost — URL limpia en la raíz
 
-   ```bash
-   npm run dev
-   ```
+Si prefieres `http://mdeprovale.test` en lugar de la subcarpeta:
 
-4. Abre `http://127.0.0.1:8000`.
-
-Si necesitas otro puerto: `php artisan serve --port=8080` y ajusta `APP_URL` y `SANCTUM_STATEFUL_DOMAINS` a ese puerto.
-
----
-
-### Opción B — Apache de XAMPP (VirtualHost)
-
-El proyecto ya está en `C:\xampp\htdocs\MDEProvale`. Apache debe apuntar a la carpeta `public/`, no a la raíz del proyecto.
-
-1. **Habilitar `mod_rewrite`** — en `C:\xampp\apache\conf\httpd.conf` verifica que esta línea **no** tenga `#`:
-
+1. **`mod_rewrite`** activo (en `conf/httpd.conf` de tu XAMPP):
    ```apache
    LoadModule rewrite_module modules/mod_rewrite.so
    ```
-
-2. **Definir el VirtualHost** — al final de `C:\xampp\apache\conf\extra\httpd-vhosts.conf` añade:
-
+2. Al final de `C:\xampp\apache\conf\extra\httpd-vhosts.conf`:
    ```apache
    <VirtualHost *:80>
        ServerName mdeprovale.test
@@ -233,58 +277,109 @@ El proyecto ya está en `C:\xampp\htdocs\MDEProvale`. Apache debe apuntar a la c
        </Directory>
    </VirtualHost>
    ```
-
-3. **Mapear el dominio** — en `C:\Windows\System32\drivers\etc\hosts` (editar como Administrador) añade:
-
+3. En `C:\Windows\System32\drivers\etc\hosts` (como Administrador):
    ```
    127.0.0.1    mdeprovale.test
    ```
-
-4. **Ajustar `.env`**:
-
+4. `.env`:
    ```env
    APP_URL=http://mdeprovale.test
    SANCTUM_STATEFUL_DOMAINS=mdeprovale.test
    SESSION_DOMAIN=mdeprovale.test
    ```
+   `php artisan config:clear` y reinicia Apache. Listo: `http://mdeprovale.test`.
 
+---
+
+## 6. Credenciales iniciales y Portal de Presidentas
+
+### 6.1 Usuarios que crea el `DatabaseSeeder`
+
+| Usuario | Contraseña | Rol |
+|---------|-----------|-----|
+| `lestradal` | `admin` | Administrador (acceso completo) |
+| `mvegape` | `admin` | Segundo rol |
+| `usuario1` | `admin` | Rol básico |
+
+Estos usuarios quedan en estado **Activo** (`state_id = 1`). El login usa
+**usuario + contraseña**.
+
+### 6.2 Portal de Presidentas (Socia Presidenta)
+
+Los usuarios con rol **Socia Presidenta** entran por un portal separado:
+
+- **Login:** `/portal-presidentas/login` — usuario = **DNI**, contraseña = **DNI**.
+- **Primer ingreso:** el sistema fuerza el cambio de contraseña en
+  `/portal-presidentas/cambiar-contrasena` (los usuarios creados tienen
+  `must_change_password = 1`).
+- **Administración:** al **asignar una presidenta** en Comités/Reconocimientos,
+  el sistema crea (o sincroniza) su cuenta de portal automáticamente con su DNI.
+- **Restablecer contraseña:** en el panel de Administración
+  (Sistema → Usuarios → *Restablecer contraseña*), se vuelve a poner como DNI y
+  se fuerza el cambio. Comando equivalente:
+
+  ```bash
+  php artisan tinker --execute="\$u = App\Models\User::find(1); \$u->update(['password' => Illuminate\Support\Facades\Hash::make(\$u->dni), 'must_change_password' => true]);"
+  ```
+
+---
+
+## 7. Pruebas automatizadas (phpunit)
+
+Los tests usan una **base separada** (`dbsysprovale_test`, configurada en
+`phpunit.xml`), porque `RefreshDatabase` ejecuta `migrate:fresh` y **borraría
+tus datos de desarrollo**.
+
+1. Crea la base de test una sola vez:
+   ```sql
+   CREATE DATABASE dbsysprovale_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+2. **Clave** (¡importante!):
    ```bash
    php artisan config:clear
    ```
-
-5. **Compilar assets para Apache** (Apache no usa el hot reload de Vite):
-
+   Stale config cache (`bootstrap/cache/config.php`) congela la conexión a la BD
+   de desarrollo y los tests la migran en blanco. Sin `config:clear` antes de
+   correr tests, **puedes perder la BD dev**.
+3. Ejecuta:
    ```bash
-   npm run build
+   php vendor/bin/phpunit
+   # o: php artisan test
+   ```
+   Para un grupo específico:
+   ```bash
+   php vendor/bin/phpunit tests/Unit/PresidentAccountServiceTest.php tests/Feature/Auth/PresidentPortalAuthenticationTest.php
    ```
 
-6. En **XAMPP Control Panel** arranca **Apache** y **MySQL** y abre `http://mdeprovale.test`.
-
-> **Alternativa sin VirtualHost** (`http://localhost/MDEProvale/public`): funciona para ver la app, pero la ruta con subcarpeta complica las cookies de sesión de Sanctum y las URLs de assets. Se recomienda el VirtualHost.
+> El suite completo puede mostrar fallos **preexistentes** en módulos no
+> relacionados (auth por email de Breeze, productos/pecosas, `partner positions`).
+> Los tests de la feature Portal de Presidentas y los `Api` principales corren en
+> verde.
 
 ---
 
-## 7. Limpiar caché (si algo no se actualiza)
+## 8. Comandos útiles
 
 ```bash
+# Limpiar todas las cachés (tras cambios en .env, rutas, vistas)
 php artisan config:clear
 php artisan route:clear
-php artisan cache:clear
 php artisan view:clear
-```
+php artisan cache:clear
 
----
+# Precompilar vistas (opcional, más rápido en producción)
+php artisan view:cache
 
-## 8. Pruebas automatizadas (opcional)
+# Recargar seeders y volver a poblar (¡borra la BD!)
+php artisan migrate:fresh --seed
 
-Las pruebas de Feature (`tests/Feature/Api`) usan **una base separada** (`phpunit.xml` → `dbsysprovale_test`) porque hacen `migrate:fresh` y borrarían tus datos.
+# Crear enlace public/storage (solo si se usan archivos subidos públicos)
+php artisan storage:link
 
-```sql
-CREATE DATABASE dbsysprovale_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-```bash
-php artisan test
+# Frontend
+npm run dev            # Vite con hot reload (SPA)
+npm run dev:blade      # Mix watch (vistas Blade)
+npm run build:assets   # Build definitivo: Vite + Mix
 ```
 
 ---
@@ -293,36 +388,50 @@ php artisan test
 
 | Síntoma | Causa / solución |
 |---------|------------------|
-| Página en blanco / sin estilos / `Vite manifest not found` | Falta `npm install` + (`npm run dev` o `npm run build`). |
-| Los cambios de un `git pull` no se ven | Falta `npm run build` (o no tienes `npm run dev` corriendo). |
-| Menú lateral vacío / no puedo iniciar sesión | Base de datos sin datos: migraste sin importar el dump (sección 4.3). |
-| Error de conexión a BD | Revisa `.env` y que MySQL esté arrancado en XAMPP. |
-| Error 500 / permisos | Permisos de escritura en `storage/` y `bootstrap/cache/`. |
-| Sesión expira sola / error 419 al guardar | `APP_URL`, `SANCTUM_STATEFUL_DOMAINS` y `SESSION_DOMAIN` no coinciden con la URL real (sección 6). |
-| Apache: 404 en todas las rutas menos `/` | Falta `mod_rewrite` o `AllowOverride All` en el VirtualHost. |
-| Apache: "Forbidden" | `DocumentRoot` mal, o falta `Require all granted`. |
-| `composer install` falla por versión de PHP | Necesitas PHP **8.1.x**; XAMPP 7.4 no sirve. |
-| `php artisan test` falla por tablas/columnas | Crea la base `dbsysprovale_test` (sección 8); no reutilices la de desarrollo. |
+| Página en blanco / sin estilos / `Vite manifest not found` | Falta `npm install` + `npm run build` (o `npm run dev`). |
+| Se ve la interfaz vieja tras actualizar | Falta `npm run build:assets` (los `resources/js`/`css` cambiaron). |
+| Error de conexión a BD | Revisa `.env` (host, puerto, base, usuario, clave) y que MySQL esté arrancado. |
+| Sesión expira sola / error 419 al guardar | `APP_URL`/`SESSION_DOMAIN` no coinciden con la URL real (sección 4/5). |
+| 404 en Apache salvo `/` | Falta `mod_rewrite` o `AllowOverride All` en el `Directory` de `public/`. |
+| 404 en los assets/`public/build` | Entras por el directorio del proyecto en vez de por `public/`, o la copia que Apache sirve no es la que editaste (dos XAMPP con copias distintas). |
+| Apache: “Forbidden” | `DocumentRoot` mal apuntado o falta `Require all granted`. |
+| `composer install` falla por versión de PHP | Necesitas PHP **8.1.x** (XAMPP 7.4 es PHP 7.4 y no sirve). |
+| `php artisan test` borró mis datos | Existía `bootstrap/cache/config.php`: corre siempre `php artisan config:clear` antes de testear (sección 7). |
+| Error MySQL `caching_sha2_password` | El cliente antiguo (`mysql.exe`) no soporta ese plugin; usa phpMyAdmin o `php artisan tinker`. |
+| Puerto 8000 ocupado | `php artisan serve --port=8080` y ajusta `APP_URL` (fallo común). |
 
 ---
 
 ## 10. Resumen rápido
 
 ```bash
-# común
-git clone <url> MDEProvale && cd MDEProvale
+# 1. Dependencias
 composer install
 npm install
-cp .env.example .env
+
+# 2. Configuración
+copy .env.example .env
 php artisan key:generate
-# crear BD dbsysprovale + importar dump.sql (sección 4.3)
-# crear API key de Groq y agregar GROQ_API_KEY al .env (sección 4.2)
-php artisan migrate
-npm run build            # o `npm run dev` si vas a tocar frontend
+# editar .env: APP_URL (sección 3.3), DB_DATABASE, DB_USERNAME, DB_PASSWORD
 
-# Opción A
-php artisan serve        # http://127.0.0.1:8000
+# 3. Base de datos (crear en MySQL/phpMyAdmin)
+# CREATE DATABASE DBSYSPROVALE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-# Opción B (XAMPP): configurar VirtualHost a /public + hosts + .env (sección 6),
-# luego arrancar Apache y MySQL     # http://mdeprovale.test
+# 4. Datos
+php artisan migrate:fresh --seed   # si vienen seeders; si no, importar dump.sql
+php artisan config:clear
+
+# 5. Assets
+npm run build:assets
+
+# 6a. Opción A
+php artisan serve                 # http://127.0.0.1:8000
+
+# 6b. Opción B (XAMPP)
+#   proyecto en C:\xampp\htdocs\MDEProvale
+#   start Apache + MySQL en el Control Panel
+#   abrir http://localhost/MDEProvale/public
 ```
+
+**Login por defecto:** `lestradal` / `admin`. **Portal de presidentas:**
+`/portal-presidentas/login` (DNI / DNI, con cambio de contraseña obligatorio).

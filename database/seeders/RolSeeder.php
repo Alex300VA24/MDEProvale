@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Rol;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class RolSeeder extends Seeder
 {
@@ -14,28 +14,18 @@ class RolSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('rols')->insert([
-            'title' => 'Administrador',
-            'description' => 'Acceso completo al sistema',
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $roles = [
+            'Administrador' => 'Acceso completo al sistema',
+            'Usuario Principal' => 'Acceso a todos los módulos excepto Responsables y Raciones, Reportes y Sistema',
+            'Usuario Básico' => 'Acceso a un solo módulo',
+            Rol::PRESIDENT => 'Acceso exclusivo al portal de consultas del comité asignado',
+        ];
 
-        DB::table('rols')->insert([
-            'title' => 'Usuario Principal',
-            'description' => 'Acceso a todos los módulos excepto Responsables y Raciones, Reportes y Sistema',
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('rols')->insert([
-            'title' => 'Usuario Básico',
-            'description' => 'Acceso a un solo módulo',
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        foreach ($roles as $title => $description) {
+            Rol::updateOrCreate(
+                ['title' => $title],
+                ['description' => $description, 'is_active' => true]
+            );
+        }
     }
 }

@@ -43,6 +43,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->app['url']->forceRootUrl($this->app['request']->root());
+
         if (config('app.debug') && env('DB_QUERY_AUDIT', false)) {
             $logPath = storage_path('logs/query_audit.log');
             file_put_contents($logPath, "=== Query Audit started at " . now() . " ===\n", FILE_APPEND);

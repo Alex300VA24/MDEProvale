@@ -18,7 +18,7 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
         setErrorMessage('');
         setPdfLoading(null);
         try {
-            const res = await fetch(`${BASE}/reconocimientos/${resolution.id}/buscar-externa`, {
+            const res = await fetch(`${window.APP_URL || ''}${BASE}/reconocimientos/${resolution.id}/buscar-externa`, {
                 headers: { Accept: 'application/json' },
             });
             const data = await res.json().catch(() => ({}));
@@ -53,7 +53,7 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
         setPdfLoading(mode);
         try {
             const endpoint = mode === 'preview' ? 'preview-externa' : 'descargar-externa';
-            const res = await fetch(`${BASE}/reconocimientos/${resolution.id}/${endpoint}`, {
+            const res = await fetch(`${window.APP_URL || ''}${BASE}/reconocimientos/${resolution.id}/${endpoint}`, {
                 headers: { Accept: 'application/json' },
             });
             if (!res.ok) {

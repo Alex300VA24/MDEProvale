@@ -24,6 +24,7 @@ yarn-error.log
 !/database/seeders/DatabaseSeeder.php
 !/database/seeders/RolSeeder.php
 !/database/seeders/StateSeeder.php
+!/database/seeders/PresidentUserSeeder.php
 .agent/
 .agents/
 .claude/

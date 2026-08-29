@@ -17,7 +17,7 @@ class CheckModuleAccess
                 return response()->json(['message' => 'No autenticado'], 401);
             }
 
-            return redirect('/login');
+            return redirect()->guest(route('login'));
         }
 
         $ability = $ability ?: $this->abilityFor($request);

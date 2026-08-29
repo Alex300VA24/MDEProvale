@@ -206,7 +206,7 @@ export default function Dashboard() {
     const handleLogout = (e) => {
         e.preventDefault();
         sessionStorage.removeItem(ASSISTANT_STORAGE_KEY);
-        router.post('/logout');
+        router.post((window.APP_URL || '') + '/logout');
     };
 
     const activeDynamicModule = dynamicItems.find((item) => item.key === activeSection)?.module;
@@ -234,7 +234,7 @@ export default function Dashboard() {
 
                     <div className="flex items-center gap-4 px-5 py-6 border-b border-white/10 min-h-[88px]">
                         <div className="w-12 h-12 bg-blue rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden">
-                            <img src="/img/muni2.png" alt="PROVALE" className="w-9 h-9 object-contain" />
+                            <img src={`${window.APP_URL || ''}/img/muni2.png`} alt="PROVALE" className="w-9 h-9 object-contain" />
                         </div>
                         <div className="logo-text">
                             <div className="text-white font-extrabold text-xl tracking-tight">MDE</div>
@@ -306,7 +306,7 @@ export default function Dashboard() {
                     <header id="top-header" className="relative flex items-center justify-between px-4 sm:px-8 h-16 sm:h-20">
                         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                             <img 
-                            src="/img/logo-provale-sin-fondo.png" 
+                            src={`${window.APP_URL || ''}/img/logo-provale-sin-fondo.png`}
                             alt="PROVALE" 
                             className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0" 
                             />

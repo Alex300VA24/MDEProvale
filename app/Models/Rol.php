@@ -9,6 +9,8 @@ class Rol extends Model
 {
     use HasFactory;
 
+    public const PRESIDENT = 'Socia Presidenta';
+
     protected $fillable = [
         'title',
         'description',

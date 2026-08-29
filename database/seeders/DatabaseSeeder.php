@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RacionesSeeder::class);
         app(\App\Services\ResolutionStateService::class)->syncAll();
         app(\App\Services\AssociationStateService::class)->syncAll();
+        $this->call(PresidentUserSeeder::class);
         $this->call(DetailProductSeeder::class);
         $this->call(TransactionSeeder::class);
         $this->call(PecosaSeeder::class);

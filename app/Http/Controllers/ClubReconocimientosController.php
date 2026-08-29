@@ -18,6 +18,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\PDF;
 use App\Services\AssociationStateService;
+use App\Services\PresidentAccountService;
 use App\Services\ResolutionStateService;
 
 class ClubReconocimientosController extends Controller
@@ -295,13 +296,18 @@ class ClubReconocimientosController extends Controller
                 throw new \Exception('No hay resolución asociada al comité');
             }
 
-            $directive = Directive::create([
+$directive = Directive::create([
                 'resolution_id' => $resolutionId,
                 'partner_id'    => $request->partner_id,
                 'position_id'   => $posicionPresidenta->id,
                 'state_id'      => $estadoVigente->id,
                 'date_start'    => now()->toDateString(),
             ]);
+
+            $partner = Partner::with('people')->find($request->partner_id);
+            if ($partner) {
+                app(PresidentAccountService::class)->sync($partner);
+            }
 
             Association::clearPresidentaCache($association->id);
 

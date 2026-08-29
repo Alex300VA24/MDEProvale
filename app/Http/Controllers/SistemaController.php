@@ -398,7 +398,8 @@ class SistemaController extends Controller
     private function restorePasswordToDni(User $user): void
     {
         $user->update([
-            'password' => Hash::make($user->dni),
+            'password'             => Hash::make($user->dni),
+            'must_change_password' => true,
         ]);
     }
 }

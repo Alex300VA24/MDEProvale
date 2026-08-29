@@ -6,6 +6,7 @@ use App\DTOs\PecosaSnapshotDTO;
 use App\Models\Association;
 use App\Models\DetailPecosa;
 use App\Models\Pecosa;
+use App\Models\VerifiedDocument;
 use App\Models\Responsible;
 use App\Models\Partner;
 use App\Models\Transaction;
@@ -17,6 +18,7 @@ use Barryvdh\DomPDF\Facade\PDF;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PecosaService
 {
@@ -25,14 +27,16 @@ class PecosaService
     private PartnerRepository $partnerRepo;
     private StockService $stockService;
     private PDFService $pdfService;
+    private VerifiedDocumentService $verifiedDocumentService;
 
-    public function __construct(PecosaRepository $pecosaRepo, ProductRepository $productRepo, PartnerRepository $partnerRepo, StockService $stockService, PDFService $pdfService)
+    public function __construct(PecosaRepository $pecosaRepo, ProductRepository $productRepo, PartnerRepository $partnerRepo, StockService $stockService, PDFService $pdfService, VerifiedDocumentService $verifiedDocumentService)
     {
         $this->pecosaRepo = $pecosaRepo;
         $this->productRepo = $productRepo;
         $this->partnerRepo = $partnerRepo;
         $this->stockService = $stockService;
         $this->pdfService = $pdfService;
+        $this->verifiedDocumentService = $verifiedDocumentService;
     }
 
     public function searchWithFilters(array $filters, int $perPage = 10)
@@ -166,7 +170,7 @@ class PecosaService
         });
     }
 
-    public function generateComprobante(Pecosa $pecosa): \Barryvdh\DomPDF\PDF
+    public function generateComprobante(Pecosa $pecosa, ?int $createdBy = null): array
     {
         $pecosa->load([
             'detailPecosas.detailProduct.product.uom',
@@ -174,7 +178,23 @@ class PecosaService
         ]);
 
         $data = $this->buildComprobanteData($pecosa);
-        return $this->pdfService->generate('comprobante_salida', $data, 'A4', 'landscape');
+        $identifier = 'PEC-' . Str::upper(Str::slug((string) $pecosa->pecosa_number)) . '-' . Str::upper(Str::random(6));
+
+        return $this->verifiedDocumentService->issue(
+            VerifiedDocument::TYPE_PECOSA_RECEIPT,
+            $identifier,
+            [
+                'pecosa' => $pecosa->pecosa_number,
+                'comite' => $pecosa->association_name ?: ($pecosa->association->name ?? ''),
+                'fecha_entrega' => optional($pecosa->delivery_date)->format('Y-m-d'),
+            ],
+            'comprobante_salida',
+            $data,
+            'comprobante-salida-' . $pecosa->pecosa_number . '.pdf',
+            $createdBy,
+            'a4',
+            'landscape'
+        );
     }
 
     private function buildPecosaSnapshotDTO(array $data): PecosaSnapshotDTO

@@ -18,16 +18,19 @@
         </include>
     </coverage>
     <php>
-        <server name="APP_ENV" value="testing"/>
-        <server name="BCRYPT_ROUNDS" value="4"/>
-        <server name="CACHE_DRIVER" value="array"/>
+        <env name="APP_ENV" value="testing"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_DRIVER" value="array"/>
         <!-- Base de datos dedicada SOLO para tests. Nunca usar la BD de desarrollo
-             (dbsysprovale): los tests con RefreshDatabase ejecutan migrate:fresh. -->
-        <server name="DB_CONNECTION" value="mysql"/>
-        <server name="DB_DATABASE" value="dbsysprovale_test"/>
-        <server name="MAIL_MAILER" value="array"/>
-        <server name="QUEUE_CONNECTION" value="sync"/>
-        <server name="SESSION_DRIVER" value="array"/>
-        <server name="TELESCOPE_ENABLED" value="false"/>
+             (DBSYSPROVALE): los tests con RefreshDatabase ejecutan migrate:fresh.
+             Advertencia: si hay config cache (bootstrap/cache/config.php), la conexion
+             queda congelada a la BD dev y los tests la borran. Antes de correr tests,
+             ejecutar:  php artisan config:clear  (y no usar config:cache en dev). -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_DATABASE" value="dbsysprovale_test"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
     </php>
 </phpunit>

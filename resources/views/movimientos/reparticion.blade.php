@@ -8,7 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @page {
             size: landscape;
-            margin: 1.5mm 3mm 1.5mm 3mm;
+            margin: 1.5mm 3mm;
         }
         body {
             margin: 0;
@@ -35,7 +35,6 @@
 
         .page-container {
             width: 100%;
-            height: 100%;
             padding: 10px;
         }
 
@@ -104,12 +103,16 @@
         .sig-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         .sig-table td { width: 33.33%; text-align: center; padding: 4px; vertical-align: bottom; }
         .sig-line { border-top: 1px solid #000; margin-top: 35px; padding-top: 4px; font-size: 7pt; }
+        .verification-row { width: 100%; margin-top: 2mm; page-break-inside: avoid; }
+        .verification-cell { width: 22mm; margin-left: auto; text-align: center; color: #1E5799; font-size: 5pt; line-height: 1.15; }
+        .verification-cell img { display: block; width: 17mm; height: 17mm; margin: 0 auto 0.8mm; }
     </style>
 </head>
 <body>
     <footer>
         <strong>PAG <span class="pagenum"></span></strong>
     </footer>
+
     <div class="page-container">
     @php
         $meses_es = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -226,6 +229,15 @@
             
         </tbody>
     </table>
+    @if(!empty($qrDataUri))
+        <div class="verification-row">
+            <div class="verification-cell">
+                <img src="{{ $qrDataUri }}" alt="Código QR de verificación">
+                Escanee para verificar<br>autenticidad
+            </div>
+        </div>
+    @endif
     </div>
+
 </body>
 </html>

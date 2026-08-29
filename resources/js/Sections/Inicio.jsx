@@ -259,7 +259,7 @@ export default function Inicio({ onNavigate }) {
         <div>
             <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden mb-6 sm:mb-8 shadow-lg">
                 <div className="absolute inset-0">
-                    <img src="/img/niños.jpg" alt="Banner" className="w-full h-full object-cover" />
+                    <img src={`${window.APP_URL || ''}/img/niños.jpg`} alt="Banner" className="w-full h-full object-cover" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue/60 to-navy/40" />
                 <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 sm:p-8 gap-4 sm:gap-8">

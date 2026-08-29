@@ -2,7 +2,10 @@
     "private": true,
     "scripts": {
         "dev": "vite",
+        "dev:blade": "laravel-mix watch",
         "build": "vite build",
+        "build:blade": "laravel-mix --production",
+        "build:assets": "npm run build && npm run build:blade",
         "preview": "vite preview"
     },
     "devDependencies": {

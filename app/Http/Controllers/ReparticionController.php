@@ -3,14 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReparticionService;
-use Barryvdh\DomPDF\Facade\PDF;
+use App\Models\VerifiedDocument;
+use App\Services\VerifiedDocumentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ReparticionController extends Controller
 {
     private ReparticionService $reparticionService;
 
-    public function __construct(ReparticionService $reparticionService)
+    public function __construct(
+        ReparticionService $reparticionService,
+        private VerifiedDocumentService $verifiedDocumentService
+    )
     {
         $this->reparticionService = $reparticionService;
     }
@@ -56,7 +61,7 @@ class ReparticionController extends Controller
 
         $monthName = date('F', strtotime($report['end_date']));
 
-        $pdf = PDF::loadView('movimientos.reparticion', [
+        $viewData = [
             'clubs' => $report['associations'],
             'currentYear' => $report['year'],
             'currentMonth' => $report['month'],
@@ -67,8 +72,35 @@ class ReparticionController extends Controller
             'totalBeneficiarios' => $report['total_beneficiarios'],
             'totalLecheLitros' => $report['total_leche_litros'],
             'totalHojuelasKg' => $report['total_hojuelas_kg'],
-        ]);
+        ];
 
-        return $pdf->setPaper('landscape')->stream('reparticion-' . $report['year'] . '-' . $report['month'] . '.pdf');
+        $identifier = sprintf(
+            'REP-%04d-%02d-%s',
+            $report['year'],
+            $report['month'],
+            strtoupper(Str::random(8))
+        );
+        $filename = 'reparticion-' . $report['year'] . '-' . sprintf('%02d', $report['month']) . '.pdf';
+
+        [, $contents, $safeFilename] = $this->verifiedDocumentService->issue(
+            VerifiedDocument::TYPE_DISTRIBUTION_REGISTER,
+            $identifier,
+            [
+                'periodo' => sprintf('%04d-%02d', $report['year'], $report['month']),
+                'comites' => $report['associations']->count(),
+                'beneficiarios' => $report['total_beneficiarios'],
+            ],
+            'movimientos.reparticion',
+            $viewData,
+            $filename,
+            $request->user()?->id,
+            'a4',
+            'landscape'
+        );
+
+        return response($contents, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $safeFilename . '"',
+        ]);
     }
 }

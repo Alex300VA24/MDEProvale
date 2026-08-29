@@ -187,8 +187,12 @@ class PecosaController extends Controller
 
     public function generarComprobante(Pecosa $pecosa)
     {
-        return $this->pecosaService->generateComprobante($pecosa)
-            ->stream('comprobante-salida-' . $pecosa->pecosa_number . '.pdf');
+        [, $contents, $filename] = $this->pecosaService->generateComprobante($pecosa, request()->user()?->id);
+
+        return response($contents, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
     }
 
     public function reportes()

@@ -29,6 +29,7 @@ class User extends Authenticatable
         'cui',
         'state_id',
         'rol_id',
+        'must_change_password',
     ];
 
     /**
@@ -48,6 +49,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'must_change_password' => 'boolean',
     ];
 
     public function rol()
@@ -78,6 +80,23 @@ class User extends Authenticatable
     public function isBasicUser()
     {
         return $this->rol_id === 3;
+    }
+
+public function isPresidentPortalUser(): bool
+    {
+        return $this->rol
+            && $this->rol->is_active
+            && mb_strtolower(trim($this->rol->title)) === mb_strtolower(Rol::PRESIDENT);
+    }
+
+    public function mustChangePassword(): bool
+    {
+        return (bool) $this->must_change_password;
+    }
+
+    public function forcePasswordChange(): void
+    {
+        $this->forceFill(['must_change_password' => true])->save();
     }
 
     /**

@@ -51,7 +51,7 @@ export default function PadronModal({ open, onClose, options }) {
                 month,
                 year,
             });
-            const res = await fetch(`/socios-beneficiarios/beneficiarios-padron?${params.toString()}`, {
+            const res = await fetch(`${window.APP_URL || ''}/socios-beneficiarios/beneficiarios-padron?${params.toString()}`, {
                 headers: { Accept: 'application/json' },
             });
             if (!res.ok) {

@@ -11,6 +11,10 @@ import axios from 'axios';
 const http = axios.create({
     withCredentials: true,
     timeout: 15000,
+    // baseURL: rutas absolutas como /api/... se resuelven bajo la base real de la
+    // aplicacion (window.APP_URL) para que funcione tanto con `php artisan serve`
+    // como instalado en una subcarpeta de htdocs (p. ej. http://localhost/MDEProvale/public).
+    baseURL: window.APP_URL || '',
     headers: {
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -39,7 +43,7 @@ http.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response && error.response.status === 401) {
-            window.location.href = '/login';
+            window.location.href = (window.APP_URL || '') + '/login';
         }
         return Promise.reject(error);
     }
