@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>try{if(localStorage.getItem('mde-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
     <title>Iniciar Sesión - PROVALE</title>
     <link rel="icon" href="{{ asset('img/logo-provale-sin-fondo.png') }}">
     <link rel="stylesheet" href="{{ asset('fonts/source-sans-3/400.css') }}">
@@ -318,10 +319,70 @@
                 padding: 26px 20px;
             }
         }
+
+        /* Interruptor de tema (esquina). */
+        .theme-fab {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 5;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            background: rgba(11, 58, 102, 0.55);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+        }
+        .theme-fab:hover { background: rgba(11, 58, 102, 0.75); }
+
+        /* ===== Modo oscuro (opt-in) ===== */
+        .dark .login-shell { background-color: #0E1526; }
+        .dark .login-shell::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 16, 28, 0.55);
+            z-index: 1;
+        }
+        .dark .login-card {
+            background: rgba(22, 31, 51, 0.98);
+            border-color: rgba(44, 58, 86, 0.9);
+            box-shadow: 0 28px 60px -30px rgba(0, 0, 0, 0.6);
+        }
+        .dark .login-logo div strong,
+        .dark .login-heading h1 { color: #E6EBF3; }
+        .dark .login-heading p,
+        .dark .field label { color: #9DB0C7; }
+        .dark .input-wrap input {
+            background: #0E1526;
+            border-color: #2C3A56;
+            color: #E6EBF3;
+        }
+        .dark .input-wrap input::placeholder { color: #6B7C93; }
+        .dark .input-wrap input:hover { border-color: #3C5170; }
+        .dark .input-wrap input:focus { background: #131C30; border-color: #5AA9E0; box-shadow: 0 0 0 4px rgba(90, 169, 224, 0.16); }
+        .dark .toggle-password:hover { color: #7FB1E6; background: #1F2A42; }
+        .dark .remember label { color: #C7D2E1; }
+        .dark .link-forgot { color: #7FB1E6; }
+        .dark .btn-login { background: #103A63; box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.55); }
+        .dark .error-banner { background: #331A1D; border-color: #6B3238; color: #F1A9AF; }
+        .dark .login-copy { color: #6B7C93; }
     </style>
 </head>
 <body>
     <x-loading-screen subtitle="Programa Vaso de Leche" />
+
+    <button type="button" class="theme-fab" aria-label="Cambiar tema" title="Cambiar entre tema claro y oscuro"
+        onclick="var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('mde-theme',d?'dark':'light')}catch(e){}">
+        <svg class="w-[18px] h-[18px] dark:hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="w-[18px] h-[18px] hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+    </button>
 
     <div class="login-shell">
         <!-- Panel del formulario -->

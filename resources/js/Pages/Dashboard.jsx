@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import LoadingScreen from '../Components/LoadingScreen';
+import ThemeToggle from '../Components/ThemeToggle';
 import http from '../http';
 import AsistentePROVALE, { ASSISTANT_STORAGE_KEY } from '../Components/AsistentePROVALE';
 
@@ -322,6 +323,8 @@ export default function Dashboard() {
                         </div>
 
                         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                            <ThemeToggle className="w-10 h-10 sm:w-11 sm:h-11" />
+
                             <button
                                 type="button"
                                 onClick={openNotifications}

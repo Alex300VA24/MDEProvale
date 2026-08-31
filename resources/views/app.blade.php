@@ -8,6 +8,8 @@
 <link rel="preload" as="image" href="{{ asset('img/muni2.png') }}" fetchpriority="high">
         <title inertia>{{ config('app.name', 'MDEProvale') }}</title>
         <script>window.APP_URL = @json(rtrim(url('/'), '/'));</script>
+        {{-- Modo oscuro opt-in aplicado antes del primer pintado (evita parpadeo). --}}
+        <script>try{if(localStorage.getItem('mde-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
 
         @if (file_exists(public_path('hot')))
             {{-- Dev: servidor de Vite con HMR --}}

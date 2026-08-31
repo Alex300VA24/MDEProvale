@@ -8,6 +8,49 @@
     --institutional-navy-hover: #124C82;
     --institutional-navy-deep: #072A4D;
     --control-radius: 0.375rem;
+
+    /* ==================== Tokens de color (modo claro) ====================
+       Cada token es un triplete "R G B" que alimenta tailwind.config.js
+       (`rgb(var(--c-x) / <alpha-value>)`). Aquí valen exactamente los mismos
+       hex de siempre, así que el modo claro se renderiza idéntico. El bloque
+       `.dark` al final del archivo los reescribe para el tema oscuro. */
+    --c-base:  241 245 249;   /* #F1F5F9 */
+    --c-mist:  214 225 236;   /* #D6E1EC */
+    --c-slate: 80 110 141;    /* #506E8D */
+    --c-wheat: 232 220 200;   /* #E8DCC8 */
+    --c-charcoal: 45 55 72;   /* #2D3748 */
+    --c-earth: 107 114 128;   /* #6B7280 */
+    --c-leaf: 22 101 52;      /* #166534 */
+    --c-leaf-light: 220 252 231; /* #DCFCE7 */
+    --c-cream: 253 248 240;   /* #FDF8F0 */
+    --c-clay: 220 38 38;      /* #DC2626 */
+    --c-clay-light: 254 226 226; /* #FEE2E2 */
+    --c-sun: 146 64 14;       /* #92400E */
+    --c-sun-light: 254 243 199;  /* #FEF3C7 */
+    --c-navy: 11 58 102;      /* #0B3A66 */
+    --c-navy-dark: 7 42 77;   /* #072A4D */
+    --c-blue: 11 58 102;      /* #0B3A66 */
+    --c-blue-mid: 23 90 145;  /* #175A91 */
+    --c-blue-light: 225 237 247; /* #E1EDF7 */
+    --c-sky: 7 89 133;        /* #075985 */
+    --c-sky-light: 224 242 254;  /* #E0F2FE */
+    --c-teal: 17 94 89;       /* #115E59 */
+    --c-teal-light: 204 251 241; /* #CCFBF1 */
+    --c-amber: 229 147 10;    /* #E5930A */
+    --c-amber-light: 254 243 220; /* #FEF3DC */
+    --c-amber-dark: 184 115 0;   /* #B87300 */
+    --c-coral: 180 35 45;     /* #B4232D */
+    --c-coral-light: 254 226 226; /* #FEE2E2 */
+    --c-purple-light: 243 232 255; /* #F3E8FF */
+    --c-green-light: 220 252 231;  /* #DCFCE7 */
+
+    /* Tokens semánticos de superficie/texto. */
+    --c-surface: 255 255 255;    /* tarjetas, modales, header */
+    --c-surface-2: 241 245 249;  /* superficie elevada / hover / barras de filtro */
+    --c-canvas: 238 244 252;     /* lienzo detrás del contenido (= body) */
+    --c-content: 26 46 74;       /* #1A2E4A texto principal */
+    --c-content-muted: 80 110 141; /* texto secundario */
+    --c-border: 214 225 236;     /* bordes y separadores */
 }
 
 /* ==================== Sistema tipográfico institucional ====================
@@ -1122,3 +1165,260 @@ textarea,
         min-height: 420px;
     }
 }
+
+/* ============================================================================
+   MODO OSCURO  (opt-in, clase `.dark` en <html>)
+   ----------------------------------------------------------------------------
+   Solo reescribe los tokens `--c-*` y un puñado de superficies/textos que
+   estaban con hex crudo. El modo claro no se toca: sin `.dark` en <html>,
+   ninguna de estas reglas aplica.
+   ========================================================================== */
+.dark {
+    --c-base:  40 52 78;      /* #28344E barras de filtro y botones de icono: suben de tono para no fundirse con el header oscuro */
+    --c-mist:  62 80 112;     /* #3E5070 bordes visibles sobre superficies oscuras */
+    --c-slate: 157 176 199;   /* texto secundario */
+    --c-wheat: 44 58 86;      /* borde heredado */
+    --c-charcoal: 230 235 243;/* texto principal */
+    --c-earth: 148 163 184;   /* texto atenuado */
+    --c-leaf: 74 222 128;     /* verde de acento/éxito sobre oscuro */
+    --c-leaf-light: 19 51 31; /* fondo de chip de éxito */
+    --c-cream: 32 40 58;      /* fila seleccionada en select2 */
+    --c-clay: 248 113 113;    /* rojo de acento sobre oscuro */
+    --c-clay-light: 58 29 31; /* fondo de chip de peligro */
+    --c-sun: 251 191 92;      /* ámbar de acento sobre oscuro */
+    --c-sun-light: 51 40 15;  /* fondo de chip de advertencia */
+    --c-navy: 203 217 236;    /* text-navy: títulos casi blancos */
+    --c-navy-dark: 147 169 198;
+    --c-blue: 127 177 230;    /* text-blue: etiquetas/enlaces sobre oscuro */
+    --c-blue-mid: 91 147 206;
+    --c-blue-light: 26 43 68; /* hover de fila / fondo de chip */
+    --c-sky: 90 169 224;
+    --c-sky-light: 18 50 74;
+    --c-teal: 77 191 180;
+    --c-teal-light: 15 46 43;
+    --c-amber: 240 169 58;
+    --c-amber-light: 51 40 15;
+    --c-amber-dark: 200 138 46;
+    --c-coral: 242 120 132;
+    --c-coral-light: 58 29 31;
+    --c-purple-light: 42 33 56;
+    --c-green-light: 19 51 31;
+
+    --c-surface: 22 31 51;     /* #161F33 tarjetas, modales, header */
+    --c-surface-2: 31 42 66;   /* #1F2A42 superficie elevada / hover */
+    --c-canvas: 14 21 38;      /* #0E1526 lienzo */
+    --c-content: 230 235 243;  /* #E6EBF3 */
+    --c-content-muted: 157 176 199;
+    --c-border: 44 58 86;      /* #2C3A56 */
+
+    /* Familia navy institucional: se aclara en oscuro para separar el sidebar,
+       los botones primarios, el toggle de menú y las cabeceras de tabla del
+       lienzo casi negro. El texto sobre estas superficies sigue siendo blanco. */
+    --institutional-navy: #1C5490;
+    --institutional-navy-hover: #276EB8;
+    --institutional-navy-deep: #15426F;
+
+    /* Lienzo del área de contenido (usado por #content-wrapper main y .bg-gray-100). */
+    --app-canvas: #0E1526;
+
+    /* SweetAlert2 (los popups se montan en <body>, heredan estas variables). */
+    --swal2-background: #161F33;
+    --swal2-color: #E6EBF3;
+    --swal2-input-background: #0E1526;
+    --swal2-input-color: #E6EBF3;
+    --swal2-border: 1px solid #2C3A56;
+    --swal2-input-border: 1px solid #2C3A56;
+    --swal2-footer-color: #9DB0C7;
+    --swal2-footer-border-color: #2C3A56;
+    --swal2-validation-message-background: #1F2A42;
+    --swal2-validation-message-color: #E6EBF3;
+    --swal2-html-container-color: #C7D2E1;
+}
+
+/* --- Lienzo y cuerpo --------------------------------------------------------- */
+.dark body {
+    background-color: rgb(var(--c-canvas));
+    color: rgb(var(--c-content));
+}
+.dark #app-shell { background-color: rgb(var(--c-canvas)); }
+
+/* --- Utilidades base de Tailwind usadas como superficie/texto -------------- */
+.dark .bg-white,
+.dark .bg-white\/95,
+.dark .bg-white\/90,
+.dark .bg-white\/80,
+.dark .bg-white\/70,
+.dark .bg-white\/60,
+.dark .bg-white\/50 { background-color: rgb(var(--c-surface)) !important; }
+
+.dark .bg-white\/10,
+.dark .bg-white\/5 { background-color: rgb(255 255 255 / 0.06) !important; }
+
+.dark #content-wrapper main .bg-gray-50,
+.dark .bg-gray-50,
+.dark .bg-slate-50,
+.dark .bg-gray-200 { background-color: rgb(var(--c-surface-2)) !important; }
+
+.dark .bg-gray-100 { background-color: rgb(var(--c-canvas)) !important; }
+
+.dark .text-gray-400,
+.dark .text-gray-500,
+.dark .text-gray-600,
+.dark .text-gray-700,
+.dark .text-gray-800,
+.dark .text-gray-900,
+.dark .text-slate-400,
+.dark .text-slate-500,
+.dark .text-slate-600,
+.dark .text-slate-700,
+.dark .text-black { color: rgb(var(--c-content-muted)) !important; }
+
+.dark .text-gray-900,
+.dark .text-slate-800,
+.dark .text-slate-900 { color: rgb(var(--c-content)) !important; }
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-slate-200,
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgb(var(--c-border)) !important; }
+
+/* Divisores del sidebar (border-white/10) — mantener visibles sobre navy. */
+.dark #sidebar .border-white\/10 { border-color: rgb(255 255 255 / 0.12) !important; }
+
+/* Sombra clara sobre lienzo oscuro no separa; se refuerza con sombra negra y filo. */
+.dark #sidebar {
+    box-shadow: 4px 0 22px rgb(0 0 0 / 0.45);
+    border-right: 1px solid rgb(255 255 255 / 0.06);
+}
+
+/* Botones de icono (bg-base + text-slate): el color heredado por el <i> es
+   demasiado tenue sobre el fondo oscuro; se sube a texto principal. */
+.dark .bg-base.text-slate,
+.dark .bg-base.text-slate > i {
+    color: rgb(var(--c-content));
+}
+
+/* --- Formularios ---------------------------------------------------------- */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+.dark select,
+.dark textarea {
+    background-color: rgb(var(--c-surface-2)) !important;
+    border-color: rgb(var(--c-border)) !important;
+    color: rgb(var(--c-content)) !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder { color: rgb(var(--c-earth)) !important; }
+
+/* --- Componentes compartidos que traían hex crudo ----------------------- */
+.dark .dashboard-section-title { color: #7FB1E6 !important; }
+
+.dark .modal-card { background-color: rgb(var(--c-surface)); border-color: rgb(var(--c-border)); }
+.dark .modal-header {
+    background: linear-gradient(180deg, rgb(var(--c-surface-2)) 0%, rgb(var(--c-surface)) 100%);
+    border-bottom-color: rgb(var(--c-border));
+}
+
+.dark #top-header {
+    background: linear-gradient(115deg, rgb(18 26 44 / 0.92) 0%, rgb(14 21 38 / 0.88) 100%);
+    border-bottom-color: rgb(var(--c-border));
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.28);
+}
+
+.dark .skeleton { background: rgb(var(--c-surface-2)); }
+.dark .skeleton::after {
+    background: linear-gradient(90deg, transparent 30%, rgb(255 255 255 / 0.06) 50%, transparent 70%);
+}
+
+/* Botón secundario (fondo blanco + texto navy con !important en claro). */
+.dark .btn-secondary,
+.dark a.btn-secondary {
+    background: rgb(var(--c-surface-2)) !important;
+    color: rgb(var(--c-navy)) !important;
+    border-color: rgb(var(--c-border)) !important;
+}
+.dark .btn-secondary:hover,
+.dark a.btn-secondary:hover {
+    background: rgb(var(--c-surface)) !important;
+    border-color: rgb(var(--c-blue-mid)) !important;
+}
+
+/* Etiquetas de estado: mismo significado, tinte oscuro + texto luminoso. */
+.dark .badge-active  { color: #8FC1EC; background: #16283C; box-shadow: inset 0 0 0 1px #2F567D; }
+.dark .badge-current { color: #86D89A; background: #14311F; box-shadow: inset 0 0 0 1px #2E6B45; }
+.dark .badge-pending { color: #E4A579; background: #33220F; box-shadow: inset 0 0 0 1px #6B4A2C; }
+.dark .badge-inactive{ color: #B9C2CF; background: #262E3D; box-shadow: inset 0 0 0 1px #414B5B; }
+.dark .badge-expired { color: #EE8A93; background: #331A1D; box-shadow: inset 0 0 0 1px #6B3238; }
+.dark .badge-unknown { color: #C3B4E4; background: #262038; box-shadow: inset 0 0 0 1px #4A3F6B; }
+
+/* --- Select2 (piel propia) --------------------------------------------- */
+.dark .select2-container--default .select2-selection--single {
+    background: rgb(var(--c-surface-2));
+    border-color: rgb(var(--c-border));
+}
+.dark .select2-container--default .select2-selection--single .select2-selection__rendered { color: rgb(var(--c-content)); }
+.dark .select2-container--default .select2-selection--single .select2-selection__placeholder { color: rgb(var(--c-earth)); }
+.dark .select2-container--default .select2-selection--single .select2-selection__arrow b { border-top-color: rgb(var(--c-earth)); }
+.dark .select2-dropdown {
+    background: rgb(var(--c-surface));
+    border-color: rgb(var(--c-border));
+}
+.dark .select2-search--dropdown { border-bottom-color: rgb(var(--c-border)); }
+.dark .select2-search--dropdown .select2-search__field {
+    background: rgb(var(--c-surface-2));
+    border-color: rgb(var(--c-border));
+    color: rgb(var(--c-content));
+}
+.dark .select2-results__option { color: rgb(var(--c-content)); }
+.dark .select2-results__option--highlighted[aria-selected] {
+    background: #13331F !important;
+    color: #4ADE80 !important;
+}
+.dark .select2-results__option[aria-selected=true] {
+    background: rgb(var(--c-surface-2));
+    color: rgb(var(--c-content));
+}
+.dark .select2-results__group { color: rgb(var(--c-earth)); }
+
+/* --- Asistente conversacional ---------------------------------------- */
+.dark .assistant-panel { background: rgb(var(--c-surface)); border-color: rgb(var(--c-border)); }
+.dark .assistant-messages { background: linear-gradient(180deg, #131A2B 0%, #0F1524 100%); }
+.dark .assistant-welcome {
+    background: linear-gradient(135deg, rgb(var(--c-surface-2)), #17233A);
+    border-color: rgb(var(--c-border));
+}
+.dark .assistant-welcome h3 { color: #CBD9EC; }
+.dark .assistant-welcome p { color: rgb(var(--c-content-muted)); }
+.dark .assistant-suggestions button {
+    background: rgb(var(--c-surface-2));
+    border-color: rgb(var(--c-border));
+    color: rgb(var(--c-content));
+}
+.dark .assistant-suggestion-copy strong { color: #CBD9EC; }
+.dark .assistant-suggestion-copy small,
+.dark .assistant-suggestions > p { color: rgb(var(--c-content-muted)); }
+.dark .assistant-message-bot {
+    background: rgb(var(--c-surface-2));
+    border-color: rgb(var(--c-border));
+    color: rgb(var(--c-content));
+}
+.dark .assistant-answer-title,
+.dark .assistant-answer-content strong { color: #CBD9EC; }
+.dark .assistant-answer-note { color: rgb(var(--c-content-muted)); }
+.dark .assistant-answer-content code { background: #0E1526; color: #7FB1E6; }
+.dark .assistant-answer-content a { color: #7FB1E6; }
+.dark .assistant-answer-step > span { background: #14304C; color: #9CC6EC; }
+.dark .assistant-form { background: rgb(var(--c-surface)); border-top-color: rgb(var(--c-border)); }
+.dark .assistant-form textarea {
+    background: #0E1526;
+    border-color: rgb(var(--c-border));
+    color: rgb(var(--c-content));
+}
+.dark .assistant-form textarea:focus { background: #0E1526; border-color: #2E5FA3; }
+.dark .assistant-disclaimer { background: rgb(var(--c-surface)); color: rgb(var(--c-content-muted)); }
+.dark .assistant-error { background: #331A1D; border-color: #6B3238; color: #F1A9AF; }
+
+/* Barra de progreso del filtro (usaba blanco translúcido para fondo claro). */
+.dark .assistant-typing span { background: rgb(var(--c-earth)); }
+

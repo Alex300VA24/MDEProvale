@@ -1,6 +1,7 @@
 import '../../css/portal.css';
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import ThemeToggle from '../Components/ThemeToggle';
 
 const base = typeof window !== 'undefined' ? window.APP_URL || '' : '';
 export const portalPath = (path = '') => `${base}${path}`;
@@ -67,11 +68,14 @@ export default function PortalLayout({ title, children }) {
                             <span>PROVALE · Portal de Presidentas</span>
                         </div>
                     </div>
-                    <form onSubmit={logout}>
-                        <button className="portal-logout" type="submit">
-                            <i className="fas fa-right-from-bracket" aria-hidden="true" /> Cerrar sesión
-                        </button>
-                    </form>
+                    <div className="portal-topbar-actions">
+                        <ThemeToggle variant="portal" />
+                        <form onSubmit={logout}>
+                            <button className="portal-logout" type="submit">
+                                <i className="fas fa-right-from-bracket" aria-hidden="true" /> Cerrar sesión
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </header>
 

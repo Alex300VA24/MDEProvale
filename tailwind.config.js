@@ -1,6 +1,28 @@
 const defaultTheme = require('tailwindcss/defaultTheme');
 
+/**
+ * Token de color respaldado por CSS custom properties.
+ *
+ * Cada color de la paleta institucional se resuelve en tiempo de ejecución
+ * contra una variable `--c-*` (definida en resources/css/app.css). En `:root`
+ * esas variables valen exactamente los mismos hex que antes, así que el modo
+ * claro se renderiza idéntico. En `.dark` se sobreescriben, y todas las
+ * utilidades (`bg-navy`, `text-charcoal`, `border-mist`, ...) cambian de tema
+ * sin tocar el marcado. El placeholder `<alpha-value>` deja que Tailwind siga
+ * generando las variantes con opacidad (`text-navy/70`, `bg-blue/10`, ...).
+ */
+function tok(cssVar) {
+    return ({ opacityValue } = {}) =>
+        opacityValue === undefined
+            ? `rgb(var(${cssVar}))`
+            : `rgb(var(${cssVar}) / ${opacityValue})`;
+}
+
 module.exports = {
+    // Modo oscuro opt-in: se activa con la clase `.dark` en <html>. Nunca se
+    // activa solo (sin preferencia de sistema); lo controla el interruptor y
+    // se persiste en localStorage('mde-theme').
+    darkMode: 'class',
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
@@ -18,53 +40,62 @@ module.exports = {
                 jakarta: ['"Source Sans 3"', 'sans-serif'],
             },
             colors: {
-                base:  '#F1F5F9',
-                mist:  '#D6E1EC',
-                slate: '#506E8D',
-                wheat: '#E8DCC8',
-                charcoal: '#2D3748',
-                earth: '#6B7280',
+                base:  tok('--c-base'),
+                mist:  tok('--c-mist'),
+                slate: tok('--c-slate'),
+                wheat: tok('--c-wheat'),
+                charcoal: tok('--c-charcoal'),
+                earth: tok('--c-earth'),
                 leaf: {
-                    DEFAULT: '#166534',
-                    light: '#DCFCE7',
+                    DEFAULT: tok('--c-leaf'),
+                    light:   tok('--c-leaf-light'),
                 },
-                cream: '#FDF8F0',
+                cream: tok('--c-cream'),
                 clay: {
-                    DEFAULT: '#DC2626',
-                    light: '#FEE2E2',
+                    DEFAULT: tok('--c-clay'),
+                    light:   tok('--c-clay-light'),
                 },
                 sun: {
-                    DEFAULT: '#92400E',
-                    light: '#FEF3C7',
+                    DEFAULT: tok('--c-sun'),
+                    light:   tok('--c-sun-light'),
                 },
                 navy: {
-                    DEFAULT: '#0B3A66',
-                    dark:    '#072A4D',
+                    DEFAULT: tok('--c-navy'),
+                    dark:    tok('--c-navy-dark'),
                 },
                 blue: {
-                    DEFAULT: '#0B3A66',
-                    mid:     '#175A91',
-                    light:   '#E1EDF7',
+                    DEFAULT: tok('--c-blue'),
+                    mid:     tok('--c-blue-mid'),
+                    light:   tok('--c-blue-light'),
                 },
                 sky: {
-                    DEFAULT: '#075985',
-                    light:   '#E0F2FE',
+                    DEFAULT: tok('--c-sky'),
+                    light:   tok('--c-sky-light'),
                 },
                 teal: {
-                    DEFAULT: '#115E59',
-                    light:   '#CCFBF1',
+                    DEFAULT: tok('--c-teal'),
+                    light:   tok('--c-teal-light'),
                 },
                 amber: {
-                    DEFAULT: '#E5930A',
-                    light:   '#FEF3DC',
-                    dark:    '#B87300',
+                    DEFAULT: tok('--c-amber'),
+                    light:   tok('--c-amber-light'),
+                    dark:    tok('--c-amber-dark'),
                 },
                 coral: {
-                    DEFAULT: '#B4232D',
-                    light:   '#FEE2E2',
+                    DEFAULT: tok('--c-coral'),
+                    light:   tok('--c-coral-light'),
                 },
-                'purple-light': '#F3E8FF',
-                'green-light': '#DCFCE7',
+                'purple-light': tok('--c-purple-light'),
+                'green-light':  tok('--c-green-light'),
+
+                // Tokens semánticos de superficie/texto para modo oscuro. En claro
+                // valen blanco/lienzo/tinta actuales; en `.dark` se invierten.
+                surface:   tok('--c-surface'),
+                'surface-2': tok('--c-surface-2'),
+                canvas:    tok('--c-canvas'),
+                content:   tok('--c-content'),
+                'content-muted': tok('--c-content-muted'),
+                hairline:  tok('--c-border'),
             },
         },
     },

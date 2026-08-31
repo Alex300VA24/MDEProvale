@@ -32,8 +32,18 @@ function FiltroSelect({ value, onChange, children, label }) {
     );
 }
 const CHART_FONT = { family: "'Source Sans 3', system-ui, sans-serif", size: 11 };
-const GRID_COLOR = 'rgba(15, 42, 74, 0.08)';
-const TICK_COLOR = '#5A7FA8';
+
+// Colores de ejes, rejilla y tooltip según el tema activo. Las gráficas de
+// Chart.js dibujan sobre <canvas> y no leen CSS, así que se resuelven en JS y
+// se vuelven a montar al alternar el tema (ver useThemeTick más abajo).
+function chartInk() {
+    const dark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+    return dark
+        ? { grid: 'rgba(157, 176, 199, 0.15)', tick: '#9DB0C7', tooltip: 'rgba(4, 10, 22, 0.95)', donutBorder: '#161F33', centerText: '#CBD9EC' }
+        : { grid: 'rgba(15, 42, 74, 0.08)', tick: '#5A7FA8', tooltip: 'rgba(11, 58, 102, 0.94)', donutBorder: '#ffffff', centerText: '#0B3A66' };
+}
+const GRID_COLOR = () => chartInk().grid;
+const TICK_COLOR = () => chartInk().tick;
 
 // Paleta categórica institucional: colores planos, saturados y con contraste
 // claro entre series. Sin degradados: lavaban el color y dejaban el doughnut
@@ -53,15 +63,19 @@ const C = {
 };
 
 // Aplica los estilos base compartidos por todas las gráficas (tipografía y
-// tooltips) una sola vez, para un aspecto homogéneo y sobrio.
-Chart.defaults.font.family = CHART_FONT.family;
-Chart.defaults.color = TICK_COLOR;
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(11, 58, 102, 0.94)';
-Chart.defaults.plugins.tooltip.padding = 12;
-Chart.defaults.plugins.tooltip.cornerRadius = 10;
-Chart.defaults.plugins.tooltip.boxPadding = 6;
-Chart.defaults.plugins.tooltip.titleFont = { family: CHART_FONT.family, size: 12, weight: '700' };
-Chart.defaults.plugins.tooltip.bodyFont = { family: CHART_FONT.family, size: 12 };
+// tooltips). Se vuelve a llamar al alternar el tema para refrescar los colores
+// dependientes del tema antes de re-montar las gráficas.
+function applyChartDefaults() {
+    Chart.defaults.font.family = CHART_FONT.family;
+    Chart.defaults.color = TICK_COLOR();
+    Chart.defaults.plugins.tooltip.backgroundColor = chartInk().tooltip;
+    Chart.defaults.plugins.tooltip.padding = 12;
+    Chart.defaults.plugins.tooltip.cornerRadius = 10;
+    Chart.defaults.plugins.tooltip.boxPadding = 6;
+    Chart.defaults.plugins.tooltip.titleFont = { family: CHART_FONT.family, size: 12, weight: '700' };
+    Chart.defaults.plugins.tooltip.bodyFont = { family: CHART_FONT.family, size: 12 };
+}
+applyChartDefaults();
 
 // Texto centrado dentro del doughnut (total de la comparativa).
 const donutCenterText = {
@@ -76,10 +90,10 @@ const donutCenterText = {
         ctx.save();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = C.navy;
+        ctx.fillStyle = chartInk().centerText;
         ctx.font = `700 20px ${CHART_FONT.family}`;
         ctx.fillText(total.toLocaleString('es-PE'), cx, cy - 4);
-        ctx.fillStyle = TICK_COLOR;
+        ctx.fillStyle = TICK_COLOR();
         ctx.font = `600 10px ${CHART_FONT.family}`;
         ctx.fillText('TOTAL', cx, cy + 14);
         ctx.restore();
@@ -153,6 +167,18 @@ function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
 export default function Inicio({ onNavigate }) {
     const [panel, setPanel] = useState(null);
     const [error, setError] = useState(false);
+
+    // Contador que cambia al alternar el tema. Sirve de dependencia para volver
+    // a montar las gráficas (Chart.js dibuja en <canvas> y no reacciona a CSS).
+    const [themeTick, setThemeTick] = useState(0);
+    useEffect(() => {
+        const onChange = () => {
+            applyChartDefaults();
+            setThemeTick((t) => t + 1);
+        };
+        window.addEventListener('mde:themechange', onChange);
+        return () => window.removeEventListener('mde:themechange', onChange);
+    }, []);
 
     // Filtros independientes: cada gráfica tiene su propio año/periodo y solo
     // se redibuja la gráfica cuyo filtro cambió.
@@ -237,8 +263,8 @@ export default function Inicio({ onNavigate }) {
                         },
                     },
                     scales: {
-                        x: { grid: { display: false }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
-                        y: { grid: { color: GRID_COLOR }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR, precision: 0, padding: 6 }, beginAtZero: true },
+                        x: { grid: { display: false }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR() } },
+                        y: { grid: { color: GRID_COLOR() }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR(), precision: 0, padding: 6 }, beginAtZero: true },
                     },
                 },
             });
@@ -248,7 +274,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.pecosas?.destroy();
             charts.current.pecosas = null;
         };
-    }, [panel && JSON.stringify(panel.pecosas_por_mes)]);
+    }, [themeTick, panel && JSON.stringify(panel.pecosas_por_mes)]);
 
     useEffect(() => {
         if (!panel) return undefined;
@@ -293,8 +319,8 @@ export default function Inicio({ onNavigate }) {
                         tooltip: { callbacks: { label: (item) => ` ${item.dataset.label}: ${nfmt(item.raw)}` } },
                     },
                     scales: {
-                        x: { grid: { display: false }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
-                        y: { grid: { color: GRID_COLOR }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR, padding: 6 }, beginAtZero: true },
+                        x: { grid: { display: false }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR() } },
+                        y: { grid: { color: GRID_COLOR() }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR(), padding: 6 }, beginAtZero: true },
                     },
                 },
             });
@@ -304,7 +330,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.productos?.destroy();
             charts.current.productos = null;
         };
-    }, [panel && JSON.stringify(panel.productos_distribuidos)]);
+    }, [themeTick, panel && JSON.stringify(panel.productos_distribuidos)]);
 
     useEffect(() => {
         if (!panel) return undefined;
@@ -322,7 +348,7 @@ export default function Inicio({ onNavigate }) {
                         data: [socios, beneficiarios],
                         backgroundColor: [C.socios, C.beneficiarios],
                         hoverBackgroundColor: [C.sociosHover, C.beneficiariosHover],
-                        borderColor: '#fff',
+                        borderColor: chartInk().donutBorder,
                         borderWidth: 3,
                         spacing: 2,
                         hoverOffset: 6,
@@ -346,7 +372,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.donut?.destroy();
             charts.current.donut = null;
         };
-    }, [panel && JSON.stringify(panel.socios_vs_beneficiarios)]);
+    }, [themeTick, panel && JSON.stringify(panel.socios_vs_beneficiarios)]);
 
     useEffect(() => {
         if (!panel) return undefined;
@@ -381,8 +407,8 @@ export default function Inicio({ onNavigate }) {
                         tooltip: { displayColors: false, callbacks: { label: (item) => ` ${nfmt(item.raw)} beneficiarios` } },
                     },
                     scales: {
-                        x: { grid: { color: GRID_COLOR }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR, precision: 0 } },
-                        y: { grid: { display: false }, border: { display: false }, ticks: { font: { family: CHART_FONT.family, size: 10 }, color: TICK_COLOR } },
+                        x: { grid: { color: GRID_COLOR() }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR(), precision: 0 } },
+                        y: { grid: { display: false }, border: { display: false }, ticks: { font: { family: CHART_FONT.family, size: 10 }, color: TICK_COLOR() } },
                     },
                 },
             });
@@ -392,7 +418,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.topComites?.destroy();
             charts.current.topComites = null;
         };
-    }, [panel && JSON.stringify(panel.top_comites)]);
+    }, [themeTick, panel && JSON.stringify(panel.top_comites)]);
 
     if (error) {
         return (

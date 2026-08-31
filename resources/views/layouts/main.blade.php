@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{-- Modo oscuro opt-in: se aplica antes del primer pintado para evitar
+         parpadeo. Por defecto claro; solo se activa si el usuario lo eligió. --}}
+    <script>try{if(localStorage.getItem('mde-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
     <title>@yield('title', 'PROVALE - Sistema de Gestión Social')</title>
     <link rel="icon" href="{{ asset('img/logo-provale-sin-fondo.png') }}" type="image/x-icon">
     {{-- Assets locales compilados (sin CDN) --}}
@@ -29,8 +32,8 @@
 
         body {
             font-family: 'Source Sans 3', sans-serif;
-            background: #EEF4FC;
-            color: #1A2E4A;
+            background: var(--app-canvas, #EEF4FC);
+            color: rgb(var(--c-content, 26 46 74));
         }
 
         h1, h2, h3, h4, h5, h6 {
@@ -43,11 +46,11 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #D4E4F7;
+            background: rgb(var(--c-mist, 214 225 236));
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #5A7FA8;
+            background: rgb(var(--c-slate, 80 110 141));
             border-radius: 3px;
         }
 
@@ -57,7 +60,7 @@
             top: 0;
             height: 100vh;
             width: 70px;
-            background: #0B3A66;
+            background: var(--institutional-navy, #0B3A66);
             transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 50;
             overflow: hidden;
@@ -94,8 +97,8 @@
             position: sticky;
             top: 0;
             z-index: 40;
-            background: #fff;
-            border-bottom: 2px solid #D4E4F7;
+            background: rgb(var(--c-surface, 255 255 255));
+            border-bottom: 2px solid rgb(var(--c-border, 214 225 236));
             box-shadow: 0 2px 16px rgba(30,87,153,0.08);
         }
 
@@ -411,8 +414,13 @@
                 </div>
 
                 <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <button type="button" id="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar entre tema claro y oscuro" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate dark:text-white hover:bg-mist transition-all">
+                        <svg class="w-[18px] h-[18px] dark:hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="w-[18px] h-[18px] hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    </button>
+
                     <button class="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-base border-2 border-mist flex items-center justify-center text-slate hover:bg-mist transition-all" @click="openNotifications()">
-                        <i class="fas fa-bell text-sm sm:text-base" style="color:#1A2E4A"></i>
+                        <i class="fas fa-bell text-sm sm:text-base" style="color:rgb(var(--c-navy, 26 46 74))"></i>
                         <span class="notification-badge absolute -top-1 -right-1 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1" :style="notifCount > 0 ? 'display:flex' : 'display:none'" x-text="notifCount > 0 ? notifCount : ''">{{ $unreadNotificationsLabel }}</span>
                     </button>
 
@@ -721,6 +729,18 @@
     </script>
 
     <script src="{{ asset('js/select2.min.js') }}"></script>
+
+    <script>
+        // Interruptor de tema. Por defecto claro; la elección se guarda en
+        // localStorage y la aplica el script anti-parpadeo del <head>.
+        (function () {
+            window.toggleTheme = function () {
+                var dark = document.documentElement.classList.toggle('dark');
+                try { localStorage.setItem('mde-theme', dark ? 'dark' : 'light'); } catch (e) {}
+                window.dispatchEvent(new CustomEvent('mde:themechange', { detail: { dark: dark } }));
+            };
+        })();
+    </script>
 
     @stack('scripts')
 
