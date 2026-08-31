@@ -4,9 +4,87 @@ import http from '../http';
 
 const BASE = '/api/dashboard/inicio';
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const CHART_FONT = { family: 'Source Sans 3', size: 11 };
-const GRID_COLOR = '#D4E4F7';
+const MESES_LARGOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+// Año mínimo seleccionable en las gráficas (coincide con InicioController::MIN_YEAR).
+const ANIO_MIN = 2019;
+const ANIO_ACTUAL = new Date().getFullYear();
+// Años disponibles, del actual hacia atrás hasta ANIO_MIN.
+const ANIOS = Array.from({ length: Math.max(1, ANIO_ACTUAL - ANIO_MIN + 1) }, (_, i) => ANIO_ACTUAL - i);
+
+// Combo compacto reutilizado en las cabeceras de las gráficas.
+// Se estiliza como control interactivo (borde marcado, fondo blanco, sombra y
+// chevron visible) para que se lea a simple vista como un desplegable y no como
+// una etiqueta más de la cabecera.
+function FiltroSelect({ value, onChange, children, label }) {
+    return (
+        <div className="relative inline-flex items-center">
+            <select
+                aria-label={label}
+                value={value}
+                onChange={(e) => onChange(Number(e.target.value))}
+                className="appearance-none text-[10px] sm:text-xs font-bold text-blue bg-white rounded-lg pl-2.5 pr-7 py-1.5 border border-blue/30 shadow-sm cursor-pointer transition-colors hover:border-blue hover:bg-blue-light/50 focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue"
+            >
+                {children}
+            </select>
+            <i className="fas fa-chevron-down pointer-events-none absolute right-2.5 text-[8px] sm:text-[9px] text-blue/70" aria-hidden="true" />
+        </div>
+    );
+}
+const CHART_FONT = { family: "'Source Sans 3', system-ui, sans-serif", size: 11 };
+const GRID_COLOR = 'rgba(15, 42, 74, 0.08)';
 const TICK_COLOR = '#5A7FA8';
+
+// Paleta categórica institucional: colores planos, saturados y con contraste
+// claro entre series. Sin degradados: lavaban el color y dejaban el doughnut
+// ilegible.
+const C = {
+    leche: '#1E5799',
+    lecheFill: 'rgba(30, 87, 153, 0.10)',
+    hojuelas: '#C77700',
+    hojuelasFill: 'rgba(199, 119, 0, 0.10)',
+    bar: '#2C6BB3',
+    barHover: '#1E5799',
+    socios: '#1E5799',
+    sociosHover: '#17457A',
+    beneficiarios: '#0E8A7A',
+    beneficiariosHover: '#0B6E61',
+    navy: '#0B3A66',
+};
+
+// Aplica los estilos base compartidos por todas las gráficas (tipografía y
+// tooltips) una sola vez, para un aspecto homogéneo y sobrio.
+Chart.defaults.font.family = CHART_FONT.family;
+Chart.defaults.color = TICK_COLOR;
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(11, 58, 102, 0.94)';
+Chart.defaults.plugins.tooltip.padding = 12;
+Chart.defaults.plugins.tooltip.cornerRadius = 10;
+Chart.defaults.plugins.tooltip.boxPadding = 6;
+Chart.defaults.plugins.tooltip.titleFont = { family: CHART_FONT.family, size: 12, weight: '700' };
+Chart.defaults.plugins.tooltip.bodyFont = { family: CHART_FONT.family, size: 12 };
+
+// Texto centrado dentro del doughnut (total de la comparativa).
+const donutCenterText = {
+    id: 'donutCenterText',
+    afterDatasetsDraw(chart) {
+        const { ctx, chartArea } = chart;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data.length) return;
+        const total = chart.data.datasets[0].data.reduce((a, b) => a + Number(b || 0), 0);
+        const cx = (chartArea.left + chartArea.right) / 2;
+        const cy = (chartArea.top + chartArea.bottom) / 2;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = C.navy;
+        ctx.font = `700 20px ${CHART_FONT.family}`;
+        ctx.fillText(total.toLocaleString('es-PE'), cx, cy - 4);
+        ctx.fillStyle = TICK_COLOR;
+        ctx.font = `600 10px ${CHART_FONT.family}`;
+        ctx.fillText('TOTAL', cx, cy + 14);
+        ctx.restore();
+    },
+};
 
 function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, className = '' }) {
     return (
@@ -54,12 +132,15 @@ function StockCard({ products = [] }) {
     );
 }
 
+// Acceso rápido con aspecto de botón pulsable: borde, sombra y respuesta al
+// hover/pressed (se eleva al pasar el cursor, se hunde al pulsar) para dejar
+// claro que es accionable y no un icono decorativo.
 function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
     return (
         <button
             type="button"
             onClick={onClick}
-            className={`quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all group ${bgClass}`}
+            className={`quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-mist shadow-sm cursor-pointer transition-all group hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm ${bgClass}`}
         >
             <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all ${tileClass}`}>
                 <i className={`fas ${icon}`} />
@@ -73,6 +154,14 @@ export default function Inicio({ onNavigate }) {
     const [panel, setPanel] = useState(null);
     const [error, setError] = useState(false);
 
+    // Filtros independientes: cada gráfica tiene su propio año/periodo y solo
+    // se redibuja la gráfica cuyo filtro cambió.
+    const [anioPecosas, setAnioPecosas] = useState(ANIO_ACTUAL);
+    const [anioProductos, setAnioProductos] = useState(ANIO_ACTUAL);
+    // "Socios vs Beneficiarios" (mes 0 = año completo).
+    const [sociosAnio, setSociosAnio] = useState(ANIO_ACTUAL);
+    const [sociosMes, setSociosMes] = useState(0);
+
     const pecosasCanvas = useRef(null);
     const productosCanvas = useRef(null);
     const donutCanvas = useRef(null);
@@ -83,8 +172,18 @@ export default function Inicio({ onNavigate }) {
         let active = true;
         (async () => {
             try {
-                const res = await http.get(`${BASE}/panel`);
-                if (active) setPanel(res.data);
+                const res = await http.get(`${BASE}/panel`, {
+                    params: {
+                        anio_pecosas: anioPecosas,
+                        anio_productos: anioProductos,
+                        socios_anio: sociosAnio,
+                        socios_mes: sociosMes,
+                    },
+                });
+                if (active) {
+                    setPanel(res.data);
+                    setError(false);
+                }
             } catch {
                 if (active) setError(true);
             }
@@ -92,13 +191,18 @@ export default function Inicio({ onNavigate }) {
         return () => {
             active = false;
         };
-    }, []);
+    }, [anioPecosas, anioProductos, sociosAnio, sociosMes]);
+
+    // Cada gráfica se monta en su propio efecto y depende SOLO de su porción
+    // de datos (serializada). Así, cambiar el filtro de una no redibuja las
+    // demás.
+    const nfmt = (v) => Number(v || 0).toLocaleString('es-PE');
 
     useEffect(() => {
         if (!panel) return undefined;
 
-        Object.values(charts.current).forEach((c) => c?.destroy());
-        charts.current = {};
+        charts.current.pecosas?.destroy();
+        charts.current.pecosas = null;
 
         const pecosaData = panel.pecosas_por_mes.data;
         if (pecosasCanvas.current && !pecosaData.every((v) => v === 0)) {
@@ -109,75 +213,104 @@ export default function Inicio({ onNavigate }) {
                     datasets: [{
                         label: 'PECOSAs',
                         data: pecosaData,
-                        backgroundColor: '#4A90D9',
-                        borderRadius: 4,
+                        backgroundColor: C.bar,
+                        hoverBackgroundColor: C.barHover,
+                        borderRadius: 6,
                         borderSkipped: false,
+                        maxBarThickness: 30,
+                        categoryPercentage: 0.68,
+                        barPercentage: 0.9,
                     }],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    animation: { duration: 500, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            displayColors: false,
+                            callbacks: {
+                                title: (items) => `${items[0].label}`,
+                                label: (item) => `  ${nfmt(item.raw)} PECOSA(s)`,
+                            },
+                        },
+                    },
                     scales: {
-                        x: { grid: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
-                        y: { grid: { color: GRID_COLOR }, ticks: { font: CHART_FONT, color: TICK_COLOR }, beginAtZero: true },
+                        x: { grid: { display: false }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
+                        y: { grid: { color: GRID_COLOR }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR, precision: 0, padding: 6 }, beginAtZero: true },
                     },
                 },
             });
         }
 
+        return () => {
+            charts.current.pecosas?.destroy();
+            charts.current.pecosas = null;
+        };
+    }, [panel && JSON.stringify(panel.pecosas_por_mes)]);
+
+    useEffect(() => {
+        if (!panel) return undefined;
+
+        charts.current.productos?.destroy();
+        charts.current.productos = null;
+
         const { leche, hojuelas } = panel.productos_distribuidos;
         if (productosCanvas.current && !(leche.every((v) => v === 0) && hojuelas.every((v) => v === 0))) {
+            const lineSeries = (label, values, color, fill, dash) => ({
+                label,
+                data: values,
+                borderColor: color,
+                backgroundColor: fill,
+                borderWidth: 2.5,
+                borderDash: dash || [],
+                pointBackgroundColor: color,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHitRadius: 12,
+                fill: true,
+                tension: 0.35,
+            });
             charts.current.productos = new Chart(productosCanvas.current, {
                 type: 'line',
                 data: {
                     labels: MESES,
                     datasets: [
-                        {
-                            label: 'Leche',
-                            data: leche,
-                            borderColor: '#1E5799',
-                            backgroundColor: 'rgba(30,87,153,0.10)',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#1E5799',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 1.5,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            fill: true,
-                            tension: 0.35,
-                        },
-                        {
-                            label: 'Hojuelas',
-                            data: hojuelas,
-                            borderColor: '#B87300',
-                            backgroundColor: 'rgba(184,115,0,0.10)',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#B87300',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 1.5,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            fill: true,
-                            tension: 0.35,
-                        },
+                        lineSeries('Leche', leche, C.leche, C.lecheFill),
+                        lineSeries('Hojuelas', hojuelas, C.hojuelas, C.hojuelasFill, [6, 4]),
                     ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: { duration: 500, easing: 'easeOutQuart' },
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        legend: { display: true, position: 'top', align: 'end', labels: { font: CHART_FONT, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle' } },
-                        tooltip: { mode: 'index', intersect: false },
+                        legend: { display: true, position: 'top', align: 'end', labels: { font: CHART_FONT, boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', padding: 14 } },
+                        tooltip: { callbacks: { label: (item) => ` ${item.dataset.label}: ${nfmt(item.raw)}` } },
                     },
                     scales: {
-                        x: { grid: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
-                        y: { grid: { color: GRID_COLOR }, ticks: { font: CHART_FONT, color: TICK_COLOR }, beginAtZero: true },
+                        x: { grid: { display: false }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
+                        y: { grid: { color: GRID_COLOR }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR, padding: 6 }, beginAtZero: true },
                     },
                 },
             });
         }
+
+        return () => {
+            charts.current.productos?.destroy();
+            charts.current.productos = null;
+        };
+    }, [panel && JSON.stringify(panel.productos_distribuidos)]);
+
+    useEffect(() => {
+        if (!panel) return undefined;
+
+        charts.current.donut?.destroy();
+        charts.current.donut = null;
 
         if (donutCanvas.current) {
             const { socios, beneficiarios } = panel.socios_vs_beneficiarios;
@@ -187,8 +320,11 @@ export default function Inicio({ onNavigate }) {
                     labels: ['Socios', 'Beneficiarios'],
                     datasets: [{
                         data: [socios, beneficiarios],
-                        backgroundColor: ['#4A90D9', '#0E8A7A'],
-                        borderWidth: 0,
+                        backgroundColor: [C.socios, C.beneficiarios],
+                        hoverBackgroundColor: [C.sociosHover, C.beneficiariosHover],
+                        borderColor: '#fff',
+                        borderWidth: 3,
+                        spacing: 2,
                         hoverOffset: 6,
                     }],
                 },
@@ -196,10 +332,27 @@ export default function Inicio({ onNavigate }) {
                     responsive: true,
                     maintainAspectRatio: false,
                     cutout: '70%',
-                    plugins: { legend: { display: false } },
+                    animation: { animateRotate: true, duration: 550 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { displayColors: false, callbacks: { label: (item) => ` ${item.label}: ${nfmt(item.raw)}` } },
+                    },
                 },
+                plugins: [donutCenterText],
             });
         }
+
+        return () => {
+            charts.current.donut?.destroy();
+            charts.current.donut = null;
+        };
+    }, [panel && JSON.stringify(panel.socios_vs_beneficiarios)]);
+
+    useEffect(() => {
+        if (!panel) return undefined;
+
+        charts.current.topComites?.destroy();
+        charts.current.topComites = null;
 
         if (topComitesCanvas.current) {
             const labels = panel.top_comites.map((c) => c.nombre.slice(0, 12));
@@ -211,29 +364,35 @@ export default function Inicio({ onNavigate }) {
                     datasets: [{
                         label: 'Beneficiarios',
                         data,
-                        backgroundColor: '#4A90D9',
-                        borderRadius: 3,
+                        backgroundColor: C.bar,
+                        hoverBackgroundColor: C.barHover,
+                        borderRadius: 5,
                         borderSkipped: false,
+                        maxBarThickness: 22,
                     }],
                 },
                 options: {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    animation: { duration: 500, easing: 'easeOutQuart' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { displayColors: false, callbacks: { label: (item) => ` ${nfmt(item.raw)} beneficiarios` } },
+                    },
                     scales: {
-                        x: { grid: { color: GRID_COLOR }, ticks: { font: CHART_FONT, color: TICK_COLOR } },
-                        y: { grid: { display: false }, ticks: { font: { family: 'Source Sans 3', size: 10 }, color: TICK_COLOR } },
+                        x: { grid: { color: GRID_COLOR }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR, precision: 0 } },
+                        y: { grid: { display: false }, border: { display: false }, ticks: { font: { family: CHART_FONT.family, size: 10 }, color: TICK_COLOR } },
                     },
                 },
             });
         }
 
         return () => {
-            Object.values(charts.current).forEach((c) => c?.destroy());
-            charts.current = {};
+            charts.current.topComites?.destroy();
+            charts.current.topComites = null;
         };
-    }, [panel]);
+    }, [panel && JSON.stringify(panel.top_comites)]);
 
     if (error) {
         return (
@@ -253,43 +412,44 @@ export default function Inicio({ onNavigate }) {
     }
 
     const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVsBeneficiarios, top_comites: topComites } = panel;
-    const anio = pecosasPorMes.anio;
+    const sociosPeriodoLabel = sociosMes === 0 ? `Año ${sociosAnio}` : `${MESES_LARGOS[sociosMes - 1]} ${sociosAnio}`;
 
     return (
         <div>
-            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden mb-6 sm:mb-8 shadow-lg">
+            <div className="inicio-hero relative rounded-2xl sm:rounded-3xl overflow-hidden mb-6 sm:mb-8 shadow-lg">
                 <div className="absolute inset-0">
                     <img src={`${window.APP_URL || ''}/img/niños.jpg`} alt="Banner" className="w-full h-full object-cover" />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue/60 to-navy/40" />
-                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 sm:p-8 gap-4 sm:gap-8">
+                <div className="relative z-10 w-full flex flex-col sm:flex-row items-start sm:items-end justify-between p-5 sm:p-8 gap-4 sm:gap-8">
                     <div>
-                        <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                            <span className="w-2 h-2 rounded-full pulse-dot" style={{ background: '#D6EAFC' }} />
-                            <span className="text-white/90 text-[10px] sm:text-xs font-semibold uppercase tracking-widest">Sistema activo</span>
+                        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                            <span className="w-2.5 h-2.5 rounded-full pulse-dot" style={{ background: '#D6EAFC' }} />
+                            <span className="text-white/90 text-xs sm:text-sm font-semibold uppercase tracking-widest">Sistema activo</span>
                         </div>
-                        <h1 className="text-white font-extrabold text-xl sm:text-3xl leading-tight mb-2">
+                        <h1 className="text-white font-extrabold text-3xl sm:text-5xl leading-tight mb-3">
                             Panel de Control
                             <br />
                             <span style={{ color: '#FEF3DC' }}>PROVALE</span>
                         </h1>
-                        <p className="text-white/70 text-xs sm:text-sm font-medium max-w-md">
+                        <p className="text-white/80 text-sm sm:text-lg font-medium max-w-lg">
                             Gestiona beneficiarios, club de madres y entregas de manera eficiente.
                         </p>
-                        <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 sm:mt-5">
+                        <div className="flex flex-wrap gap-3 sm:gap-4 mt-5 sm:mt-7">
                             <button
                                 type="button"
                                 onClick={() => onNavigate?.('productos', 'new-pecosa')}
-                                className="px-3 sm:px-4 py-2 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-xs sm:text-sm hover:bg-white/30 transition-all border border-white/20"
+                                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-sm sm:text-base hover:bg-white/30 transition-all border border-white/20"
                             >
-                                <i className="fas fa-plus mr-1" />Registrar Pecosa
+                                <i className="fas fa-plus mr-2" />Registrar Pecosa
                             </button>
                             <button
                                 type="button"
                                 onClick={() => onNavigate?.('comites')}
-                                className="px-3 sm:px-4 py-2 bg-white text-blue font-semibold rounded-lg text-xs sm:text-sm hover:bg-blue-light transition-all shadow-sm"
+                                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white font-semibold rounded-lg text-sm sm:text-base border border-blue/15 hover:bg-blue-light transition-all shadow-sm"
+                                style={{ color: '#0B3A66' }}
                             >
-                                <i className="fas fa-file-alt mr-1" />Comites
+                                <i className="fas fa-file-alt mr-2" />Comites
                             </button>
                         </div>
                     </div>
@@ -332,15 +492,20 @@ export default function Inicio({ onNavigate }) {
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base">PECOSAs por Mes</h3>
-                            <p className="text-slate text-xs sm:text-sm">Salidas {anio}</p>
+                            <p className="text-slate text-xs sm:text-sm">Salidas {anioPecosas}</p>
                         </div>
-                        <span className="px-2 py-1 text-[10px] sm:text-xs font-bold bg-blue-light text-blue rounded-lg">{pecosasPorMes.total_anio} total</span>
+                        <div className="flex items-center gap-2">
+                            <span className="px-2 py-1 text-[10px] sm:text-xs font-bold bg-blue-light text-blue rounded-lg whitespace-nowrap">{pecosasPorMes.total_anio} total</span>
+                            <FiltroSelect value={anioPecosas} onChange={setAnioPecosas} label="Año de PECOSAs por mes">
+                                {ANIOS.map((y) => <option key={y} value={y}>{y}</option>)}
+                            </FiltroSelect>
+                        </div>
                     </div>
                     <div className="chart-wrap h-40 sm:h-48 relative">
                         {pecosasPorMes.data.every((v) => v === 0) ? (
                             <div className="empty-state absolute inset-0">
                                 <i className="fas fa-file-invoice" />
-                                <p className="text-xs sm:text-sm">Aún no hay PECOSAs registradas en {anio}</p>
+                                <p className="text-xs sm:text-sm">Aún no hay PECOSAs registradas en {anioPecosas}</p>
                             </div>
                         ) : (
                             <canvas ref={pecosasCanvas} />
@@ -352,18 +517,21 @@ export default function Inicio({ onNavigate }) {
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base">Productos Distribuidos</h3>
-                            <p className="text-slate text-xs sm:text-sm">Leche y Hojuelas - {anio}</p>
+                            <p className="text-slate text-xs sm:text-sm">Leche y Hojuelas - {anioProductos}</p>
                         </div>
-                        <div className="flex gap-1 sm:gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                             <span className="px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-semibold bg-blue-light text-blue rounded">Leche</span>
                             <span className="px-1.5 sm:px-2 py-1 text-[10px] sm:text-xs font-semibold bg-amber-light text-amber rounded">Hojuelas</span>
+                            <FiltroSelect value={anioProductos} onChange={setAnioProductos} label="Año de productos distribuidos">
+                                {ANIOS.map((y) => <option key={y} value={y}>{y}</option>)}
+                            </FiltroSelect>
                         </div>
                     </div>
                     <div className="chart-wrap h-40 sm:h-48 relative">
                         {panel.productos_distribuidos.leche.every((v) => v === 0) && panel.productos_distribuidos.hojuelas.every((v) => v === 0) ? (
                             <div className="empty-state absolute inset-0">
                                 <i className="fas fa-boxes-stacked" />
-                                <p className="text-xs sm:text-sm">Aún no hay movimientos de productos en {anio}</p>
+                                <p className="text-xs sm:text-sm">Aún no hay movimientos de productos en {anioProductos}</p>
                             </div>
                         ) : (
                             <canvas ref={productosCanvas} />
@@ -375,7 +543,16 @@ export default function Inicio({ onNavigate }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
                     <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-1">Socios vs Beneficiarios</h3>
-                    <p className="text-slate text-xs sm:text-sm mb-3">Comparativa total</p>
+                    <p className="text-slate text-xs sm:text-sm mb-2">Vigentes · {sociosPeriodoLabel}</p>
+                    <div className="flex items-center gap-2 mb-3">
+                        <FiltroSelect value={sociosMes} onChange={setSociosMes} label="Mes de socios vs beneficiarios">
+                            <option value={0}>Año completo</option>
+                            {MESES_LARGOS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+                        </FiltroSelect>
+                        <FiltroSelect value={sociosAnio} onChange={setSociosAnio} label="Año de socios vs beneficiarios">
+                            {ANIOS.map((y) => <option key={y} value={y}>{y}</option>)}
+                        </FiltroSelect>
+                    </div>
                     <div className="chart-wrap h-32 sm:h-36">
                         <canvas ref={donutCanvas} />
                     </div>
@@ -433,16 +610,14 @@ export default function Inicio({ onNavigate }) {
                             tileClass="bg-teal"
                             textClass="text-teal"
                         />
-                        <button
-                            type="button"
+                        <QuickButton
                             onClick={() => onNavigate?.('productos', 'productos')}
-                            className="quick-btn flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg sm:rounded-xl bg-sky-light hover:bg-sky/10 transition-all group"
-                        >
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-sky rounded-md sm:rounded-lg flex items-center justify-center text-white text-xs sm:text-sm group-hover:scale-105 transition-all">
-                                <i className="fas fa-box" />
-                            </div>
-                            <span className="text-[10px] sm:text-xs font-semibold text-sky text-center leading-tight">Productos</span>
-                        </button>
+                            icon="fa-box"
+                            label="Productos"
+                            bgClass="bg-sky-light hover:bg-sky/10"
+                            tileClass="bg-sky"
+                            textClass="text-sky"
+                        />
                     </div>
                 </div>
             </div>

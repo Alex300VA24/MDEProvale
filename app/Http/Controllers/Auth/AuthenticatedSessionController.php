@@ -38,19 +38,22 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $request->session()->forget(['session_just_expired', 'user_was_authenticated']);
+
+        if ($request->user()->isPresidentPortalUser()) {
+            if (! $this->isPresidentPortalUrl($request->session()->get('url.intended'))) {
+                $request->session()->forget('url.intended');
+            }
+
+            return redirect()->intended(route('president-portal.index'));
+        }
+
         if ($request->get('expired') == 1) {
-            $request->session()->forget('session_just_expired');
             return redirect()->route('dashboard');
         }
 
-        $request->session()->forget('session_just_expired');
-
-        if ($request->user()->isPresidentPortalUser()) {
-            return redirect()->route('president-portal.index');
-        }
-
         $intendedUrl = $request->session()->get('url.intended');
-        if ($intendedUrl && $this->shouldIgnoreIntendedUrl($intendedUrl)) {
+        if ($intendedUrl && ($this->shouldIgnoreIntendedUrl($intendedUrl) || $this->isPresidentPortalUrl($intendedUrl))) {
             $request->session()->forget('url.intended');
         }
 
@@ -79,5 +82,16 @@ class AuthenticatedSessionController extends Controller
         $path = parse_url($url, PHP_URL_PATH) ?? '';
 
         return strpos($path, '/sistema/notifications/count/unread') !== false;
+    }
+
+    private function isPresidentPortalUrl(?string $url): bool
+    {
+        if (! $url) {
+            return false;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+
+        return str_contains($path, '/portal-presidentas');
     }
 }

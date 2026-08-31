@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Rol;
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class EnsurePresidentRole
 {
@@ -16,9 +17,36 @@ class EnsurePresidentRole
             return redirect()->guest(route('president.login'));
         }
 
-        abort_unless($user->rol && $user->rol->is_active, 403);
-        abort_unless(mb_strtolower(trim($user->rol->title)) === mb_strtolower(Rol::PRESIDENT), 403);
+        $isPresident = $user->rol
+            && $user->rol->is_active
+            && mb_strtolower(trim($user->rol->title)) === mb_strtolower(Rol::PRESIDENT);
 
-        return $next($request);
+        if (! $isPresident) {
+            $url = route('dashboard');
+
+            if ($request->expectsJson()) {
+                return $this->noStore(response()->json([
+                    'message' => 'Esta sesión pertenece a la plataforma administrativa.',
+                    'redirect' => $url,
+                    'wrong_portal' => true,
+                ], 409));
+            }
+
+            if ($request->inertia()) {
+                return $this->noStore(Inertia::location($url));
+            }
+
+            return $this->noStore(redirect()->to($url));
+        }
+
+        return $this->noStore($next($request));
+    }
+
+    private function noStore($response)
+    {
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        $response->headers->set('Pragma', 'no-cache');
+
+        return $response;
     }
 }

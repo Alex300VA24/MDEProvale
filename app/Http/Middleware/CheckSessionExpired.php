@@ -17,7 +17,7 @@ class CheckSessionExpired
      */
     public function handle(Request $request, Closure $next)
     {
-        if ($request->routeIs('login') || $request->is('login')) {
+        if ($this->isPublicSessionRoute($request)) {
             return $next($request);
         }
 
@@ -35,18 +35,19 @@ class CheckSessionExpired
         }
 
         if ($request->session()->has('user_was_authenticated')) {
+            $loginRoute = $request->is('portal-presidentas*') ? 'president.login' : 'login';
             $request->session()->forget('user_was_authenticated');
             $request->session()->put('session_just_expired', true);
 
             if ($request->inertia()) {
-                return Inertia::location(route('login', ['expired' => 1]));
+                return Inertia::location(route($loginRoute, ['expired' => 1]));
             }
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.',
                     'session_expired' => true,
-                    'redirect' => route('login'),
+                    'redirect' => route($loginRoute, ['expired' => 1]),
                 ], 401);
             }
 
@@ -54,9 +55,25 @@ class CheckSessionExpired
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login', ['expired' => 1]);
+            return redirect()->route($loginRoute, ['expired' => 1]);
         }
 
         return $next($request);
+    }
+
+    private function isPublicSessionRoute(Request $request): bool
+    {
+        return $request->routeIs(
+            'login',
+            'president.login',
+            'president.login.store',
+            'documents.*',
+            'password.request',
+            'password.email',
+            'password.reset',
+            'password.update',
+            'password-reset-request',
+            'register'
+        ) || $request->is('/', 'refresh-csrf');
     }
 }

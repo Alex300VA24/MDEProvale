@@ -111,6 +111,11 @@ Route::prefix('dashboard/movimientos')->middleware('module:movimientos')->name('
 // ==================== MÓDULO: RESPONSABLES Y RACIONES ====================
 Route::prefix('dashboard/responsables-raciones')->middleware('module:responsables-raciones')->name('api.responsables-raciones.')->group(function () {
     Route::get('responsibles', [ResponsablesRacionesController::class, 'responsibles'])->name('responsibles');
+    Route::get('responsibles/history', [ResponsablesRacionesController::class, 'responsiblesHistory'])->name('responsibles.history');
+    Route::get('responsibles/detail/{responsible}', [ResponsablesRacionesController::class, 'showResponsible'])->name('responsibles.show');
+    Route::post('responsibles/{responsible}/end', [ResponsablesRacionesController::class, 'endResponsiblePeriod'])
+        ->where('responsible', '[0-9]+')
+        ->name('responsibles.end');
     Route::put('responsibles/{type}', [ResponsablesRacionesController::class, 'updateResponsible'])
         ->where('type', 'chief|storekeeper')
         ->name('responsibles.update');

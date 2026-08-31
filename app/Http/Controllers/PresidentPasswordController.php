@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class PresidentPasswordController extends Controller
 {
     public function edit(Request $request)
     {
-        return view('portal-presidentas.cambiar-contrasena');
+        return Inertia::render('Portal/Password', [
+            'passwordChangeRequired' => $request->user()->mustChangePassword(),
+        ]);
     }
 
     public function update(Request $request)

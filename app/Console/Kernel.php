@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('states:sync-associations')->dailyAt('00:05');
+        $schedule->command('pecosas:sync-vigencia')->dailyAt('00:10');
     }
 
     /**

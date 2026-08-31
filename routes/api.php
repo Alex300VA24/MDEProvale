@@ -20,9 +20,11 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
-    // Endpoints JSON del dashboard SPA (ver dashboard-api.php)
-    require __DIR__ . '/dashboard-api.php';
+    Route::middleware('platform.user')->group(function () {
+        // Endpoints JSON del dashboard SPA (ver dashboard-api.php)
+        require __DIR__ . '/dashboard-api.php';
 
-    Route::post('/asistente/chat', AssistantChatController::class)
-        ->middleware('throttle:assistant');
+        Route::post('/asistente/chat', AssistantChatController::class)
+            ->middleware('throttle:assistant');
+    });
 });

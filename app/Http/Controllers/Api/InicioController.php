@@ -5,20 +5,45 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Association;
 use App\Models\Beneficiarie;
-use App\Models\DetailPecosa;
 use App\Models\Partner;
+use App\Models\Pecosa;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class InicioController extends Controller
 {
     /**
+     * Año mínimo seleccionable en las gráficas del panel de inicio.
+     */
+    private const MIN_YEAR = 2019;
+
+    /**
      * Datos del panel de inicio (tarjetas KPI + gráficas). Disponible para
      * cualquier usuario autenticado (la sección 'Inicio' no está atada a
      * ningún módulo, ver NAV_ITEMS en Dashboard.jsx): son solo conteos y
      * agregados, sin datos personales.
+     *
+     * Cada gráfica se filtra de forma independiente (cambiar el año de una no
+     * afecta a las demás). Parámetros de query opcionales:
+     * - anio_pecosas: año de "PECOSAs por mes" (por defecto, el año actual).
+     * - anio_productos: año de "Productos distribuidos" (por defecto, el actual).
+     * - socios_anio / socios_mes: periodo de la comparativa "Socios vs
+     *   Beneficiarios". socios_mes = 0 significa "año completo".
      */
-    public function panel()
+    public function panel(Request $request)
     {
+        $currentYear = now()->year;
+
+        $yearPecosas = $this->clampYear((int) $request->query('anio_pecosas', $currentYear), $currentYear);
+        $yearProductos = $this->clampYear((int) $request->query('anio_productos', $currentYear), $currentYear);
+
+        $sociosYear = $this->clampYear((int) $request->query('socios_anio', $currentYear), $currentYear);
+        $sociosMonth = (int) $request->query('socios_mes', 0);
+        if ($sociosMonth < 1 || $sociosMonth > 12) {
+            $sociosMonth = 0;
+        }
+
         $totalSocios = Partner::count();
         $totalBeneficiarios = Beneficiarie::count();
         $totalComites = Association::count();
@@ -75,11 +100,9 @@ class InicioController extends Controller
             ];
         })->values();
 
-        $currentYear = now()->year;
-        $yearStart = $currentYear . '-01-01';
-        $yearEnd = $currentYear . '-12-31';
+        $pecosasYearEnd = $yearPecosas . '-12-31';
 
-        // PECOSAs por mes (año actual).
+        // PECOSAs por mes (año seleccionado).
         // Nota: se usa el query builder (no el modelo Eloquent Pecosa) porque
         // Pecosa::getMonthAttribute() es un accessor que pisa el alias "month"
         // seleccionado aquí y lo devuelve siempre en null al hidratar el modelo.
@@ -90,47 +113,75 @@ class InicioController extends Controller
         $pecosas = DB::table('pecosas')
             ->select('delivery_date')
             ->whereNotNull('delivery_date')
-            ->whereBetween('delivery_date', [($currentYear - 1) . '-12-01', $yearEnd])
+            ->whereBetween('delivery_date', [($yearPecosas - 1) . '-12-01', $pecosasYearEnd])
             ->get();
 
         $pecosaData = array_fill(0, 12, 0);
         foreach ($pecosas as $item) {
-            $date = \Carbon\Carbon::parse($item->delivery_date);
-            $effective = $date->day > $date->daysInMonth - 7 ? $date->copy()->addMonth() : $date;
+            $effective = Pecosa::effectiveDeliveryDate($item->delivery_date);
 
-            if ((int) $effective->year === $currentYear) {
+            if ((int) $effective->year === $yearPecosas) {
                 $pecosaData[$effective->month - 1]++;
             }
         }
         $totalPecosasAnio = array_sum($pecosaData);
 
         // Productos distribuidos por mes (Leche / Hojuelas).
-        // Mismo criterio que PECOSAs por mes: entrega en última semana del
-        // mes se contabiliza en el mes siguiente. Rango ampliado (dic. del
-        // año anterior a dic. de este año) para no perder ese desplazamiento.
-        $productosPorMes = DetailPecosa::selectRaw('pecosas.delivery_date, detail_pecosas.quantity as total, products.title as product')
-            ->join('pecosas', 'detail_pecosas.pecosa_id', '=', 'pecosas.id')
-            ->join('detail_products', 'detail_pecosas.detail_product_id', '=', 'detail_products.id')
+        // Se toma la salida real registrada en product_stocks y se ubica en el
+        // mes del movimiento de ingreso (detail_products.start_date .. end_date,
+        // siempre un mes calendario). No se usa la fecha de la PECOSA ni el
+        // desplazamiento de fin de mes: la base de origen a veces parte una
+        // ración en dos PECOSAs a ambos lados del corte de fin de mes, o carga
+        // la ración de un mes en el lote del mes siguiente, lo que dejaba el
+        // alimento en cero ese mes (p. ej. leche enero 2026).
+        $productosPorMes = DB::table('product_stocks')
+            ->join('detail_products', 'product_stocks.detail_product_id', '=', 'detail_products.id')
             ->join('products', 'detail_products.product_id', '=', 'products.id')
-            ->whereBetween('pecosas.delivery_date', [($currentYear - 1) . '-12-01', $yearEnd])
-            ->get();
+            ->whereYear('detail_products.start_date', $yearProductos)
+            ->groupBy('mes', 'products.title')
+            ->get([
+                DB::raw('MONTH(detail_products.start_date) as mes'),
+                'products.title as product',
+                DB::raw('SUM(product_stocks.quantity) as total'),
+            ]);
 
         $lecheData = array_fill(0, 12, 0);
         $hojuelasData = array_fill(0, 12, 0);
         foreach ($productosPorMes as $item) {
-            $date = \Carbon\Carbon::parse($item->delivery_date);
-            $effective = $date->day > $date->daysInMonth - 7 ? $date->copy()->addMonth() : $date;
-
-            if ((int) $effective->year !== $currentYear) {
+            $mes = (int) $item->mes - 1;
+            if ($mes < 0 || $mes > 11) {
                 continue;
             }
-            $mes = $effective->month - 1;
             if (stripos($item->product, 'leche') !== false) {
                 $lecheData[$mes] += (int) $item->total;
             } elseif (stripos($item->product, 'hojuela') !== false) {
                 $hojuelasData[$mes] += (int) $item->total;
             }
         }
+
+        // Socios y beneficiarios vigentes en el periodo seleccionado.
+        // No se usan created_at/updated_at: la vigencia se calcula por
+        // solapamiento de fechas de alta/baja (date_begin / date_end) con el
+        // rango del periodo. Para beneficiarios, esas fechas viven en
+        // beneficiary_histories (la tabla beneficiaries no tiene fecha propia).
+        [$periodoInicio, $periodoFin] = $this->sociosPeriodo($sociosYear, $sociosMonth);
+
+        $sociosVigentes = DB::table('partners')
+            ->whereDate('date_begin', '<=', $periodoFin)
+            ->where(function ($query) use ($periodoInicio) {
+                $query->whereNull('date_end')
+                    ->orWhereDate('date_end', '>=', $periodoInicio);
+            })
+            ->count();
+
+        $beneficiariosVigentes = DB::table('beneficiary_histories')
+            ->whereDate('date_begin', '<=', $periodoFin)
+            ->where(function ($query) use ($periodoInicio) {
+                $query->whereNull('date_end')
+                    ->orWhereDate('date_end', '>=', $periodoInicio);
+            })
+            ->distinct()
+            ->count('beneficiary_id');
 
         // Top comités con más beneficiarios
         $topComites = Association::selectRaw('associations.name as club, COUNT(beneficiaries.id) as total')
@@ -154,18 +205,51 @@ class InicioController extends Controller
             'pecosas_por_mes' => [
                 'data' => $pecosaData,
                 'total_anio' => $totalPecosasAnio,
-                'anio' => $currentYear,
+                'anio' => $yearPecosas,
             ],
             'productos_distribuidos' => [
                 'leche' => $lecheData,
                 'hojuelas' => $hojuelasData,
-                'anio' => $currentYear,
+                'anio' => $yearProductos,
             ],
             'socios_vs_beneficiarios' => [
-                'socios' => $totalSocios,
-                'beneficiarios' => $totalBeneficiarios,
+                'socios' => $sociosVigentes,
+                'beneficiarios' => $beneficiariosVigentes,
+                'anio' => $sociosYear,
+                'mes' => $sociosMonth,
             ],
+            'anio_min' => self::MIN_YEAR,
+            'anio_actual' => $currentYear,
             'top_comites' => $topComites,
         ]);
+    }
+
+    /**
+     * Acota un año al rango [MIN_YEAR, año actual].
+     */
+    private function clampYear(int $year, int $currentYear): int
+    {
+        if ($year < self::MIN_YEAR || $year > $currentYear) {
+            return $currentYear;
+        }
+
+        return $year;
+    }
+
+    /**
+     * Rango de fechas [inicio, fin] del periodo de la comparativa
+     * "Socios vs Beneficiarios". mes = 0 abarca el año completo.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function sociosPeriodo(int $year, int $month): array
+    {
+        if ($month < 1 || $month > 12) {
+            return ["$year-01-01", "$year-12-31"];
+        }
+
+        $inicio = Carbon::create($year, $month, 1)->startOfMonth();
+
+        return [$inicio->toDateString(), $inicio->copy()->endOfMonth()->toDateString()];
     }
 }

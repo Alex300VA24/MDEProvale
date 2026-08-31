@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Events\ResponsiblePeriodEnded;
+use App\Listeners\LogResponsiblePeriodEnded;
+use App\Models\Pecosa;
+use App\Observers\PecosaObserver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -18,6 +22,9 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        ResponsiblePeriodEnded::class => [
+            LogResponsiblePeriodEnded::class,
+        ],
     ];
 
     /**
@@ -27,6 +34,6 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        Pecosa::observe(PecosaObserver::class);
     }
 }

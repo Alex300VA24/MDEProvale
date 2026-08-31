@@ -84,11 +84,13 @@ class SearchController extends Controller
 
         $query->where(function ($outer) use ($terms, $prefix) {
             foreach ($terms as $term) {
-                $outer->where(function ($qb) use ($term, $prefix) {
-                    $qb->where("{$prefix}names", 'like', "{$term}%")
-                        ->orWhere("{$prefix}father_lastname", 'like', "{$term}%")
-                        ->orWhere("{$prefix}mother_lastname", 'like', "{$term}%")
-                        ->orWhere("{$prefix}dni", 'like', "{$term}%");
+                $pattern = '%' . addcslashes($term, '\\%_') . '%';
+
+                $outer->where(function ($qb) use ($pattern, $prefix) {
+                    $qb->where("{$prefix}names", 'like', $pattern)
+                        ->orWhere("{$prefix}father_lastname", 'like', $pattern)
+                        ->orWhere("{$prefix}mother_lastname", 'like', $pattern)
+                        ->orWhere("{$prefix}dni", 'like', $pattern);
                 });
             }
         });

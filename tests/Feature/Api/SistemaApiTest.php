@@ -79,6 +79,17 @@ class SistemaApiTest extends TestCase
             ->assertJsonCount(1, 'data');
     }
 
+    public function test_usuarios_filter_matches_names_and_surnames_in_any_order(): void
+    {
+        $this->createBasicUser();
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/usuarios?search=User%20Basico')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.username', 'basico');
+    }
+
     public function test_store_usuario_creates_user(): void
     {
         $this->actingAs($this->adminUser())

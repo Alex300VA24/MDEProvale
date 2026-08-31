@@ -17,10 +17,7 @@ class BeneficiarieController extends Controller
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->whereHas('person', function ($q) use ($search) {
-                $q->where('names', 'like', "%{$search}%")
-                    ->orWhere('father_lastname', 'like', "%{$search}%")
-                    ->orWhere('mother_lastname', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
+                $q->searchIdentity($search);
             });
         }
 

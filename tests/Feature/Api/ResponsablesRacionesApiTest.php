@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Api;
 
+use App\Events\ResponsiblePeriodEnded;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 use Tests\Traits\SeedsBaseData;
 
@@ -211,5 +213,99 @@ class ResponsablesRacionesApiTest extends TestCase
     public function test_unauthenticated_request_gets_401(): void
     {
         $this->getJson(self::BASE . '/raciones')->assertStatus(401);
+    }
+
+    // ==================== HISTORIAL DE RESPONSABLES ====================
+
+    public function test_history_endpoint_paginates_and_reports_period_and_vigencia(): void
+    {
+        $this->actingAs($this->adminUser())->putJson(self::BASE . '/responsibles/chief', ['person_id' => 1]);
+        $this->actingAs($this->adminUser())->putJson(self::BASE . '/responsibles/chief', ['person_id' => 2]);
+
+        $res = $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/responsibles/history?per_page=10')
+            ->assertOk()
+            ->assertJsonStructure(['data' => [['id', 'type_label', 'active', 'person_name', 'person_dni', 'start_date', 'end_date', 'duration_days']], 'meta' => ['total', 'links']])
+            ->assertJsonPath('meta.total', 2);
+
+        // El vigente (person 2) va primero; el anterior (person 1) tiene end_date.
+        $this->assertSame(2, $res->json('data.0.person_id'));
+        $this->assertTrue($res->json('data.0.active'));
+        $this->assertNull($res->json('data.0.end_date'));
+        $this->assertFalse($res->json('data.1.active'));
+        $this->assertNotNull($res->json('data.1.end_date'));
+    }
+
+    public function test_history_endpoint_filters_by_search_and_vigencia(): void
+    {
+        $this->actingAs($this->adminUser())->putJson(self::BASE . '/responsibles/chief', ['person_id' => 1]);
+        $this->actingAs($this->adminUser())->putJson(self::BASE . '/responsibles/chief', ['person_id' => 2]);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/responsibles/history?search=12345672')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.person_id', 2);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/responsibles/history?vigencia=finalizado')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.person_id', 1);
+    }
+
+    public function test_show_responsible_returns_detail_with_person(): void
+    {
+        $create = $this->actingAs($this->adminUser())
+            ->putJson(self::BASE . '/responsibles/storekeeper', ['person_id' => 1])
+            ->assertOk();
+        $id = $create->json('data.id');
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . "/responsibles/detail/{$id}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $id)
+            ->assertJsonPath('data.type_label', 'Encargado de PROVALE')
+            ->assertJsonPath('data.person.dni', '12345671');
+    }
+
+    public function test_update_responsible_dispatches_period_ended_event_on_replacement(): void
+    {
+        Event::fake([ResponsiblePeriodEnded::class]);
+
+        $this->actingAs($this->adminUser())->putJson(self::BASE . '/responsibles/chief', ['person_id' => 1]);
+        Event::assertNotDispatched(ResponsiblePeriodEnded::class);
+
+        $this->actingAs($this->adminUser())->putJson(self::BASE . '/responsibles/chief', ['person_id' => 2]);
+        Event::assertDispatched(ResponsiblePeriodEnded::class, fn ($e) => $e->responsible->person_id === 1 && $e->reason === 'replaced');
+    }
+
+    public function test_end_responsible_period_marks_finished_and_dispatches_event(): void
+    {
+        Event::fake([ResponsiblePeriodEnded::class]);
+
+        $id = $this->actingAs($this->adminUser())
+            ->putJson(self::BASE . '/responsibles/chief', ['person_id' => 1])
+            ->json('data.id');
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE . "/responsibles/{$id}/end")
+            ->assertOk()
+            ->assertJsonPath('data.active', false);
+
+        $this->assertDatabaseHas('responsibles', ['id' => $id, 'active' => 0]);
+        Event::assertDispatched(ResponsiblePeriodEnded::class, fn ($e) => $e->responsible->id === $id && $e->reason === 'manual');
+    }
+
+    public function test_end_responsible_period_rejects_already_finished(): void
+    {
+        $id = $this->actingAs($this->adminUser())
+            ->putJson(self::BASE . '/responsibles/chief', ['person_id' => 1])
+            ->json('data.id');
+        $this->actingAs($this->adminUser())->postJson(self::BASE . "/responsibles/{$id}/end")->assertOk();
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE . "/responsibles/{$id}/end")
+            ->assertStatus(422);
     }
 }

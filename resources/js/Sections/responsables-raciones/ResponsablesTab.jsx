@@ -4,6 +4,7 @@ import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import Combobox from '../../Components/Combobox';
 import errorMessage from '../../errorMessage';
+import ResponsablesHistorialTable from './ResponsablesHistorialTable';
 
 const BASE = '/api/dashboard/responsables-raciones';
 
@@ -120,27 +121,34 @@ export default function ResponsablesTab({ can }) {
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ResponsibleCard
-                title={{ type: 'chief', label: 'Subgerente de Programas Sociales' }}
-                subtitle="Subgerencia de Programas Sociales"
-                icon="fa-user-shield"
-                iconClass="bg-leaf-light text-leaf"
-                responsible={data.chief}
-                people={data.people}
-                canEdit={can.edit}
-                onSaved={load}
+        <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ResponsibleCard
+                    title={{ type: 'chief', label: 'Subgerente de Programas Sociales' }}
+                    subtitle="Subgerencia de Programas Sociales"
+                    icon="fa-user-shield"
+                    iconClass="bg-leaf-light text-leaf"
+                    responsible={data.chief}
+                    people={data.people}
+                    canEdit={can.edit}
+                    onSaved={load}
+                />
+                <ResponsibleCard
+                    title={{ type: 'storekeeper', label: 'Encargado de PROVALE' }}
+                    subtitle="Programa Vaso de Leche"
+                    icon="fa-warehouse"
+                    iconClass="bg-sky-light text-[#0284C7]"
+                    responsible={data.storekeeper}
+                    people={data.people}
+                    canEdit={can.edit}
+                    onSaved={load}
+                />
+            </div>
+
+            <ResponsablesHistorialTable
+                can={can}
+                key={`${data.chief?.id ?? 'x'}-${data.storekeeper?.id ?? 'x'}`}
             />
-            <ResponsibleCard
-                title={{ type: 'storekeeper', label: 'Encargado de PROVALE' }}
-                subtitle="Programa Vaso de Leche"
-                icon="fa-warehouse"
-                iconClass="bg-sky-light text-[#0284C7]"
-                responsible={data.storekeeper}
-                people={data.people}
-                canEdit={can.edit}
-                onSaved={load}
-            />
-        </div>
+        </>
     );
 }

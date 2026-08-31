@@ -7,6 +7,7 @@ use App\Models\State;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class PresidentPortalAuthenticationTest extends TestCase
@@ -92,7 +93,50 @@ class PresidentPortalAuthenticationTest extends TestCase
 
         $this->actingAs($user)
             ->get(route('president.password.change'))
-            ->assertOk();
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Portal/Password')
+                ->where('passwordChangeRequired', true)
+            );
+    }
+
+    public function test_president_cannot_enter_administrative_dashboard(): void
+    {
+        $user = $this->createPresidentUser(mustChangePassword: false);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertRedirect(route('president-portal.index'));
+    }
+
+    public function test_standard_login_never_sends_president_to_dashboard_after_expiration(): void
+    {
+        $this->createPresidentUser(mustChangePassword: false);
+
+        $this->post('/login?expired=1', [
+            'username' => self::DNI,
+            'password' => self::DNI,
+        ])->assertRedirect(route('president-portal.index'));
+    }
+
+    public function test_authenticated_president_opening_standard_login_returns_to_portal(): void
+    {
+        $user = $this->createPresidentUser(mustChangePassword: false);
+
+        $this->actingAs($user)
+            ->get(route('login'))
+            ->assertRedirect(route('president-portal.index'));
+    }
+
+    public function test_cached_dashboard_api_redirects_president_instead_of_returning_403(): void
+    {
+        $user = $this->createPresidentUser(mustChangePassword: false);
+
+        $this->actingAs($user)
+            ->getJson(route('api.inicio.panel'))
+            ->assertStatus(409)
+            ->assertJsonPath('wrong_portal', true)
+            ->assertJsonPath('redirect', route('president-portal.index'));
     }
 
     public function test_password_change_updates_account_and_redirects_to_portal(): void

@@ -391,7 +391,8 @@ class ProductosPecosasController extends Controller
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
             'managing_partner_id' => 'required|exists:partners,id',
-            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
+            // Estado administrado por el sistema (ver PecosaObserver).
+            'state_id' => ['nullable', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'association_id' => 'required|exists:associations,id',
             'details' => 'required|array|min:1',
             'details.*.detail_product_id' => 'required|exists:detail_products,id',
@@ -949,6 +950,8 @@ class ProductosPecosasController extends Controller
 
         $startDate = Carbon::create((int) $anio, (int) $mes, 1)->startOfMonth()->toDateString();
         $endDate = Carbon::create((int) $anio, (int) $mes, 1)->endOfMonth()->toDateString();
+        // PECOSAs de la última semana del mes anterior pertenecen a este mes.
+        [$pecosaFrom, $pecosaTo] = Pecosa::deliveryPeriodRange((int) $anio, (int) $mes);
         $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
         $associations = Association::with(['placeSector.place', 'partners.beneficiaries.person:id,birthdate'])
             ->when($estadoActivo, function ($q) use ($estadoActivo) {
@@ -992,7 +995,7 @@ class ProductosPecosasController extends Controller
 
         $pecosasByAssociation = Pecosa::with('detailPecosas:id,pecosa_id,quantity')
             ->whereIn('association_id', $associationIds)
-            ->whereBetween('delivery_date', [$startDate, $endDate])
+            ->whereBetween('delivery_date', [$pecosaFrom->toDateString(), $pecosaTo->toDateString()])
             ->get()
             ->keyBy('association_id');
 

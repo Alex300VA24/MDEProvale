@@ -27,7 +27,7 @@
         .logout { min-width:112px; min-height:44px; border:1px solid rgba(255,150,155,.55); background:rgba(210,60,66,.26); color:#FFD9DB; border-radius:8px; font-weight:700; cursor:pointer; }
         .logout:hover { background:rgba(210,60,66,.4); border-color:rgba(255,170,174,.75); }
         button:focus-visible,a:focus-visible,input:focus-visible { outline:3px solid rgba(30,87,153,.28); outline-offset:2px; }
-        .shell { min-height:calc(100vh - 76px); display:grid; place-items:center; padding:30px 0 50px; }
+        .shell { min-height:100vh; display:grid; place-items:center; padding:30px 0 50px; }
         .card { width:min(100%,460px); padding:34px; border:1px solid rgba(212,228,247,.9); border-radius:24px; background:rgba(255,255,255,.96); box-shadow:0 28px 70px -38px rgba(26,46,74,.55); }
         h1 { margin:0; font:700 25px/1.2 'Lexend',sans-serif; }
         .intro { margin:8px 0 4px; color:var(--muted); }
@@ -53,12 +53,6 @@
 </head>
 <body class="portal-password">
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
-    <header class="topbar">
-        <div class="topbar-inner">
-            <div class="brand"><img src="{{ asset('img/logo-provale-sin-fondo.png') }}" width="48" height="48" alt="Logo PROVALE"><div><strong>Municipalidad Distrital de La Esperanza</strong><span>PROVALE · Portal de Presidentas</span></div></div>
-            <form method="POST" action="{{ route('president.logout') }}">@csrf<button class="logout" type="submit"><i class="fas fa-right-from-bracket" aria-hidden="true"></i> Cerrar sesión</button></form>
-        </div>
-    </header>
 
     <main class="shell" id="main-content">
         <section class="card" aria-labelledby="password-title">
@@ -76,18 +70,18 @@
                 @csrf
                 <div class="field">
                     <label for="current_password">Contraseña actual</label>
-                    <div class="input-wrap"><i class="fas fa-lock" aria-hidden="true"></i><input id="current_password" name="current_password" type="password" autocomplete="current-password" required aria-describedby="current-password-error"><button class="toggle" type="button" data-toggle-for="current_password" aria-label="Mostrar contraseña"><i class="fas fa-eye" aria-hidden="true"></i></button></div>
+                    <div class="input-wrap"><i class="fas fa-lock" aria-hidden="true"></i><input id="current_password" name="current_password" type="password" autocomplete="current-password" required aria-describedby="current-password-error"><button class="toggle" type="button" data-toggle-for="current_password" aria-label="Mostrar contraseña"><i class="fas fa-eye-slash" aria-hidden="true"></i></button></div>
                     @error('current_password')<div class="error" id="current-password-error" role="alert">{{ $message }}</div>@enderror
                 </div>
                 <div class="field">
                     <label for="password">Nueva contraseña</label>
-                    <div class="input-wrap"><i class="fas fa-key" aria-hidden="true"></i><input id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="password-error"><button class="toggle" type="button" data-toggle-for="password" aria-label="Mostrar contraseña"><i class="fas fa-eye" aria-hidden="true"></i></button></div>
+                    <div class="input-wrap"><i class="fas fa-key" aria-hidden="true"></i><input id="password" name="password" type="password" autocomplete="new-password" required aria-describedby="password-error"><button class="toggle" type="button" data-toggle-for="password" aria-label="Mostrar contraseña"><i class="fas fa-eye-slash" aria-hidden="true"></i></button></div>
                     <p class="hint">Mínimo 8 caracteres y diferente a tu DNI.</p>
                     @error('password')<div class="error" id="password-error" role="alert">{{ $message }}</div>@enderror
                 </div>
                 <div class="field">
                     <label for="password_confirmation">Confirmar nueva contraseña</label>
-                    <div class="input-wrap"><i class="fas fa-key" aria-hidden="true"></i><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required><button class="toggle" type="button" data-toggle-for="password_confirmation" aria-label="Mostrar contraseña"><i class="fas fa-eye" aria-hidden="true"></i></button></div>
+                    <div class="input-wrap"><i class="fas fa-key" aria-hidden="true"></i><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required><button class="toggle" type="button" data-toggle-for="password_confirmation" aria-label="Mostrar contraseña"><i class="fas fa-eye-slash" aria-hidden="true"></i></button></div>
                 </div>
                 <button class="submit" id="submit" type="submit"><i class="fas fa-check" aria-hidden="true"></i> Guardar y continuar</button>
             </form>
@@ -100,7 +94,7 @@
                 const visible = input.type === 'text';
                 input.type = visible ? 'password' : 'text';
                 button.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
-                button.querySelector('i').className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
+                button.querySelector('i').className = visible ? 'fas fa-eye-slash' : 'fas fa-eye';
             });
         });
         document.getElementById('password-form').addEventListener('submit', () => {

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
@@ -24,6 +25,33 @@ class People extends Model
     ];
 
     protected $appends = ['age_formatted'];
+
+    /**
+     * Busca cada palabra en nombres, apellidos o DNI. Esto permite consultas
+     * como "María Quispe", "Quispe María" o solo un apellido sin depender de
+     * cómo están separados los datos entre columnas.
+     */
+    public function scopeSearchIdentity(Builder $query, ?string $search): Builder
+    {
+        $terms = preg_split('/\s+/u', trim((string) $search), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (empty($terms)) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $outer) use ($terms) {
+            foreach ($terms as $term) {
+                $pattern = '%' . addcslashes($term, '\\%_') . '%';
+
+                $outer->where(function (Builder $termQuery) use ($pattern) {
+                    $termQuery->where('names', 'like', $pattern)
+                        ->orWhere('father_lastname', 'like', $pattern)
+                        ->orWhere('mother_lastname', 'like', $pattern)
+                        ->orWhere('dni', 'like', $pattern);
+                });
+            }
+        });
+    }
 
     public function placeSector()
     {

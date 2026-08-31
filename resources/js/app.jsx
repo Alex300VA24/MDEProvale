@@ -12,11 +12,14 @@ import '@fontsource/lexend/700.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 import { createRoot } from 'react-dom/client';
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ToastProvider } from './Components/Toast';
+import { registerInertiaErrorAlerts } from './httpAlerts';
 
 const appName = import.meta.env.VITE_APP_NAME || 'MDEProvale';
+
+registerInertiaErrorAlerts(router);
 
 createInertiaApp({
     title: (title) => `${title ? `${title} — ` : ''}${appName}`,

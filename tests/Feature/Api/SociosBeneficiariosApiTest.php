@@ -44,6 +44,59 @@ class SociosBeneficiariosApiTest extends TestCase
             ->assertJsonStructure(['data' => [], 'meta' => []]);
     }
 
+    public function test_people_partner_and_beneficiary_filters_match_full_name_in_any_order(): void
+    {
+        $associationId = $this->seedAssociation();
+        $personId = $this->seedPerson([
+            'names' => 'Sandro Luis',
+            'father_lastname' => 'Cardenas',
+            'mother_lastname' => 'Vilca',
+            'dni' => '72843944',
+        ]);
+        $partnerId = \Illuminate\Support\Facades\DB::table('partners')->insertGetId([
+            'person_id' => $personId,
+            'association_id' => $associationId,
+            'state_id' => 1,
+            'date_begin' => now()->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $relationshipId = \Illuminate\Support\Facades\DB::table('relationships')->insertGetId([
+            'title' => 'TITULAR',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        \Illuminate\Support\Facades\DB::table('beneficiaries')->insert([
+            'person_id' => $personId,
+            'partner_id' => $partnerId,
+            'relationship_id' => $relationshipId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        foreach (['personas', 'partners', 'beneficiarios'] as $endpoint) {
+            $this->actingAs($this->userWithAccess())
+                ->getJson(self::BASE . "/{$endpoint}?search=Cardenas%20Sandro")
+                ->assertOk()
+                ->assertJsonCount(1, 'data');
+        }
+    }
+
+    public function test_ajax_person_search_matches_a_last_name(): void
+    {
+        $personId = $this->seedPerson([
+            'names' => 'María Elena',
+            'father_lastname' => 'Quispe',
+            'mother_lastname' => 'Mamani',
+            'dni' => '72843944',
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson('/api/search/people?q=Mamani')
+            ->assertOk()
+            ->assertJsonPath('results.0.id', $personId);
+    }
+
     public function test_partners_options_endpoint(): void
     {
         $this->actingAs($this->userWithAccess())

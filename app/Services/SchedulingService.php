@@ -27,6 +27,9 @@ class SchedulingService
     {
         $startDate = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+        // PECOSAs emitidas en la última semana del mes anterior corresponden a
+        // la repartición de este mes: se filtran por el período efectivo.
+        [$pecosaFrom, $pecosaTo] = Pecosa::deliveryPeriodRange($year, $month);
         $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
 
         $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries(
@@ -40,7 +43,7 @@ class SchedulingService
 
         $pecosasByAssociation = Pecosa::with('detailPecosas:id,pecosa_id,quantity')
             ->whereIn('association_id', $associationIds)
-            ->whereBetween('delivery_date', [$startDate, $endDate])
+            ->whereBetween('delivery_date', [$pecosaFrom->toDateString(), $pecosaTo->toDateString()])
             ->get()
             ->keyBy('association_id');
 

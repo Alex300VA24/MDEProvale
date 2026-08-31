@@ -32,14 +32,7 @@ class SistemaController extends Controller
         $query = User::with(['rol', 'state'])->orderBy('names');
 
         if ($search = trim((string) $request->input('search'))) {
-            $query->where(function ($q) use ($search) {
-                $q->where('names', 'like', "%{$search}%")
-                    ->orWhere('father_surname', 'like', "%{$search}%")
-                    ->orWhere('mother_surname', 'like', "%{$search}%")
-                    ->orWhere('username', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
-            });
+            $query->searchIdentity($search);
         }
 
         if ($request->filled('rol_id')) {

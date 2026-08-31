@@ -802,7 +802,9 @@
 .assistant-launcher {
     width: 4rem;
     height: 4rem;
-    border-radius: var(--control-radius);
+    /* !important para ganarle a la regla global de controles (:where(button...)),
+       igual que .sidebar-edge-toggle: este lanzador es un boton redondo. */
+    border-radius: 9999px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1092,4 +1094,31 @@ textarea,
     line-height: 1.2 !important;
     white-space: nowrap !important;
     vertical-align: middle;
+}
+
+/* 6. Radio de las superficies del panel de Inicio. Las tarjetas KPI usan
+      `rounded-xl` en movil y `sm:rounded-2xl` en escritorio, y el banner usa
+      `rounded-2xl sm:rounded-3xl`, asi que el radio cambiaba entre breakpoints
+      y no coincidia con el resto de tarjetas del sistema. Aqui se fija el mismo
+      --surface-radius que usan todas las demas superficies. */
+#content-wrapper main .stat-card,
+#content-wrapper main .panel-card,
+#content-wrapper main .inicio-hero {
+    border-radius: var(--surface-radius) !important;
+}
+
+/* Altura del banner de bienvenida (imagen de los ninos): mas presencia visual.
+   La imagen va en position:absolute + object-cover, asi que basta con dar
+   alto minimo al contenedor para que se muestre mas foto. Se hace flex con
+   alineacion al fondo para que el texto y los botones queden abajo del banner. */
+#content-wrapper main .inicio-hero {
+    min-height: 300px;
+    display: flex;
+    align-items: flex-end;
+}
+
+@media (min-width: 640px) {
+    #content-wrapper main .inicio-hero {
+        min-height: 420px;
+    }
 }

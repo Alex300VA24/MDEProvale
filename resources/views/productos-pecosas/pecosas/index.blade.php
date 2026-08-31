@@ -327,7 +327,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form action="{{ route('productos-pecosas.pecosas.store') }}" method="POST" id="pecosa-form-modal" onsubmit="document.getElementById('loading-screen').classList.add('active');">
+            <form action="{{ route('productos-pecosas.pecosas.store') }}" method="POST" id="pecosa-form-modal">
                 @csrf
                 <div class="p-4 sm:p-6">
                     <h4 class="font-extrabold text-charcoal text-lg mb-4 flex items-center gap-2">
@@ -372,12 +372,9 @@
                             <input type="hidden" name="storekeeper_id" value="{{ $almaceneroActivo->id ?? '' }}">
                         </div>
                         <div>
-                            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Estado</label>
-                            <select name="state_id" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all" required>
-                                @foreach($states as $state)
-                                    <option value="{{ $state->id }}">{{ $state->title }}</option>
-                                @endforeach
-                            </select>
+                            <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Vigencia</label>
+                            <input type="text" value="Vigente (automático)" class="w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-gray-100" readonly>
+                            <p class="text-[10px] text-earth mt-1">La PECOSA del período anterior pasará a Vencida.</p>
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-bold text-earth uppercase tracking-wider mb-2">Observaciones</label>
@@ -415,6 +412,52 @@
 <script>
 let detailCountModal = 0;
 let detailProductsListModal = @json($detailProductsList ?? []);
+
+// Aviso de vigencia: antes de guardar, si el comité ya tiene una PECOSA en el
+// período de repartición anterior, se advierte que quedará como VENCIDA.
+(function () {
+    const form = document.getElementById('pecosa-form-modal');
+    if (!form) return;
+    const loading = document.getElementById('loading-screen');
+    let confirmado = false;
+
+    const enviar = () => {
+        confirmado = true;
+        if (loading) loading.classList.add('active');
+        form.submit();
+    };
+
+    form.addEventListener('submit', function (e) {
+        if (confirmado) return;
+        e.preventDefault();
+
+        const asociacion = (form.querySelector('[name="association_id"]') || {}).value;
+        const fecha = (form.querySelector('[name="delivery_date"]') || {}).value;
+        if (!asociacion || !fecha) { enviar(); return; }
+
+        fetch('{{ route('productos-pecosas.pecosas.verificar-vigencia') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+            body: JSON.stringify({ association_id: asociacion, delivery_date: fecha }),
+        })
+        .then((r) => r.json())
+        .then((d) => {
+            if (d && d.supersede) {
+                const ok = window.confirm(
+                    'Al generar esta PECOSA, la PECOSA anterior N.° ' + d.pecosa_number +
+                    ' (' + d.delivery_date + ' · ' + d.periodo + ') pasará a figurar como VENCIDA.\n\n¿Deseas continuar?'
+                );
+                if (!ok) return;
+            }
+            enviar();
+        })
+        .catch(enviar);
+    });
+})();
 
 function fmtDate(d) {
     if (!d) return '';

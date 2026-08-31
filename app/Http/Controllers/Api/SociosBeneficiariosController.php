@@ -63,10 +63,7 @@ class SociosBeneficiariosController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('people', function ($q) use ($search) {
-                $q->where('names', 'like', "%{$search}%")
-                    ->orWhere('father_lastname', 'like', "%{$search}%")
-                    ->orWhere('mother_lastname', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
+                $q->searchIdentity($search);
             });
         }
 
@@ -142,13 +139,7 @@ class SociosBeneficiariosController extends Controller
             ->with('placeSector.place:id,title', 'placeSector.sector:id,title');
 
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('names', 'like', "%{$search}%")
-                    ->orWhere('father_lastname', 'like', "%{$search}%")
-                    ->orWhere('mother_lastname', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
-            });
+            $query->searchIdentity($request->search);
         }
 
         if ($request->filled('gender')) {
@@ -210,10 +201,7 @@ class SociosBeneficiariosController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('person', function ($q) use ($search) {
-                $q->where('names', 'like', "%{$search}%")
-                    ->orWhere('father_lastname', 'like', "%{$search}%")
-                    ->orWhere('mother_lastname', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
+                $q->searchIdentity($search);
             });
         }
 

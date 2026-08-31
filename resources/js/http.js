@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { showSessionExpired } from './httpAlerts';
 
 /**
  * Cliente axios para las llamadas JSON del dashboard (Sanctum SPA).
@@ -42,8 +43,13 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            window.location.href = (window.APP_URL || '') + '/login';
+        const status = error.response?.status;
+        const data = error.response?.data;
+
+        if (data?.wrong_portal && data?.redirect) {
+            window.location.assign(data.redirect);
+        } else if ([401, 419].includes(status)) {
+            showSessionExpired(data?.redirect);
         }
         return Promise.reject(error);
     }

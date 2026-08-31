@@ -2,13 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\PecosaController;
+use App\Models\Pecosa;
 use App\Models\Rol;
 use App\Models\State;
 use App\Models\User;
 use App\Models\VerifiedDocument;
 use App\Services\VerifiedDocumentService;
+use App\Services\PecosaService;
+use App\Services\PDFService;
+use App\Services\StockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class DocumentVerificationPortalTest extends TestCase
@@ -120,12 +126,53 @@ class DocumentVerificationPortalTest extends TestCase
 
         $this->actingAs($this->admin)
             ->get(route('president-portal.index'))
-            ->assertForbidden();
+            ->assertRedirect(route('dashboard'));
 
         $this->actingAs($this->president)
             ->get(route('president-portal.index'))
             ->assertOk()
-            ->assertSee('No existe comité vigente asignado');
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Portal/Index')
+                ->where('association', null)
+            );
+    }
+
+    public function test_stale_session_marker_does_not_block_public_authenticity_page(): void
+    {
+        $token = str_repeat('c', 64);
+        $document = VerifiedDocument::create([
+            'token' => $token,
+            'type' => VerifiedDocument::TYPE_PECOSA_RECEIPT,
+            'identifier' => 'PEC-PUBLICA-001',
+            'status' => VerifiedDocument::STATUS_VALID,
+            'issued_at' => now(),
+        ]);
+
+        $this->withSession(['user_was_authenticated' => true])
+            ->get(route('documents.verify', $document->token))
+            ->assertOk()
+            ->assertSee('Documento auténtico y vigente');
+    }
+
+    public function test_view_pdf_action_redirects_to_authenticity_page(): void
+    {
+        $document = new VerifiedDocument([
+            'token' => str_repeat('d', 64),
+            'identifier' => 'PEC-REDIRECT-001',
+        ]);
+
+        $this->mock(PecosaService::class)
+            ->shouldReceive('generateComprobante')
+            ->once()
+            ->andReturn([$document, '%PDF-1.4 test', 'pecosa.pdf']);
+        $this->mock(PDFService::class);
+        $this->mock(StockService::class);
+
+        $this->actingAs($this->admin);
+        $response = app(PecosaController::class)
+            ->generarComprobante(new Pecosa(['pecosa_number' => 'P-001']));
+
+        $this->assertSame(route('documents.verify', $document->token), $response->getTargetUrl());
     }
 
     public function test_president_portal_has_its_own_role_restricted_login(): void

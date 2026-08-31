@@ -4011,7 +4011,7 @@ h1, h2, h3, h4, h5, h6,
 .assistant-launcher {
   width: 4rem;
   height: 4rem;
-  border-radius: var(--control-radius);
+  border-radius: 9999px !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4721,6 +4721,28 @@ textarea,
   line-height: 1.2 !important;
   white-space: nowrap !important;
   vertical-align: middle;
+}
+
+/* 6. Radio de las superficies del panel de Inicio (KPI, paneles de graficas y banner):
+      el mismo --surface-radius que usan todas las demas tarjetas del sistema. */
+#content-wrapper main .stat-card,
+#content-wrapper main .panel-card,
+#content-wrapper main .inicio-hero {
+  border-radius: var(--surface-radius) !important;
+}
+
+/* Altura del banner de bienvenida (imagen de los ninos): mas presencia visual.
+   Flex con alineacion al fondo para que el texto y los botones queden abajo. */
+#content-wrapper main .inicio-hero {
+  min-height: 300px;
+  display: flex;
+  align-items: flex-end;
+}
+
+@media (min-width: 640px) {
+  #content-wrapper main .inicio-hero {
+    min-height: 420px;
+  }
 }
 
 .first\:pt-0:first-child {

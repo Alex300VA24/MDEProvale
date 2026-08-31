@@ -6,6 +6,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Session\TokenMismatchException;
 use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -41,16 +42,22 @@ class Handler extends ExceptionHandler
             //
         });
 
-        $this->renderable(function (TokenMismatchException $e, $request) {
+        $this->renderable(function (HttpExceptionInterface $e, $request) {
+            if ($e->getStatusCode() !== 419 || ! ($e->getPrevious() instanceof TokenMismatchException)) {
+                return null;
+            }
+
+            $loginUrl = $this->expiredSessionLoginUrl($request);
+
             if ($request->inertia()) {
-                return Inertia::location(route('login', ['expired' => 1]));
+                return Inertia::location($loginUrl);
             }
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.',
                     'session_expired' => true,
-                    'redirect' => route('login'),
+                    'redirect' => $loginUrl,
                 ], 419);
             }
 
@@ -58,24 +65,35 @@ class Handler extends ExceptionHandler
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login', ['expired' => 1]);
+            return redirect()->to($loginUrl);
         });
     }
 
     protected function unauthenticated($request, AuthenticationException $exception)
     {
+        $loginUrl = $this->expiredSessionLoginUrl($request);
+
         if ($request->inertia()) {
-            return Inertia::location(route('login', ['expired' => 1]));
+            return Inertia::location($loginUrl);
         }
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'message' => 'No autenticado.',
                 'session_expired' => true,
-                'redirect' => route('login'),
+                'redirect' => $loginUrl,
             ], 401);
         }
 
-        return redirect()->guest(route('login'))->with('session_expired', true);
+        return redirect()->guest($loginUrl)->with('session_expired', true);
+    }
+
+    private function expiredSessionLoginUrl($request): string
+    {
+        $route = $request->is('portal-presidentas*')
+            ? 'president.login'
+            : 'login';
+
+        return route($route, ['expired' => 1]);
     }
 }

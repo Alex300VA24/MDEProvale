@@ -238,7 +238,7 @@ export default function Dashboard() {
                         </div>
                         <div className="logo-text">
                             <div className="text-white font-extrabold text-xl tracking-tight">MDE</div>
-                            <div className="text-blue-light text-[11px] font-semibold uppercase tracking-widest">Vaso de Leche</div>
+                            <div className="text-blue-light text-[11px] font-semibold uppercase tracking-widest">SGEPVL</div>
                         </div>
                     </div>
 

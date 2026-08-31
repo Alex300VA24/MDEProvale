@@ -18,11 +18,7 @@ class PersonaController extends Controller
                                 'address');
 
         if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where('names', 'like', "%{$search}%")
-                ->orWhere('father_lastname', 'like', "%{$search}%")
-                ->orWhere('mother_lastname', 'like', "%{$search}%")
-                ->orWhere('dni', 'like', "%{$search}%");
+            $query->searchIdentity($request->search);
         }
 
         if ($request->has('gender') && $request->gender != '') {

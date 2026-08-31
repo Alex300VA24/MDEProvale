@@ -38,6 +38,13 @@
         .submit:hover { filter:brightness(1.05); }
         button:focus-visible,a:focus-visible { outline:3px solid rgba(30,87,153,.28); outline-offset:2px; }
         .help { margin:20px 0 0; text-align:center; color:var(--muted); font-size:13px; }
+        .session-alert-backdrop { position:fixed; inset:0; z-index:60; display:grid; place-items:center; padding:20px; background:rgba(5,25,45,.68); }
+        .session-alert { width:min(100%,390px); padding:28px; border-radius:16px; background:#fff; box-shadow:0 28px 70px -24px rgba(5,25,45,.72); }
+        .session-alert-icon { display:grid; place-items:center; width:48px; height:48px; margin-bottom:18px; border-radius:12px; background:#FFF7E0; color:#9A6700; font-size:21px; }
+        .session-alert h2 { margin:0; font:700 22px/1.25 'Lexend',sans-serif; }
+        .session-alert p { margin:10px 0 22px; color:var(--muted); line-height:1.55; }
+        .session-alert button { width:100%; min-height:46px; border:0; border-radius:8px; background:var(--navy); color:#fff; font:700 15px 'Source Sans 3',sans-serif; cursor:pointer; }
+        .session-alert button:hover { background:var(--blue); }
         @media(max-width:480px) { .shell { padding:14px; } .card { padding:26px 20px; border-radius:20px; } }
     </style>
     <link rel="stylesheet" href="{{ asset('css/president-portal.css') }}">
@@ -58,7 +65,7 @@
                 </div>
                 <div class="field">
                     <label for="password">Contraseña</label>
-                    <div class="input-wrap"><i class="fas fa-lock" aria-hidden="true"></i><input id="password" name="password" type="password" autocomplete="current-password" required aria-describedby="password-error"><button class="toggle" type="button" id="toggle-password" aria-label="Mostrar contraseña"><i class="fas fa-eye" aria-hidden="true"></i></button></div>
+                    <div class="input-wrap"><i class="fas fa-lock" aria-hidden="true"></i><input id="password" name="password" type="password" autocomplete="current-password" required aria-describedby="password-error"><button class="toggle" type="button" id="toggle-password" aria-label="Mostrar contraseña"><i class="fas fa-eye-slash" aria-hidden="true"></i></button></div>
                     @error('password')<div class="error" id="password-error" role="alert">{{ $message }}</div>@enderror
                 </div>
                 <label class="remember" for="remember"><input id="remember" name="remember" type="checkbox"> Recordarme</label>
@@ -67,6 +74,16 @@
             <p class="help">Acceso exclusivo para presidentas registradas y vigentes.</p>
         </section>
     </main>
+    @if(session('session_expired') || request()->get('expired') == 1)
+        <div class="session-alert-backdrop" id="session-expired-alert">
+            <section class="session-alert" role="alertdialog" aria-modal="true" aria-labelledby="session-expired-title" aria-describedby="session-expired-description">
+                <div class="session-alert-icon" aria-hidden="true"><i class="fas fa-clock"></i></div>
+                <h2 id="session-expired-title">Sesión finalizada</h2>
+                <p id="session-expired-description">Tu sesión venció por inactividad. Inicia sesión nuevamente para continuar de forma segura.</p>
+                <button type="button" id="session-expired-confirm">Iniciar sesión</button>
+            </section>
+        </div>
+    @endif
     <script>
         const toggle = document.getElementById('toggle-password');
         const password = document.getElementById('password');
@@ -74,13 +91,26 @@
             const visible = password.type === 'text';
             password.type = visible ? 'password' : 'text';
             toggle.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
-            toggle.querySelector('i').className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
+            toggle.querySelector('i').className = visible ? 'fas fa-eye-slash' : 'fas fa-eye';
         });
         document.getElementById('president-login-form').addEventListener('submit', () => {
             const button = document.getElementById('submit');
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Ingresando...';
         });
+
+        const sessionExpiredButton = document.getElementById('session-expired-confirm');
+        if (sessionExpiredButton) {
+            sessionExpiredButton.focus();
+            sessionExpiredButton.addEventListener('click', () => {
+                document.getElementById('session-expired-alert')?.remove();
+                document.getElementById('username')?.focus();
+
+                if (window.history.replaceState) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            });
+        }
     </script>
 </body>
 </html>

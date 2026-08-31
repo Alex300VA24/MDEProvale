@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
@@ -51,6 +52,31 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'must_change_password' => 'boolean',
     ];
+
+    /** Busca por identidad completa aunque nombres y apellidos estén separados. */
+    public function scopeSearchIdentity(Builder $query, ?string $search): Builder
+    {
+        $terms = preg_split('/\s+/u', trim((string) $search), -1, PREG_SPLIT_NO_EMPTY);
+
+        if (empty($terms)) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $outer) use ($terms) {
+            foreach ($terms as $term) {
+                $pattern = '%' . addcslashes($term, '\\%_') . '%';
+
+                $outer->where(function (Builder $termQuery) use ($pattern) {
+                    $termQuery->where('names', 'like', $pattern)
+                        ->orWhere('father_surname', 'like', $pattern)
+                        ->orWhere('mother_surname', 'like', $pattern)
+                        ->orWhere('username', 'like', $pattern)
+                        ->orWhere('email', 'like', $pattern)
+                        ->orWhere('dni', 'like', $pattern);
+                });
+            }
+        });
+    }
 
     public function rol()
     {

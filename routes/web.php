@@ -19,7 +19,18 @@ use App\Http\Controllers\Auth\PresidentAuthenticatedSessionController;
 */
 
 Route::get('/', function () {
-    return view('auth.login');
+    $user = auth()->user();
+
+    if ($user) {
+        return redirect()->route(
+            $user->isPresidentPortalUser() ? 'president-portal.index' : 'dashboard'
+        );
+    }
+
+    return response()->view('auth.login')->withHeaders([
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+    ]);
 });
 
 // Ruta pública para refrescar CSRF token
@@ -55,10 +66,17 @@ Route::middleware('role.president')->group(function () {
         ->name('president.password.change');
     Route::post('/portal-presidentas/cambiar-contrasena', [PresidentPasswordController::class, 'update'])
         ->name('president.password.update');
+
+    Route::get('/portal-presidentas/pecosas/{pecosa}', [PresidentPortalController::class, 'showPecosa'])
+        ->name('president-portal.pecosa');
+    Route::get('/portal-presidentas/pecosas/{pecosa}/pdf', [PresidentPortalController::class, 'pecosaPdf'])
+        ->name('president-portal.pecosa.pdf');
+    Route::get('/portal-presidentas/socios', [PresidentPortalController::class, 'socios'])
+        ->name('president-portal.socios');
 });
 
 // Rutas que requieren autenticación
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'platform.user'])->group(function () {
     // Dashboard SPA (Inertia + React). El resto de la navegación es 100% client-side.
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');

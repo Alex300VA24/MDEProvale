@@ -187,16 +187,44 @@ class PecosaController extends Controller
 
     public function generarComprobante(Pecosa $pecosa)
     {
-        [, $contents, $filename] = $this->pecosaService->generateComprobante($pecosa, request()->user()?->id);
+        [$document] = $this->pecosaService->generateComprobante($pecosa, request()->user()?->id);
 
-        return response($contents, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]);
+        return redirect()->route('documents.verify', $document->token);
     }
 
     public function reportes()
     {
         return view('productos-pecosas.pecosas.reportes');
+    }
+
+    /**
+     * Informa si al registrar una PECOSA para el comité y la fecha indicados
+     * quedará una PECOSA del período anterior que pasará a estado VENCIDA.
+     * Alimenta el aviso de confirmación del formulario de registro.
+     */
+    public function verificarVigencia(Request $request)
+    {
+        $data = $request->validate([
+            'association_id' => 'required|exists:associations,id',
+            'delivery_date' => 'required|date',
+        ]);
+
+        $vigId = State::idFor(State::CURRENT);
+        $previous = Pecosa::effectiveDeliveryDate($data['delivery_date'])->subMonthNoOverflow();
+        [$start, $end] = Pecosa::deliveryPeriodRange($previous->year, $previous->month);
+
+        $anterior = Pecosa::query()
+            ->where('association_id', $data['association_id'])
+            ->when($vigId, fn ($q) => $q->where('state_id', $vigId))
+            ->whereBetween('delivery_date', [$start->toDateString(), $end->toDateString()])
+            ->orderByDesc('delivery_date')
+            ->first(['id', 'pecosa_number', 'delivery_date']);
+
+        return response()->json([
+            'supersede' => (bool) $anterior,
+            'pecosa_number' => $anterior?->pecosa_number,
+            'delivery_date' => optional($anterior?->delivery_date)->format('d/m/Y'),
+            'periodo' => ucfirst($previous->locale('es')->monthName) . ' ' . $previous->year,
+        ]);
     }
 }

@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PartnerSeeder::class);
         $this->call(BeneficiarieSeeder::class);
         $this->call(ProductSeeder::class);
-        //$this->call(ResponsibleSeeder::class);
+        $this->call(ResponsibleSeeder::class);
         $this->call(BeneficiarieHistorySeeder::class);
         $this->call(DirectiveSeeder::class);
         $this->call(RacionesSeeder::class);
@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
         $this->call(DetailProductSeeder::class);
         $this->call(TransactionSeeder::class);
         $this->call(PecosaSeeder::class);
+        $this->call(PecosaResponsableSeeder::class);
         $this->call(ProductStockSeeder::class);
         $this->call(DetailPecosaSeeder::class);
     }

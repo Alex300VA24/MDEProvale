@@ -116,8 +116,9 @@ body.portal-password {
 
 .portal-password .topbar,
 .portal-dashboard .topbar {
-    background: var(--institutional-navy);
+    background: var(--portal-surface);
     border-bottom: 3px solid var(--institutional-gold);
+    box-shadow: 0 6px 20px -16px rgba(11, 58, 102, 0.55);
     backdrop-filter: none;
 }
 
@@ -130,26 +131,26 @@ body.portal-password {
 
 .portal-password .brand,
 .portal-dashboard .brand {
-    color: #ffffff;
+    color: var(--institutional-navy);
 }
 
-/* Cerrar sesion: rojo suave sobre la barra navy (no saturado). */
+/* Cerrar sesion: rojo institucional legible sobre la barra blanca. */
 .portal-password .logout,
 .portal-dashboard .logout {
-    border-color: rgba(255, 150, 155, 0.55);
-    color: #FFD9DB;
-    background: rgba(210, 60, 66, 0.26);
+    border-color: rgba(176, 42, 52, 0.38);
+    color: #A92535;
+    background: rgba(210, 60, 66, 0.08);
 }
 
 .portal-password .logout:hover,
 .portal-dashboard .logout:hover {
-    background: rgba(210, 60, 66, 0.4);
-    border-color: rgba(255, 170, 174, 0.75);
+    background: rgba(210, 60, 66, 0.16);
+    border-color: rgba(176, 42, 52, 0.6);
 }
 
 .portal-password .shell {
     width: 100%;
-    min-height: calc(100dvh - 81px);
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -246,6 +247,12 @@ body.portal-password {
     color: #8F431F;
     background: #FBE7D8;
     box-shadow: inset 0 0 0 1px #D79A77;
+}
+
+.portal-dashboard .status-expired {
+    color: #A92535;
+    background: #FCE1E3;
+    box-shadow: inset 0 0 0 1px #EE7A82;
 }
 
 .portal-dashboard tbody tr:hover {

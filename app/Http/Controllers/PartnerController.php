@@ -47,10 +47,7 @@ class PartnerController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('people', function ($q) use ($search) {
-                $q->where('names', 'like', "%{$search}%")
-                    ->orWhere('father_lastname', 'like', "%{$search}%")
-                    ->orWhere('mother_lastname', 'like', "%{$search}%")
-                    ->orWhere('dni', 'like', "%{$search}%");
+                $q->searchIdentity($search);
             });
         }
 

@@ -24,10 +24,7 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             ->withCount('beneficiaries')
             ->when($filters['search'] ?? null, function ($q, $search) {
                 $q->whereHas('people', function ($q) use ($search) {
-                    $q->where('names', 'like', "%{$search}%")
-                      ->orWhere('father_lastname', 'like', "%{$search}%")
-                      ->orWhere('mother_lastname', 'like', "%{$search}%")
-                      ->orWhere('dni', 'like', "%{$search}%");
+                    $q->searchIdentity($search);
                 });
             })
             ->when($filters['association_id'] ?? null, fn($q, $v) => $q->where('association_id', $v))
