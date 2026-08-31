@@ -12,17 +12,23 @@ use App\Models\TypeBenefit;
 use App\Models\ReasonDisqualification;
 use App\Models\PlaceSector;
 use App\Models\State;
+use App\Models\VerifiedDocument;
 use App\Services\PartnerService;
 use App\Services\BeneficiaryReportService;
-use Barryvdh\DomPDF\Facade\PDF;
+use App\Services\VerifiedDocumentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class PartnerController extends Controller
 {
     private PartnerService $partnerService;
     private BeneficiaryReportService $beneficiaryReportService;
 
-    public function __construct(PartnerService $partnerService, BeneficiaryReportService $beneficiaryReportService)
+    public function __construct(
+        PartnerService $partnerService,
+        BeneficiaryReportService $beneficiaryReportService,
+        private VerifiedDocumentService $verifiedDocumentService
+    )
     {
         $this->partnerService = $partnerService;
         $this->beneficiaryReportService = $beneficiaryReportService;
@@ -129,9 +135,36 @@ class PartnerController extends Controller
         try {
             $data = $this->beneficiaryReportService->generatePadronReport($associationId, (int)$mes, (int)$anio);
 
-            $pdf = PDF::loadView('reporte_beneficiario', $data);
-            $pdf->setPaper('a4', 'landscape');
-            return $pdf->stream('padron-beneficiarios-' . $data['comite'] . '-' . $mes . '-' . $anio . '.pdf');
+            $identifier = sprintf(
+                'BEN-%04d-%02d-%s-%s',
+                $anio,
+                $mes,
+                Str::upper((string) $data['comite']),
+                Str::upper(Str::random(8))
+            );
+            $filename = 'padron-beneficiarios-' . $data['comite'] . '-' . $mes . '-' . $anio . '.pdf';
+
+            [, $contents, $safeFilename] = $this->verifiedDocumentService->issue(
+                VerifiedDocument::TYPE_BENEFICIARY_REGISTER,
+                $identifier,
+                [
+                    'periodo' => sprintf('%04d-%02d', $anio, $mes),
+                    'comite' => $data['comite'],
+                    'club' => $data['club_nombre'],
+                    'beneficiarios' => $data['total_beneficiarios'],
+                ],
+                'reporte_beneficiario',
+                $data,
+                $filename,
+                $request->user()?->id,
+                'a4',
+                'landscape'
+            );
+
+            return response($contents, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $safeFilename . '"',
+            ]);
         } catch (\DomainException $e) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => $e->getMessage()], 422);

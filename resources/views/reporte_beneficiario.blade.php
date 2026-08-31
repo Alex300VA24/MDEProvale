@@ -39,6 +39,9 @@
         .resumen-title { font-weight: bold; text-align: center; background-color: #d8d8d8; border: 1px solid #000; padding: 2px; font-size: 6pt; margin-bottom: 2px; }
         .summary-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         .summary-table td { border: 1px solid #000; padding: 2px; text-align: center; font-size: 6pt; }
+        .observations-verification { width: 28mm; margin: 6mm auto 0; color: #1E5799; font-size: 5pt; line-height: 1.15; page-break-inside: avoid; }
+        .observations-verification img { display: block; width: 17mm; height: 17mm; margin: 0 0 0.8mm 0; }
+        .observations-verification-caption { display: block; width: 28mm; text-align: left; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -227,6 +230,12 @@
                         </tr>
                         @endforeach
                     </table>
+                    @endif
+                    @if(!empty($qrDataUri))
+                    <div class="observations-verification">
+                        <img src="{{ $qrDataUri }}" alt="Código QR de verificación">
+                        <div class="observations-verification-caption">Escanee para verificar<br>autenticidad</div>
+                    </div>
                     @endif
                 </td>
                 <td style="width: 2px; border: none; padding: 0;">&nbsp;</td>

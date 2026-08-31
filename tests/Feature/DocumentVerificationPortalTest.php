@@ -14,6 +14,7 @@ use App\Services\PDFService;
 use App\Services\StockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -118,6 +119,78 @@ class DocumentVerificationPortalTest extends TestCase
         $this->assertStringStartsWith('%PDF-', $contents);
         $this->assertSame(hash('sha256', $contents), $document->sha256);
         Storage::disk('local')->assertExists($document->storage_path);
+    }
+
+    public function test_beneficiary_register_is_issued_with_authenticity_qr(): void
+    {
+        Storage::fake('local');
+        $data = [
+            'beneficiarios' => [],
+            'resumen_filas' => [],
+            'observaciones' => [[
+                'codigo' => 1,
+                'descripcion' => 'EDAD >= 14 años (BAJA)',
+                'cantidad' => 0,
+            ]],
+            'club_nombre' => 'COMITÉ QA',
+            'comite' => '001',
+            'periodo' => '2026-II',
+            'total_beneficiarios' => 0,
+        ];
+
+        [$document, $contents] = app(VerifiedDocumentService::class)->issue(
+            VerifiedDocument::TYPE_BENEFICIARY_REGISTER,
+            'BEN-QA-' . strtoupper(\Illuminate\Support\Str::random(8)),
+            ['periodo' => '2026-08', 'comite' => '001', 'beneficiarios' => 0],
+            'reporte_beneficiario',
+            $data,
+            'padron-beneficiarios-qa.pdf',
+            $this->admin->id,
+            'a4',
+            'landscape'
+        );
+
+        $this->assertStringStartsWith('%PDF-', $contents);
+        $this->assertSame(VerifiedDocument::TYPE_BENEFICIARY_REGISTER, $document->type);
+        $this->assertSame('Padrón de Beneficiarios', $document->type_label);
+        Storage::disk('local')->assertExists($document->storage_path);
+    }
+
+    public function test_qr_placement_matches_each_register_layout(): void
+    {
+        $qr = 'data:image/png;base64,QR-DE-PRUEBA';
+        $distribution = View::make('movimientos.reparticion', [
+            'clubs' => collect(),
+            'currentYear' => 2026,
+            'currentMonth' => 8,
+            'monthName' => 'August',
+            'daysInMonth' => 31,
+            'qrDataUri' => $qr,
+        ])->render();
+        $beneficiaries = View::make('reporte_beneficiario', [
+            'beneficiarios' => [],
+            'resumen_filas' => [],
+            'observaciones' => [[
+                'codigo' => 1,
+                'descripcion' => 'EDAD >= 14 años (BAJA)',
+                'cantidad' => 0,
+            ]],
+            'qrDataUri' => $qr,
+        ])->render();
+
+        $this->assertStringContainsString('<td class="header-verification-qr">', $distribution);
+        $this->assertStringNotContainsString('class="verification-row"', $distribution);
+        $this->assertStringNotContainsString('class="header-spacer"', $distribution);
+        $this->assertLessThan(
+            strpos($distribution, '<td class="header-verification-qr">'),
+            strpos($distribution, '<td class="header-verification-data">')
+        );
+        $this->assertStringContainsString('<div class="observations-verification">', $beneficiaries);
+        $this->assertStringContainsString('class="observations-verification-caption"', $beneficiaries);
+        $this->assertGreaterThan(
+            strpos($beneficiaries, 'RESUMEN DE OBSERVACIONES'),
+            strpos($beneficiaries, '<div class="observations-verification">')
+        );
     }
 
     public function test_only_president_role_can_open_private_portal(): void

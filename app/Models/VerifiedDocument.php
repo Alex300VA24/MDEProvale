@@ -12,6 +12,7 @@ class VerifiedDocument extends Model
     public const TYPE_PECOSA_REGISTER = 'padron_pecosas';
     public const TYPE_PECOSA_RECEIPT = 'comprobante_pecosa';
     public const TYPE_DISTRIBUTION_REGISTER = 'padron_reparticion';
+    public const TYPE_BENEFICIARY_REGISTER = 'padron_beneficiarios';
     public const STATUS_VALID = 'vigente';
     public const STATUS_REVOKED = 'revocado';
 
@@ -45,6 +46,7 @@ class VerifiedDocument extends Model
             self::TYPE_PECOSA_REGISTER => 'Padrón de Pecosas',
             self::TYPE_PECOSA_RECEIPT => 'Comprobante de Pecosa',
             self::TYPE_DISTRIBUTION_REGISTER => 'Padrón de Repartición',
+            self::TYPE_BENEFICIARY_REGISTER => 'Padrón de Beneficiarios',
             default => 'Documento institucional',
         };
     }

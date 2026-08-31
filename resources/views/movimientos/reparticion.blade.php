@@ -45,21 +45,13 @@
         /* MAIN TABLE */
         .main-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
             border: 2px solid #000;
-            border-right: none;
             border-bottom: none;
             margin-bottom: 5px;
         }
         .header-table { width: 100%; border-collapse: collapse; border-spacing: 0; margin-bottom: 8px; }
-        .header-spacer {
-            width: 1px;
-            border-top: none !important;
-            border-bottom: none !important;
-            border-right: none !important;
-            border-left: 1px solid #000 !important;
-            background-color: #fff !important;
-        }
         .main-table th {
             background-color: #d8d8d8;
             border: 1px solid #000;
@@ -103,9 +95,11 @@
         .sig-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
         .sig-table td { width: 33.33%; text-align: center; padding: 4px; vertical-align: bottom; }
         .sig-line { border-top: 1px solid #000; margin-top: 35px; padding-top: 4px; font-size: 7pt; }
-        .verification-row { width: 100%; margin-top: 2mm; page-break-inside: avoid; }
-        .verification-cell { width: 22mm; margin-left: auto; text-align: center; color: #1E5799; font-size: 5pt; line-height: 1.15; }
-        .verification-cell img { display: block; width: 17mm; height: 17mm; margin: 0 auto 0.8mm; }
+        .header-verification { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .header-verification td { border: none; padding: 0; }
+        .header-verification-data { text-align: left; vertical-align: top; font-size: 6.5pt; line-height: 1.35; white-space: nowrap; }
+        .header-verification-qr { width: 16mm; text-align: right; vertical-align: top; color: #1E5799; font-size: 4pt; line-height: 1.05; }
+        .header-verification-qr img { display: block; width: 15mm; height: 15mm; margin: 0 0 0.4mm auto; }
     </style>
 </head>
 <body>
@@ -119,6 +113,21 @@
         $nombreMes = strtoupper($meses_es[$currentMonth] ?? $monthName);
     @endphp
     <table class="main-table">
+        <colgroup>
+            <col style="width: 3.5%;">
+            <col style="width: 3.5%;">
+            <col style="width: 18%;">
+            <col style="width: 16%;">
+            <col style="width: 13.5%;">
+            <col style="width: 13.5%;">
+            <col style="width: 4.5%;">
+            <col style="width: 4.5%;">
+            <col style="width: 4.5%;">
+            <col style="width: 4.5%;">
+            <col style="width: 5%;">
+            <col style="width: 4.5%;">
+            <col style="width: 4.5%;">
+        </colgroup>
         <thead>
             <tr>
                 <td colspan="13" style="border: none; padding: 0 0 4px 0;">
@@ -145,10 +154,22 @@
                                     <strong>LECHE EVAPORADA ENTERA Y HOJUELAS DE QUINUA AVENA CON AZÚCAR FORTIFICADO CON VITAMINAS Y MINERALES</strong>
                                 </div>
                             </td>
-                            <td style="width: 120px; text-align: right; vertical-align: top; font-size: 7pt; padding: 0;">
-                                <div style="font-weight: bold; margin-top: 4px;">AÑO: {{ $currentYear }}</div>
-                                <div>FECHA: {{ date('d/m/Y') }}</div>
-                                <div>HORA: {{ date('H:i:s') }}</div>
+                            <td style="width: 145px; vertical-align: top; padding: 0;">
+                                <table class="header-verification">
+                                    <tr>
+                                        <td class="header-verification-data">
+                                            <div style="font-weight: bold; margin-top: 4px;">AÑO: {{ $currentYear }}</div>
+                                            <div>FECHA: {{ date('d/m/Y') }}</div>
+                                            <div>HORA: {{ date('H:i:s') }}</div>
+                                        </td>
+                                        <td class="header-verification-qr">
+                                            @if(!empty($qrDataUri))
+                                                <img src="{{ $qrDataUri }}" alt="Código QR de verificación">
+                                                Verificar<br>autenticidad
+                                            @endif
+                                        </td>
+                                    </tr>
+                                </table>
                             </td>
                         </tr>
                     </table>
@@ -168,7 +189,6 @@
                 <th class="col-highlight-hojuelas">HOJUELAS</th>
                 <th style="width: 40px;">SACOS</th>
                 <th style="width: 40px;">KILOS</th>
-                <th class="header-spacer">&nbsp;</th>
             </tr>
         </thead>
         <tbody>
@@ -205,7 +225,6 @@
                     <td class="col-num col-highlight-hojuelas">{{ round($club['hojuelas_kg']) }}</td>
                     <td class="col-num">{{ $club['hojuelas_sacos'] ?? 0 }}</td>
                     <td class="col-num">{{ $club['hojuelas_kilos'] ?? 0 }}</td>
-                    <td class="header-spacer"></td>
                 </tr>
             @endforeach
             @php
@@ -223,20 +242,11 @@
                 <td class="col-num col-highlight-hojuelas" rowspan="2">{{ round($total_hojuelas_kg) }}</td>
                 <td class="col-num" rowspan="2">{{ $total_hojuelas_sacos }}</td>
                 <td class="col-num" rowspan="2">{{ $total_hojuelas_kilos }}</td>
-                <td class="header-spacer" rowspan="2"></td>
             </tr>
             <tr></tr>
             
         </tbody>
     </table>
-    @if(!empty($qrDataUri))
-        <div class="verification-row">
-            <div class="verification-cell">
-                <img src="{{ $qrDataUri }}" alt="Código QR de verificación">
-                Escanee para verificar<br>autenticidad
-            </div>
-        </div>
-    @endif
     </div>
 
 </body>
