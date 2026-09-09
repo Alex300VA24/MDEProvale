@@ -198,6 +198,17 @@ class PecosaController extends Controller
     }
 
     /**
+     * Genera el Acta de Supervisión en blanco (formato oficial para llenar a mano
+     * durante la visita de supervisión a los clubes de madres y comités).
+     */
+    public function actaSupervision()
+    {
+        $pdf = $this->pdfService->generate('actas.supervision', [], 'a4', 'portrait');
+
+        return $pdf->stream('acta-supervision.pdf');
+    }
+
+    /**
      * Informa si al registrar una PECOSA para el comité y la fecha indicados
      * quedará una PECOSA del período anterior que pasará a estado VENCIDA.
      * Alimenta el aviso de confirmación del formulario de registro.

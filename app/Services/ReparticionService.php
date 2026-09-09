@@ -7,9 +7,9 @@ use App\Models\Racion;
 
 class ReparticionService
 {
-    public function getActiveRacion(int $year): ?Racion
+    public function getActiveRacion(int $year, int $month): ?Racion
     {
-        return Racion::where('year', $year)->where('active', true)->first();
+        return Racion::forMonth($year, $month)->first();
     }
 
     /**

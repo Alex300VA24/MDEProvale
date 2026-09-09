@@ -32,6 +32,7 @@ class BeneficiaryReportService
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
         $cutoffDate = $endDate;
+        [$pecosaStart, $pecosaEnd] = Pecosa::deliveryPeriodRange($year, $month);
 
         $presidenta = $association->getPresidentNameAt($endDate->toDateString())
             ?? $association->getPresidentName();
@@ -44,7 +45,7 @@ class BeneficiaryReportService
 
         $pecosa = Pecosa::with('detailPecosas.detailProduct.product')
             ->where('association_id', $associationId)
-            ->whereBetween('delivery_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->whereBetween('delivery_date', [$pecosaStart->toDateString(), $pecosaEnd->toDateString()])
             ->first();
 
         [$beneficiarios, $resumen] = $this->buildReportData($partners, $cutoffDate, $startDate, $endDate);

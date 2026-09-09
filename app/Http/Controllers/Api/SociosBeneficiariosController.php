@@ -21,6 +21,8 @@ use App\Models\State;
 use App\Models\TypeBenefit;
 use App\Services\PartnerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SociosBeneficiariosController extends Controller
 {
@@ -196,7 +198,22 @@ class SociosBeneficiariosController extends Controller
 
     public function beneficiarios(Request $request)
     {
-        $query = Beneficiarie::with(self::BENEFICIARIO_WITH);
+        [$year, $month] = $this->beneficiaryPeriod($request);
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+
+        $query = Beneficiarie::with([
+            'person',
+            'partner.people:id,names,father_lastname',
+            'relationship',
+            'histories' => fn ($history) => $history
+                ->whereDate('date_begin', '<=', $endDate)
+                ->where(fn ($dates) => $dates->whereNull('date_end')->orWhereDate('date_end', '>=', $startDate))
+                ->orderByDesc('date_begin'),
+            'histories.typeBenefit:id,title,abbreviation',
+            'histories.state:id,title',
+            'histories.reasonDisqualification:id,title',
+        ])->activeDuring($startDate, $endDate);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -216,7 +233,9 @@ class SociosBeneficiariosController extends Controller
         $beneficiaries = $query->orderBy('id', 'desc')
             ->paginate((int) $request->input('per_page', 10));
 
-        return BeneficiarieResource::collection($beneficiaries);
+        return BeneficiarieResource::collection($beneficiaries)->additional([
+            'period' => ['year' => $year, 'month' => $month],
+        ]);
     }
 
     public function beneficiariosOptions()
@@ -254,7 +273,7 @@ class SociosBeneficiariosController extends Controller
     private function syncBeneficiarioHistory(Beneficiarie $beneficiarie, array $data): void
     {
         if (empty($data['type_benefit_id']) || empty($data['history_state_id'])
-            || empty($data['date_begin']) || empty($data['date_end'])) {
+            || empty($data['date_begin'])) {
             return;
         }
 
@@ -263,13 +282,15 @@ class SociosBeneficiariosController extends Controller
             'height' => $data['height'] ?? 0,
             'hmg' => $data['hmg'] ?? 0,
             'date_begin' => $data['date_begin'],
-            'date_end' => $data['date_end'],
+            'date_end' => $data['date_end'] ?? null,
             'type_benefit_id' => $data['type_benefit_id'],
             'state_id' => $data['history_state_id'],
             'reason_disqualification_id' => $data['reason_disqualification_id'] ?? null,
         ];
 
-        $history = $beneficiarie->histories()->first();
+        $history = $beneficiarie->histories()
+            ->whereDate('date_begin', $payload['date_begin'])
+            ->first();
 
         if ($history) {
             $history->update($payload);
@@ -320,8 +341,42 @@ class SociosBeneficiariosController extends Controller
 
     public function destroyBeneficiario(Beneficiarie $beneficiarie)
     {
-        $beneficiarie->delete();
+        $today = now()->toDateString();
+        $activeHistories = $beneficiarie->histories()
+            ->whereDate('date_begin', '<=', $today)
+            ->where(fn ($query) => $query->whereNull('date_end')->orWhereDate('date_end', '>=', $today))
+            ->get();
+
+        if ($activeHistories->isEmpty() && ! $beneficiarie->histories()->exists()) {
+            $beneficiarie->delete();
+        } elseif ($activeHistories->isEmpty()) {
+            return response()->json([
+                'message' => 'No se puede alterar un período histórico. Seleccione el período vigente para dar de baja al beneficiario.',
+            ], 422);
+        } else {
+            $expiredStateId = State::where('abbreviation', State::EXPIRED)->value('id');
+            foreach ($activeHistories as $history) {
+                $history->update(array_filter([
+                    'date_end' => $today,
+                    'state_id' => $expiredStateId,
+                ], fn ($value) => $value !== null));
+            }
+        }
 
         return response()->json(null, 204);
+    }
+
+    private function beneficiaryPeriod(Request $request): array
+    {
+        if ($request->filled('year') && $request->filled('month')) {
+            $year = max(2019, min(now()->year + 1, (int) $request->input('year')));
+            $month = max(1, min(12, (int) $request->input('month')));
+            return [$year, $month];
+        }
+
+        $latest = DB::table('beneficiary_histories')->max('date_begin');
+        $date = $latest ? Carbon::parse($latest) : now();
+
+        return [$date->year, $date->month];
     }
 }

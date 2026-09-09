@@ -108,7 +108,7 @@ function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, 
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg ${iconClass}`}>
                     <i className={`fas ${icon}`} />
                 </div>
-                <span className={`text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${badgeClass}`}>{badge}</span>
+                <span className={`max-w-[8rem] truncate text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${badgeClass}`} title={badge}>{badge}</span>
             </div>
             <div className="text-2xl sm:text-4xl font-bold text-navy leading-none mb-1">{value}</div>
             <div className="text-xs sm:text-sm font-medium text-slate">{label}</div>
@@ -187,6 +187,8 @@ export default function Inicio({ onNavigate }) {
     // "Socios vs Beneficiarios" (mes 0 = año completo).
     const [sociosAnio, setSociosAnio] = useState(ANIO_ACTUAL);
     const [sociosMes, setSociosMes] = useState(0);
+    const [periodoAnio, setPeriodoAnio] = useState(null);
+    const [periodoMes, setPeriodoMes] = useState(null);
 
     const pecosasCanvas = useRef(null);
     const productosCanvas = useRef(null);
@@ -204,10 +206,15 @@ export default function Inicio({ onNavigate }) {
                         anio_productos: anioProductos,
                         socios_anio: sociosAnio,
                         socios_mes: sociosMes,
+                        ...(periodoAnio && periodoMes ? { periodo_anio: periodoAnio, periodo_mes: periodoMes } : {}),
                     },
                 });
                 if (active) {
                     setPanel(res.data);
+                    if (!periodoAnio || !periodoMes) {
+                        setPeriodoAnio(res.data.stats.period.year);
+                        setPeriodoMes(res.data.stats.period.month);
+                    }
                     setError(false);
                 }
             } catch {
@@ -217,7 +224,7 @@ export default function Inicio({ onNavigate }) {
         return () => {
             active = false;
         };
-    }, [anioPecosas, anioProductos, sociosAnio, sociosMes]);
+    }, [anioPecosas, anioProductos, sociosAnio, sociosMes, periodoAnio, periodoMes]);
 
     // Cada gráfica se monta en su propio efecto y depende SOLO de su porción
     // de datos (serializada). Así, cambiar el filtro de una no redibuja las
@@ -439,6 +446,7 @@ export default function Inicio({ onNavigate }) {
 
     const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVsBeneficiarios, top_comites: topComites } = panel;
     const sociosPeriodoLabel = sociosMes === 0 ? `Año ${sociosAnio}` : `${MESES_LARGOS[sociosMes - 1]} ${sociosAnio}`;
+    const cardsPeriodLabel = periodoMes && periodoAnio ? `${MESES_LARGOS[periodoMes - 1]} ${periodoAnio}` : '';
 
     return (
         <div>
@@ -482,21 +490,36 @@ export default function Inicio({ onNavigate }) {
                 </div>
             </div>
 
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
+                <div>
+                    <h2 className="font-extrabold text-charcoal text-base sm:text-lg">Resumen del período</h2>
+                    <p className="text-xs sm:text-sm text-slate" aria-live="polite">Datos vigentes y entregas de {cardsPeriodLabel}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <FiltroSelect value={periodoMes || ''} onChange={setPeriodoMes} label="Mes del resumen">
+                        {MESES_LARGOS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
+                    </FiltroSelect>
+                    <FiltroSelect value={periodoAnio || ''} onChange={setPeriodoAnio} label="Año del resumen">
+                        {ANIOS.map((year) => <option key={year} value={year}>{year}</option>)}
+                    </FiltroSelect>
+                </div>
+            </div>
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
                 <StatCard
                     icon="fa-users"
                     iconClass="bg-blue-light text-blue"
                     barClass="bg-gradient-to-r from-blue to-sky"
-                    badge="+12%"
+                    badge={cardsPeriodLabel}
                     badgeClass="text-blue bg-blue-light"
                     value={stats.total_socios}
-                    label="Total Socios"
+                    label="Socios vigentes"
                 />
                 <StatCard
                     icon="fa-user-check"
                     iconClass="bg-sky-light text-sky"
                     barClass="bg-gradient-to-r from-sky to-[#7ec3e8]"
-                    badge="+8%"
+                    badge={cardsPeriodLabel}
                     badgeClass="text-sky bg-sky-light"
                     value={stats.total_beneficiarios}
                     label="Beneficiarios"
@@ -505,10 +528,10 @@ export default function Inicio({ onNavigate }) {
                     icon="fa-heart"
                     iconClass="bg-amber-light text-amber"
                     barClass="bg-gradient-to-r from-amber to-[#f0c567]"
-                    badge="+5%"
+                    badge={`${stats.total_pecosas} PECOSAs`}
                     badgeClass="text-amber bg-amber-light"
                     value={stats.total_comites}
-                    label="Club de Madres"
+                    label="Clubes con socios"
                 />
                 <StockCard products={stats.stock_productos} />
             </div>

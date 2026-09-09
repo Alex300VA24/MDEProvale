@@ -11,6 +11,8 @@ import { formatDate, personFullName, personLabel } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
+const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const YEARS = Array.from({ length: Math.max(1, new Date().getFullYear() - 2018) }, (_, index) => new Date().getFullYear() - index);
 const SEARCH_PEOPLE = '/api/search/people';
 
 const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
@@ -256,7 +258,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', partner_id: '', relationship_id: '' });
+    const [filters, setFilters] = useState({ search: '', partner_id: '', relationship_id: '', year: '', month: '' });
     const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -277,8 +279,15 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
             if (debouncedFilters.search) params.search = debouncedFilters.search;
             if (debouncedFilters.partner_id) params.partner_id = debouncedFilters.partner_id;
             if (debouncedFilters.relationship_id) params.relationship_id = debouncedFilters.relationship_id;
+            if (debouncedFilters.year && debouncedFilters.month) {
+                params.year = debouncedFilters.year;
+                params.month = debouncedFilters.month;
+            }
             const res = await http.get(`${BASE}/beneficiarios`, { params });
             setData(res.data);
+            if (!filters.year || !filters.month) {
+                setFilters((previous) => ({ ...previous, ...res.data.period }));
+            }
         } catch {
             toast.error('No se pudo cargar la lista de beneficiarios.');
         } finally {
@@ -311,7 +320,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
         if (!deleting) return;
         try {
             await http.delete(`${BASE}/beneficiarios/${deleting.id}`);
-            toast.success('Beneficiario eliminado correctamente.');
+            toast.success('Beneficiario dado de baja; su historial se conservó.');
             setDeleting(null);
             load();
         } catch (err) {
@@ -365,11 +374,23 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                         allowClear
                     />
                 </div>
+                <div className="w-full sm:w-36 shrink-0">
+                    <label className={labelCls}>Mes</label>
+                    <select value={filters.month} onChange={(e) => setFilter('month', Number(e.target.value))} className={inputCls}>
+                        {MONTHS.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
+                    </select>
+                </div>
+                <div className="w-full sm:w-28 shrink-0">
+                    <label className={labelCls}>Año</label>
+                    <select value={filters.year} onChange={(e) => setFilter('year', Number(e.target.value))} className={inputCls}>
+                        {YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
+                    </select>
+                </div>
                 <div className="w-full sm:w-auto shrink-0 flex flex-col">
                     <button
                         type="button"
                         onClick={() => {
-                            setFilters({ search: '', partner_id: '', relationship_id: '' });
+                            setFilters((previous) => ({ ...previous, search: '', partner_id: '', relationship_id: '' }));
                             setPage(1);
                         }}
                         className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
@@ -408,7 +429,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                                     <td colSpan={5}>
                                         <div className="empty-state">
                                             <i className="fas fa-hand-holding-heart" />
-                                            <p>No hay beneficiarios registrados</p>
+                                            <p>No hay beneficiarios vigentes en el período seleccionado</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -500,7 +521,7 @@ const BeneficiariosTab = forwardRef(function BeneficiariosTab({ options, can }, 
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Beneficiario"
-                message="Se eliminará el registro del beneficiario de forma permanente."
+                message="Se cerrará su vigencia actual. Los meses anteriores permanecerán disponibles en el historial."
                 details={deleting ? [
                     { label: 'Beneficiario', value: personFullName(deleting.person) },
                     { label: 'DNI', value: deleting.person?.dni },

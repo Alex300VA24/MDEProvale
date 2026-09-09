@@ -42,6 +42,10 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
             ->when($filters['state_id'] ?? null, fn($q, $v) => $q->where('state_id', $v))
             ->when($filters['fecha_inicio'] ?? null, fn($q, $v) => $q->whereDate('delivery_date', '>=', $v))
             ->when($filters['fecha_fin'] ?? null, fn($q, $v) => $q->whereDate('delivery_date', '<=', $v))
+            ->when(
+                isset($filters['year'], $filters['month']),
+                fn ($q) => $q->forDeliveryPeriod((int) $filters['year'], (int) $filters['month'])
+            )
             ->orderBy('id', 'desc')
             ->paginate($perPage);
     }

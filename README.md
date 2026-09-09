@@ -170,6 +170,10 @@ El proyecto genera **dos builds** distintos:
 | SPA (React/Vite) | `npm run build` | `public/build/` (dashboard) |
 | Vistas Blade (Alpine/jQuery) | `npm run build:blade` | `public/css`, `public/js`, fuentes, webfonts |
 
+Esas salidas se generan en cada equipo y están excluidas por `.gitignore`; no
+deben agregarse con `git add -f`. El código fuente vive en `resources/` y las
+versiones de dependencias quedan fijadas en `package-lock.json`.
+
 Para producción/levantarlo, compila ambos de una vez:
 
 ```bash
@@ -295,14 +299,9 @@ Si prefieres `http://mdeprovale.test` en lugar de la subcarpeta:
 
 ### 6.1 Usuarios que crea el `DatabaseSeeder`
 
-| Usuario | Contraseña | Rol |
-|---------|-----------|-----|
-| `lestradal` | `admin` | Administrador (acceso completo) |
-| `mvegape` | `admin` | Segundo rol |
-| `usuario1` | `admin` | Rol básico |
-
-Estos usuarios quedan en estado **Activo** (`state_id = 1`). El login usa
-**usuario + contraseña**.
+Las credenciales de desarrollo no se publican en el repositorio. Solicítalas al
+responsable del entorno o crea un usuario local mediante un seeder privado. No
+reutilices cuentas ni contraseñas de prueba en producción.
 
 ### 6.2 Portal de Presidentas (Socia Presidenta)
 
@@ -433,5 +432,32 @@ php artisan serve                 # http://127.0.0.1:8000
 #   abrir http://localhost/MDEProvale/public
 ```
 
-**Login por defecto:** `lestradal` / `admin`. **Portal de presidentas:**
-`/portal-presidentas/login` (DNI / DNI, con cambio de contraseña obligatorio).
+**Portal de presidentas:** `/portal-presidentas/login` (DNI / DNI, con cambio de
+contraseña obligatorio). Las credenciales administrativas se entregan fuera del
+repositorio.
+
+---
+
+## 11. Higiene del repositorio
+
+No se versionan dependencias, archivos `.env`, claves, cachés, logs, cobertura,
+artefactos compilados ni salidas temporales de herramientas. Tampoco se suben
+prototipos HTML de la raíz que ya tengan su vista Blade equivalente.
+
+Los insumos locales de migración pueden contener DNI, nombres u otros datos
+personales. Por eso se excluyen las carpetas de migración, los CSV de
+`migracion_responsables/` y `public/fichas/`. Los scripts reutilizables de
+`migracion_responsables/` sí se conservan, pero sus datos de entrada no.
+
+Antes de confirmar cambios:
+
+```bash
+git status --short
+git diff --check
+git check-ignore -v RUTA_DEL_ARCHIVO
+```
+
+Si un archivo sensible ya fue confirmado alguna vez, agregarlo a `.gitignore`
+no lo elimina del historial. Hay que retirarlo del índice, rotar cualquier
+secreto expuesto y, cuando corresponda, limpiar el historial con coordinación
+del equipo.

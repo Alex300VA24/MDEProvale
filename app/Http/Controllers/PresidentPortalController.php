@@ -60,7 +60,7 @@ class PresidentPortalController extends Controller
                 ];
             }
 
-            $racion = $this->reparticionService->getActiveRacion($year);
+            $racion = $this->reparticionService->getActiveRacion($year, $month);
             if ($racion) {
                 $allocation = $this->reparticionService
                     ->buildReport($racion, $year, $month)['associations']

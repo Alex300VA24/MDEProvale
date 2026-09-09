@@ -25,7 +25,10 @@
                 </button>
             </form>
             <a href="{{ route('movimientos.reparticion', ['year' => $currentYear, 'month' => $currentMonth]) }}" target="_blank" class="btn-primary flex items-center gap-2">
-                <i class="fas fa-file-pdf"></i> Generar PDF
+                <i class="fas fa-file-pdf"></i> Padrón con QR
+            </a>
+            <a href="{{ route('movimientos.reparticion-con-firma', ['year' => $currentYear, 'month' => $currentMonth]) }}" target="_blank" class="btn-secondary flex items-center gap-2">
+                <i class="fas fa-file-signature"></i> Padrón con firma
             </a>
             <a href="{{ route('movimientos.index') }}" class="btn-secondary flex items-center gap-2">
                 <i class="fas fa-arrow-left"></i> Volver

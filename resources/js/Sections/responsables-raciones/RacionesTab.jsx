@@ -11,9 +11,31 @@ const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wide
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
+const MESES = [
+    { value: 1, label: 'Enero' },
+    { value: 2, label: 'Febrero' },
+    { value: 3, label: 'Marzo' },
+    { value: 4, label: 'Abril' },
+    { value: 5, label: 'Mayo' },
+    { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' },
+    { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Septiembre' },
+    { value: 10, label: 'Octubre' },
+    { value: 11, label: 'Noviembre' },
+    { value: 12, label: 'Diciembre' },
+];
+
+function getMonthName(num) {
+    const found = MESES.find((m) => m.value === num);
+    return found ? found.label : '';
+}
+
 function RacionFormModal({ mode, racion, onClose, onSaved }) {
     const toast = useToast();
     const [year, setYear] = useState(mode === 'edit' ? racion.year : new Date().getFullYear());
+    const [monthStart, setMonthStart] = useState(mode === 'edit' ? racion.month_start : 1);
+    const [monthEnd, setMonthEnd] = useState(mode === 'edit' ? racion.month_end : 12);
     const [hojuelas, setHojuelas] = useState(mode === 'edit' ? racion.racion_hojuelas_gramos : '');
     const [leche, setLeche] = useState(mode === 'edit' ? racion.racion_leche_militros : '');
     const [submitting, setSubmitting] = useState(false);
@@ -24,9 +46,15 @@ function RacionFormModal({ mode, racion, onClose, onSaved }) {
             toast.error('Complete todos los campos.');
             return;
         }
+        if (Number(monthStart) > Number(monthEnd)) {
+            toast.error('El mes de inicio debe ser menor o igual al mes de fin.');
+            return;
+        }
         setSubmitting(true);
         try {
             const payload = {
+                month_start: Number(monthStart),
+                month_end: Number(monthEnd),
                 racion_hojuelas_gramos: Number(hojuelas),
                 racion_leche_militros: Number(leche),
             };
@@ -51,6 +79,24 @@ function RacionFormModal({ mode, racion, onClose, onSaved }) {
                 <div>
                     <label className={labelCls}>Año</label>
                     <input type="number" min="2000" max="2100" value={year} onChange={(e) => setYear(e.target.value)} className={inputCls} required readOnly={mode === 'edit'} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className={labelCls}>Mes Inicio</label>
+                        <select value={monthStart} onChange={(e) => setMonthStart(e.target.value)} className={inputCls} required disabled={mode === 'edit'}>
+                            {MESES.map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className={labelCls}>Mes Fin</label>
+                        <select value={monthEnd} onChange={(e) => setMonthEnd(e.target.value)} className={inputCls} required disabled={mode === 'edit'}>
+                            {MESES.filter((m) => m.value >= Number(monthStart)).map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label className={labelCls}>Ración Hojuelas (gramos)</label>
@@ -160,10 +206,10 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
 
             {raciones && (
             <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="data-table w-full text-xs sm:text-sm min-w-[500px]">
+                <table className="data-table w-full text-xs sm:text-sm min-w-[600px]">
                     <thead>
                         <tr>
-                            <th className="px-3 sm:px-4 py-3 text-left">Año</th>
+                            <th className="px-3 sm:px-4 py-3 text-left">Período</th>
                             <th className="px-3 sm:px-4 py-3 text-left">Ración Hojuelas (g)</th>
                             <th className="px-3 sm:px-4 py-3 text-left">Ración Leche (ml)</th>
                             <th className="px-3 sm:px-4 py-3 text-center">Estado</th>
@@ -196,7 +242,9 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                             }
                             return visible.map((r) => (
                                 <tr key={r.id} className="row-enter">
-                                    <td className="px-3 sm:px-4 py-3 font-bold">{r.year}</td>
+                                    <td className="px-3 sm:px-4 py-3 font-bold">
+                                        {getMonthName(r.month_start)} - {getMonthName(r.month_end)} {r.year}
+                                    </td>
                                     <td className="px-3 sm:px-4 py-3">{r.racion_hojuelas_gramos} g</td>
                                     <td className="px-3 sm:px-4 py-3">{r.racion_leche_militros} ml</td>
                                     <td className="px-3 sm:px-4 py-3 text-center">
@@ -260,7 +308,7 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                 title="Eliminar Ración"
                 message="Se eliminará esta ración de forma permanente."
                 details={deleting ? [
-                    { label: 'Año', value: deleting.year },
+                    { label: 'Período', value: `${getMonthName(deleting.month_start)} - ${getMonthName(deleting.month_end)} ${deleting.year}` },
                     { label: 'Ración Hojuelas', value: `${deleting.racion_hojuelas_gramos} g` },
                     { label: 'Ración Leche', value: `${deleting.racion_leche_militros} ml` },
                 ] : []}

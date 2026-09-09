@@ -111,6 +111,16 @@ export default function ProductosPecosas({ initialAction }) {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
+                            {can.pecosas.view && tab === 'pecosas' && (
+                                <a
+                                    href={`${window.APP_URL || ''}/productos-pecosas/acta-supervision`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-clipboard-check" aria-hidden="true" /> Acta de Supervisión
+                                </a>
+                            )}
                             {can.pecosas.view && tab === 'pecosas' && can.pecosas.create && (
                                 <button
                                     type="button"

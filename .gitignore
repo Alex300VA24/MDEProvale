@@ -1,23 +1,86 @@
-/node_modules
-/public/build
+# Dependencias
+/node_modules/
+/vendor/
+
+# Entorno local, credenciales y claves
+.env
+.env.*
+!.env.example
+/auth.json
+/storage/*.key
+*.pem
+
+# Artefactos compilados (se regeneran con npm run build:assets)
+/public/build/
 /public/hot
 /public/storage
-/storage/*.key
-/vendor
-.env
-.env.backup
-.phpunit.result.cache
-docker-compose.override.yml
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/.idea
-/.vscode
+/public/mix-manifest.json
+/public/css/app.css
+/public/css/fontawesome.min.css
+/public/css/select2.min.css
+/public/js/app.js
+/public/js/app.js.LICENSE.txt
+/public/js/select2.min.js
+/public/fonts/
+/public/webfonts/
 
-# Ignorar carpetas de migración local y seeders
+# Cachés, logs, cobertura y temporales
+/.phpunit.cache/
+/.phpunit.result.cache
+/coverage/
+/tmp/
+/temp/
+*.cache
+*.log
+*.tmp
+*.bak
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# IDE, sistema operativo y agentes locales
+/.idea/
+/.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+/.agent/
+/.agents/
+/.claude/
+/.codex/
+/.cursor/
+/.gemini/
+/.impeccable/
+/.kiro/
+/.opencode/
+/.codex_tmp/
+/.windsurf/
+/skills/
+/skills-lock.json
+
+# Configuración local de máquinas virtuales o contenedores
+/docker-compose.override.yml
+/Homestead.json
+/Homestead.yaml
+
+# Migraciones y datos locales o personales
 /migracion_productos/
 /migracion_socios/
+/migracion_responsables/*.csv
+/public/fichas/
+
+# Seeders: solo se versionan los manifiestos sin datos personales
 /database/seeders/
 !/database/seeders/
 /database/seeders/*
@@ -25,30 +88,21 @@ yarn-error.log
 !/database/seeders/RolSeeder.php
 !/database/seeders/StateSeeder.php
 !/database/seeders/PresidentUserSeeder.php
-.agent/
-.agents/
-.claude/
-.codex/
-.cursor/
-.gemini/
-.impeccable/
-.kiro/
-.opencode/
-.codex_tmp/
-.windsurf/
 
-# Archivos generados / dumps / temporales que no van al repo
+# Prototipos HTML ya migrados a vistas Blade
+/acta_*.html
+/reparticion*.html
+
+# Salidas de herramientas de análisis y validación visual
 /repomix-output.md
-/skills-lock.json
-/skills/
-/tmp/
-/temp/
+/docs/*.visual-check.*
+
+# Dumps y paquetes locales
 *.zip
 *.rar
 *.7z
 *.tar
 *.tar.gz
-*.log
 *.sql
 *.sqlite
 !database/*.sqlite.example

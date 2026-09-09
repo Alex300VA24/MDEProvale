@@ -130,15 +130,16 @@ class MovimientosController extends Controller
         $year = (int) $request->input('year', date('Y'));
         $month = (int) $request->input('month', date('n'));
 
-        $racion = $this->reparticionService->getActiveRacion($year);
+        $racion = $this->reparticionService->getActiveRacion($year, $month);
         if (!$racion) {
             return response()->json([
-                'message' => "No hay ración configurada para el año {$year}. Configure las raciones en Responsables y Raciones.",
+                'message' => "No hay ración configurada para el período {$month}/{$year}. Configure las raciones en Responsables y Raciones.",
             ], 404);
         }
 
         $report = $this->reparticionService->buildReport($racion, $year, $month);
         $report['pdf_url'] = route('movimientos.reparticion', ['year' => $year, 'month' => $month]);
+        $report['pdf_firma_url'] = route('movimientos.reparticion-con-firma', ['year' => $year, 'month' => $month]);
 
         return response()->json($report, 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }

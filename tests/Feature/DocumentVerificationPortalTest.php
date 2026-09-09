@@ -179,6 +179,9 @@ class DocumentVerificationPortalTest extends TestCase
         ])->render();
 
         $this->assertStringContainsString('<td class="header-verification-qr">', $distribution);
+        $this->assertStringContainsString('<td class="header-brand">', $distribution);
+        $this->assertStringContainsString('<td class="header-title">', $distribution);
+        $this->assertStringContainsString('<td class="header-verification-container">', $distribution);
         $this->assertStringNotContainsString('class="verification-row"', $distribution);
         $this->assertStringNotContainsString('class="header-spacer"', $distribution);
         $this->assertLessThan(
@@ -191,6 +194,41 @@ class DocumentVerificationPortalTest extends TestCase
             strpos($beneficiaries, 'RESUMEN DE OBSERVACIONES'),
             strpos($beneficiaries, '<div class="observations-verification">')
         );
+    }
+
+    public function test_distribution_signature_layout_is_complete_and_has_no_qr(): void
+    {
+        $signatureRegister = View::make('movimientos.reparticion_con_firma', [
+            'clubs' => [[
+                'codigo' => '001',
+                'nombre' => 'COMITÉ CON NOMBRE EXTENSO',
+                'presidenta' => 'PRESIDENTA DE PRUEBA',
+                'direccion' => 'DIRECCIÓN DE PRUEBA',
+                'sector' => 'SECTOR 1',
+                'primera_prioridad' => 2,
+                'segunda_prioridad' => 3,
+                'total_beneficiarios' => 7,
+                'bolsas' => 4,
+                'kilos' => 5,
+                'racion' => '1',
+                'fecha_entrega' => '31/08/2026',
+                'recibe' => 'PRESIDENTA DE PRUEBA',
+                'dni' => '12345678',
+            ]],
+            'sector' => null,
+            'currentMonth' => 8,
+            'currentYear' => 2026,
+        ])->render();
+
+        $this->assertStringContainsString('style="width: 71px;">SECTOR</th>', $signatureRegister);
+        $this->assertStringContainsString('SECTOR 1', $signatureRegister);
+        $this->assertStringContainsString('12345678', $signatureRegister);
+        $this->assertStringContainsString('style="width: 23px;">1RA', $signatureRegister);
+        $this->assertStringContainsString('style="width: 118px;">FIRMA', $signatureRegister);
+        $this->assertStringContainsString('class="col-recibe manual-entry"', $signatureRegister);
+        $this->assertStringContainsString('<td class="signature"></td>', $signatureRegister);
+        $this->assertStringNotContainsString('qrDataUri', $signatureRegister);
+        $this->assertStringNotContainsString('autenticidad', $signatureRegister);
     }
 
     public function test_only_president_role_can_open_private_portal(): void

@@ -67,13 +67,13 @@ class PartnerService
             ]);
 
             if (!empty($b['type_benefit_id']) && !empty($b['history_state_id'])
-                && !empty($b['date_begin']) && !empty($b['date_end'])) {
+                && !empty($b['date_begin'])) {
                 BeneficiaryHistory::create([
                     'weight' => $b['weight'] ?? 0,
                     'height' => $b['height'] ?? 0,
                     'hmg' => $b['hmg'] ?? 0,
                     'date_begin' => $b['date_begin'],
-                    'date_end' => $b['date_end'],
+                    'date_end' => $b['date_end'] ?? null,
                     'type_benefit_id' => $b['type_benefit_id'],
                     'beneficiary_id' => $ben->id,
                     'state_id' => $b['history_state_id'],

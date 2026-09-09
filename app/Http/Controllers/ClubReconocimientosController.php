@@ -673,4 +673,60 @@ $directive = Directive::create([
         $pdf = PDF::loadView('padron_club', $data)->setPaper('a4', 'landscape');
         return $pdf->stream('padron-club-madres-' . $anio . '-' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.pdf');
     }
+
+    /**
+     * Genera el Acta de Renuncia en blanco (formato oficial para llenar a mano
+     * cuando una dirigente del club de madres presenta su renuncia).
+     */
+    public function actaRenuncia()
+    {
+        $pdf = PDF::loadView('actas.renuncia', [])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('acta-renuncia.pdf');
+    }
+
+    /**
+     * Genera el Acta de Reuniones: padrón de asistencia con los comités y sus
+     * presidentas vigentes precargados, dejando la columna de firma en blanco
+     * para el registro manual durante la reunión.
+     */
+    public function actaReuniones()
+    {
+        $associations = Association::with(['placeSector.place'])
+            ->whereHas('resolution')
+            ->get()
+            ->sortBy(function ($association) {
+                return sprintf(
+                    '%03d-%s',
+                    optional(optional($association->placeSector)->place)->id ?? 999,
+                    $association->code
+                );
+            })
+            ->values();
+
+        $numero = 1;
+        $filas = $associations->map(function ($association) use (&$numero) {
+            $presidenta = $association->getPresidenta();
+            $people = $presidenta ? $presidenta->people : null;
+            $zonaId = optional(optional($association->placeSector)->place)->id;
+
+            return [
+                'zona'       => $zonaId ? str_pad($zonaId, 2, '0', STR_PAD_LEFT) : '',
+                'comite'     => $association->code ?? '',
+                'numero'     => $numero++,
+                'club'       => strtoupper($association->name),
+                'presidenta' => $people
+                    ? strtoupper(trim("{$people->names} {$people->father_lastname} {$people->mother_lastname}"))
+                    : '',
+                'dni'        => $people->dni ?? '',
+            ];
+        })->all();
+
+        $pdf = PDF::loadView('actas.reuniones', [
+            'filas'    => $filas,
+            'generado' => now()->format('d/m/Y H:i'),
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('acta-reuniones.pdf');
+    }
 }

@@ -92,9 +92,14 @@ export default function ReparticionTab() {
                     </span>
                 )}
                 {report && (
-                    <a href={report.pdf_url} target="_blank" rel="noreferrer" className="btn-primary text-xs sm:text-sm">
-                        <i className="fas fa-file-pdf mr-2" /> Descargar Repartición
-                    </a>
+                    <div className="flex flex-wrap gap-2">
+                        <a href={report.pdf_url} target="_blank" rel="noreferrer" className="btn-primary text-xs sm:text-sm">
+                            <i className="fas fa-file-pdf mr-2" /> Padrón con QR
+                        </a>
+                        <a href={report.pdf_firma_url} target="_blank" rel="noreferrer" className="btn-secondary text-xs sm:text-sm">
+                            <i className="fas fa-file-signature mr-2" /> Padrón con firma
+                        </a>
+                    </div>
                 )}
             </div>
 

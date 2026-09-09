@@ -1,0 +1,270 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura de alto nivel de MDEProvale",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Alex300VA24/MDEProvale.git",
+      "revision": "e4ad07641c5233b2b37465de1e72e35ba2880fb8"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [48, 76],
+    "cols": 5,
+    "gapX": 80,
+    "gapY": 44,
+    "cellW": 160,
+    "cellH": 76
+  },
+  "components": [
+    {
+      "id": "publico",
+      "type": "external",
+      "label": "Ciudadanía",
+      "sublabel": "Consulta pública por token y QR",
+      "size": [160, 76],
+      "row": 0,
+      "col": 2,
+      "sources": [
+        { "path": "routes/web.php", "label": "Rutas públicas" },
+        { "path": "app/Http/Controllers/DocumentVerificationController.php", "label": "Verificación" }
+      ]
+    },
+    {
+      "id": "usuarios",
+      "type": "external",
+      "label": "Personal y presidentas",
+      "sublabel": "Acceso autenticado",
+      "size": [160, 76],
+      "row": 2,
+      "col": 0,
+      "sources": [
+        { "path": "routes/web.php", "label": "Portales" },
+        { "path": "README.md", "label": "Roles de acceso" }
+      ]
+    },
+    {
+      "id": "interfaz",
+      "type": "frontend",
+      "label": "Interfaz web",
+      "sublabel": "Blade + React / Inertia",
+      "tag": "Vite + Laravel Mix",
+      "size": [160, 76],
+      "row": 2,
+      "col": 1,
+      "sources": [
+        { "path": "resources/js/app.jsx", "label": "Entrada SPA" },
+        { "path": "resources/views/app.blade.php", "label": "Shell Inertia" },
+        { "path": "package.json", "label": "Build frontend" }
+      ]
+    },
+    {
+      "id": "entrada_http",
+      "type": "backend",
+      "label": "Entrada HTTP",
+      "sublabel": "Apache / artisan + Laravel 10",
+      "tag": "PHP 8.1",
+      "size": [160, 76],
+      "row": 2,
+      "col": 2,
+      "sources": [
+        { "path": "public/index.php", "label": "Front controller" },
+        { "path": "app/Providers/RouteServiceProvider.php", "label": "Ruteo web/API" },
+        { "path": "README.md", "label": "Despliegue" }
+      ]
+    },
+    {
+      "id": "seguridad",
+      "type": "security",
+      "label": "Control de acceso",
+      "sublabel": "Sesión, CSRF, Sanctum y roles",
+      "size": [160, 76],
+      "row": 2,
+      "col": 3,
+      "sources": [
+        { "path": "app/Http/Kernel.php", "label": "Middleware" },
+        { "path": "app/Http/Middleware/CheckModuleAccess.php", "label": "Permisos" },
+        { "path": "routes/api.php", "label": "Sanctum" }
+      ]
+    },
+    {
+      "id": "modulos",
+      "type": "backend",
+      "label": "Módulos de negocio",
+      "sublabel": "Socios · pecosas · reportes",
+      "size": [160, 76],
+      "row": 2,
+      "col": 4,
+      "sources": [
+        { "path": "routes/dashboard-api.php", "label": "API modular" },
+        { "path": "app/Http/Controllers/Api/SociosBeneficiariosController.php", "label": "Controlador JSON" },
+        { "path": "app/Http/Controllers/ReportGeneratorController.php", "label": "Controlador web" }
+      ]
+    },
+    {
+      "id": "dominio",
+      "type": "backend",
+      "label": "Servicios y repositorios",
+      "sublabel": "Reglas y transacciones",
+      "size": [160, 76],
+      "row": 4,
+      "col": 4,
+      "sources": [
+        { "path": "app/Services/TransactionService.php", "label": "Servicio de dominio" },
+        { "path": "app/Repositories/TransactionRepository.php", "label": "Acceso a datos" },
+        { "path": "app/Providers/AppServiceProvider.php", "label": "Inyección" }
+      ]
+    },
+    {
+      "id": "base_datos",
+      "type": "database",
+      "label": "MySQL / MariaDB",
+      "sublabel": "Operación e identidad",
+      "tag": "PDO + Eloquent",
+      "size": [160, 76],
+      "row": 4,
+      "col": 3,
+      "sources": [
+        { "path": "config/database.php", "label": "Conexión" },
+        { "path": "database/migrations/2026_03_14_193401_create_transactions_table.php", "label": "Esquema" },
+        { "path": "app/Models/Transaction.php", "label": "Modelo" }
+      ]
+    },
+    {
+      "id": "archivos_locales",
+      "type": "database",
+      "label": "Archivos locales",
+      "sublabel": "PDF, QR, sesiones, caché y logs",
+      "size": [160, 76],
+      "row": 4,
+      "col": 2,
+      "sources": [
+        { "path": "app/Services/VerifiedDocumentService.php", "label": "PDF y QR" },
+        { "path": "config/filesystems.php", "label": "Disco local" },
+        { "path": ".env.example", "label": "Drivers locales" }
+      ]
+    },
+    {
+      "id": "groq",
+      "type": "external",
+      "label": "Groq API",
+      "sublabel": "Asistente con respaldo local",
+      "tag": "HTTPS / JSON",
+      "size": [160, 76],
+      "row": 0,
+      "col": 4,
+      "sources": [
+        { "path": "app/Http/Controllers/Api/AssistantChatController.php", "label": "Cliente HTTP" },
+        { "path": "app/Services/AssistantGuidanceService.php", "label": "Respaldo local" },
+        { "path": "config/services.php", "label": "Configuración" }
+      ]
+    },
+    {
+      "id": "portal_municipal",
+      "type": "external",
+      "label": "Portal municipal",
+      "sublabel": "Resoluciones en HTML y PDF",
+      "tag": "HTTPS / HTML + PDF",
+      "size": [160, 76],
+      "row": 0,
+      "col": 3,
+      "sources": [
+        { "path": "app/Http/Controllers/Api/ComitesController.php", "label": "Proxy municipal" },
+        { "path": "routes/dashboard-api.php", "label": "Endpoints proxy" }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Sistema gestionado MDEProvale (despliegue documentado: XAMPP o artisan serve)",
+      "wraps": ["interfaz", "entrada_http", "seguridad", "modulos", "dominio", "base_datos", "archivos_locales"],
+      "pad": 28
+    },
+    {
+      "kind": "security-group",
+      "label": "Límite de confianza: control de acceso",
+      "wraps": ["seguridad"],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "id": "usuarios_interfaz",
+      "from": "usuarios",
+      "to": "interfaz",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "interfaz_entrada",
+      "from": "interfaz",
+      "to": "entrada_http",
+      "label": "HTML + JSON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "publico_entrada",
+      "from": "publico",
+      "to": "entrada_http",
+      "label": "GET por token",
+      "labelDy": 24,
+      "variant": "dashed"
+    },
+    {
+      "id": "entrada_seguridad",
+      "from": "entrada_http",
+      "to": "seguridad",
+      "label": "web / api",
+      "variant": "security"
+    },
+    {
+      "id": "seguridad_modulos",
+      "from": "seguridad",
+      "to": "modulos",
+      "label": "autorizada",
+      "labelDy": 54,
+      "variant": "security"
+    },
+    {
+      "id": "modulos_dominio",
+      "from": "modulos",
+      "to": "dominio",
+      "label": "casos de uso",
+      "labelDy": 30
+    },
+    {
+      "id": "dominio_bd",
+      "from": "dominio",
+      "to": "base_datos",
+      "label": "SQL",
+      "variant": "emphasis"
+    },
+    {
+      "id": "dominio_archivos",
+      "from": "dominio",
+      "to": "archivos_locales",
+      "label": "PDF / sesión",
+      "labelDy": 24,
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "variant": "dashed"
+    },
+    {
+      "id": "modulos_groq",
+      "from": "modulos",
+      "to": "groq",
+      "label": "chat HTTPS",
+      "variant": "dashed"
+    },
+    {
+      "id": "modulos_portal",
+      "from": "modulos",
+      "to": "portal_municipal",
+      "label": "consulta / PDF",
+      "variant": "dashed"
+    }
+  ]
+}

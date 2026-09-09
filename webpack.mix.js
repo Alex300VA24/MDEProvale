@@ -16,6 +16,17 @@ mix.js('resources/js/app.js', 'public/js')
     .copy('node_modules/@fontsource/plus-jakarta-sans/600.css', 'public/fonts/plus-jakarta-sans/600.css')
     .copy('node_modules/@fontsource/plus-jakarta-sans/700.css', 'public/fonts/plus-jakarta-sans/700.css')
     .copy('node_modules/@fontsource/plus-jakarta-sans/800.css', 'public/fonts/plus-jakarta-sans/800.css')
+    // Source Sans 3 y Lexend: fuentes autoalojadas usadas por las vistas Blade
+    .copyDirectory('node_modules/@fontsource/source-sans-3/files', 'public/fonts/source-sans-3/files')
+    .copy('node_modules/@fontsource/source-sans-3/400.css', 'public/fonts/source-sans-3/400.css')
+    .copy('node_modules/@fontsource/source-sans-3/500.css', 'public/fonts/source-sans-3/500.css')
+    .copy('node_modules/@fontsource/source-sans-3/600.css', 'public/fonts/source-sans-3/600.css')
+    .copy('node_modules/@fontsource/source-sans-3/700.css', 'public/fonts/source-sans-3/700.css')
+    .copyDirectory('node_modules/@fontsource/lexend/files', 'public/fonts/lexend/files')
+    .copy('node_modules/@fontsource/lexend/400.css', 'public/fonts/lexend/400.css')
+    .copy('node_modules/@fontsource/lexend/500.css', 'public/fonts/lexend/500.css')
+    .copy('node_modules/@fontsource/lexend/600.css', 'public/fonts/lexend/600.css')
+    .copy('node_modules/@fontsource/lexend/700.css', 'public/fonts/lexend/700.css')
     // Select2
     .copy('node_modules/select2/dist/css/select2.min.css', 'public/css/select2.min.css')
     .copy('node_modules/select2/dist/js/select2.min.js', 'public/js/select2.min.js');

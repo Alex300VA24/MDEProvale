@@ -44,9 +44,20 @@ class InicioController extends Controller
             $sociosMonth = 0;
         }
 
-        $totalSocios = Partner::count();
-        $totalBeneficiarios = Beneficiarie::count();
+        [$periodYear, $periodMonth] = $this->dashboardPeriod($request);
+        [$cardStart, $cardEnd] = $this->sociosPeriodo($periodYear, $periodMonth);
+
+        $activePartners = DB::table('partners')
+            ->whereDate('date_begin', '<=', $cardEnd)
+            ->where(fn ($query) => $query->whereNull('date_end')->orWhereDate('date_end', '>=', $cardStart));
+
+        $totalSocios = (clone $activePartners)->count();
+        $totalBeneficiarios = Beneficiarie::activeDuring($cardStart, $cardEnd)->count();
         $totalComites = Association::count();
+        [$pecosaStart, $pecosaEnd] = Pecosa::deliveryPeriodRange($periodYear, $periodMonth);
+        $totalPecosasPeriodo = Pecosa::whereBetween('delivery_date', [
+            $pecosaStart->toDateString(), $pecosaEnd->toDateString(),
+        ])->count();
 
         // Stock total: una sola query (cantidad ingresada - cantidad ya repartida
         // por cada lote), en vez de iterar cada detail_product en PHP.
@@ -184,9 +195,17 @@ class InicioController extends Controller
             ->count('beneficiary_id');
 
         // Top comités con más beneficiarios
-        $topComites = Association::selectRaw('associations.name as club, COUNT(beneficiaries.id) as total')
+        $topComites = Association::selectRaw('associations.name as club, COUNT(DISTINCT beneficiaries.id) as total')
             ->join('partners', 'partners.association_id', '=', 'associations.id')
             ->join('beneficiaries', 'beneficiaries.partner_id', '=', 'partners.id')
+            ->leftJoin('beneficiary_histories', 'beneficiary_histories.beneficiary_id', '=', 'beneficiaries.id')
+            ->where(function ($query) use ($cardStart, $cardEnd) {
+                $query->whereNull('beneficiary_histories.id')
+                    ->orWhere(function ($history) use ($cardStart, $cardEnd) {
+                        $history->whereDate('beneficiary_histories.date_begin', '<=', $cardEnd)
+                            ->where(fn ($dates) => $dates->whereNull('beneficiary_histories.date_end')->orWhereDate('beneficiary_histories.date_end', '>=', $cardStart));
+                    });
+            })
             ->groupBy('associations.id', 'associations.name')
             ->orderByDesc('total')
             ->limit(10)
@@ -199,6 +218,8 @@ class InicioController extends Controller
                 'total_socios' => $totalSocios,
                 'total_beneficiarios' => $totalBeneficiarios,
                 'total_comites' => $totalComites,
+                'total_pecosas' => $totalPecosasPeriodo,
+                'period' => ['year' => $periodYear, 'month' => $periodMonth],
                 'stock_total' => $stockTotal,
                 'stock_productos' => $stockProductos,
             ],
@@ -251,5 +272,25 @@ class InicioController extends Controller
         $inicio = Carbon::create($year, $month, 1)->startOfMonth();
 
         return [$inicio->toDateString(), $inicio->copy()->endOfMonth()->toDateString()];
+    }
+
+    private function dashboardPeriod(Request $request): array
+    {
+        if ($request->filled('periodo_anio') && $request->filled('periodo_mes')) {
+            return [
+                $this->clampYear((int) $request->query('periodo_anio'), now()->year),
+                max(1, min(12, (int) $request->query('periodo_mes'))),
+            ];
+        }
+
+        $latestHistory = DB::table('beneficiary_histories')->max('date_begin');
+        $latestPecosa = Pecosa::whereNotNull('delivery_date')->max('delivery_date');
+        $dates = collect([
+            $latestHistory ? Carbon::parse($latestHistory) : null,
+            $latestPecosa ? Pecosa::effectiveDeliveryDate($latestPecosa) : null,
+        ])->filter();
+        $latest = $dates->sortByDesc(fn ($date) => $date->format('Y-m'))->first() ?? now();
+
+        return [$latest->year, $latest->month];
     }
 }

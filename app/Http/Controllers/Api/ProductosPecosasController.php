@@ -168,10 +168,23 @@ class ProductosPecosasController extends Controller
 
     public function pecosas(Request $request)
     {
-        $filters = $request->only(['search', 'association_id', 'state_id', 'fecha_inicio', 'fecha_fin']);
+        $filters = $request->only(['search', 'association_id', 'state_id', 'fecha_inicio', 'fecha_fin', 'year', 'month']);
+
+        if (! isset($filters['year'], $filters['month'])) {
+            $latestDate = Pecosa::whereNotNull('delivery_date')->max('delivery_date');
+            $latestPeriod = Pecosa::effectiveDeliveryDate($latestDate ?: now());
+            $filters['year'] = $latestPeriod->year;
+            $filters['month'] = $latestPeriod->month;
+        } else {
+            $filters['year'] = max(2019, min(now()->year + 1, (int) $filters['year']));
+            $filters['month'] = max(1, min(12, (int) $filters['month']));
+        }
+
         $pecosas = $this->pecosaRepo->searchWithFilters($filters, (int) $request->input('per_page', 10));
 
-        return PecosaResource::collection($pecosas);
+        return PecosaResource::collection($pecosas)->additional([
+            'period' => ['year' => $filters['year'], 'month' => $filters['month']],
+        ]);
     }
 
     public function pecosasOptions()

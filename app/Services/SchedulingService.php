@@ -8,6 +8,7 @@ use App\Models\Pecosa;
 use App\Models\Position;
 use App\Models\State;
 use App\Repositories\AssociationRepository;
+use App\Services\ReparticionService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -16,11 +17,13 @@ class SchedulingService
 {
     private AssociationRepository $associationRepo;
     private PDFService $pdfService;
+    private ReparticionService $reparticionService;
 
-    public function __construct(AssociationRepository $associationRepo, PDFService $pdfService)
+    public function __construct(AssociationRepository $associationRepo, PDFService $pdfService, ReparticionService $reparticionService)
     {
         $this->associationRepo = $associationRepo;
         $this->pdfService = $pdfService;
+        $this->reparticionService = $reparticionService;
     }
 
     public function generateProgramacionEntrega(int $month, int $year, ?string $sector = null): array
@@ -31,6 +34,11 @@ class SchedulingService
         // la repartición de este mes: se filtran por el período efectivo.
         [$pecosaFrom, $pecosaTo] = Pecosa::deliveryPeriodRange($year, $month);
         $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
+
+        $racion = $this->reparticionService->getActiveRacion($year, $month);
+        $racionLabel = $racion
+            ? $racion->racion_hojuelas_gramos . 'g / ' . $racion->racion_leche_militros . 'ml'
+            : '';
 
         $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries(
             $estadoActivo ? $estadoActivo->id : null, $sector
@@ -60,11 +68,13 @@ class SchedulingService
                 'nombre' => strtoupper($association->name),
                 'presidenta' => $presidenta,
                 'direccion' => $association->address ?? '',
+                'sector' => optional(optional($association->placeSector)->sector)->title ?? '',
                 'primera_prioridad' => $primeraPrioridad,
                 'segunda_prioridad' => $segundaPrioridad,
+                'total_beneficiarios' => $totalBenef,
                 'bolsas' => $bolsas,
                 'kilos' => 0,
-                'racion' => '',
+                'racion' => $racionLabel,
                 'fecha_entrega' => $pecosa ? date('d/m/Y', strtotime($pecosa->delivery_date)) : '',
                 'recibe' => $presidenta,
                 'dni' => $directive ? ($directive->partner ? ($directive->partner->people ? $directive->partner->people->dni : '') : '') : '',

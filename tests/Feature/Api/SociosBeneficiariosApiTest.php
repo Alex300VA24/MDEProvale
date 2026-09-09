@@ -261,12 +261,16 @@ class SociosBeneficiariosApiTest extends TestCase
     {
         $associationId = $this->seedAssociation();
         $personId = $this->seedPerson();
+        $currentStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
+            'title' => 'Vigente',
+            'abbreviation' => \App\Models\State::CURRENT,
+        ]);
 
         $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/partners', [
                 'person_id' => $personId,
                 'association_id' => $associationId,
-                'state_id' => 1,
+                'state_id' => $currentStateId,
                 'date_begin' => now()->toDateString(),
             ])
             ->assertStatus(201)

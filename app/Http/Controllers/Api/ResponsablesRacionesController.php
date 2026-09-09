@@ -114,7 +114,9 @@ class ResponsablesRacionesController extends Controller
 
     public function raciones()
     {
-        $raciones = Racion::orderBy('year', 'desc')->get();
+        $raciones = Racion::orderBy('year', 'desc')
+            ->orderBy('month_start', 'asc')
+            ->get();
 
         return response()->json(['data' => RacionResource::collection($raciones)], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }

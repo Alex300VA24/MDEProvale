@@ -13,6 +13,8 @@ Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->middleware
     Route::put('club/{association}', [ClubReconocimientosController::class, 'updateClub'])->name('update');
     Route::delete('club/{association}', [ClubReconocimientosController::class, 'destroyClub'])->name('destroy');
     Route::get('club-padron', [ClubReconocimientosController::class, 'generarPadronClub'])->name('club.padron');
+    Route::get('acta-renuncia', [ClubReconocimientosController::class, 'actaRenuncia'])->name('acta-renuncia');
+    Route::get('acta-reuniones', [ClubReconocimientosController::class, 'actaReuniones'])->name('acta-reuniones');
 
     // Reconocimientos
     Route::get('reconocimientos', [ClubReconocimientosController::class, 'indexReconocimientos'])->name('reconocimientos.index');

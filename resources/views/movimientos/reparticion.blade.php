@@ -44,14 +44,35 @@
 
         /* MAIN TABLE */
         .main-table {
-            width: 100%;
-            table-layout: fixed;
+            width: 95%;
             border-collapse: collapse;
             border: 2px solid #000;
             border-bottom: none;
             margin-bottom: 5px;
         }
-        .header-table { width: 100%; border-collapse: collapse; border-spacing: 0; margin-bottom: 8px; }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+            margin-bottom: 8px;
+        }
+        .header-brand {
+            width: 150px;
+            text-align: left;
+            vertical-align: middle;
+            padding: 0;
+        }
+        .header-title {
+            text-align: center;
+            vertical-align: middle;
+            line-height: 1.2;
+            padding: 0;
+        }
+        .header-verification-container {
+            width: 145px;
+            vertical-align: top;
+            padding: 0;
+        }
         .main-table th {
             background-color: #d8d8d8;
             border: 1px solid #000;
@@ -79,13 +100,10 @@
             font-size: 5.5pt;
             font-weight: bold;
         }
-        .col-n { width: 18px; background-color: #f0f0f0; font-weight: bold; }
-        .col-cod { width: 28px; }
-        .col-club { text-align: left; padding-left: 3px; width: 170px; }
-        .col-pres { text-align: left; padding-left: 3px; width: 150px; }
-        .col-dir { text-align: left; padding-left: 3px; width: 110px; }
-        .col-num { width: 38px; }
-        .col-sm { width: 30px; }
+        .col-n { background-color: #f0f0f0; font-weight: bold; }
+        .col-club { text-align: left; padding-left: 3px; }
+        .col-pres { text-align: left; padding-left: 3px; }
+        .col-dir { text-align: left; padding-left: 3px; }
         .col-highlight-leche { background-color: #dff3e4; font-weight: bold; }
         .col-highlight-hojuelas { background-color: #fff0c2; font-weight: bold; }
         .total-row { background-color: #e8e8e8; font-weight: bold; }
@@ -97,9 +115,28 @@
         .sig-line { border-top: 1px solid #000; margin-top: 35px; padding-top: 4px; font-size: 7pt; }
         .header-verification { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .header-verification td { border: none; padding: 0; }
-        .header-verification-data { text-align: left; vertical-align: top; font-size: 6.5pt; line-height: 1.35; white-space: nowrap; }
-        .header-verification-qr { width: 16mm; text-align: right; vertical-align: top; color: #1E5799; font-size: 4pt; line-height: 1.05; }
-        .header-verification-qr img { display: block; width: 15mm; height: 15mm; margin: 0 0 0.4mm auto; }
+        .header-verification-data {
+            text-align: right;
+            vertical-align: top;
+            padding-right: 4px !important;
+            font-size: 6.5pt;
+            line-height: 1.35;
+            white-space: nowrap;
+        }
+        .header-verification-qr {
+            width: 15mm;
+            text-align: center;
+            vertical-align: top;
+            color: #1E5799;
+            font-size: 4pt;
+            line-height: 1.05;
+        }
+        .header-verification-qr img {
+            display: block;
+            width: 14mm;
+            height: 14mm;
+            margin: 0 auto 0.4mm;
+        }
     </style>
 </head>
 <body>
@@ -113,27 +150,12 @@
         $nombreMes = strtoupper($meses_es[$currentMonth] ?? $monthName);
     @endphp
     <table class="main-table">
-        <colgroup>
-            <col style="width: 3.5%;">
-            <col style="width: 3.5%;">
-            <col style="width: 18%;">
-            <col style="width: 16%;">
-            <col style="width: 13.5%;">
-            <col style="width: 13.5%;">
-            <col style="width: 4.5%;">
-            <col style="width: 4.5%;">
-            <col style="width: 4.5%;">
-            <col style="width: 4.5%;">
-            <col style="width: 5%;">
-            <col style="width: 4.5%;">
-            <col style="width: 4.5%;">
-        </colgroup>
         <thead>
             <tr>
                 <td colspan="13" style="border: none; padding: 0 0 4px 0;">
                     <table class="header-table">
                         <tr>
-                            <td style="width: 150px; text-align: left; vertical-align: middle; padding: 0;">
+                            <td class="header-brand">
                                 <img src="{{ public_path('img/muni2.png') }}"
                                     style="width: 50px; height: auto; vertical-align: middle; margin-right: 5px;"
                                     alt="Logo">
@@ -143,7 +165,7 @@
                                     <div style="font-size: 6pt;">O.F. Vaso de Leche</div>
                                 </div>
                             </td>
-                            <td style="text-align: center; vertical-align: middle; line-height: 1.2; padding: 0; width: 60%;">
+                            <td class="header-title">
                                 <div style="font-size: 11pt; font-weight: bold; margin: 0;">
                                     PROGRAMACIÓN DE ENTREGA DE LOS PRODUCTOS DEL PROGRAMA VASO DE LECHE
                                 </div>
@@ -154,7 +176,7 @@
                                     <strong>LECHE EVAPORADA ENTERA Y HOJUELAS DE QUINUA AVENA CON AZÚCAR FORTIFICADO CON VITAMINAS Y MINERALES</strong>
                                 </div>
                             </td>
-                            <td style="width: 145px; vertical-align: top; padding: 0;">
+                            <td class="header-verification-container">
                                 <table class="header-verification">
                                     <tr>
                                         <td class="header-verification-data">
@@ -176,19 +198,19 @@
                 </td>
             </tr>
             <tr>
-                <th style="width: 30px;">N°</th>
-                <th style="width: 30px;">COD</th>
-                <th style="width: 180px;">CLUB DE MADRES</th>
-                <th style="width: 160px;">PRESIDENTA</th>
-                <th style="width: 130px;">DIRECCIÓN</th>
-                <th style="width: 130px;">SECTOR</th>
-                <th style="width: 40px;">BENEF</th>
-                <th class="col-highlight-leche">LECHE</th>
-                <th style="width: 40px;">CAJAS</th>
-                <th style="width: 40px;">TARROS</th>
-                <th class="col-highlight-hojuelas">HOJUELAS</th>
-                <th style="width: 40px;">SACOS</th>
-                <th style="width: 40px;">KILOS</th>
+                <th style="width: 32px;">N°</th>
+                <th style="width: 32px;">COD</th>
+                <th style="width: 192px;">CLUB DE MADRES</th>
+                <th style="width: 171px;">PRESIDENTA</th>
+                <th style="width: 139px;">DIRECCIÓN</th>
+                <th style="width: 139px;">SECTOR</th>
+                <th style="width: 43px;">BENEF</th>
+                <th class="col-highlight-leche" style="width: 43px;">LECHE</th>
+                <th style="width: 43px;">CAJAS</th>
+                <th style="width: 43px;">TARROS</th>
+                <th class="col-highlight-hojuelas" style="width: 48px;">HOJUELAS</th>
+                <th style="width: 43px;">SACOS</th>
+                <th style="width: 43px;">KILOS</th>
             </tr>
         </thead>
         <tbody>
@@ -234,17 +256,15 @@
                 $total_hojuelas_kilos = (int) $total_hojuelas_kilos % 30;
             @endphp
             <tr class="total-row">
-                <td colspan="6" rowspan="2" class="total-label">TOTAL:</td>
-                <td class="col-num" rowspan="2">{{ $total_benef }}</td>
-                <td class="col-num col-highlight-leche" rowspan="2">{{ round($total_leche_tarros) }}</td>
-                <td class="col-num" rowspan="2">{{ $total_leche_cajas }}</td>
-                <td class="col-num" rowspan="2">{{ $total_leche_tarros_sueltos }}</td>
-                <td class="col-num col-highlight-hojuelas" rowspan="2">{{ round($total_hojuelas_kg) }}</td>
-                <td class="col-num" rowspan="2">{{ $total_hojuelas_sacos }}</td>
-                <td class="col-num" rowspan="2">{{ $total_hojuelas_kilos }}</td>
+                <td colspan="6" class="total-label">TOTAL:</td>
+                <td class="col-num">{{ $total_benef }}</td>
+                <td class="col-num col-highlight-leche">{{ round($total_leche_tarros) }}</td>
+                <td class="col-num">{{ $total_leche_cajas }}</td>
+                <td class="col-num">{{ $total_leche_tarros_sueltos }}</td>
+                <td class="col-num col-highlight-hojuelas">{{ round($total_hojuelas_kg) }}</td>
+                <td class="col-num">{{ $total_hojuelas_sacos }}</td>
+                <td class="col-num">{{ $total_hojuelas_kilos }}</td>
             </tr>
-            <tr></tr>
-            
         </tbody>
     </table>
     </div>

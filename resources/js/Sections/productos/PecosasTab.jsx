@@ -11,6 +11,8 @@ import { dateValue, detailOptionLabel, fmtDate, stateClass } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/productos-pecosas';
+const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const YEARS = Array.from({ length: Math.max(1, new Date().getFullYear() - 2018) }, (_, index) => new Date().getFullYear() - index);
 
 const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
@@ -340,7 +342,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', association_id: '', state_id: '' });
+    const [filters, setFilters] = useState({ search: '', association_id: '', state_id: '', year: '', month: '' });
     const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -361,8 +363,15 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
             if (debouncedFilters.search) params.search = debouncedFilters.search;
             if (debouncedFilters.association_id) params.association_id = debouncedFilters.association_id;
             if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
+            if (debouncedFilters.year && debouncedFilters.month) {
+                params.year = debouncedFilters.year;
+                params.month = debouncedFilters.month;
+            }
             const res = await http.get(`${BASE}/pecosas`, { params });
             setData(res.data);
+            if (!filters.year || !filters.month) {
+                setFilters((previous) => ({ ...previous, ...res.data.period }));
+            }
         } catch {
             toast.error('No se pudo cargar la lista de pecosas.');
         } finally {
@@ -452,11 +461,23 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                         ))}
                     </select>
                 </div>
+                <div className="w-full sm:w-36 shrink-0">
+                    <label className={labelCls}>Mes</label>
+                    <select value={filters.month} onChange={(e) => setFilter('month', Number(e.target.value))} className={inputCls}>
+                        {MONTHS.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
+                    </select>
+                </div>
+                <div className="w-full sm:w-28 shrink-0">
+                    <label className={labelCls}>Año</label>
+                    <select value={filters.year} onChange={(e) => setFilter('year', Number(e.target.value))} className={inputCls}>
+                        {YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
+                    </select>
+                </div>
                 <div className="w-full sm:w-auto shrink-0 flex flex-col">
                     <button
                         type="button"
                         onClick={() => {
-                            setFilters({ search: '', association_id: '', state_id: '' });
+                            setFilters((previous) => ({ ...previous, search: '', association_id: '', state_id: '' }));
                             setPage(1);
                         }}
                         className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
@@ -496,7 +517,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                     <td colSpan={6}>
                                         <div className="empty-state">
                                             <i className="fas fa-file-alt" />
-                                            <p>No hay pecosas registradas</p>
+                                            <p>No hay pecosas en el período seleccionado</p>
                                         </div>
                                     </td>
                                 </tr>

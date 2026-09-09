@@ -122,6 +122,26 @@ export default function ClubReconocimientos({ initialAction }) {
                                     <i className="fas fa-clipboard-list" aria-hidden="true" /> Generar Padrón
                                 </button>
                             )}
+                            {can.comites.view && tab === 'comites' && (
+                                <a
+                                    href={`${window.APP_URL || ''}/club-reconocimientos/acta-renuncia`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-file-signature" aria-hidden="true" /> Acta de Renuncia
+                                </a>
+                            )}
+                            {can.comites.view && tab === 'comites' && (
+                                <a
+                                    href={`${window.APP_URL || ''}/club-reconocimientos/acta-reuniones`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-users-line" aria-hidden="true" /> Acta de Reuniones
+                                </a>
+                            )}
                             {can.comites.view && tab === 'comites' && can.comites.create && (
                                 <button
                                     type="button"
