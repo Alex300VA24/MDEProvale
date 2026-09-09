@@ -10,6 +10,16 @@ class AssistantGuidanceService
     {
         $question = Str::lower(Str::ascii($question));
 
+        // El tema de reportes se resuelve antes que cualquier flujo por entidad:
+        // "creame un reporte de pecosas" NO es la guía para registrar una pecosa.
+        if ($this->hasAny($question, ['reporte', 'informe', 'descargar pdf', 'en pdf', 'exportar', 'imprimir'])) {
+            return "Sobre los reportes en PDF:\n"
+                . "- No existe una pantalla para armar reportes a mano: los genero yo cuando me lo pides de forma explícita.\n"
+                . "- Pídelo con una sola entidad y un periodo simple, por ejemplo: crea un reporte de pecosas de este mes, o crea un reporte de beneficiarios del comité (nombre).\n"
+                . "- Te dejaré el botón Ver reporte para abrirlo en una pestaña nueva; desde ahí lo imprimes o lo guardas en PDF.\n"
+                . "- Si necesitas cruzar varios datos o columnas especiales, dime primero qué dato principal y qué periodo necesitas.";
+        }
+
         if ($this->hasAll($question, ['comite', 'benefici']) && $this->hasAny($question, ['mas', 'mayor', 'top'])) {
             return "Para consultar el comité con más beneficiarios:\n"
                 . "1. Abre Inicio en el menú lateral.\n"
@@ -93,14 +103,6 @@ class AssistantGuidanceService
                 . "4. Pulsa Generar Padrón para consultar sus beneficiarios.";
         }
 
-        if ($this->hasAny($question, ['reporte', 'imprimir', 'descargar pdf'])) {
-            return "Para generar un reporte:\n"
-                . "1. Abre Reportes en el menú lateral.\n"
-                . "2. Elige el reporte disponible para tu rol.\n"
-                . "3. Completa el periodo y los filtros.\n"
-                . "4. Genera el resultado y luego imprímelo o descárgalo.";
-        }
-
         if ($this->hasAny($question, ['usuario', 'rol', 'permiso', 'modulo', 'notificacion'])) {
             return "Estas opciones están en Sistema y requieren permisos administrativos. Abre Sistema y elige Usuarios, Roles, Módulos o Notificaciones. Si la opción no aparece, solicita acceso al administrador.";
         }
@@ -117,8 +119,8 @@ class AssistantGuidanceService
             . "- registrar pecosas;\n"
             . "- revisar movimientos y reparticiones;\n"
             . "- configurar raciones;\n"
-            . "- generar reportes.\n"
-            . "Escribe qué deseas hacer, por ejemplo: \"¿Cómo genero el padrón de beneficiarios?\"";
+            . "- consultar datos y generar reportes desde Consultas IA.\n"
+            . "Escribe qué deseas hacer, por ejemplo: \"¿Cuántos comités activos hay este mes?\"";
     }
 
     private function hasAny(string $question, array $terms): bool

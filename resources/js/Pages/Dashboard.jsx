@@ -3,7 +3,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import LoadingScreen from '../Components/LoadingScreen';
 import ThemeToggle from '../Components/ThemeToggle';
 import http from '../http';
-import AsistentePROVALE, { ASSISTANT_STORAGE_KEY } from '../Components/AsistentePROVALE';
+import AsistentePROVALE from '../Components/AsistentePROVALE';
 
 // Secciones cargadas bajo demanda (React.lazy => chunk separado por sección).
 const Inicio = lazy(() => import('../Sections/Inicio'));
@@ -12,7 +12,7 @@ const ProductosPecosas = lazy(() => import('../Sections/ProductosPecosas'));
 const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos'));
 const Movimientos = lazy(() => import('../Sections/Movimientos'));
 const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
-const Reportes = lazy(() => import('../Sections/Reportes'));
+const ConsultasIA = lazy(() => import('../Sections/ConsultasIA'));
 const Sistema = lazy(() => import('../Sections/Sistema'));
 const Ayuda = lazy(() => import('../Sections/Ayuda'));
 
@@ -23,7 +23,7 @@ const SECTION_COMPONENTS = {
     comites: ClubReconocimientos,
     movimientos: Movimientos,
     'responsables-raciones': ResponsablesRaciones,
-    reportes: Reportes,
+    reportes: ConsultasIA,
     sistema: Sistema,
     ayuda: Ayuda,
 };
@@ -36,7 +36,7 @@ const NAV_ITEMS = [
     { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
-    { key: 'reportes', label: 'Reportes', icon: 'fa-chart-bar', modules: ['reportes'] },
+    { key: 'reportes', label: 'Consultas IA', icon: 'fa-robot', modules: ['reportes'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];
@@ -206,7 +206,6 @@ export default function Dashboard() {
 
     const handleLogout = (e) => {
         e.preventDefault();
-        sessionStorage.removeItem(ASSISTANT_STORAGE_KEY);
         router.post((window.APP_URL || '') + '/logout');
     };
 

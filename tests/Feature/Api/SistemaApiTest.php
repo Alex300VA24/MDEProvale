@@ -470,4 +470,36 @@ class SistemaApiTest extends TestCase
     {
         $this->getJson(self::BASE . '/usuarios')->assertStatus(401);
     }
+
+    public function test_assistant_config_returns_defaults(): void
+    {
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/asistente-config')
+            ->assertOk()
+            ->assertJsonPath('data.max_consultas', 5)
+            ->assertJsonPath('data.ventana_horas', 3);
+    }
+
+    public function test_assistant_config_updates_and_clamps_values(): void
+    {
+        $this->actingAs($this->adminUser())
+            ->putJson(self::BASE . '/asistente-config', ['max_consultas' => 12, 'ventana_horas' => 6])
+            ->assertOk()
+            ->assertJsonPath('data.max_consultas', 12)
+            ->assertJsonPath('data.ventana_horas', 6);
+
+        $this->assertDatabaseHas('settings', ['key' => 'assistant_max_consultas', 'value' => '12']);
+
+        $this->actingAs($this->adminUser())
+            ->putJson(self::BASE . '/asistente-config', ['max_consultas' => 0, 'ventana_horas' => 999])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['max_consultas', 'ventana_horas']);
+    }
+
+    public function test_assistant_config_requires_sistema_access(): void
+    {
+        $this->actingAs($this->createBasicUser(false))
+            ->getJson(self::BASE . '/asistente-config')
+            ->assertStatus(403);
+    }
 }

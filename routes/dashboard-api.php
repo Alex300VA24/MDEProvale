@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
 use App\Http\Controllers\Api\SistemaController;
 use App\Http\Controllers\Api\SociosBeneficiariosController;
-use App\Http\Controllers\ReportGeneratorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -126,11 +125,6 @@ Route::prefix('dashboard/responsables-raciones')->middleware('module:responsable
     Route::delete('raciones/{racion}', [ResponsablesRacionesController::class, 'destroyRacion'])->name('raciones.destroy');
 });
 
-// ==================== MÓDULO: REPORTES ====================
-Route::prefix('dashboard/reportes')->middleware('module:reportes')->name('api.reportes.')->group(function () {
-    Route::get('config', [ReportGeneratorController::class, 'config'])->name('config');
-});
-
 // ==================== MÓDULO: SISTEMA ====================
 Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
     // Campanita de notificaciones: disponible para cualquier usuario autenticado,
@@ -160,5 +154,9 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
 
         Route::post('notifications/{notification}/approve', [SistemaController::class, 'approveNotification'])->name('notifications.approve');
         Route::post('notifications/{notification}/reject', [SistemaController::class, 'rejectNotification'])->name('notifications.reject');
+
+        // Parámetros del límite de consultas del asistente IA.
+        Route::get('asistente-config', [SistemaController::class, 'asistenteConfig'])->name('asistente-config');
+        Route::put('asistente-config', [SistemaController::class, 'updateAsistenteConfig'])->name('asistente-config.update');
     });
 });

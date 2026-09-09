@@ -60,8 +60,10 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
 
+        // El asistente aplica su propio límite (5 consultas / 3 h) dentro de
+        // AssistantChatController; este limitador queda como salvaguarda.
         RateLimiter::for('assistant', function (Request $request) {
-            return Limit::perMinute(10)->by(optional($request->user())->id ?: $request->ip());
+            return Limit::perMinutes(180, 5)->by(optional($request->user())->id ?: $request->ip());
         });
     }
 }

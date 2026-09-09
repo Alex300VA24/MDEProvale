@@ -920,6 +920,20 @@
 .assistant-answer-content em { font-style: italic; }
 .assistant-answer-content code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.72rem; padding: 0.08rem 0.32rem; border-radius: 0.35rem; background: #EEF2F7; color: #1E5799; }
 .assistant-answer-content a { color: #1E5799; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Tablas dentro de las respuestas del asistente / Consultas IA. */
+.assistant-table-wrap { overflow-x: auto; margin: 0.35rem 0; -webkit-overflow-scrolling: touch; }
+.assistant-table { border-collapse: collapse; width: 100%; font-size: 0.76rem; }
+.assistant-table th, .assistant-table td { border: 1px solid #D9E2EC; padding: 0.34rem 0.55rem; text-align: left; vertical-align: top; }
+.assistant-table th { background: #EEF3F9; color: #173A5E; font-weight: 800; }
+.assistant-table tbody tr:nth-child(even) td { background: #F7FAFD; }
+
+/* Insignia de cupo y botón de reporte (Consultas IA + widget). */
+.consulta-limit-badge { display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; font-size: 0.72rem; font-weight: 700; color: #1E5799; background: #E5F1FB; border-radius: 9999px; padding: 0.3rem 0.7rem; }
+.consulta-limit-badge.is-blocked { color: #B23B3B; background: #FBE9E9; }
+.consulta-report-btn { margin-top: 0.55rem; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.76rem; font-weight: 800; color: #fff; background: #1E5799; border-radius: 0.6rem; padding: 0.42rem 0.85rem; transition: background .15s ease; }
+.consulta-report-btn:hover { background: #17427A; }
+
 .assistant-error { padding: 0.7rem 0.8rem; border: 1px solid #FECACA; border-radius: 0.75rem; background: #FEF2F2; color: #B91C1C; font-size: 0.75rem; }
 .assistant-typing { display: flex; gap: 0.25rem; padding: 0.85rem 1rem; }
 .assistant-typing span { width: 0.4rem; height: 0.4rem; border-radius: 9999px; background: #6B7280; animation: assistant-dot 1.2s infinite ease-in-out; }
@@ -1418,6 +1432,13 @@ textarea,
 .dark .assistant-form textarea:focus { background: #0E1526; border-color: #2E5FA3; }
 .dark .assistant-disclaimer { background: rgb(var(--c-surface)); color: rgb(var(--c-content-muted)); }
 .dark .assistant-error { background: #331A1D; border-color: #6B3238; color: #F1A9AF; }
+.dark .assistant-table th { background: #14243B; color: #CBD9EC; }
+.dark .assistant-table th, .dark .assistant-table td { border-color: #24384F; }
+.dark .assistant-table tbody tr:nth-child(even) td { background: #101A2B; }
+.dark .consulta-limit-badge { color: #9CC6EC; background: #14304C; }
+.dark .consulta-limit-badge.is-blocked { color: #F1A9AF; background: #3A1E22; }
+.dark .consulta-report-btn { background: #2E5FA3; }
+.dark .consulta-report-btn:hover { background: #3A6DB5; }
 
 /* Barra de progreso del filtro (usaba blanco translúcido para fondo claro). */
 .dark .assistant-typing span { background: rgb(var(--c-earth)); }

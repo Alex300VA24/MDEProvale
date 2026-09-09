@@ -75,12 +75,15 @@ const MODULE_DOCS = {
         ],
     },
     reportes: {
-        title: 'Reportes',
-        icon: 'fa-chart-bar',
-        summary: 'Concentra los reportes e indicadores del sistema para el seguimiento del programa.',
+        title: 'Consultas IA',
+        icon: 'fa-robot',
+        summary: 'Haz preguntas puntuales sobre datos del programa (comités, presidentas, beneficiarios, pecosas) y genera reportes cuando lo pidas de forma explícita.',
         steps: [
-            'Consulta los reportes disponibles según tu acceso.',
-            'Filtra por período o criterio requerido y descarga o imprime el resultado.',
+            'Escribe tu pregunta en el campo inferior. Las consultas frecuentes solo rellenan ese campo para que la completes antes de enviar.',
+            'Para un reporte pide: crea un reporte de beneficiarios del comité (nombre); luego pulsa Ver reporte para abrirlo en una pestaña nueva y guardarlo en PDF.',
+            'Si la solicitud es compleja, el asistente primero te explica por qué no puede resolverla al instante y te hace preguntas para acotarla.',
+            'El número de consultas por ventana de horas lo define el administrador en Sistema > Asistente IA; el contador y la hora de reinicio se muestran en la cabecera.',
+            'El historial no se guarda: al cambiar de sección o volver a iniciar sesión empiezas desde cero.',
         ],
     },
     sistema: {
@@ -92,6 +95,7 @@ const MODULE_DOCS = {
             'En "Roles", define qué módulos ve cada rol y con qué permisos (Ver, Crear, Editar, Eliminar).',
             'En "Módulos", revisa o ajusta el estado y orden de los módulos del sistema.',
             'En "Notificaciones", aprueba o rechaza las solicitudes pendientes.',
+            'En "Asistente IA", define el número de consultas y el rango de horas del límite del asistente.',
         ],
     },
 };

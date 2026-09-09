@@ -24,7 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Endpoints JSON del dashboard SPA (ver dashboard-api.php)
         require __DIR__ . '/dashboard-api.php';
 
-        Route::post('/asistente/chat', AssistantChatController::class)
-            ->middleware('throttle:assistant');
+        // Límite (5 consultas / 3 h por usuario) aplicado dentro del controlador
+        // para poder informar el cupo restante en cada respuesta.
+        Route::post('/asistente/chat', AssistantChatController::class);
     });
 });

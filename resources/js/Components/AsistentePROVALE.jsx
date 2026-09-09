@@ -1,26 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import http from '../http';
+import { FormattedAnswer } from './assistantFormat';
 
-export const ASSISTANT_STORAGE_KEY = 'asistente_historial';
+// Widget flotante de ayuda. El historial vive solo en memoria: al recargar o
+// volver a iniciar sesión no queda contexto guardado. El límite de consultas lo
+// define el administrador (Sistema > Asistente IA) y el backend lo refleja aquí.
+
+const MAX_HISTORIAL = 20;
 
 const SUGGESTIONS = [
     {
-        icon: 'fa-clipboard-user',
-        label: 'Padrón de beneficiarios',
-        description: 'Generar listado de socios y sus beneficiarios.',
-        prompt: '¿Cómo genero el padrón de socios y beneficiarios?',
-    },
-    {
         icon: 'fa-people-roof',
-        label: 'Padrón de Clubes de Madres',
-        description: 'Consultar beneficiarios agrupados por comité.',
-        prompt: '¿Cómo genero el padrón de Clubes de Madres por comité?',
+        label: 'Comités activos',
+        description: 'Ver cuántos comités están vigentes.',
+        prompt: '¿Cuántos comités activos hay este mes?',
     },
     {
-        icon: 'fa-ranking-star',
-        label: 'Comité con más beneficiarios',
-        description: 'Ver clasificación de comités por beneficiarios.',
-        prompt: '¿Cómo consulto el comité con más beneficiarios?',
+        icon: 'fa-user-tie',
+        label: 'Presidenta de un comité',
+        description: 'Consultar quién preside un comité.',
+        prompt: '¿Quién es la presidenta del comité ',
     },
     {
         icon: 'fa-file-circle-plus',
@@ -34,153 +33,62 @@ const SUGGESTIONS = [
         description: 'Revisar existencias, entradas y salidas.',
         prompt: '¿Cómo consulto el stock de productos?',
     },
-    {
-        icon: 'fa-truck-ramp-box',
-        label: 'Repartición mensual',
-        description: 'Calcular raciones por comité y descargar PDF.',
-        prompt: '¿Cómo genero la repartición mensual de raciones por comité?',
-    },
 ];
 
-function loadHistory() {
-    try {
-        const value = JSON.parse(sessionStorage.getItem(ASSISTANT_STORAGE_KEY) || '[]');
-        return Array.isArray(value)
-            ? value.filter((message) => ['user', 'assistant'].includes(message?.role) && typeof message?.content === 'string').slice(-20)
-            : [];
-    } catch {
-        sessionStorage.removeItem(ASSISTANT_STORAGE_KEY);
-        return [];
-    }
-}
-
-// Parser Markdown ligero para las respuestas del asistente.
-// Soporta: **negrita**, *cursiva*, `código`, [enlace](url), encabezados (#),
-// listas numeradas ("1. ") y viñetas ("- ", "* ", "• "). Los emojis se muestran tal cual.
-function renderInline(text, keyPrefix) {
-    const pattern = /(\*\*([^*]+)\*\*|__([^_]+)__|\*([^*]+)\*|_([^_]+)_|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))/g;
-    const nodes = [];
-    let lastIndex = 0;
-    let match;
-    let i = 0;
-
-    while ((match = pattern.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-            nodes.push(text.slice(lastIndex, match.index));
-        }
-        const key = `${keyPrefix}-i${i++}`;
-        if (match[2] || match[3]) {
-            nodes.push(<strong key={key}>{match[2] || match[3]}</strong>);
-        } else if (match[4] || match[5]) {
-            nodes.push(<em key={key}>{match[4] || match[5]}</em>);
-        } else if (match[6]) {
-            nodes.push(<code key={key}>{match[6]}</code>);
-        } else if (match[7] && match[8]) {
-            nodes.push(
-                <a key={key} href={match[8]} target="_blank" rel="noreferrer noopener">
-                    {match[7]}
-                </a>,
-            );
-        }
-        lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < text.length) {
-        nodes.push(text.slice(lastIndex));
-    }
-
-    return nodes.length ? nodes : [text];
-}
-
-function FormattedAnswer({ content }) {
-    const lines = content.split('\n').map((line) => line.trim()).filter(Boolean);
-
-    return (
-        <div className="assistant-answer-content">
-            {lines.map((line, index) => {
-                const key = `${index}-${line.slice(0, 12)}`;
-                const heading = line.match(/^#{1,6}\s+(.+)$/);
-                const step = line.match(/^(\d+)[.)]\s+(.+)$/);
-                const bullet = line.match(/^[-*•]\s+(.+)$/);
-                const isTitle = index === 0 && line.endsWith(':');
-
-                if (heading) {
-                    return (
-                        <p key={key} className="assistant-answer-title">
-                            {renderInline(heading[1], key)}
-                        </p>
-                    );
-                }
-
-                if (step) {
-                    return (
-                        <div key={key} className="assistant-answer-step">
-                            <span>{step[1]}</span>
-                            <p>{renderInline(step[2], key)}</p>
-                        </div>
-                    );
-                }
-
-                if (bullet) {
-                    return (
-                        <div key={key} className="assistant-answer-bullet">
-                            <i className="fas fa-check" aria-hidden="true" />
-                            <p>{renderInline(bullet[1], key)}</p>
-                        </div>
-                    );
-                }
-
-                return (
-                    <p key={key} className={isTitle ? 'assistant-answer-title' : 'assistant-answer-note'}>
-                        {renderInline(line, key)}
-                    </p>
-                );
-            })}
-        </div>
-    );
+function horaReinicio(iso) {
+    if (!iso) return '';
+    const fecha = new Date(iso);
+    return Number.isNaN(fecha.getTime()) ? '' : fecha.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function AsistentePROVALE() {
     const [open, setOpen] = useState(false);
-    const [messages, setMessages] = useState(loadHistory);
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [limite, setLimite] = useState(null);
+    const [bloqueado, setBloqueado] = useState(false);
     const endRef = useRef(null);
     const inputRef = useRef(null);
 
     useEffect(() => {
-        if (messages.length) {
-            sessionStorage.setItem(ASSISTANT_STORAGE_KEY, JSON.stringify(messages.slice(-20)));
-        } else {
-            sessionStorage.removeItem(ASSISTANT_STORAGE_KEY);
-        }
-    }, [messages]);
-
-    useEffect(() => {
         if (!open) return;
         endRef.current?.scrollIntoView({ behavior: 'smooth' });
-        if (!loading) inputRef.current?.focus();
-    }, [open, messages, loading]);
+        if (!loading && !bloqueado) inputRef.current?.focus();
+    }, [open, messages, loading, bloqueado]);
 
     const submitMessage = async (content) => {
         const cleanContent = content.trim();
-        if (!cleanContent || loading) return;
+        if (!cleanContent || loading || bloqueado) return;
 
-        const history = [...messages, { role: 'user', content: cleanContent }].slice(-20);
+        const history = [...messages, { role: 'user', content: cleanContent }].slice(-MAX_HISTORIAL);
         setMessages(history);
         setInput('');
         setError('');
         setLoading(true);
 
         try {
-            const response = await http.post('/api/asistente/chat', { mensajes: history });
-            setMessages((current) => [
-                ...current,
-                { role: 'assistant', content: response.data.respuesta },
-            ].slice(-20));
+            const response = await http.post('/api/asistente/chat', {
+                mensajes: history.map(({ role, content: texto }) => ({ role, content: texto })),
+            });
+            const { data } = response;
+            setMessages((current) =>
+                [...current, { role: 'assistant', content: data.respuesta, accion: data.accion ?? null }].slice(-MAX_HISTORIAL),
+            );
+            if (data.limite) {
+                setLimite(data.limite);
+                if (data.limite.restantes <= 0) setBloqueado(true);
+            }
         } catch (requestError) {
-            setError(requestError.response?.data?.message || 'No se pudo contactar al asistente. Intenta nuevamente.');
+            const status = requestError.response?.status;
+            if (status === 429) {
+                setBloqueado(true);
+                setLimite(requestError.response?.data?.limite ?? null);
+                setError(requestError.response?.data?.mensaje || 'Alcanzaste el límite de consultas por ahora.');
+            } else {
+                setError(requestError.response?.data?.message || 'No se pudo contactar al asistente. Intenta nuevamente.');
+            }
         } finally {
             setLoading(false);
         }
@@ -191,11 +99,21 @@ export default function AsistentePROVALE() {
         submitMessage(input);
     };
 
+    // Las sugerencias solo rellenan el campo; el usuario completa y envía.
+    const useSuggestion = (prompt) => {
+        if (bloqueado) return;
+        setInput(prompt);
+        inputRef.current?.focus();
+    };
+
     const resetConversation = () => {
         setMessages([]);
         setInput('');
         setError('');
     };
+
+    const restantes = limite?.restantes ?? null;
+    const hora = horaReinicio(limite?.reinicia_en);
 
     return (
         <div className="assistant-widget">
@@ -226,7 +144,7 @@ export default function AsistentePROVALE() {
                             <span className="assistant-welcome-icon"><i className="fas fa-wand-magic-sparkles" aria-hidden="true" /></span>
                             <div>
                                 <h3>¿En qué te ayudo?</h3>
-                                <p>Te guío paso a paso para usar las funciones de PROVALE.</p>
+                                <p>Consulto datos del programa y te guío paso a paso para usar PROVALE.</p>
                             </div>
                         </div>
 
@@ -235,13 +153,13 @@ export default function AsistentePROVALE() {
                                 <p>Consultas frecuentes</p>
                                 <div>
                                     {SUGGESTIONS.map((suggestion) => (
-                                        <button key={suggestion.label} type="button" onClick={() => submitMessage(suggestion.prompt)} disabled={loading}>
+                                        <button key={suggestion.label} type="button" onClick={() => useSuggestion(suggestion.prompt)} disabled={bloqueado}>
                                             <i className={`fas ${suggestion.icon}`} aria-hidden="true" />
                                             <span className="assistant-suggestion-copy">
                                                 <strong>{suggestion.label}</strong>
                                                 <small>{suggestion.description}</small>
                                             </span>
-                                            <i className="fas fa-chevron-right" aria-hidden="true" />
+                                            <i className="fas fa-pen" aria-hidden="true" />
                                         </button>
                                     ))}
                                 </div>
@@ -257,6 +175,15 @@ export default function AsistentePROVALE() {
                                 <span className="assistant-bot-avatar" aria-hidden="true"><i className="fas fa-comment-dots" /></span>
                                 <div className="assistant-message assistant-message-bot">
                                     <FormattedAnswer content={message.content} />
+                                    {message.accion?.tipo === 'reporte' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => window.open((window.APP_URL || '') + message.accion.url, '_blank', 'noopener')}
+                                            className="consulta-report-btn"
+                                        >
+                                            <i className="fas fa-file-pdf" aria-hidden="true" /> {message.accion.label || 'Ver reporte'}
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -285,14 +212,19 @@ export default function AsistentePROVALE() {
                             onKeyDown={(event) => {
                                 if (event.key === 'Enter' && !event.shiftKey) sendMessage(event);
                             }}
-                            placeholder="¿Qué deseas hacer en PROVALE?"
-                            disabled={loading}
+                            placeholder={bloqueado ? 'Límite de consultas alcanzado' : '¿Qué deseas hacer en PROVALE?'}
+                            disabled={loading || bloqueado}
                         />
-                        <button type="submit" disabled={loading || !input.trim()} aria-label="Enviar mensaje">
+                        <button type="submit" disabled={loading || bloqueado || !input.trim()} aria-label="Enviar mensaje">
                             <i className="fas fa-paper-plane" aria-hidden="true" />
                         </button>
                     </form>
-                    <p className="assistant-disclaimer"><i className="fas fa-shield-halved" aria-hidden="true" /> Orientación segura sobre uso de PROVALE</p>
+                    <p className="assistant-disclaimer">
+                        <i className="fas fa-shield-halved" aria-hidden="true" />
+                        {restantes !== null
+                            ? ` ${restantes}/${limite.total} consultas${hora ? ` · se reinicia ${hora}` : ''}`
+                            : ' Orientación segura sobre uso de PROVALE'}
+                    </p>
                 </section>
             )}
 

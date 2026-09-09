@@ -19,6 +19,7 @@ use App\Models\Notification;
 use App\Models\Rol;
 use App\Models\State;
 use App\Models\User;
+use App\Services\AssistantSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -316,5 +317,32 @@ class SistemaController extends Controller
         ]);
 
         return response()->json(['data' => new NotificationResource($notification->fresh(['requestedByUser', 'processedByUser']))]);
+    }
+
+    // ==================== ASISTENTE IA ====================
+
+    public function asistenteConfig(AssistantSettingsService $config)
+    {
+        return response()->json([
+            'data' => $config->all() + [
+                'limites' => [
+                    'max_consultas' => [AssistantSettingsService::MAX_MINIMO, AssistantSettingsService::MAX_MAXIMO],
+                    'ventana_horas' => [AssistantSettingsService::VENTANA_MINIMA, AssistantSettingsService::VENTANA_MAXIMA],
+                ],
+            ],
+        ]);
+    }
+
+    public function updateAsistenteConfig(Request $request, AssistantSettingsService $config)
+    {
+        $datos = $request->validate([
+            'max_consultas' => ['required', 'integer', 'min:'.AssistantSettingsService::MAX_MINIMO, 'max:'.AssistantSettingsService::MAX_MAXIMO],
+            'ventana_horas' => ['required', 'integer', 'min:'.AssistantSettingsService::VENTANA_MINIMA, 'max:'.AssistantSettingsService::VENTANA_MAXIMA],
+        ]);
+
+        return response()->json([
+            'data' => $config->update((int) $datos['max_consultas'], (int) $datos['ventana_horas']),
+            'message' => 'Configuración del asistente actualizada.',
+        ]);
     }
 }

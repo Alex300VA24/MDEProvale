@@ -4,12 +4,14 @@ import UsuariosTab from './sistema/UsuariosTab';
 import RolesTab from './sistema/RolesTab';
 import ModulosTab from './sistema/ModulosTab';
 import NotificacionesTab from './sistema/NotificacionesTab';
+import AsistenteConfigTab from './sistema/AsistenteConfigTab';
 
 const HEADERS = {
     usuarios: { icon: 'fa-users', title: 'Gestión de Usuarios', newLabel: 'Registrar Usuario', description: 'Administra los usuarios del sistema.' },
     roles: { icon: 'fa-user-tag', title: 'Gestión de Roles', newLabel: 'Registrar Rol', description: 'Administra los roles y permisos del sistema.' },
     modulos: { icon: 'fa-puzzle-piece', title: 'Gestión de Módulos', newLabel: 'Registrar Módulo', description: 'Administra los módulos del sistema.' },
     notificaciones: { icon: 'fa-bell', title: 'Notificaciones', description: 'Administra las notificaciones del sistema.' },
+    asistente: { icon: 'fa-robot', title: 'Asistente IA', description: 'Configura el límite de consultas del asistente IA por usuario.' },
 };
 
 export default function Sistema() {
@@ -91,6 +93,9 @@ export default function Sistema() {
                 </div>
                 <div className={tab === 'notificaciones' ? '' : 'hidden'}>
                     <NotificacionesTab />
+                </div>
+                <div className={tab === 'asistente' ? '' : 'hidden'}>
+                    <AsistenteConfigTab can={can} />
                 </div>
             </div>
         </div>
