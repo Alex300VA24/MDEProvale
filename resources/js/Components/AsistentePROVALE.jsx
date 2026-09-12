@@ -41,8 +41,7 @@ function horaReinicio(iso) {
     return Number.isNaN(fecha.getTime()) ? '' : fecha.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function AsistentePROVALE() {
-    const [open, setOpen] = useState(false);
+export default function AsistentePROVALE({ open, onOpenChange }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -51,12 +50,34 @@ export default function AsistentePROVALE() {
     const [bloqueado, setBloqueado] = useState(false);
     const endRef = useRef(null);
     const inputRef = useRef(null);
+    const launcherRef = useRef(null);
+
+    const setOpen = (nextOpen) => {
+        onOpenChange(typeof nextOpen === 'function' ? nextOpen(open) : nextOpen);
+    };
+
+    const closeAssistant = () => {
+        onOpenChange(false);
+        window.requestAnimationFrame(() => launcherRef.current?.focus());
+    };
 
     useEffect(() => {
         if (!open) return;
         endRef.current?.scrollIntoView({ behavior: 'smooth' });
         if (!loading && !bloqueado) inputRef.current?.focus();
     }, [open, messages, loading, bloqueado]);
+
+    useEffect(() => {
+        if (!open) return undefined;
+
+        const closeOnEscape = (event) => {
+            if (event.key !== 'Escape') return;
+            closeAssistant();
+        };
+
+        window.addEventListener('keydown', closeOnEscape);
+        return () => window.removeEventListener('keydown', closeOnEscape);
+    }, [open, onOpenChange]);
 
     const submitMessage = async (content) => {
         const cleanContent = content.trim();
@@ -74,7 +95,12 @@ export default function AsistentePROVALE() {
             });
             const { data } = response;
             setMessages((current) =>
-                [...current, { role: 'assistant', content: data.respuesta, accion: data.accion ?? null }].slice(-MAX_HISTORIAL),
+                [...current, {
+                    role: 'assistant',
+                    content: data.respuesta,
+                    accion: data.accion ?? null,
+                    sugerencias: data.sugerencias ?? [],
+                }].slice(-MAX_HISTORIAL),
             );
             if (data.limite) {
                 setLimite(data.limite);
@@ -133,7 +159,7 @@ export default function AsistentePROVALE() {
                                     <i className="fas fa-plus" aria-hidden="true" />
                                 </button>
                             )}
-                            <button type="button" onClick={() => setOpen(false)} className="assistant-header-button" aria-label="Minimizar asistente">
+                            <button type="button" onClick={closeAssistant} className="assistant-header-button" aria-label="Minimizar asistente">
                                 <i className="fas fa-minus" aria-hidden="true" />
                             </button>
                         </div>
@@ -144,7 +170,7 @@ export default function AsistentePROVALE() {
                             <span className="assistant-welcome-icon"><i className="fas fa-wand-magic-sparkles" aria-hidden="true" /></span>
                             <div>
                                 <h3>¿En qué te ayudo?</h3>
-                                <p>Consulto datos del programa y te guío paso a paso para usar PROVALE.</p>
+                                <p>Entiendo preguntas en lenguaje natural, consulto datos y te guío dentro de PROVALE.</p>
                             </div>
                         </div>
 
@@ -175,6 +201,20 @@ export default function AsistentePROVALE() {
                                 <span className="assistant-bot-avatar" aria-hidden="true"><i className="fas fa-comment-dots" /></span>
                                 <div className="assistant-message assistant-message-bot">
                                     <FormattedAnswer content={message.content} />
+                                    {message.sugerencias?.length > 0 && (
+                                        <div className="assistant-clarification-options" aria-label="Opciones para aclarar la consulta">
+                                            {message.sugerencias.map((suggestion) => (
+                                                <button
+                                                    key={suggestion.prompt}
+                                                    type="button"
+                                                    onClick={() => submitMessage(suggestion.prompt)}
+                                                    disabled={loading || bloqueado}
+                                                >
+                                                    {suggestion.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                     {message.accion?.tipo === 'reporte' && (
                                         <button
                                             type="button"
@@ -230,6 +270,7 @@ export default function AsistentePROVALE() {
 
             <button
                 type="button"
+                ref={launcherRef}
                 className="assistant-launcher"
                 onClick={() => setOpen((current) => !current)}
                 aria-label={open ? 'Cerrar Asistente PROVALE' : 'Abrir Asistente PROVALE'}

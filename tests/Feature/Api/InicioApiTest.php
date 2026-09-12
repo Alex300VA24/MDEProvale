@@ -105,6 +105,79 @@ class InicioApiTest extends TestCase
             ->assertJsonPath('top_comites', []);
     }
 
+    public function test_historical_cards_show_unique_people_audit_and_dual_roles(): void
+    {
+        $this->seedPanelData();
+        $now = now();
+
+        DB::table('partners')->insert([
+            'id' => 3,
+            'person_id' => 1,
+            'association_id' => 2,
+            'state_id' => 1,
+            'date_begin' => '2026-01-01',
+            'date_end' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        DB::table('partner_roster_periods')->insert([
+            ['partner_id' => 1, 'period' => '2026-09-01', 'created_at' => $now, 'updated_at' => $now],
+            ['partner_id' => 2, 'period' => '2026-09-01', 'created_at' => $now, 'updated_at' => $now],
+            ['partner_id' => 3, 'period' => '2026-09-01', 'created_at' => $now, 'updated_at' => $now],
+        ]);
+        DB::table('association_roster_periods')->insert([
+            ['association_id' => 1, 'period' => '2026-09-01', 'partner_count' => 2, 'beneficiary_count' => 2, 'created_at' => $now, 'updated_at' => $now],
+            ['association_id' => 2, 'period' => '2026-09-01', 'partner_count' => 1, 'beneficiary_count' => 0, 'created_at' => $now, 'updated_at' => $now],
+        ]);
+
+        DB::table('type_benefits')->insert([
+            'id' => 1,
+            'title' => 'Lactante',
+            'abbreviation' => 'LAC',
+            'min_age' => 0,
+            'max_age' => 99,
+            'priority' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('beneficiaries')->insert([
+            'id' => 2,
+            'person_id' => 1,
+            'partner_id' => 1,
+            'relationship_id' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('beneficiary_histories')->insert([
+            'weight' => 60,
+            'height' => 1.6,
+            'hmg' => 12,
+            'date_begin' => '2026-09-01',
+            'date_end' => null,
+            'type_benefit_id' => 1,
+            'relationship_id' => 1,
+            'beneficiary_id' => 2,
+            'state_id' => 1,
+            'reason_disqualification_id' => null,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/panel?periodo_anio=2026&periodo_mes=9')
+            ->assertOk()
+            ->assertJsonPath('stats.total_socios', 2)
+            ->assertJsonPath('stats.total_beneficiarios', 2)
+            ->assertJsonPath('stats.total_comites', 2)
+            ->assertJsonPath('stats.dual_role.LAC', 1)
+            ->assertJsonPath('stats.dual_role.total', 1)
+            ->assertJsonPath('stats.roster_audit.source', 'BASE DE DATOS PROVALE - SETIEMBRE.xlsx')
+            ->assertJsonPath('stats.roster_audit.metrics.socios.database', 3)
+            ->assertJsonPath('stats.roster_audit.metrics.socios.corrected', 2)
+            ->assertJsonCount(3, 'stats.roster_audit.metrics.socios.observations');
+    }
+
     public function test_panel_uses_balance_from_latest_entry_for_each_food(): void
     {
         $now = now();

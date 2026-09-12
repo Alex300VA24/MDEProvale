@@ -169,11 +169,19 @@ class AssistantReportService
 
     /**
      * @param  list<string>  $entidades
-     * @return array{tipo:string,respuesta:string}
+     * @return array{tipo:string,respuesta:string,sugerencias?:array<int,array{label:string,prompt:string}>}
      */
     private function guia(array $entidades): array
     {
         $multiples = count($entidades) > 1;
+
+        if ($entidades === []) {
+            return [
+                'tipo' => 'guia',
+                'respuesta' => "Necesito confirmar el reporte:\n\n¿Quisiste decir alguna de estas opciones?",
+                'sugerencias' => $this->sugerenciasReporte(['beneficiarios', 'pecosas', 'productos']),
+            ];
+        }
 
         $motivo = $multiples
             ? 'Esa solicitud tiene varios pasos porque cruza más de un tipo de dato ('.$this->listarEtiquetas($entidades).') y el reporte automático trabaja con una sola entidad a la vez.'
@@ -188,7 +196,25 @@ class AssistantReportService
             ."- crea un reporte de beneficiarios del comité (nombre)\n"
             .'- crea un reporte de movimientos del año 2026';
 
-        return ['tipo' => 'guia', 'respuesta' => $texto];
+        $result = ['tipo' => 'guia', 'respuesta' => $texto];
+
+        if ($multiples) {
+            $result['sugerencias'] = $this->sugerenciasReporte(array_slice($entidades, 0, 3));
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  list<string>  $entidades
+     * @return array<int,array{label:string,prompt:string}>
+     */
+    private function sugerenciasReporte(array $entidades): array
+    {
+        return array_map(fn (string $entidad) => [
+            'label' => 'Reporte de '.self::ETIQUETA[$entidad],
+            'prompt' => 'Quiero un reporte de '.self::ETIQUETA[$entidad].'.',
+        ], $entidades);
     }
 
     /**

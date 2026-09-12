@@ -4,11 +4,8 @@ const defaultTheme = require('tailwindcss/defaultTheme');
  * Token de color respaldado por CSS custom properties.
  *
  * Cada color de la paleta institucional se resuelve en tiempo de ejecución
- * contra una variable `--c-*` (definida en resources/css/app.css). En `:root`
- * esas variables valen exactamente los mismos hex que antes, así que el modo
- * claro se renderiza idéntico. En `.dark` se sobreescriben, y todas las
- * utilidades (`bg-navy`, `text-charcoal`, `border-mist`, ...) cambian de tema
- * sin tocar el marcado. El placeholder `<alpha-value>` deja que Tailwind siga
+ * contra una variable `--c-*` (definida en resources/css/app.css). El
+ * placeholder `<alpha-value>` deja que Tailwind siga
  * generando las variantes con opacidad (`text-navy/70`, `bg-blue/10`, ...).
  */
 function tok(cssVar) {
@@ -19,10 +16,6 @@ function tok(cssVar) {
 }
 
 module.exports = {
-    // Modo oscuro opt-in: se activa con la clase `.dark` en <html>. Nunca se
-    // activa solo (sin preferencia de sistema); lo controla el interruptor y
-    // se persiste en localStorage('mde-theme').
-    darkMode: 'class',
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
@@ -88,8 +81,7 @@ module.exports = {
                 'purple-light': tok('--c-purple-light'),
                 'green-light':  tok('--c-green-light'),
 
-                // Tokens semánticos de superficie/texto para modo oscuro. En claro
-                // valen blanco/lienzo/tinta actuales; en `.dark` se invierten.
+                // Tokens semánticos de superficie, lienzo y contenido.
                 surface:   tok('--c-surface'),
                 'surface-2': tok('--c-surface-2'),
                 canvas:    tok('--c-canvas'),

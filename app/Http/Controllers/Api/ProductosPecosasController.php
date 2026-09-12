@@ -191,10 +191,19 @@ class ProductosPecosasController extends Controller
     {
         $activeState = State::where('abbreviation', State::CURRENT)->select(['id'])->first();
 
-        $associations = ($activeState
-            ? Association::select(['id', 'name', 'code', 'state_id'])->where('state_id', $activeState->id)
-            : Association::select(['id', 'name', 'code', 'state_id']))
+        // El formulario solo admite comites vigentes, pero el filtro debe poder
+        // consultar todo el historial, incluso el de comites vencidos o pendientes.
+        $filterAssociations = Association::select(['id', 'name', 'code', 'state_id'])
+            ->orderBy('name')
             ->get();
+
+        $filterAssociations->each(function ($association) use ($activeState) {
+            $association->is_current = ! $activeState || $association->state_id === $activeState->id;
+        });
+
+        $associations = $activeState
+            ? $filterAssociations->where('state_id', $activeState->id)->values()
+            : $filterAssociations;
 
         $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
 
@@ -252,6 +261,7 @@ class ProductosPecosasController extends Controller
         return response()->json([
             'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
             'associations' => $associations,
+            'filter_associations' => $filterAssociations,
             'responsibles' => $responsibles,
             'detail_products' => $detailProducts,
         ]);

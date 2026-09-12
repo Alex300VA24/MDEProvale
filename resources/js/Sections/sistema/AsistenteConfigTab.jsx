@@ -70,7 +70,7 @@ export default function AsistenteConfigTab({ can }) {
             <div className="bg-blue-light/40 border-2 border-blue/20 rounded-2xl px-4 py-3 mb-6 flex items-start gap-3">
                 <i className="fas fa-circle-info text-blue mt-0.5" aria-hidden="true" />
                 <p className="text-earth text-sm">
-                    Define cuántas consultas puede hacer cada usuario al asistente IA (Consultas IA y widget flotante)
+                    Define cuántas consultas puede hacer cada usuario en el chatbot Asistente PROVALE.
                     y cada cuántas horas se reinicia ese contador. El límite se aplica por usuario.
                 </p>
             </div>

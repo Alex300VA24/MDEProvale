@@ -1,4 +1,4 @@
-// Formateador compartido de las respuestas del asistente / Consultas IA.
+// Formateador compartido de las respuestas del Asistente PROVALE.
 // Convierte texto plano en bloques legibles: título, pasos numerados, viñetas,
 // tablas con barras verticales y notas. Limpia restos de Markdown (**, *, #, `).
 

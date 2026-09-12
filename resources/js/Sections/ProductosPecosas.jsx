@@ -53,6 +53,7 @@ export default function ProductosPecosas({ initialAction }) {
                     states: productsOpts?.data?.states ?? pecosasOpts?.data?.states ?? [],
                     uoms: productsOpts?.data?.uoms ?? [],
                     associations: pecosasOpts?.data?.associations ?? [],
+                    filter_associations: pecosasOpts?.data?.filter_associations ?? pecosasOpts?.data?.associations ?? [],
                     responsibles: pecosasOpts?.data?.responsibles ?? [],
                     detail_products: pecosasOpts?.data?.detail_products ?? [],
                 });

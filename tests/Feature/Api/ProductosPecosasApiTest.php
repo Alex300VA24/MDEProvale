@@ -378,8 +378,48 @@ class ProductosPecosasApiTest extends TestCase
             ->assertJsonStructure([
                 'states' => ['*' => ['id', 'title', 'abbreviation']],
                 'associations' => ['*' => ['id', 'name', 'code']],
+                'filter_associations' => ['*' => ['id', 'name', 'code', 'is_current']],
                 'responsibles' => ['*' => ['id', 'type', 'name', 'dni']],
                 'detail_products' => ['*' => ['id', 'product_id', 'product_title', 'unit_price', 'available_stock', 'active']],
+            ]);
+    }
+
+    public function test_pecosas_filter_options_include_non_current_associations(): void
+    {
+        DB::table('states')->insert([
+            ['id' => 2, 'title' => 'Vigente', 'abbreviation' => 'VIG'],
+            ['id' => 3, 'title' => 'Vencido', 'abbreviation' => 'VEN'],
+        ]);
+
+        DB::table('associations')->where('id', 1)->update(['state_id' => 2]);
+        DB::table('directives')->where('id', 1)->update(['state_id' => 2]);
+        DB::table('associations')->insert([
+            'id' => 2,
+            'code' => 'CDM-HIST',
+            'name' => 'Comite Historico',
+            'company_name' => 'Comite Historico SAC',
+            'address' => 'Av. Historial 456',
+            'resolution_id' => 1,
+            'state_id' => 3,
+            'place_sector_id' => 1,
+            'type_premises_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . '/pecosas/options')
+            ->assertOk()
+            ->assertJsonCount(1, 'associations')
+            ->assertJsonCount(2, 'filter_associations')
+            ->assertJsonPath('associations.0.id', 1)
+            ->assertJsonPath('associations.0.is_current', true)
+            ->assertJsonFragment([
+                'id' => 2,
+                'name' => 'Comite Historico',
+                'code' => 'CDM-HIST',
+                'state_id' => 3,
+                'is_current' => false,
             ]);
     }
 

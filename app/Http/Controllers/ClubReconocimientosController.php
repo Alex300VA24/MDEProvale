@@ -466,24 +466,36 @@ $directive = Directive::create([
         $endDate    = \Carbon\Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
         $cutoffDate = $endDate->toDateString();
 
-        // Comités que tenían resolución vigente en el periodo consultado
-        $associations = Association::with([
+        $rosterPeriods = \App\Models\AssociationRosterPeriod::query()
+            ->whereDate('period', $startDate->toDateString())
+            ->get()
+            ->keyBy('association_id');
+        $hasRosterSnapshot = $rosterPeriods->isNotEmpty();
+
+        $associationsQuery = Association::with([
             'placeSector.place',
             'placeSector.sector',
             'resolution',
             'resolutionsHistory',
             'state',
             'typePremises',
-        ])
-        ->whereHas('resolution', function ($q) use ($startDate, $endDate) {
-            // La resolución del comité cubría el periodo
-            $q->where('date_start', '<=', $endDate->toDateString())
-              ->where(function ($q2) use ($startDate) {
-                  $q2->whereNull('date_end')
-                     ->orWhere('date_end', '>=', $startDate->toDateString());
-              });
-        })
-        ->get();
+        ]);
+
+        if ($hasRosterSnapshot) {
+            // Entre marzo y setiembre de 2026 manda la presencia real en los
+            // padrones mensuales, incluso si la resolución está pendiente.
+            $associationsQuery->whereIn('id', $rosterPeriods->keys());
+        } else {
+            $associationsQuery->whereHas('resolution', function ($q) use ($startDate, $endDate) {
+                $q->where('date_start', '<=', $endDate->toDateString())
+                    ->where(function ($q2) use ($startDate) {
+                        $q2->whereNull('date_end')
+                            ->orWhere('date_end', '>=', $startDate->toDateString());
+                    });
+            });
+        }
+
+        $associations = $associationsQuery->get();
 
         $zonaGroups = [];
         foreach ($associations as $association) {
@@ -526,31 +538,36 @@ $directive = Directive::create([
                 ];
             }
 
-            // Presidenta vigente en el periodo (histórica)
-            $presidenta = $association->getPresidentNameAt($cutoffDate) ?? '';
+            $rosterPeriod = $rosterPeriods->get($association->id);
 
-            // Beneficiarios vigentes en el periodo:
-            // socios vigentes → sus beneficiarios con historial vigente en el periodo
-            $totalBenef = \App\Models\Partner::where('association_id', $association->id)
-                ->where(function ($q) use ($endDate) {
-                    $q->whereNull('date_begin')
-                      ->orWhere('date_begin', '<=', $endDate->toDateString());
-                })
-                ->where(function ($q) use ($startDate) {
-                    $q->whereNull('date_end')
-                      ->orWhere('date_end', '>=', $startDate->toDateString());
-                })
-                ->withCount(['beneficiaries as benef_count' => function ($q) use ($startDate, $endDate) {
-                    $q->whereHas('histories', function ($h) use ($startDate, $endDate) {
-                        $h->where('date_begin', '<=', $endDate->toDateString())
-                          ->where(function ($h2) use ($startDate) {
-                              $h2->whereNull('date_end')
-                                 ->orWhere('date_end', '>=', $startDate->toDateString());
-                          });
-                    });
-                }])
-                ->get()
-                ->sum('benef_count');
+            // El encabezado del Excel conserva incluso presidentas que no
+            // aparecían como socias y por ello no pudieron ligarse a directivas.
+            $presidenta = $rosterPeriod
+                ? ($rosterPeriod->president_name ?? '')
+                : ($association->getPresidentNameAt($cutoffDate) ?? '');
+
+            $totalBenef = $rosterPeriod
+                ? (int) $rosterPeriod->beneficiary_count
+                : \App\Models\Partner::where('association_id', $association->id)
+                    ->where(function ($q) use ($endDate) {
+                        $q->whereNull('date_begin')
+                            ->orWhere('date_begin', '<=', $endDate->toDateString());
+                    })
+                    ->where(function ($q) use ($startDate) {
+                        $q->whereNull('date_end')
+                            ->orWhere('date_end', '>=', $startDate->toDateString());
+                    })
+                    ->withCount(['beneficiaries as benef_count' => function ($q) use ($startDate, $endDate) {
+                        $q->whereHas('histories', function ($h) use ($startDate, $endDate) {
+                            $h->where('date_begin', '<=', $endDate->toDateString())
+                                ->where(function ($h2) use ($startDate) {
+                                    $h2->whereNull('date_end')
+                                        ->orWhere('date_end', '>=', $startDate->toDateString());
+                                });
+                        });
+                    }])
+                    ->get()
+                    ->sum('benef_count');
 
             // Resoluciones del comité — todas las que cubrían el periodo
             $resolutionsAll = [];

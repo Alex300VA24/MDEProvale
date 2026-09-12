@@ -351,6 +351,12 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
     const [deleting, setDeleting] = useState(null);
 
     const debouncedFilters = useDebounced(filters, 400);
+    const filterAssociationOptions = (options.filter_associations || options.associations || [])
+        .map((association) => ({
+            id: association.id,
+            label: association.name,
+            badge: association.is_current === false ? 'Vencido' : null,
+        }));
 
     useEffect(() => {
         setPage(1);
@@ -447,9 +453,10 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                     <Combobox
                         value={filters.association_id}
                         onChange={(v) => setFilter('association_id', v ?? '')}
-                        options={(options.associations || []).map((a) => ({ id: a.id, label: a.name }))}
+                        options={filterAssociationOptions}
                         placeholder="Todos los Clubes"
                         allowClear
+                        maxResults={filterAssociationOptions.length}
                     />
                 </div>
                 <div className="w-full sm:w-40 lg:w-40 shrink 0">

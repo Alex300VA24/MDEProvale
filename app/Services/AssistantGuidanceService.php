@@ -6,9 +6,17 @@ use Illuminate\Support\Str;
 
 class AssistantGuidanceService
 {
+    private const DOMAIN_TERMS = [
+        'beneficiario', 'beneficiarios', 'comite', 'consultar', 'kardex',
+        'movimiento', 'notificacion', 'padron', 'pecosa', 'pecosas',
+        'presidenta', 'producto', 'productos', 'racion', 'reconocimiento',
+        'reparticion', 'reporte', 'reportes', 'responsable', 'socia', 'socias',
+        'socio', 'socios', 'stock', 'usuario',
+    ];
+
     public function answer(string $question): ?string
     {
-        $question = Str::lower(Str::ascii($question));
+        $question = $this->normalizeQuestion($question);
 
         // El tema de reportes se resuelve antes que cualquier flujo por entidad:
         // "creame un reporte de pecosas" NO es la guía para registrar una pecosa.
@@ -110,6 +118,43 @@ class AssistantGuidanceService
         return null;
     }
 
+    /**
+     * Devuelve alternativas accionables cuando no existe una intención segura.
+     * El cliente las muestra como respuestas rápidas y espera la elección del
+     * usuario antes de intentar resolver la consulta.
+     *
+     * @return array{respuesta:string,sugerencias:array<int,array{label:string,prompt:string}>}
+     */
+    public function clarification(string $question): array
+    {
+        $question = $this->normalizeQuestion($question);
+
+        if ($this->hasAny($question, ['reporte', 'informe', 'pdf', 'exportar'])) {
+            $suggestions = [
+                ['label' => 'Reporte de beneficiarios', 'prompt' => 'Quiero un reporte de beneficiarios.'],
+                ['label' => 'Reporte de pecosas', 'prompt' => 'Quiero un reporte de pecosas.'],
+                ['label' => 'Reporte de productos', 'prompt' => 'Quiero un reporte de productos.'],
+            ];
+        } elseif ($this->hasAny($question, ['registrar', 'crear', 'nuevo', 'nueva', 'agregar'])) {
+            $suggestions = [
+                ['label' => 'Registrar una socia', 'prompt' => '¿Cómo registro una nueva socia?'],
+                ['label' => 'Registrar un beneficiario', 'prompt' => '¿Cómo registro un beneficiario?'],
+                ['label' => 'Registrar una pecosa', 'prompt' => '¿Cómo registro una nueva pecosa?'],
+            ];
+        } else {
+            $suggestions = [
+                ['label' => 'Consultar un comité', 'prompt' => 'Quiero consultar los datos de un comité.'],
+                ['label' => 'Consultar beneficiarios', 'prompt' => 'Quiero consultar beneficiarios.'],
+                ['label' => 'Consultar pecosas', 'prompt' => 'Quiero consultar pecosas de un periodo.'],
+            ];
+        }
+
+        return [
+            'respuesta' => "Necesito confirmar tu consulta:\n\n¿Quisiste decir alguna de estas opciones?",
+            'sugerencias' => $suggestions,
+        ];
+    }
+
     public function overview(): string
     {
         return "Puedo guiarte paso a paso en estas tareas:\n"
@@ -119,7 +164,7 @@ class AssistantGuidanceService
             . "- registrar pecosas;\n"
             . "- revisar movimientos y reparticiones;\n"
             . "- configurar raciones;\n"
-            . "- consultar datos y generar reportes desde Consultas IA.\n"
+            . "- consultar datos y generar reportes desde el Asistente PROVALE.\n"
             . "Escribe qué deseas hacer, por ejemplo: \"¿Cuántos comités activos hay este mes?\"";
     }
 
@@ -143,5 +188,28 @@ class AssistantGuidanceService
         }
 
         return true;
+    }
+
+    private function normalizeQuestion(string $question): string
+    {
+        $question = Str::lower(Str::ascii(trim($question)));
+
+        return (string) preg_replace_callback('/\b[a-z]{5,}\b/', function (array $match) {
+            $word = $match[0];
+            $best = $word;
+            $bestDistance = PHP_INT_MAX;
+
+            foreach (self::DOMAIN_TERMS as $term) {
+                $distance = levenshtein($word, $term);
+                $allowed = strlen($term) >= 9 ? 2 : 1;
+
+                if ($distance <= $allowed && $distance < $bestDistance) {
+                    $best = $term;
+                    $bestDistance = $distance;
+                }
+            }
+
+            return $best;
+        }, $question);
     }
 }

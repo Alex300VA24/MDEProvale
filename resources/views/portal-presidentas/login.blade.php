@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('mde-theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
     <title>Acceso de Presidentas - PROVALE</title>
     <link rel="icon" href="{{ asset('img/logo-provale-sin-fondo.png') }}">
     <link rel="stylesheet" href="{{ asset('fonts/source-sans-3/400.css') }}">
@@ -48,34 +47,10 @@
         .session-alert button:hover { background:var(--blue); }
         @media(max-width:480px) { .shell { padding:14px; } .card { padding:26px 20px; border-radius:20px; } }
 
-        .theme-fab { position:fixed; top:16px; right:16px; z-index:70; width:44px; height:44px; display:flex; align-items:center; justify-content:center; border-radius:9999px; border:1px solid var(--line); background:#fff; color:var(--blue); font-size:16px; cursor:pointer; box-shadow:0 8px 24px -14px rgba(26,46,74,.5); }
-
-        /* ===== Modo oscuro (opt-in) ===== */
-        .dark body { background:#0E1526; color:#E6EBF3; }
-        .dark .card { background:rgba(22,31,51,.97); border-color:rgba(44,58,86,.9); box-shadow:0 28px 70px -38px rgba(0,0,0,.6); }
-        .dark h1 { color:#E6EBF3; }
-        .dark .intro, .dark label { color:#9DB0C7; }
-        .dark input { background:#0E1526; border-color:#2C3A56; color:#E6EBF3; }
-        .dark input:focus { background:#131C30; border-color:#5AA9E0; box-shadow:0 0 0 4px rgba(90,169,224,.16); }
-        .dark .toggle:hover { background:#1F2A42; color:#7FB1E6; }
-        .dark .remember { color:#C7D2E1; }
-        .dark .submit { background:#103A63; box-shadow:0 12px 24px -14px rgba(0,0,0,.55); }
-        .dark .help { color:#9DB0C7; }
-        .dark .theme-fab { background:#1F2A42; border-color:#2C3A56; color:#7FB1E6; }
-        .dark .session-alert { background:#161F33; box-shadow:0 28px 70px -24px rgba(0,0,0,.7); }
-        .dark .session-alert h2 { color:#E6EBF3; }
-        .dark .session-alert p { color:#9DB0C7; }
-        .dark .session-alert-icon { background:#33280F; color:#F0C98A; }
     </style>
     <link rel="stylesheet" href="{{ asset('css/president-portal.css') }}">
 </head>
 <body class="portal-login">
-    <button type="button" class="theme-fab" aria-label="Cambiar tema" title="Cambiar entre tema claro y oscuro"
-        onclick="var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('mde-theme',d?'dark':'light')}catch(e){}">
-        <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        <svg class="i-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-    </button>
-
     <main class="shell">
         <section class="card" aria-labelledby="login-title">
             <div class="brand"><img src="{{ asset('img/logo-provale-sin-fondo.png') }}" alt="Logo PROVALE"><div><strong>Municipalidad Distrital de La Esperanza</strong><span>PROVALE · Portal de Presidentas</span></div></div>

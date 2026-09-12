@@ -2,10 +2,20 @@
 
 return [
 
+    'ai' => [
+        'provider' => env('AI_PROVIDER', 'groq'),
+    ],
+
     'groq' => [
         'key' => env('GROQ_API_KEY'),
         'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
         'url' => env('GROQ_API_URL', 'https://api.groq.com/openai/v1/chat/completions'),
+    ],
+
+    'google_ai' => [
+        'key' => env('GOOGLE_API_KEY'),
+        'model' => env('GOOGLE_MODEL', 'gemini-2.5-flash'),
+        'url' => env('GOOGLE_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models'),
     ],
 
     /*

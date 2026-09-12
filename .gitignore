@@ -80,14 +80,46 @@ Desktop.ini
 /migracion_responsables/*.csv
 /public/fichas/
 
-# Seeders: solo se versionan los manifiestos sin datos personales
-/database/seeders/
-!/database/seeders/
+# Seeders: se versionan catálogos, orquestador, seeders temporales y JSONs
 /database/seeders/*
 !/database/seeders/DatabaseSeeder.php
 !/database/seeders/RolSeeder.php
 !/database/seeders/StateSeeder.php
 !/database/seeders/PresidentUserSeeder.php
+# Seeders de catálogo (restaurados)
+!/database/seeders/ResolutionSeeder.php
+!/database/seeders/ResolutionAssociationSeeder.php
+!/database/seeders/DirectiveSeeder.php
+!/database/seeders/RacionesSeeder.php
+!/database/seeders/ModuleSeeder.php
+!/database/seeders/ReasonDisqualificationSeeder.php
+!/database/seeders/PositionSeeder.php
+!/database/seeders/SectorSeeder.php
+!/database/seeders/PlaceSeeder.php
+!/database/seeders/PlaceSectorSeeder.php
+!/database/seeders/TypePremisesSeeder.php
+!/database/seeders/RelationshipSeeder.php
+!/database/seeders/TypeBenefitSeeder.php
+!/database/seeders/UomSeeder.php
+!/database/seeders/TypeTransactionSeeder.php
+!/database/seeders/UserSeeder.php
+!/database/seeders/ProductSeeder.php
+!/database/seeders/ResponsibleSeeder.php
+!/database/seeders/AssociationSeeder.php
+# Seeders temporales (PHP delgados que leen JSON)
+!/database/seeders/PeopleSeeder.php
+!/database/seeders/TemporalPartnerSeeder.php
+!/database/seeders/TemporalBeneficiarieSeeder.php
+!/database/seeders/TemporalBeneficiarieHistorySeeder.php
+# Seeders de movimientos (PHP que leen JSON filtrado)
+!/database/seeders/PecosaSeeder.php
+!/database/seeders/DetailPecosaSeeder.php
+!/database/seeders/PecosaResponsableSeeder.php
+!/database/seeders/ProductStockSeeder.php
+!/database/seeders/DetailProductSeeder.php
+!/database/seeders/TransactionSeeder.php
+# JSON data (se versionan)
+!/database/seeders/data/
 
 # Prototipos HTML ya migrados a vistas Blade
 /acta_*.html

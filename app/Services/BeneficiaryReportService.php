@@ -37,7 +37,11 @@ class BeneficiaryReportService
         $presidenta = $association->getPresidentNameAt($endDate->toDateString())
             ?? $association->getPresidentName();
 
-        $partners = $this->partnerRepo->findActiveByAssociation($associationId, $endDate->toDateString());
+        $partners = $this->partnerRepo->findActiveByAssociation(
+            $associationId,
+            $startDate->toDateString(),
+            $endDate->toDateString()
+        );
 
         if ($partners->isEmpty()) {
             throw new \DomainException('No hay socios vigentes para el comité y periodo seleccionado.');
@@ -131,6 +135,9 @@ class BeneficiaryReportService
                 $tipoBeneficio = $historialActivo ? ($historialActivo->typeBenefit ? $historialActivo->typeBenefit->abbreviation : '') : '';
                 $razonBaja = $historialActivo ? ($historialActivo->reasonDisqualification ? $historialActivo->reasonDisqualification->id : '') : '';
                 $fechaInicio = $historialActivo ? $historialActivo->date_begin : null;
+                $parentesco = $historialActivo && $historialActivo->relationship
+                    ? $historialActivo->relationship->title
+                    : ($beneficiario->relationship ? $beneficiario->relationship->title : '');
 
                 [$bajaFlag, $observationFlag, $razonBaja] = $this->evaluateBeneficiaryRules($edadAnos, $tipoBeneficio, $fechaInicio, $cutoffDate, $historialActivo, $razonBaja);
 
@@ -140,7 +147,7 @@ class BeneficiaryReportService
                     in_array($tipoBeneficio, ['LAC', 'GES']) ? $tipoBeneficio : '',
                     $persona->birthdate ? date('d/m/Y', strtotime($persona->birthdate)) : '',
                     $persona->gender === 'M' ? 'M' : 'F',
-                    $beneficiario->relationship ? $beneficiario->relationship->title : '',
+                    $parentesco,
                     $edadAnos,
                     $edadMeses,
                     $edadDias,

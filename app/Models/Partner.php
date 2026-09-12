@@ -51,6 +51,11 @@ class Partner extends Model
         return $this->hasMany(Beneficiarie::class);
     }
 
+    public function rosterPeriods()
+    {
+        return $this->hasMany(PartnerRosterPeriod::class);
+    }
+
     public function getNameAttribute()
     {
         return $this->people ? $this->people->names . ' ' . $this->people->father_lastname . ' ' . $this->people->mother_lastname : 'Sin nombre';

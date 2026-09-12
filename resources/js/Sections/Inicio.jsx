@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 import http from '../http';
+import DetailModal, { DetailGroup } from '../Components/DetailModal';
 
 const BASE = '/api/dashboard/inicio';
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -33,14 +34,9 @@ function FiltroSelect({ value, onChange, children, label }) {
 }
 const CHART_FONT = { family: "'Source Sans 3', system-ui, sans-serif", size: 11 };
 
-// Colores de ejes, rejilla y tooltip según el tema activo. Las gráficas de
-// Chart.js dibujan sobre <canvas> y no leen CSS, así que se resuelven en JS y
-// se vuelven a montar al alternar el tema (ver useThemeTick más abajo).
+// Colores institucionales del lienzo claro para las gráficas Chart.js.
 function chartInk() {
-    const dark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
-    return dark
-        ? { grid: 'rgba(157, 176, 199, 0.15)', tick: '#9DB0C7', tooltip: 'rgba(4, 10, 22, 0.95)', donutBorder: '#161F33', centerText: '#CBD9EC' }
-        : { grid: 'rgba(15, 42, 74, 0.08)', tick: '#5A7FA8', tooltip: 'rgba(11, 58, 102, 0.94)', donutBorder: '#ffffff', centerText: '#0B3A66' };
+    return { grid: 'rgba(15, 42, 74, 0.08)', tick: '#5A7FA8', tooltip: 'rgba(11, 58, 102, 0.94)', donutBorder: '#ffffff', centerText: '#0B3A66' };
 }
 const GRID_COLOR = () => chartInk().grid;
 const TICK_COLOR = () => chartInk().tick;
@@ -100,9 +96,11 @@ const donutCenterText = {
     },
 };
 
-function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, className = '' }) {
+function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, detail, onDetail, className = '' }) {
+    const hasObservations = Boolean(detail?.observations?.length);
+
     return (
-        <div className={`stat-card stagger-enter bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden ${className}`}>
+        <div className={`stat-card stagger-enter bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden flex flex-col ${className}`}>
             <div className={`absolute top-0 left-0 right-0 h-1 ${barClass}`} />
             <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg ${iconClass}`}>
@@ -110,9 +108,119 @@ function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, 
                 </div>
                 <span className={`max-w-[8rem] truncate text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${badgeClass}`} title={badge}>{badge}</span>
             </div>
-            <div className="text-2xl sm:text-4xl font-bold text-navy leading-none mb-1">{value}</div>
-            <div className="text-xs sm:text-sm font-medium text-slate">{label}</div>
+            <div className="text-2xl sm:text-4xl font-bold text-navy leading-none mb-1 tabular-nums">{value}</div>
+            <div className="text-xs sm:text-sm font-medium text-slate flex-1">{label}</div>
+            {hasObservations && (
+                <button
+                    type="button"
+                    onClick={onDetail}
+                    className="mt-3 min-h-11 w-full inline-flex items-center justify-between gap-2 rounded-lg bg-amber-light px-3 py-2 text-xs sm:text-sm font-bold text-sun transition-colors hover:bg-amber/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber focus-visible:ring-offset-2"
+                    aria-label={`Ver detalle y observaciones de ${label}`}
+                >
+                    <span className="inline-flex items-center gap-2">
+                        <i className="fas fa-circle-exclamation" aria-hidden="true" />
+                        Ver detalle
+                    </span>
+                    <i className="fas fa-chevron-right text-[10px]" aria-hidden="true" />
+                </button>
+            )}
         </div>
+    );
+}
+
+const AUDIT_TITLES = {
+    socios: { title: 'Detalle de socias', label: 'Socias', icon: 'fa-users' },
+    beneficiarios: { title: 'Detalle de beneficiarios', label: 'Beneficiarios', icon: 'fa-user-check' },
+    clubes: { title: 'Detalle de clubes', label: 'Clubes', icon: 'fa-heart' },
+};
+
+function AuditValue({ label, value, emphasized = false }) {
+    return (
+        <div className="min-w-0 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate">{label}</div>
+            <div className={`mt-1 text-xl sm:text-2xl font-extrabold tabular-nums ${emphasized ? 'text-blue' : 'text-charcoal'}`}>
+                {Number(value || 0).toLocaleString('es-PE')}
+            </div>
+        </div>
+    );
+}
+
+function RosterAuditModal({ audit, metricKey, periodLabel, onClose }) {
+    const definition = AUDIT_TITLES[metricKey];
+    const metric = audit?.metrics?.[metricKey];
+    if (!definition || !metric) return null;
+
+    const dualRole = audit.dual_role || {};
+    const isPeopleMetric = metricKey === 'socios' || metricKey === 'beneficiarios';
+
+    return (
+        <DetailModal
+            open
+            onClose={onClose}
+            title={`${definition.title} · ${periodLabel}`}
+            icon={definition.icon}
+            maxWidth="sm:max-w-3xl"
+        >
+            <DetailGroup>
+                <div className={`rounded-xl px-4 py-3 border ${metric.verified ? 'bg-leaf-light border-leaf/20 text-leaf' : 'bg-sun-light border-amber/30 text-sun'}`}>
+                    <div className="flex items-start gap-3">
+                        <i className={`fas ${metric.verified ? 'fa-circle-check' : 'fa-triangle-exclamation'} mt-0.5`} aria-hidden="true" />
+                        <div>
+                            <p className="font-bold text-sm">{metric.verified ? 'Conteo verificado con la auditoría' : 'El conteo actual requiere revisión'}</p>
+                            <p className="mt-0.5 text-xs sm:text-sm leading-relaxed">
+                                El card muestra el total corregido. El número histórico no se elimina: permanece separado como evidencia del padrón original.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-5 divide-y sm:divide-y-0 sm:divide-x divide-mist">
+                    <AuditValue label="Excel original" value={metric.excel} />
+                    <div className="sm:pl-5"><AuditValue label="Relaciones en BD" value={metric.database} /></div>
+                    <div className="sm:pl-5"><AuditValue label="Total corregido" value={metric.corrected} emphasized /></div>
+                </div>
+
+                {metric.database !== metric.migrated && (
+                    <p className="text-xs sm:text-sm text-sun">
+                        La auditoría esperaba {Number(metric.migrated).toLocaleString('es-PE')} relaciones migradas; actualmente la BD devuelve {Number(metric.database).toLocaleString('es-PE')}.
+                    </p>
+                )}
+            </DetailGroup>
+
+            {isPeopleMetric && (
+                <DetailGroup title="Socias que también son beneficiarias" icon="fa-people-arrows-left-right">
+                    <p className="text-sm text-charcoal leading-relaxed">
+                        Estas personas cuentan una vez en <strong>Socias</strong> y también una vez en <strong>Beneficiarios</strong>, porque cumplen ambos roles. El cruce considera únicamente LAC, GES y DIS vigentes en el período.
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {['LAC', 'GES', 'DIS'].map((type) => (
+                            <div key={type} className="rounded-lg bg-blue-light px-3 py-2.5 text-center">
+                                <div className="text-lg font-extrabold text-blue tabular-nums">{Number(dualRole[type] || 0).toLocaleString('es-PE')}</div>
+                                <div className="text-[10px] font-bold uppercase tracking-wide text-slate">{type}</div>
+                            </div>
+                        ))}
+                        <div className="rounded-lg bg-teal-light px-3 py-2.5 text-center">
+                            <div className="text-lg font-extrabold text-teal tabular-nums">{Number(dualRole.total || 0).toLocaleString('es-PE')}</div>
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-slate">Total</div>
+                        </div>
+                    </div>
+                </DetailGroup>
+            )}
+
+            <DetailGroup title="Observaciones históricas" icon="fa-clipboard-list">
+                <ul className="space-y-2.5">
+                    {metric.observations.map((observation) => (
+                        <li key={observation} className="flex items-start gap-2.5 text-sm leading-relaxed text-charcoal">
+                            <i className="fas fa-circle-info mt-1 text-xs text-amber" aria-hidden="true" />
+                            <span>{observation}</span>
+                        </li>
+                    ))}
+                </ul>
+                <p className="pt-2 text-xs text-slate break-words">
+                    Fuente histórica: <span className="font-semibold text-charcoal">{audit.source}</span>
+                </p>
+            </DetailGroup>
+        </DetailModal>
     );
 }
 
@@ -167,18 +275,7 @@ function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
 export default function Inicio({ onNavigate }) {
     const [panel, setPanel] = useState(null);
     const [error, setError] = useState(false);
-
-    // Contador que cambia al alternar el tema. Sirve de dependencia para volver
-    // a montar las gráficas (Chart.js dibuja en <canvas> y no reacciona a CSS).
-    const [themeTick, setThemeTick] = useState(0);
-    useEffect(() => {
-        const onChange = () => {
-            applyChartDefaults();
-            setThemeTick((t) => t + 1);
-        };
-        window.addEventListener('mde:themechange', onChange);
-        return () => window.removeEventListener('mde:themechange', onChange);
-    }, []);
+    const [auditMetric, setAuditMetric] = useState(null);
 
     // Filtros independientes: cada gráfica tiene su propio año/periodo y solo
     // se redibuja la gráfica cuyo filtro cambió.
@@ -281,7 +378,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.pecosas?.destroy();
             charts.current.pecosas = null;
         };
-    }, [themeTick, panel && JSON.stringify(panel.pecosas_por_mes)]);
+    }, [panel && JSON.stringify(panel.pecosas_por_mes)]);
 
     useEffect(() => {
         if (!panel) return undefined;
@@ -337,7 +434,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.productos?.destroy();
             charts.current.productos = null;
         };
-    }, [themeTick, panel && JSON.stringify(panel.productos_distribuidos)]);
+    }, [panel && JSON.stringify(panel.productos_distribuidos)]);
 
     useEffect(() => {
         if (!panel) return undefined;
@@ -379,7 +476,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.donut?.destroy();
             charts.current.donut = null;
         };
-    }, [themeTick, panel && JSON.stringify(panel.socios_vs_beneficiarios)]);
+    }, [panel && JSON.stringify(panel.socios_vs_beneficiarios)]);
 
     useEffect(() => {
         if (!panel) return undefined;
@@ -425,7 +522,7 @@ export default function Inicio({ onNavigate }) {
             charts.current.topComites?.destroy();
             charts.current.topComites = null;
         };
-    }, [themeTick, panel && JSON.stringify(panel.top_comites)]);
+    }, [panel && JSON.stringify(panel.top_comites)]);
 
     if (error) {
         return (
@@ -512,8 +609,10 @@ export default function Inicio({ onNavigate }) {
                     barClass="bg-gradient-to-r from-blue to-sky"
                     badge={cardsPeriodLabel}
                     badgeClass="text-blue bg-blue-light"
-                    value={stats.total_socios}
-                    label="Socios vigentes"
+                    value={nfmt(stats.total_socios)}
+                    label="Socias únicas corregidas"
+                    detail={stats.roster_audit?.metrics?.socios}
+                    onDetail={() => setAuditMetric('socios')}
                 />
                 <StatCard
                     icon="fa-user-check"
@@ -521,8 +620,10 @@ export default function Inicio({ onNavigate }) {
                     barClass="bg-gradient-to-r from-sky to-[#7ec3e8]"
                     badge={cardsPeriodLabel}
                     badgeClass="text-sky bg-sky-light"
-                    value={stats.total_beneficiarios}
-                    label="Beneficiarios"
+                    value={nfmt(stats.total_beneficiarios)}
+                    label="Beneficiarios únicos corregidos"
+                    detail={stats.roster_audit?.metrics?.beneficiarios}
+                    onDetail={() => setAuditMetric('beneficiarios')}
                 />
                 <StatCard
                     icon="fa-heart"
@@ -530,8 +631,10 @@ export default function Inicio({ onNavigate }) {
                     barClass="bg-gradient-to-r from-amber to-[#f0c567]"
                     badge={`${stats.total_pecosas} PECOSAs`}
                     badgeClass="text-amber bg-amber-light"
-                    value={stats.total_comites}
-                    label="Clubes con socios"
+                    value={nfmt(stats.total_comites)}
+                    label="Clubes del padrón"
+                    detail={stats.roster_audit?.metrics?.clubes}
+                    onDetail={() => setAuditMetric('clubes')}
                 />
                 <StockCard products={stats.stock_productos} />
             </div>
@@ -670,6 +773,15 @@ export default function Inicio({ onNavigate }) {
                     </div>
                 </div>
             </div>
+
+            {auditMetric && stats.roster_audit && (
+                <RosterAuditModal
+                    audit={stats.roster_audit}
+                    metricKey={auditMetric}
+                    periodLabel={cardsPeriodLabel}
+                    onClose={() => setAuditMetric(null)}
+                />
+            )}
         </div>
     );
 }

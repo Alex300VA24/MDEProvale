@@ -10,6 +10,13 @@ class AssistantChatApiTest extends TestCase
 {
     private const ENDPOINT = '/api/asistente/chat';
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['services.ai.provider' => 'none']);
+    }
+
     public function test_guest_cannot_use_the_assistant(): void
     {
         $this->postJson(self::ENDPOINT, [
@@ -20,6 +27,7 @@ class AssistantChatApiTest extends TestCase
     public function test_it_sends_a_scoped_conversation_to_groq(): void
     {
         config([
+            'services.ai.provider' => 'groq',
             'services.groq.key' => 'test-key',
             'services.groq.model' => 'openai/gpt-oss-120b',
             'services.groq.url' => 'https://api.groq.test/openai/v1/chat/completions',
@@ -52,6 +60,51 @@ class AssistantChatApiTest extends TestCase
                 && $messages[0]['role'] === 'system'
                 && str_contains($messages[0]['content'], 'Solo responde consultas')
                 && $messages[1]['role'] === 'user';
+        });
+    }
+
+    public function test_it_sends_a_scoped_conversation_to_google(): void
+    {
+        config([
+            'services.ai.provider' => 'google',
+            'services.google_ai.key' => 'test-google-key',
+            'services.google_ai.model' => 'gemini-test',
+            'services.google_ai.url' => 'https://generativelanguage.test/v1beta/models',
+        ]);
+
+        Http::fake([
+            'generativelanguage.test/*' => Http::response([
+                'candidates' => [[
+                    'content' => [
+                        'parts' => [['text' => "Ayuda de Google:\n1. Abre Productos y Pecosas."]],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $user = User::factory()->make(['id' => 105]);
+
+        $this->actingAs($user)
+            ->postJson(self::ENDPOINT, [
+                'mensajes' => [
+                    ['role' => 'user', 'content' => 'Necesito ayuda'],
+                    ['role' => 'assistant', 'content' => '¿En qué módulo?'],
+                    ['role' => 'user', 'content' => 'En Productos y Pecosas'],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('respuesta', "Ayuda de Google:\n1. Abre Productos y Pecosas.");
+
+        Http::assertSent(function ($request) {
+            $contents = $request['contents'];
+
+            return $request->url() === 'https://generativelanguage.test/v1beta/models/gemini-test:generateContent'
+                && $request->hasHeader('x-goog-api-key', 'test-google-key')
+                && $request['generationConfig']['maxOutputTokens'] === 600
+                && str_contains($request['system_instruction']['parts'][0]['text'], 'Solo responde consultas')
+                && $contents[0]['role'] === 'user'
+                && $contents[1]['role'] === 'model'
+                && $contents[2]['role'] === 'user';
         });
     }
 
@@ -105,7 +158,7 @@ class AssistantChatApiTest extends TestCase
             ->assertJsonPath('respuesta', fn ($answer) => str_contains($answer, 'Más acciones'));
     }
 
-    public function test_it_returns_available_help_when_the_question_is_unknown_and_no_key_exists(): void
+    public function test_it_asks_for_clarification_when_the_question_is_unknown_and_no_provider_exists(): void
     {
         config(['services.groq.key' => null]);
         $user = User::factory()->make(['id' => 103]);
@@ -115,7 +168,23 @@ class AssistantChatApiTest extends TestCase
                 'mensajes' => [['role' => 'user', 'content' => 'Necesito ayuda']],
             ])
             ->assertOk()
-            ->assertJsonPath('respuesta', fn ($answer) => str_contains($answer, 'Puedo guiarte paso a paso'));
+            ->assertJsonPath('respuesta', fn ($answer) => str_contains($answer, '¿Quisiste decir'))
+            ->assertJsonCount(3, 'sugerencias')
+            ->assertJsonStructure([
+                'sugerencias' => [['label', 'prompt']],
+            ]);
+    }
+
+    public function test_it_understands_a_typo_in_a_common_navigation_question(): void
+    {
+        $user = User::factory()->make(['id' => 106]);
+
+        $this->actingAs($user)
+            ->postJson(self::ENDPOINT, [
+                'mensajes' => [['role' => 'user', 'content' => '¿Cómo registro una pecoza?']],
+            ])
+            ->assertOk()
+            ->assertJsonPath('respuesta', fn ($answer) => str_contains($answer, 'Nueva Pecosa'));
     }
 
     public function test_it_reports_the_remaining_quota_and_blocks_after_five_questions(): void
@@ -160,6 +229,19 @@ class AssistantChatApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('accion.tipo', 'reporte')
             ->assertJsonPath('accion.url', fn ($url) => str_contains($url, '/reportes/generar') && str_contains($url, 'entidades'));
+    }
+
+    public function test_a_vague_report_request_asks_the_user_to_choose_an_entity(): void
+    {
+        $user = User::factory()->make(['id' => 559]);
+
+        $this->actingAs($user)
+            ->postJson(self::ENDPOINT, [
+                'mensajes' => [['role' => 'user', 'content' => 'Quiero un reporte']],
+            ])
+            ->assertOk()
+            ->assertJsonPath('respuesta', fn ($answer) => str_contains($answer, '¿Quisiste decir'))
+            ->assertJsonCount(3, 'sugerencias');
     }
 
     public function test_a_multi_entity_report_request_is_answered_with_guidance(): void

@@ -1,7 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import LoadingScreen from '../Components/LoadingScreen';
-import ThemeToggle from '../Components/ThemeToggle';
 import http from '../http';
 import AsistentePROVALE from '../Components/AsistentePROVALE';
 
@@ -12,7 +11,6 @@ const ProductosPecosas = lazy(() => import('../Sections/ProductosPecosas'));
 const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos'));
 const Movimientos = lazy(() => import('../Sections/Movimientos'));
 const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
-const ConsultasIA = lazy(() => import('../Sections/ConsultasIA'));
 const Sistema = lazy(() => import('../Sections/Sistema'));
 const Ayuda = lazy(() => import('../Sections/Ayuda'));
 
@@ -23,7 +21,6 @@ const SECTION_COMPONENTS = {
     comites: ClubReconocimientos,
     movimientos: Movimientos,
     'responsables-raciones': ResponsablesRaciones,
-    reportes: ConsultasIA,
     sistema: Sistema,
     ayuda: Ayuda,
 };
@@ -36,7 +33,7 @@ const NAV_ITEMS = [
     { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
-    { key: 'reportes', label: 'Consultas IA', icon: 'fa-robot', modules: ['reportes'] },
+    { key: 'asistente', label: 'Asistente PROVALE', icon: 'fa-comments', modules: ['reportes'], action: 'assistant' },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];
@@ -47,6 +44,10 @@ function getSectionFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const section = params.get('section');
     return SECTION_COMPONENTS[section] || section?.startsWith('module:') ? section : 'inicio';
+}
+
+function shouldOpenAssistantFromUrl() {
+    return new URLSearchParams(window.location.search).get('section') === 'reportes';
 }
 
 function DynamicModule({ module }) {
@@ -108,6 +109,7 @@ export default function Dashboard() {
     ];
 
     const [activeSection, setActiveSection] = useState(getSectionFromUrl);
+    const [assistantOpen, setAssistantOpen] = useState(shouldOpenAssistantFromUrl);
     const [panelLoading, setPanelLoading] = useState(true);
     const [navigationIntent, setNavigationIntent] = useState(null);
     const [sidebarExpanded, setSidebarExpanded] = useState(
@@ -145,6 +147,17 @@ export default function Dashboard() {
         window.history.pushState({ section: key }, '', url.pathname + url.search);
     };
 
+    const selectNavigationItem = (item) => {
+        if (window.innerWidth <= 768) setMobileOpen(false);
+
+        if (item.action === 'assistant') {
+            setAssistantOpen(true);
+            return;
+        }
+
+        navigate(item.key);
+    };
+
     const hidePanelLoading = useCallback(() => setPanelLoading(false), []);
 
     // Botón "atrás" del navegador también cambia de sección.
@@ -156,6 +169,15 @@ export default function Dashboard() {
         };
         window.addEventListener('popstate', onPop);
         return () => window.removeEventListener('popstate', onPop);
+    }, []);
+
+    // Los enlaces antiguos a ?section=reportes ahora abren el chatbot sin
+    // mantener una sección duplicada en el historial del navegador.
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('section') !== 'reportes') return;
+        url.searchParams.delete('section');
+        window.history.replaceState({ section: 'inicio' }, '', url.pathname + url.search);
     }, []);
 
     useEffect(() => {
@@ -244,16 +266,22 @@ export default function Dashboard() {
 
                     <nav id="sidebar-navigation" className="px-3 py-4 overflow-y-auto overflow-x-hidden flex flex-col scrollbar-thin" style={{ height: 'calc(100% - 88px)' }}>
                         <div className="flex-1">
-                            {navItems.map((item) => (
+                            {navItems.map((item) => {
+                                const selected = item.action === 'assistant'
+                                    ? assistantOpen
+                                    : activeSection === item.key;
+
+                                return (
                                 <button
                                     key={item.key}
                                     type="button"
-                                    onClick={() => navigate(item.key)}
+                                    onClick={() => selectNavigationItem(item)}
                                     title={!sidebarExpanded ? item.label : undefined}
                                     aria-label={item.label}
-                                    aria-current={activeSection === item.key ? 'page' : undefined}
+                                    aria-current={item.action !== 'assistant' && selected ? 'page' : undefined}
+                                    aria-expanded={item.action === 'assistant' ? assistantOpen : undefined}
                                     className={`nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all w-full text-left ${
-                                        activeSection === item.key
+                                        selected
                                             ? 'active bg-white/10 text-white'
                                             : 'text-white/70 hover:text-white hover:bg-white/10'
                                     }`}
@@ -261,7 +289,8 @@ export default function Dashboard() {
                                     <i className={`fas ${item.icon} w-5 text-center text-lg flex-shrink-0`} />
                                     <span className="nav-text text-[14px]">{item.label}</span>
                                 </button>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         <div className="pt-4 border-t border-white/10">
@@ -322,8 +351,6 @@ export default function Dashboard() {
                         </div>
 
                         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                            <ThemeToggle className="w-10 h-10 sm:w-11 sm:h-11" />
-
                             <button
                                 type="button"
                                 onClick={openNotifications}
@@ -383,7 +410,7 @@ export default function Dashboard() {
 
             {panelLoading && <LoadingScreen subtitle="Cargando panel..." />}
 
-            <AsistentePROVALE />
+            <AsistentePROVALE open={assistantOpen} onOpenChange={setAssistantOpen} />
 
             {notifOpen && (
                 <div

@@ -4,8 +4,8 @@ namespace App\Repositories;
 
 use App\Models\Partner;
 use App\Models\DetailProduct;
-use App\Models\State;
 use App\Repositories\Contracts\PartnerRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -33,42 +33,54 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             ->paginate($perPage);
     }
 
-    /**
-     * `date_begin`/`date_end` no están poblados en la data migrada (el sistema de
-     * origen solo trackea vigencia por `state_id`, no por rango de fechas), así que
-     * un socio sin fechas se considera vigente en cualquier periodo, igual que en
-     * countBeneficiariesForAssociationAtDate().
-     */
-    public function findActiveByAssociation(int $associationId, string $date): Collection
+    public function findActiveByAssociation(int $associationId, string $startDate, string $endDate): Collection
     {
+        $period = Carbon::parse($startDate)->startOfMonth()->toDateString();
+
         return $this->model
             ->where('association_id', $associationId)
-            ->where(function ($q) use ($date) {
-                $q->whereNull('date_begin')->orWhere('date_begin', '<=', $date);
+            ->where(function ($query) use ($period, $startDate, $endDate) {
+                $query->whereHas('rosterPeriods', fn ($periods) => $periods->whereDate('period', $period))
+                    ->orWhere(function ($legacy) use ($startDate, $endDate) {
+                        $legacy->whereDoesntHave('rosterPeriods')
+                            ->where(function ($dates) use ($endDate) {
+                                $dates->whereNull('date_begin')->orWhere('date_begin', '<=', $endDate);
+                            })
+                            ->where(function ($dates) use ($startDate) {
+                                $dates->whereNull('date_end')->orWhere('date_end', '>=', $startDate);
+                            });
+                    });
             })
-            ->where(function ($q) use ($date) {
-                $q->whereNull('date_end')->orWhere('date_end', '>=', $date);
-            })
-            ->with(['people', 'beneficiaries.person', 'beneficiaries.relationship', 'beneficiaries.histories.typeBenefit', 'beneficiaries.histories.reasonDisqualification'])
+            ->with([
+                'people',
+                'beneficiaries.person',
+                'beneficiaries.relationship',
+                'beneficiaries.histories.typeBenefit',
+                'beneficiaries.histories.relationship',
+                'beneficiaries.histories.reasonDisqualification',
+            ])
             ->get();
     }
 
     public function countBeneficiariesForAssociationAtDate(int $associationId, string $date): int
     {
-        $activeStateIds = State::where('abbreviation', State::CURRENT)
-            ->orWhereRaw('LOWER(title) = ?', ['activo'])
-            ->pluck('id');
+        $period = Carbon::parse($date)->startOfMonth()->toDateString();
 
         return $this->model
             ->where('association_id', $associationId)
-            ->when($activeStateIds->isNotEmpty(), fn($q) => $q->whereIn('state_id', $activeStateIds))
-            ->where(fn($q) => $q->whereNull('date_begin')->orWhere('date_begin', '<=', $date))
-            ->where(fn($q) => $q->whereNull('date_end')->orWhere('date_end', '>=', $date))
-            ->withCount(['beneficiaries as historical_count' => function ($q) use ($activeStateIds, $date) {
-                $q->where(fn($q) => $q->whereDoesntHave('histories')->orWhereHas('histories', function ($h) use ($activeStateIds, $date) {
-                    $h->when($activeStateIds->isNotEmpty(), fn($q) => $q->whereIn('state_id', $activeStateIds))
-                      ->where(fn($q) => $q->whereNull('date_begin')->orWhere('date_begin', '<=', $date))
-                      ->where(fn($q) => $q->whereNull('date_end')->orWhere('date_end', '>=', $date));
+            ->where(function ($query) use ($period, $date) {
+                $query->whereHas('rosterPeriods', fn ($periods) => $periods->whereDate('period', $period))
+                    ->orWhere(function ($legacy) use ($date) {
+                        $legacy->whereDoesntHave('rosterPeriods')
+                            ->where(fn ($dates) => $dates->whereNull('date_begin')->orWhere('date_begin', '<=', $date))
+                            ->where(fn ($dates) => $dates->whereNull('date_end')->orWhere('date_end', '>=', $date));
+                    });
+            })
+            ->withCount(['beneficiaries as historical_count' => function ($query) use ($date) {
+                $query->where(fn ($beneficiaries) => $beneficiaries->whereDoesntHave('histories')
+                    ->orWhereHas('histories', function ($histories) use ($date) {
+                        $histories->where(fn ($dates) => $dates->whereNull('date_begin')->orWhere('date_begin', '<=', $date))
+                            ->where(fn ($dates) => $dates->whereNull('date_end')->orWhere('date_end', '>=', $date));
                 }));
             }])
             ->get()

@@ -51,14 +51,14 @@ class ReparticionService
                         });
                     });
             }
-        ])->get()->map(function ($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth) {
+        ])->get()->map(function ($association) use ($racionLecheMl, $racionHojuelasGr, $daysInMonth, $endDate) {
             $totalBeneficiaries = 0;
 
             foreach ($association->partners as $partner) {
                 $totalBeneficiaries += $partner->beneficiaries->count();
             }
 
-            $presidenta = $association->getPresidentName() ?? '';
+            $presidenta = $association->getPresidentNameAt($endDate) ?? '';
 
             $lecheTarros = round(($totalBeneficiaries * $daysInMonth * $racionLecheMl) / 410);
             $lecheCajas = intdiv((int) $lecheTarros, 48);

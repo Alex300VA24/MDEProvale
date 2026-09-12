@@ -18,6 +18,7 @@ class BeneficiaryHistory extends Model
         'date_begin',
         'date_end',
         'type_benefit_id',
+        'relationship_id',
         'beneficiary_id',
         'state_id',
         'reason_disqualification_id',
@@ -41,6 +42,11 @@ class BeneficiaryHistory extends Model
     public function typeBenefit()
     {
         return $this->belongsTo(TypeBenefit::class);
+    }
+
+    public function relationship()
+    {
+        return $this->belongsTo(Relationship::class);
     }
 
     public function obstetricData()

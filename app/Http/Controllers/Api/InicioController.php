@@ -51,9 +51,39 @@ class InicioController extends Controller
             ->whereDate('date_begin', '<=', $cardEnd)
             ->where(fn ($query) => $query->whereNull('date_end')->orWhereDate('date_end', '>=', $cardStart));
 
-        $totalSocios = (clone $activePartners)->count();
-        $totalBeneficiarios = Beneficiarie::activeDuring($cardStart, $cardEnd)->count();
-        $totalComites = Association::count();
+        $hasRosterSnapshot = DB::table('partner_roster_periods')
+            ->whereDate('period', $cardStart)
+            ->exists();
+
+        if ($hasRosterSnapshot) {
+            $partnersInRoster = DB::table('partner_roster_periods as roster')
+                ->join('partners', 'partners.id', '=', 'roster.partner_id')
+                ->whereDate('roster.period', $cardStart);
+
+            $totalSociosRelaciones = (clone $partnersInRoster)->count();
+            $totalSocios = (clone $partnersInRoster)->distinct()->count('partners.person_id');
+        } else {
+            $totalSociosRelaciones = (clone $activePartners)->count();
+            $totalSocios = (clone $activePartners)->distinct()->count('person_id');
+        }
+
+        $activeBeneficiaries = Beneficiarie::activeDuring($cardStart, $cardEnd);
+        $totalBeneficiariosRelaciones = (clone $activeBeneficiaries)->count();
+        $totalBeneficiarios = (clone $activeBeneficiaries)->distinct()->count('person_id');
+
+        $hasAssociationSnapshot = DB::table('association_roster_periods')
+            ->whereDate('period', $cardStart)
+            ->exists();
+        $totalComites = $hasAssociationSnapshot
+            ? DB::table('association_roster_periods')->whereDate('period', $cardStart)->distinct()->count('association_id')
+            : Association::count();
+
+        $dualRole = $this->dualRoleBreakdown($cardStart, $cardEnd, $hasRosterSnapshot);
+        $rosterAudit = $this->rosterAudit($periodYear, $periodMonth, [
+            'socios' => ['relations' => $totalSociosRelaciones, 'corrected' => $totalSocios],
+            'beneficiarios' => ['relations' => $totalBeneficiariosRelaciones, 'corrected' => $totalBeneficiarios],
+            'clubes' => ['relations' => $totalComites, 'corrected' => $totalComites],
+        ], $dualRole);
         [$pecosaStart, $pecosaEnd] = Pecosa::deliveryPeriodRange($periodYear, $periodMonth);
         $totalPecosasPeriodo = Pecosa::whereBetween('delivery_date', [
             $pecosaStart->toDateString(), $pecosaEnd->toDateString(),
@@ -177,22 +207,33 @@ class InicioController extends Controller
         // beneficiary_histories (la tabla beneficiaries no tiene fecha propia).
         [$periodoInicio, $periodoFin] = $this->sociosPeriodo($sociosYear, $sociosMonth);
 
-        $sociosVigentes = DB::table('partners')
-            ->whereDate('date_begin', '<=', $periodoFin)
-            ->where(function ($query) use ($periodoInicio) {
-                $query->whereNull('date_end')
-                    ->orWhereDate('date_end', '>=', $periodoInicio);
-            })
-            ->count();
+        $hasComparisonSnapshot = $sociosMonth > 0
+            && DB::table('partner_roster_periods')->whereDate('period', $periodoInicio)->exists();
+
+        $sociosVigentes = $hasComparisonSnapshot
+            ? DB::table('partner_roster_periods as roster')
+                ->join('partners', 'partners.id', '=', 'roster.partner_id')
+                ->whereDate('roster.period', $periodoInicio)
+                ->distinct()
+                ->count('partners.person_id')
+            : DB::table('partners')
+                ->whereDate('date_begin', '<=', $periodoFin)
+                ->where(function ($query) use ($periodoInicio) {
+                    $query->whereNull('date_end')
+                        ->orWhereDate('date_end', '>=', $periodoInicio);
+                })
+                ->distinct()
+                ->count('person_id');
 
         $beneficiariosVigentes = DB::table('beneficiary_histories')
-            ->whereDate('date_begin', '<=', $periodoFin)
+            ->join('beneficiaries', 'beneficiaries.id', '=', 'beneficiary_histories.beneficiary_id')
+            ->whereDate('beneficiary_histories.date_begin', '<=', $periodoFin)
             ->where(function ($query) use ($periodoInicio) {
-                $query->whereNull('date_end')
-                    ->orWhereDate('date_end', '>=', $periodoInicio);
+                $query->whereNull('beneficiary_histories.date_end')
+                    ->orWhereDate('beneficiary_histories.date_end', '>=', $periodoInicio);
             })
             ->distinct()
-            ->count('beneficiary_id');
+            ->count('beneficiaries.person_id');
 
         // Top comités con más beneficiarios
         $topComites = Association::selectRaw('associations.name as club, COUNT(DISTINCT beneficiaries.id) as total')
@@ -220,6 +261,8 @@ class InicioController extends Controller
                 'total_comites' => $totalComites,
                 'total_pecosas' => $totalPecosasPeriodo,
                 'period' => ['year' => $periodYear, 'month' => $periodMonth],
+                'roster_audit' => $rosterAudit,
+                'dual_role' => $dualRole,
                 'stock_total' => $stockTotal,
                 'stock_productos' => $stockProductos,
             ],
@@ -292,5 +335,84 @@ class InicioController extends Controller
         $latest = $dates->sortByDesc(fn ($date) => $date->format('Y-m'))->first() ?? now();
 
         return [$latest->year, $latest->month];
+    }
+
+    /**
+     * Personas que, en el mismo período, figuran como socias y como
+     * beneficiarias LAC, GES o DIS. Se cuentan en ambos totales porque son dos
+     * roles distintos, pero una sola vez dentro de cada total corregido.
+     *
+     * @return array{LAC: int, GES: int, DIS: int, total: int}
+     */
+    private function dualRoleBreakdown(string $startDate, string $endDate, bool $useRosterSnapshot): array
+    {
+        $query = DB::table('partners')
+            ->join('people as partner_people', 'partner_people.id', '=', 'partners.person_id')
+            ->join('beneficiaries', 'beneficiaries.person_id', '=', 'partner_people.id')
+            ->join('beneficiary_histories', 'beneficiary_histories.beneficiary_id', '=', 'beneficiaries.id')
+            ->join('type_benefits', 'type_benefits.id', '=', 'beneficiary_histories.type_benefit_id')
+            ->whereIn('type_benefits.abbreviation', ['LAC', 'GES', 'DIS'])
+            ->whereDate('beneficiary_histories.date_begin', '<=', $endDate)
+            ->where(function ($history) use ($startDate) {
+                $history->whereNull('beneficiary_histories.date_end')
+                    ->orWhereDate('beneficiary_histories.date_end', '>=', $startDate);
+            });
+
+        if ($useRosterSnapshot) {
+            $query->join('partner_roster_periods', 'partner_roster_periods.partner_id', '=', 'partners.id')
+                ->whereDate('partner_roster_periods.period', $startDate);
+        } else {
+            $query->whereDate('partners.date_begin', '<=', $endDate)
+                ->where(function ($partners) use ($startDate) {
+                    $partners->whereNull('partners.date_end')
+                        ->orWhereDate('partners.date_end', '>=', $startDate);
+                });
+        }
+
+        $byType = (clone $query)
+            ->selectRaw('type_benefits.abbreviation, COUNT(DISTINCT partner_people.id) as total')
+            ->groupBy('type_benefits.abbreviation')
+            ->pluck('total', 'type_benefits.abbreviation');
+
+        return [
+            'LAC' => (int) ($byType['LAC'] ?? 0),
+            'GES' => (int) ($byType['GES'] ?? 0),
+            'DIS' => (int) ($byType['DIS'] ?? 0),
+            'total' => (int) (clone $query)->distinct()->count('partner_people.id'),
+        ];
+    }
+
+    /**
+     * Adjunta la fuente y las observaciones inmutables de los padrones
+     * históricos. Los valores actuales se calculan desde la BD y se comparan
+     * con la auditoría para no ocultar futuras diferencias.
+     */
+    private function rosterAudit(int $year, int $month, array $current, array $dualRole): ?array
+    {
+        $period = sprintf('%04d-%02d', $year, $month);
+        $audit = config("roster_audits.{$period}");
+
+        if (!$audit) {
+            return null;
+        }
+
+        foreach ($audit['metrics'] as $key => &$metric) {
+            $expectedCorrected = $metric['corrected'];
+            $metric['corrected_expected'] = $expectedCorrected;
+            $metric['database'] = (int) $current[$key]['relations'];
+            $metric['corrected'] = (int) $current[$key]['corrected'];
+            $metric['verified'] = $metric['database'] === (int) $metric['migrated']
+                && $metric['corrected'] === (int) $expectedCorrected;
+        }
+        unset($metric);
+
+        $expectedDualRole = $audit['dual_role'];
+        $audit['dual_role'] = $dualRole + [
+            'expected' => $expectedDualRole,
+            'verified' => $dualRole === $expectedDualRole,
+        ];
+        $audit['period'] = $period;
+
+        return $audit;
     }
 }

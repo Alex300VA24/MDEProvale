@@ -75,15 +75,16 @@ const MODULE_DOCS = {
         ],
     },
     reportes: {
-        title: 'Consultas IA',
-        icon: 'fa-robot',
-        summary: 'Haz preguntas puntuales sobre datos del programa (comités, presidentas, beneficiarios, pecosas) y genera reportes cuando lo pidas de forma explícita.',
+        title: 'Asistente PROVALE',
+        icon: 'fa-comments',
+        summary: 'Abre el chatbot para consultar datos del programa con lenguaje natural y generar reportes cuando lo pidas de forma explícita.',
         steps: [
             'Escribe tu pregunta en el campo inferior. Las consultas frecuentes solo rellenan ese campo para que la completes antes de enviar.',
             'Para un reporte pide: crea un reporte de beneficiarios del comité (nombre); luego pulsa Ver reporte para abrirlo en una pestaña nueva y guardarlo en PDF.',
             'Si la solicitud es compleja, el asistente primero te explica por qué no puede resolverla al instante y te hace preguntas para acotarla.',
-            'El número de consultas por ventana de horas lo define el administrador en Sistema > Asistente IA; el contador y la hora de reinicio se muestran en la cabecera.',
-            'El historial no se guarda: al cambiar de sección o volver a iniciar sesión empiezas desde cero.',
+            'Si tu pregunta es ambigua, el asistente te mostrará interpretaciones posibles para que confirmes una antes de responder.',
+            'El número de consultas por ventana de horas lo define el administrador en Sistema > Asistente IA; el contador y la hora de reinicio se muestran en el chatbot.',
+            'La conversación conserva el contexto mientras mantengas abierto el dashboard; al recargar o volver a iniciar sesión empieza desde cero.',
         ],
     },
     sistema: {

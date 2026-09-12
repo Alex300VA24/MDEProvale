@@ -11,12 +11,6 @@
     --surface-radius: 8px;
 }
 
-/* Icono de tema en SVG (la fuente FontAwesome de este proyecto es un
-   subconjunto sin fa-moon/fa-sun). Hereda currentColor del .theme-fab. */
-.theme-fab .i-sun { display: none; }
-.dark .theme-fab .i-moon { display: none; }
-.dark .theme-fab .i-sun { display: inline; }
-
 body.portal-login,
 body.portal-password,
 body.portal-dashboard {
@@ -311,7 +305,6 @@ body.portal-password {
         grid-column: 1 / -1;
     }
 }
-
 @media (prefers-reduced-motion: reduce) {
     .portal-login *,
     .portal-password *,
@@ -321,31 +314,3 @@ body.portal-password {
         transition-duration: 0.001ms !important;
     }
 }
-
-/* ==================== Modo oscuro (opt-in, clase `.dark` en <html>) ====================
-   Reescribe las variables del portal y las superficies con hex fijo. El modo
-   claro no se altera. */
-.dark {
-    --portal-surface: #161f33;
-    --portal-canvas: #0e1526;
-    --portal-line: #2c3a56;
-    --portal-text: #e6ebf3;
-    --portal-muted: #9db0c7;
-}
-.dark body.portal-login,
-.dark body.portal-password,
-.dark body.portal-dashboard { background-color: var(--portal-canvas); color: var(--portal-text); }
-.dark .portal-login .login-card,
-.dark .portal-password .card,
-.dark .card { background: rgba(22, 31, 51, 0.98); border-color: rgba(44, 58, 86, 0.9); }
-.dark .topbar,
-.dark .portal-topbar { background: rgba(14, 21, 38, 0.92); }
-.dark .stat-icon { background: #1f2a42; color: var(--portal-text); }
-.dark .portal-app tbody tr:hover,
-.dark tbody tr:hover { background: #1f2a42; }
-.dark .status-ready  { color: #86D89A; background: #14311F; box-shadow: inset 0 0 0 1px #2E6B45; }
-.dark .status-pending{ color: #E4A579; background: #33220F; box-shadow: inset 0 0 0 1px #6B4A2C; }
-.dark .status-expired{ color: #EE8A93; background: #331A1D; box-shadow: inset 0 0 0 1px #6B3238; }
-.dark .committee-card,
-.dark .portal-navbar { background: #0f3f6e; }
-.dark .committee-card .eyebrow { color: #A7F3D0; }

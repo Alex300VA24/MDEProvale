@@ -108,7 +108,9 @@ export default function Combobox({
         if (isSearchMode) return;
 
         const q = query.trim().toLowerCase();
-        setResults(q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options);
+        setResults(q
+            ? options.filter((o) => [o.label, o.badge].filter(Boolean).join(' ').toLowerCase().includes(q))
+            : options);
         setLoading(false);
     }, [query, options, minQuery, isSearchMode]);
 
@@ -117,7 +119,9 @@ export default function Combobox({
         return options.find((o) => String(o.id) === String(value)) || null;
     }, [value, options]);
 
-    const display = selectedLabel || selected?.label || '';
+    const display = selectedLabel || (selected
+        ? [selected.label, selected.badge].filter(Boolean).join(' — ')
+        : '');
     const inputValue = open && query !== '' ? query : display;
 
     const handleSelect = (opt) => {
@@ -226,9 +230,12 @@ export default function Combobox({
                                 key={o.id}
                                 onClick={() => handleSelect(o)}
                                 onMouseEnter={() => setHighlight(i)}
-                                className={`block w-full text-left px-4 py-2 text-sm text-charcoal whitespace-normal break-words ${i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
+                                className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm text-charcoal ${i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
                             >
-                                {o.label}
+                                <span className="min-w-0 flex-1 whitespace-normal break-words">{o.label}</span>
+                                {o.badge && (
+                                    <span className="badge badge-expired shrink-0">{o.badge}</span>
+                                )}
                             </button>
                         ))
                     )}

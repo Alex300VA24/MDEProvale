@@ -3,15 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\AssistantAiService;
 use App\Services\AssistantDataService;
 use App\Services\AssistantGuidanceService;
 use App\Services\AssistantReportService;
 use App\Services\AssistantSettingsService;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +29,9 @@ Reglas obligatorias:
   | --- | --- |
   | valor | valor |
 - Solo responde consultas sobre navegación y uso de PROVALE. Para cualquier otro tema, indica amablemente que solo puedes ayudar con el uso del sistema.
-- Si la solicitud es ambigua o le falta un dato clave (comité, periodo, tipo de dato), primero haz UNA sola pregunta breve para aclararla. No inventes la respuesta.
+- Si la solicitud es ambigua, tiene errores que impiden inferir la intención o le falta un dato clave (comité, periodo, tipo de dato), no respondas todavía la consulta. Pregunta "¿Quisiste decir...?" y ofrece de dos a tres interpretaciones concretas y breves para que el usuario elija.
+- Usa todos los mensajes anteriores para conservar el contexto. Interpreta respuestas breves como "el 375", "ese comité" o "sí" según la pregunta anterior.
+- Si ya hiciste una pregunta aclaratoria, trata el siguiente mensaje como su respuesta. No reinicies la conversación ni devuelvas una lista genérica de ayuda.
 - No inventes botones, rutas, menús, datos ni funciones. Si no tienes certeza, dilo y recomienda el Centro de Ayuda o al administrador.
 - Da instrucciones paso a paso solo cuando la tarea sea realmente compleja o no se pueda resolver de forma directa; antes explica en una frase por qué no puedes resolverla al instante.
 - No existe ninguna pantalla, módulo ni menú para armar reportes a mano. Los reportes solo los produce este asistente cuando el usuario los pide de forma explícita, por ejemplo: "crea un reporte de pecosas de este mes". Nunca describas pasos del tipo "entra al módulo X y pulsa Generar reporte" ni menciones opciones como "Consultar Pecosas" o menús de exportación: no existen.
@@ -46,13 +46,14 @@ Flujos conocidos del sistema:
 - Comités y Reconocimientos: registrar comité, asignar presidenta, consultar padrón y gestionar resoluciones de reconocimiento.
 - Movimientos: Kardex registra ingresos y salidas. Repartición permite elegir año y mes, calcular la distribución con la ración vigente y descargar el PDF.
 - Responsables y Raciones: configurar responsables activos y la ración anual de hojuelas en gramos y leche en mililitros por beneficiario.
-- Consultas IA: hacer preguntas puntuales sobre datos del programa y, cuando se pide de forma explícita, generar un reporte para abrirlo en una pestaña nueva.
+- Asistente PROVALE: hacer preguntas puntuales sobre datos del programa y, cuando se pide de forma explícita, generar un reporte para abrirlo en una pestaña nueva.
 - Sistema: usuarios, roles, permisos, módulos y notificaciones son opciones administrativas y dependen del acceso del rol.
 - Si una opción no aparece, el usuario debe verificar sus permisos con el administrador.
 PROMPT;
 
     public function __invoke(
         Request $request,
+        AssistantAiService $ai,
         AssistantGuidanceService $guidance,
         AssistantDataService $datos,
         AssistantReportService $reportes,
@@ -93,11 +94,17 @@ PROMPT;
         // 1) Solicitud explícita de reporte.
         $reporte = $reportes->detect($pregunta);
         if ($reporte) {
-            return $this->responder($key, $maxConsultas, $reporte['respuesta'], $reporte['accion'] ?? null);
+            return $this->responder(
+                $key,
+                $maxConsultas,
+                $reporte['respuesta'],
+                $reporte['accion'] ?? null,
+                $reporte['sugerencias'] ?? null
+            );
         }
 
         // 2) Consulta puntual de datos (respuesta determinista, sin modelo).
-        $dato = $datos->resolve($pregunta);
+        $dato = $datos->resolveConversation($messages);
         if ($dato !== null) {
             return $this->responder($key, $maxConsultas, $dato);
         }
@@ -107,57 +114,47 @@ PROMPT;
         // así no inventa módulos ni menús de exportación inexistentes.
         $normalizada = Str::lower(Str::ascii($pregunta));
         if (preg_match('/\b(reporte|reportes|informe|informes|exporta|exportar|exportame)\b/', $normalizada)) {
-            return $this->responder($key, $maxConsultas, $guidance->answer($pregunta) ?? $guidance->overview());
+            $clarification = $guidance->clarification($pregunta);
+
+            return $this->responder(
+                $key,
+                $maxConsultas,
+                $clarification['respuesta'],
+                null,
+                $clarification['sugerencias']
+            );
         }
 
         // 3) Guía de navegación local y, si hay clave, redacción con el modelo.
         $localAnswer = $guidance->answer($pregunta);
-        $apiKey = (string) config('services.groq.key');
-
-        if ($apiKey === '') {
-            return $this->responder($key, $maxConsultas, $localAnswer ?? $guidance->overview());
-        }
-
-        try {
-            $response = Http::acceptJson()
-                ->asJson()
-                ->withToken($apiKey)
-                ->connectTimeout(5)
-                ->timeout(25)
-                ->post(config('services.groq.url'), [
-                    'model' => config('services.groq.model'),
-                    'messages' => array_merge([
-                        ['role' => 'system', 'content' => self::SYSTEM_PROMPT],
-                    ], $messages),
-                    'temperature' => 0.2,
-                    'max_completion_tokens' => 600,
-                ]);
-        } catch (ConnectionException $exception) {
-            Log::warning('No se pudo conectar con el proveedor del asistente.', [
-                'exception' => $exception::class,
-            ]);
-
-            return $this->responder($key, $maxConsultas, $localAnswer ?? $guidance->overview());
-        }
-
-        if ($response->failed()) {
-            Log::warning('El proveedor del asistente rechazó la solicitud.', [
-                'status' => $response->status(),
-            ]);
-
-            return $this->responder($key, $maxConsultas, $localAnswer ?? $guidance->overview());
-        }
-
-        $answer = $this->sanear(trim((string) $response->json('choices.0.message.content')));
+        $answer = $this->sanear($ai->generate($messages, self::SYSTEM_PROMPT) ?? '');
 
         if ($answer === '') {
-            return $this->responder($key, $maxConsultas, $localAnswer ?? $guidance->overview());
+            if ($localAnswer !== null) {
+                return $this->responder($key, $maxConsultas, $localAnswer);
+            }
+
+            $clarification = $guidance->clarification($pregunta);
+
+            return $this->responder(
+                $key,
+                $maxConsultas,
+                $clarification['respuesta'],
+                null,
+                $clarification['sugerencias']
+            );
         }
 
         return $this->responder($key, $maxConsultas, $answer);
     }
 
-    private function responder(string $key, int $maxConsultas, string $respuesta, ?array $accion = null): JsonResponse
+    private function responder(
+        string $key,
+        int $maxConsultas,
+        string $respuesta,
+        ?array $accion = null,
+        ?array $sugerencias = null
+    ): JsonResponse
     {
         $payload = [
             'respuesta' => $respuesta,
@@ -166,6 +163,10 @@ PROMPT;
 
         if ($accion) {
             $payload['accion'] = $accion;
+        }
+
+        if ($sugerencias) {
+            $payload['sugerencias'] = $sugerencias;
         }
 
         return response()->json($payload);

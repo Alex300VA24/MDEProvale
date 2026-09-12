@@ -8,6 +8,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 interface PartnerRepositoryInterface
 {
     public function searchWithFilters(array $filters, int $perPage = 10): LengthAwarePaginator;
-    public function findActiveByAssociation(int $associationId, string $date): Collection;
+    public function findActiveByAssociation(int $associationId, string $startDate, string $endDate): Collection;
     public function countBeneficiariesForAssociationAtDate(int $associationId, string $date): int;
 }

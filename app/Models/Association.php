@@ -56,6 +56,11 @@ class Association extends Model
         return $this->hasMany(Partner::class);
     }
 
+    public function rosterPeriods()
+    {
+        return $this->hasMany(AssociationRosterPeriod::class);
+    }
+
     public function pecosas()
     {
         return $this->hasMany(Pecosa::class);
