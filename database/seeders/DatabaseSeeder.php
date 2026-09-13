@@ -10,8 +10,8 @@ class DatabaseSeeder extends Seeder
     {
         // 1. Catalogos
         $this->call(StateSeeder::class);
-        $this->call(RolSeeder::class);
         $this->call(ModuleSeeder::class);
+        $this->call(RolSeeder::class);
         $this->call(ReasonDisqualificationSeeder::class);
         $this->call(PositionSeeder::class);
         $this->call(SectorSeeder::class);
@@ -53,14 +53,21 @@ class DatabaseSeeder extends Seeder
         // 7. Usuarios presidentas (depende de directivas + estados)
         $this->call(PresidentUserSeeder::class);
 
-        // 8. Productos y movimientos (filtrado >= 2026-02)
+        // 8. Productos y PECOSAs del corte vigente de SQL Server.
+        // PRODUCTO.PRO_fecha_reg >= 2026-03-04
+        // DETALLE_PECOSA.PEC_id >= 23729
+        // PECOSA.PEC_fecha >= 2026-02-26
+        // KARDEX.KAR_id >= 20168
         $this->call(ProductSeeder::class);
         $this->call(DetailProductSeeder::class);
         $this->call(RacionesSeeder::class);
         $this->call(PecosaSeeder::class);
-        $this->call(PecosaResponsableSeeder::class);
+        $this->call(DetailPecosaSeeder::class);
         $this->call(TransactionSeeder::class);
         $this->call(ProductStockSeeder::class);
-        $this->call(DetailPecosaSeeder::class);
+
+        // 9. Cierre de mes: agosto 2026 como último período cerrado. Septiembre
+        // (mes en curso) queda sin cierre y sus avisos no se muestran en Inicio.
+        $this->call(CierreMesSeeder::class);
     }
 }

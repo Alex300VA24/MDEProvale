@@ -3,6 +3,7 @@
 namespace Tests\Feature\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 use Tests\Traits\SeedsBaseData;
 
@@ -132,6 +133,103 @@ class SociosBeneficiariosApiTest extends TestCase
             ->getJson(self::BASE . '/personas/options')
             ->assertOk()
             ->assertJsonStructure(['place_sectors' => []]);
+    }
+
+    public function test_reniec_photo_is_saved_encrypted_and_only_returned_in_person_detail(): void
+    {
+        $user = $this->userWithAccess();
+        $photoBase64 = base64_encode("\xFF\xD8\xFF\xD9");
+        $photoDataUri = 'data:image/jpeg;base64,'.$photoBase64;
+
+        config([
+            'services.reniec.dni_usuario' => '87654321',
+            'services.reniec.ruc_usuario' => '20123456789',
+            'services.reniec.password' => 'secreto',
+        ]);
+        Http::fake(['*' => Http::response([
+            'coResultado' => '0000',
+            'deResultado' => 'Consulta realizada correctamente',
+            'datosPersona' => [
+                'prenombres' => 'MARIA ELENA',
+                'apPrimer' => 'QUISPE',
+                'apSegundo' => 'MAMANI',
+                'direccion' => 'JR. LIMA 123',
+                'ubigeo' => 'PUNO/PUNO/PUNO',
+                'restriccion' => 'NINGUNA',
+                'foto' => $photoBase64,
+            ],
+        ])]);
+
+        $response = $this->actingAs($user)
+            ->postJson(self::BASE . '/personas/reniec', ['dni' => '12345678'])
+            ->assertOk()
+            ->assertJsonPath('data.names', 'MARIA ELENA')
+            ->assertJsonPath('data.father_lastname', 'QUISPE')
+            ->assertJsonPath('data.address', 'JR. LIMA 123')
+            ->assertJsonMissingPath('data.photo')
+            ->assertJsonStructure(['data' => ['photo_token']]);
+
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+
+        $photoToken = $response->json('data.photo_token');
+        $created = $this->actingAs($user)
+            ->postJson(self::BASE . '/personas', [
+                'names' => 'MARIA ELENA',
+                'father_lastname' => 'QUISPE',
+                'mother_lastname' => 'MAMANI',
+                'dni' => '12345678',
+                'reniec_photo_token' => $photoToken,
+            ])
+            ->assertCreated();
+
+        $personId = $created->json('data.id');
+        $this->assertSame($photoDataUri, \App\Models\People::findOrFail($personId)->reniec_photo);
+        $this->assertNotSame(
+            $photoDataUri,
+            \Illuminate\Support\Facades\DB::table('people')->where('id', $personId)->value('reniec_photo')
+        );
+
+        $detail = $this->actingAs($user)
+            ->getJson(self::BASE . "/personas/{$personId}")
+            ->assertOk()
+            ->assertJsonPath('data.photo', $photoDataUri);
+        $this->assertStringContainsString('no-store', (string) $detail->headers->get('Cache-Control'));
+
+        $this->actingAs($user)
+            ->getJson(self::BASE . '/personas')
+            ->assertOk()
+            ->assertJsonMissingPath('data.0.photo');
+    }
+
+    public function test_personas_reniec_endpoint_rejects_invalid_dni_without_calling_pide(): void
+    {
+        Http::fake();
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/personas/reniec', ['dni' => '123'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('dni');
+
+        Http::assertNothingSent();
+    }
+
+    public function test_personas_reniec_endpoint_rejects_a_minor(): void
+    {
+        config([
+            'services.reniec.dni_usuario' => '87654321',
+            'services.reniec.ruc_usuario' => '20123456789',
+            'services.reniec.password' => 'secreto',
+        ]);
+        Http::fake(['*' => Http::response([
+            'coResultado' => '0001',
+            'deResultado' => 'El DNI consultado pertenece a un menor de edad',
+        ])]);
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/personas/reniec', ['dni' => '12345678'])
+            ->assertUnprocessable()
+            ->assertJsonPath('code', '0001')
+            ->assertJsonPath('message', 'El DNI corresponde a una persona menor de edad.');
     }
 
     public function test_beneficiarios_endpoint_returns_json_collection(): void

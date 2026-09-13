@@ -197,6 +197,23 @@ class PecosaService
         );
     }
 
+    /**
+     * Recopila los datos de comprobante de todas las PECOSAs del período de
+     * repartición indicado, listos para renderizarse en un único PDF.
+     */
+    public function getMonthlyComprobantesData(int $year, int $month): array
+    {
+        $pecosas = Pecosa::forDeliveryPeriod($year, $month)
+            ->with([
+                'detailPecosas.detailProduct.product.uom',
+                'association.placeSector.place',
+            ])
+            ->orderBy('pecosa_number')
+            ->get();
+
+        return $pecosas->map(fn (Pecosa $pecosa) => $this->buildComprobanteData($pecosa))->all();
+    }
+
     private function buildPecosaSnapshotDTO(array $data): PecosaSnapshotDTO
     {
         $chief = isset($data['chief_id']) ? Responsible::with('person')->find($data['chief_id']) : null;

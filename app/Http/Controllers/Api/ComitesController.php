@@ -21,12 +21,12 @@ use App\Models\State;
 use App\Models\TypePremises;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use App\Services\AssociationStateService;
 use App\Services\PresidentAccountService;
 use App\Services\ResolutionStateService;
+use App\Services\MunicipalResolutionService;
 
 class ComitesController extends Controller
 {
@@ -245,7 +245,20 @@ Directive::create([
         ]);
 
         if ($request->filled('search')) {
-            $query->where('document', 'like', "%{$request->search}%");
+            $search = trim((string) $request->search);
+            $matchCommittee = function ($associationQuery) use ($search) {
+                $associationQuery
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('company_name', 'like', "%{$search}%");
+            };
+
+            $query->where(function ($resolutionQuery) use ($search, $matchCommittee) {
+                $resolutionQuery
+                    ->where('document', 'like', "%{$search}%")
+                    ->orWhereHas('associations', $matchCommittee)
+                    ->orWhereHas('primaryAssociations', $matchCommittee);
+            });
         }
 
         if ($request->filled('state_id')) {
@@ -259,7 +272,18 @@ Directive::create([
             ]);
         }
 
-        $resolutions = $query->orderByDesc('date_document')->paginate((int) $request->input('per_page', 10));
+        if ($request->filled('mes')) {
+            $month = (int) $request->mes;
+
+            if ($month >= 1 && $month <= 12) {
+                $query->whereMonth('date_start', $month);
+            }
+        }
+
+        $resolutions = $query
+            ->orderByDesc('date_start')
+            ->orderByDesc('id')
+            ->paginate((int) $request->input('per_page', 10));
 
         return ReconocimientoResource::collection($resolutions);
     }
@@ -329,13 +353,9 @@ Directive::create([
 
     // ==================== RESOLUCIÓN EXTERNA (PORTAL MUNICIPAL) ====================
 
-    private const MUNI_BASE_URL = 'https://www.muniesperanza.gob.pe';
-    private const MUNI_SEARCH_URL = self::MUNI_BASE_URL . '/website/loads/cargar_archivos.php';
-    private const MUNI_TIPO_RESOLUCION_ALCALDIA = 2;
-
     public function buscarResolucionExterna(Resolution $resolution)
     {
-        $match = $this->resolveResolucionExterna($resolution);
+        $match = app(MunicipalResolutionService::class)->resolve($resolution);
 
         if (!$match) {
             return response()->json([
@@ -363,7 +383,7 @@ Directive::create([
 
     private function streamResolucionExterna(Resolution $resolution, string $disposition)
     {
-        $match = $this->resolveResolucionExterna($resolution);
+        $match = app(MunicipalResolutionService::class)->resolve($resolution);
 
         abort_if(!$match, 404, 'No se encontró esta resolución en el portal de la Municipalidad.');
 
@@ -381,59 +401,6 @@ Directive::create([
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
         ]);
-    }
-
-    /**
-     * El buscador del portal municipal solo filtra por año + mes + texto exacto.
-     * `date_start` es la fecha real de emisión (viene del mismo reporte oficial
-     * usado para poblar la tabla resolutions), así que se usa como proxy del mes.
-     */
-    private function resolveResolucionExterna(Resolution $resolution): ?array
-    {
-        if (!$resolution->document || !$resolution->date_start) {
-            return null;
-        }
-
-        return Cache::remember('resolucion_externa_' . $resolution->id, 3600, function () use ($resolution) {
-            [$numero, $anio] = array_pad(explode('-', $resolution->document, 2), 2, null);
-
-            if (!$numero || !$anio) {
-                return null;
-            }
-
-            $mes = $resolution->date_start->month;
-
-            try {
-                $response = $this->municipalHttpClient(15)
-                    ->get(self::MUNI_SEARCH_URL, [
-                        'd' => "{$anio}|{$mes}|{$numero}|" . self::MUNI_TIPO_RESOLUCION_ALCALDIA,
-                    ]);
-            } catch (ConnectionException $e) {
-                return null;
-            }
-
-            if (!$response->successful()) {
-                return null;
-            }
-
-            if (!preg_match("/window\.open\('([^']+\.pdf)'/i", $response->body(), $pdfMatch)) {
-                return null;
-            }
-
-            $relativePath = ltrim(str_replace('../../', '', $pdfMatch[1]), '/');
-
-            // La fila tiene dos celdas que empiezan con "RESOLUCION": la categoría
-            // ("RESOLUCIONES DE ALCALDÍA") y el título con el número ("...N°0220-2025-MDE").
-            // Se exige el patrón número-guion-año para quedarse con el título.
-            preg_match('/RESOLUCION[^<]*\d{2,6}-\d{4}[^<]*/i', $response->body(), $tituloMatch);
-            preg_match('/(\d{2}\/\d{2}\/\d{4})/', $response->body(), $fechaMatch);
-
-            return [
-                'pdf_url' => self::MUNI_BASE_URL . '/' . $relativePath,
-                'titulo' => $tituloMatch[0] ?? $resolution->document,
-                'fecha' => $fechaMatch[1] ?? null,
-            ];
-        });
     }
 
     /**

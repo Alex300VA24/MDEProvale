@@ -18,8 +18,10 @@ use App\Models\Transaction;
 use App\Services\PecosaService;
 use App\Services\PDFService;
 use App\Services\StockService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PecosaController extends Controller
 {
@@ -195,6 +197,29 @@ class PecosaController extends Controller
     public function reportes()
     {
         return view('productos-pecosas.pecosas.reportes');
+    }
+
+    /**
+     * Genera en un solo PDF el comprobante de salida de todas las PECOSAs
+     * del período de repartición (mes/año) indicado.
+     */
+    public function pdfMensual(Request $request)
+    {
+        $data = $request->validate([
+            'year' => 'required|integer|min:2019|max:' . (now()->year + 1),
+            'month' => 'required|integer|min:1|max:12',
+        ]);
+
+        $items = $this->pecosaService->getMonthlyComprobantesData((int) $data['year'], (int) $data['month']);
+
+        if (empty($items)) {
+            return response()->json(['message' => 'No hay pecosas registradas para el periodo seleccionado.'], 404);
+        }
+
+        $periodo = Carbon::create((int) $data['year'], (int) $data['month'], 1)->locale('es')->translatedFormat('F_Y');
+        $filename = 'pecosas-' . Str::slug($periodo) . '.pdf';
+
+        return $this->pdfService->stream('comprobante_salida_lote', ['items' => $items], $filename, 'a4', 'landscape');
     }
 
     /**

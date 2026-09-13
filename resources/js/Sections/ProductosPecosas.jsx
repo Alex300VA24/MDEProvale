@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 import http from '../http';
 import ProductosTab from './productos/ProductosTab';
 import PecosasTab from './productos/PecosasTab';
+import PecosasPdfMensualModal from './productos/PecosasPdfMensualModal';
 
 const BASE = '/api/dashboard/productos-pecosas';
 
@@ -37,6 +38,7 @@ export default function ProductosPecosas({ initialAction }) {
     const [optionsError, setOptionsError] = useState(false);
     const pecosasRef = useRef(null);
     const productosRef = useRef(null);
+    const [pdfMensualOpen, setPdfMensualOpen] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -122,6 +124,15 @@ export default function ProductosPecosas({ initialAction }) {
                                     <i className="fas fa-clipboard-check" aria-hidden="true" /> Acta de Supervisión
                                 </a>
                             )}
+                            {can.pecosas.view && tab === 'pecosas' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPdfMensualOpen(true)}
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                >
+                                    <i className="fas fa-file-pdf" aria-hidden="true" /> Generar Pecosas
+                                </button>
+                            )}
                             {can.pecosas.view && tab === 'pecosas' && can.pecosas.create && (
                                 <button
                                     type="button"
@@ -162,6 +173,10 @@ export default function ProductosPecosas({ initialAction }) {
                     )}
                 </div>
             </div>
+
+            {can.pecosas.view && (
+                <PecosasPdfMensualModal open={pdfMensualOpen} onClose={() => setPdfMensualOpen(false)} />
+            )}
         </>
     );
 }

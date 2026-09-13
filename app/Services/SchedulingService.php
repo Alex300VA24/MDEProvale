@@ -65,7 +65,7 @@ class SchedulingService
 
             return [
                 'codigo' => $association->code ?? $association->id,
-                'nombre' => strtoupper($association->name),
+                'nombre' => mb_strtoupper($association->name, 'UTF-8'),
                 'presidenta' => $presidenta,
                 'direccion' => $association->address ?? '',
                 'sector' => optional(optional($association->placeSector)->sector)->title ?? '',

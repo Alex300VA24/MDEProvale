@@ -14,7 +14,6 @@ class ReconocimientoResource extends JsonResource
         return [
             'id' => $this->id,
             'document' => $this->document,
-            'date_document' => $this->date_document?->toDateTimeString(),
             'date_start' => $this->date_start?->toDateString(),
             'date_end' => $this->date_end?->toDateString(),
             'state_id' => $this->state_id,

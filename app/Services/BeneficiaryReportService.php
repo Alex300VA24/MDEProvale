@@ -74,7 +74,7 @@ class BeneficiaryReportService
             'resumen' => $resumen,
             'resumen_filas' => $resumenFilas,
             'observaciones' => $observaciones,
-            'club_nombre' => strtoupper($association->name),
+            'club_nombre' => mb_strtoupper($association->name, 'UTF-8'),
             'direccion' => $association->address ?? '',
             'ccpp' => $association->placeSector ? ($association->placeSector->sector ? $association->placeSector->sector->title : '') : '',
             'direccion' => $association->address ?? '',
@@ -142,7 +142,7 @@ class BeneficiaryReportService
                 [$bajaFlag, $observationFlag, $razonBaja] = $this->evaluateBeneficiaryRules($edadAnos, $tipoBeneficio, $fechaInicio, $cutoffDate, $historialActivo, $razonBaja);
 
                 $items[] = new BeneficiaryReportItemDTO(
-                    strtoupper("{$persona->father_lastname} {$persona->mother_lastname} {$persona->names}"),
+                    mb_strtoupper("{$persona->father_lastname} {$persona->mother_lastname} {$persona->names}", 'UTF-8'),
                     $persona->dni ?? '',
                     in_array($tipoBeneficio, ['LAC', 'GES']) ? $tipoBeneficio : '',
                     $persona->birthdate ? date('d/m/Y', strtotime($persona->birthdate)) : '',
@@ -162,7 +162,7 @@ class BeneficiaryReportService
 
             if (!empty($items)) {
                 $beneficiarios[] = [
-                    'socia_nombre' => strtoupper("{$socia->father_lastname} {$socia->mother_lastname} {$socia->names}"),
+                    'socia_nombre' => mb_strtoupper("{$socia->father_lastname} {$socia->mother_lastname} {$socia->names}", 'UTF-8'),
                     'socia_direccion' => $socia->address ?? '',
                     'socia_dni' => $socia->dni ?? '',
                     'rowspan' => count($items),

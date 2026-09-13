@@ -1014,7 +1014,7 @@ class ProductosPecosasController extends Controller
 
             if ($directiva && $directiva->partner && $directiva->partner->people) {
                 $p = $directiva->partner->people;
-                $presidenta = strtoupper($p->names . ' ' . $p->father_lastname);
+                $presidenta = mb_strtoupper($p->names . ' ' . $p->father_lastname, 'UTF-8');
             }
 
             $totalBenef = 0;
@@ -1050,7 +1050,7 @@ class ProductosPecosasController extends Controller
 
             $clubes[] = [
                 'codigo' => $association->code ?? $association->id,
-                'nombre' => strtoupper($association->name),
+                'nombre' => mb_strtoupper($association->name, 'UTF-8'),
                 'presidenta' => $presidenta,
                 'direccion' => $association->address ?? '',
                 'primera_prioridad' => $primeraPrioridad,

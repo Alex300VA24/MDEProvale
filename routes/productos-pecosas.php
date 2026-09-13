@@ -28,6 +28,7 @@ Route::prefix('productos-pecosas')->name('productos-pecosas.')->middleware('modu
     Route::get('pecosas/crear', [PecosaController::class, 'create'])->name('pecosas.create');
     Route::post('pecosas', [PecosaController::class, 'store'])->name('pecosas.store');
     Route::post('pecosas/verificar-vigencia', [PecosaController::class, 'verificarVigencia'])->name('pecosas.verificar-vigencia');
+    Route::get('pecosas-pdf-mensual', [PecosaController::class, 'pdfMensual'])->name('pecosas.pdf-mensual');
     Route::get('pecosas/{pecosa}/comprobante', [PecosaController::class, 'generarComprobante'])->name('pecosas.comprobante');
     Route::get('acta-supervision', [PecosaController::class, 'actaSupervision'])->name('pecosas.acta-supervision');
     Route::get('pecosas/{pecosa}', [PecosaController::class, 'show'])->name('pecosas.show');

@@ -13,17 +13,10 @@ class TypeTransactionSeeder extends Seeder
      */
     public function run()
     {
-        // insert into TipoMovimiento(descripcion) values('Ingreso'),('Salida');
-        DB::table('type_transactions')->insert([
-            'title' => 'Ingreso',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('type_transactions')->insert([
-            'title' => 'Salida',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $now = now();
+        DB::table('type_transactions')->upsert([
+            ['id' => 1, 'title' => 'Ingreso', 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'title' => 'Salida', 'created_at' => $now, 'updated_at' => $now],
+        ], ['id'], ['title', 'updated_at']);
     }
 }

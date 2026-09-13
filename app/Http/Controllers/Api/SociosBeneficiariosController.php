@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\ReniecException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePartnerRequest;
 use App\Http\Requests\StorePersonaRequest;
@@ -20,9 +21,16 @@ use App\Models\Relationship;
 use App\Models\State;
 use App\Models\TypeBenefit;
 use App\Services\PartnerService;
+use App\Services\ReniecService;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class SociosBeneficiariosController extends Controller
 {
@@ -165,13 +173,88 @@ class SociosBeneficiariosController extends Controller
         ]);
     }
 
+    public function consultarReniec(Request $request, ReniecService $reniec)
+    {
+        Gate::authorize('create', People::class);
+
+        $validated = $request->validate([
+            'dni' => ['required', 'regex:/^\d{8}$/'],
+        ], [
+            'dni.regex' => 'Ingrese un DNI válido de 8 dígitos.',
+        ]);
+
+        try {
+            $person = $reniec->consultar($validated['dni']);
+        } catch (ReniecException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'code' => $exception->resultCode(),
+            ], $exception->httpStatus())->header('Cache-Control', 'no-store, private');
+        }
+
+        $photo = $person['photo'] ?? null;
+        unset($person['photo']);
+
+        if ($photo) {
+            $photoToken = (string) Str::uuid();
+            Cache::put("reniec-photo:{$photoToken}", [
+                'user_id' => (string) $request->user()->getAuthIdentifier(),
+                'dni' => $validated['dni'],
+                'encrypted_photo' => Crypt::encryptString($photo),
+            ], now()->addMinutes(15));
+            $person['photo_token'] = $photoToken;
+        }
+
+        return response()->json(['data' => $person])
+            ->header('Cache-Control', 'no-store, private');
+    }
+
     public function storePersona(StorePersonaRequest $request)
     {
-        $person = People::create($request->validated());
+        $validated = $request->validated();
+        $photoToken = $validated['reniec_photo_token'] ?? null;
+        unset($validated['reniec_photo_token']);
+
+        if ($photoToken) {
+            $cachedPhoto = Cache::get("reniec-photo:{$photoToken}");
+            $belongsToRequest = is_array($cachedPhoto)
+                && hash_equals((string) ($cachedPhoto['user_id'] ?? ''), (string) $request->user()->getAuthIdentifier())
+                && hash_equals((string) ($cachedPhoto['dni'] ?? ''), (string) $validated['dni']);
+
+            if (! $belongsToRequest) {
+                throw ValidationException::withMessages([
+                    'reniec_photo_token' => 'La foto de RENIEC expiró. Consulte nuevamente el DNI.',
+                ]);
+            }
+
+            try {
+                $validated['reniec_photo'] = Crypt::decryptString($cachedPhoto['encrypted_photo']);
+            } catch (DecryptException) {
+                throw ValidationException::withMessages([
+                    'reniec_photo_token' => 'No se pudo validar la foto de RENIEC. Consulte nuevamente el DNI.',
+                ]);
+            }
+        }
+
+        $person = People::create($validated);
+
+        if ($photoToken) {
+            Cache::forget("reniec-photo:{$photoToken}");
+        }
 
         return (new PersonaResource($person->load('placeSector.place:id,title', 'placeSector.sector:id,title')))
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function showPersona(Request $request, People $person)
+    {
+        $person->load('placeSector.place:id,title', 'placeSector.sector:id,title');
+        $data = (new PersonaResource($person))->resolve($request);
+        $data['photo'] = $person->reniec_photo;
+
+        return response()->json(['data' => $data])
+            ->header('Cache-Control', 'no-store, private');
     }
 
     public function updatePersona(UpdatePersonaRequest $request, People $person)

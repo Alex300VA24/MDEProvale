@@ -20,6 +20,7 @@ use App\Models\Rol;
 use App\Models\State;
 use App\Models\User;
 use App\Services\AssistantSettingsService;
+use App\Services\MonthClosureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -317,6 +318,59 @@ class SistemaController extends Controller
         ]);
 
         return response()->json(['data' => new NotificationResource($notification->fresh(['requestedByUser', 'processedByUser']))]);
+    }
+
+    // ==================== CIERRE DE MES ====================
+
+    public function cierreMesIndex(MonthClosureService $service)
+    {
+        $now = now();
+
+        $closed = $service->currentClosedPeriod($now);
+
+        return response()->json([
+            'ultimo_cerrado' => $closed
+                ? ['anio' => $closed[0], 'mes' => $closed[1], 'label' => $service->label($closed[0], $closed[1])]
+                : null,
+            'cerrados' => $service->closedMonths($now),
+            'disponibles' => $service->availableMonths($now),
+            'mes_actual' => [
+                'anio' => $now->year,
+                'mes' => $now->month,
+                'label' => $service->label($now->year, $now->month),
+            ],
+        ]);
+    }
+
+    public function storeCierreMes(Request $request, MonthClosureService $service)
+    {
+        $validated = $request->validate([
+            'anio' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'mes' => ['required', 'integer', 'min:1', 'max:12'],
+        ]);
+
+        try {
+            $service->close((int) $validated['anio'], (int) $validated['mes']);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        $now = now();
+        $closed = $service->currentClosedPeriod($now);
+
+        return response()->json([
+            'data' => [
+                'ultimo_cerrado' => $closed
+                    ? ['anio' => $closed[0], 'mes' => $closed[1], 'label' => $service->label($closed[0], $closed[1])]
+                    : null,
+                'mes_actual' => [
+                    'anio' => $now->year,
+                    'mes' => $now->month,
+                    'label' => $service->label($now->year, $now->month),
+                ],
+            ],
+            'message' => 'Mes cerrado correctamente.',
+        ]);
     }
 
     // ==================== ASISTENTE IA ====================

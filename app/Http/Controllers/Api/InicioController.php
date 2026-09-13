@@ -7,6 +7,7 @@ use App\Models\Association;
 use App\Models\Beneficiarie;
 use App\Models\Partner;
 use App\Models\Pecosa;
+use App\Services\MonthClosureService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -28,21 +29,16 @@ class InicioController extends Controller
      * afecta a las demás). Parámetros de query opcionales:
      * - anio_pecosas: año de "PECOSAs por mes" (por defecto, el año actual).
      * - anio_productos: año de "Productos distribuidos" (por defecto, el actual).
-     * - socios_anio / socios_mes: periodo de la comparativa "Socios vs
-     *   Beneficiarios". socios_mes = 0 significa "año completo".
+     * - periodo_anio / periodo_mes: período del resumen (tarjetas KPI, stock,
+     *   "Socios vs Beneficiarios" y "Top Comités"); por defecto, el mes con
+     *   la actividad más reciente.
      */
     public function panel(Request $request)
     {
         $currentYear = now()->year;
 
-        $yearPecosas = $this->clampYear((int) $request->query('anio_pecosas', $currentYear), $currentYear);
+$yearPecosas = $this->clampYear((int) $request->query('anio_pecosas', $currentYear), $currentYear);
         $yearProductos = $this->clampYear((int) $request->query('anio_productos', $currentYear), $currentYear);
-
-        $sociosYear = $this->clampYear((int) $request->query('socios_anio', $currentYear), $currentYear);
-        $sociosMonth = (int) $request->query('socios_mes', 0);
-        if ($sociosMonth < 1 || $sociosMonth > 12) {
-            $sociosMonth = 0;
-        }
 
         [$periodYear, $periodMonth] = $this->dashboardPeriod($request);
         [$cardStart, $cardEnd] = $this->sociosPeriodo($periodYear, $periodMonth);
@@ -99,47 +95,10 @@ class InicioController extends Controller
             )
             ->value('stock');
 
-        // Stock visible en Inicio: saldo del ingreso más reciente de cada
-        // alimento, descontando las salidas registradas para ese mismo lote.
-        $salidasPorLote = DB::table('product_stocks')
-            ->selectRaw('detail_product_id, SUM(quantity) as total_used')
-            ->groupBy('detail_product_id');
-
-        $ultimosIngresos = DB::table('detail_products')
-            ->join('products', 'detail_products.product_id', '=', 'products.id')
-            ->leftJoin('uoms', 'products.uom_id', '=', 'uoms.id')
-            ->leftJoinSub($salidasPorLote, 'used', function ($join) {
-                $join->on('detail_products.id', '=', 'used.detail_product_id');
-            })
-            ->where(function ($query) {
-                $query->whereRaw('LOWER(products.title) LIKE ?', ['%hojuela%'])
-                    ->orWhereRaw('LOWER(products.title) LIKE ?', ['%leche%']);
-            })
-            ->orderByDesc('detail_products.start_date')
-            ->orderByDesc('detail_products.id')
-            ->get([
-                'products.title as product',
-                'uoms.title as unit',
-                'detail_products.start_date',
-                DB::raw('(detail_products.quantity - COALESCE(used.total_used, 0)) as available_stock'),
-            ]);
-
-        $stockProductos = collect([
-            ['key' => 'hojuelas', 'name' => 'Hojuelas', 'needle' => 'hojuela'],
-            ['key' => 'leche', 'name' => 'Leche', 'needle' => 'leche'],
-        ])->map(function ($definition) use ($ultimosIngresos) {
-            $entry = $ultimosIngresos->first(
-                fn ($item) => stripos((string) $item->product, $definition['needle']) !== false
-            );
-
-            return [
-                'key' => $definition['key'],
-                'name' => $definition['name'],
-                'stock' => $entry ? (int) $entry->available_stock : 0,
-                'unit' => $entry ? (string) $entry->unit : '',
-                'last_entry_date' => $entry ? $entry->start_date : null,
-            ];
-        })->values();
+        // Stock visible en Inicio: para el período seleccionado se desglosa lo
+        // ingresado del mes, lo utilizado y el restante de Hojuelas y Leche.
+        // Solo tiene sentido definitivo cuando el mes está cerrado.
+        $stockProductos = $this->stockProductosForPeriod($periodYear, $periodMonth);
 
         $pecosasYearEnd = $yearPecosas . '-12-31';
 
@@ -200,15 +159,15 @@ class InicioController extends Controller
             }
         }
 
-        // Socios y beneficiarios vigentes en el periodo seleccionado.
+// Socios y beneficiarios vigentes en el periodo del resumen (el mismo
+        // que filtra las tarjetas KPI: "Resumen del período").
         // No se usan created_at/updated_at: la vigencia se calcula por
         // solapamiento de fechas de alta/baja (date_begin / date_end) con el
         // rango del periodo. Para beneficiarios, esas fechas viven en
         // beneficiary_histories (la tabla beneficiaries no tiene fecha propia).
-        [$periodoInicio, $periodoFin] = $this->sociosPeriodo($sociosYear, $sociosMonth);
+        [$periodoInicio, $periodoFin] = $this->sociosPeriodo($periodYear, $periodMonth);
 
-        $hasComparisonSnapshot = $sociosMonth > 0
-            && DB::table('partner_roster_periods')->whereDate('period', $periodoInicio)->exists();
+        $hasComparisonSnapshot = DB::table('partner_roster_periods')->whereDate('period', $periodoInicio)->exists();
 
         $sociosVigentes = $hasComparisonSnapshot
             ? DB::table('partner_roster_periods as roster')
@@ -279,13 +238,78 @@ class InicioController extends Controller
             'socios_vs_beneficiarios' => [
                 'socios' => $sociosVigentes,
                 'beneficiarios' => $beneficiariosVigentes,
-                'anio' => $sociosYear,
-                'mes' => $sociosMonth,
+                'anio' => $periodYear,
+                'mes' => $periodMonth,
             ],
             'anio_min' => self::MIN_YEAR,
             'anio_actual' => $currentYear,
             'top_comites' => $topComites,
         ]);
+    }
+
+    /**
+     * Stock mensual de Hojuelas y Leche para el período seleccionado.
+     *
+     * Devuelve para cada alimento lo ingresado durante el mes, lo utilizado
+     * (salidas sobre el lote del mes) y el restante (ingresado - utilizado;
+     * negativo implica faltante). Todos los valores respetan la unidad del
+     * producto (uoms). El flag `cerrado` indica si el período ya fue cerrado
+     * por el administrador, momento recién en el que tienen sentido definitivo.
+     *
+     * @return array<int, array{key:string, name:string, unit:string, ingresado:int, utilizado:int, restante:int, stock:int, cerrado:bool}>
+     */
+    private function stockProductosForPeriod(int $year, int $month): array
+    {
+        $start = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $end = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+
+        $rows = DB::table('detail_products')
+            ->join('products', 'detail_products.product_id', '=', 'products.id')
+            ->leftJoin('uoms', 'products.uom_id', '=', 'uoms.id')
+            ->leftJoinSub(
+                DB::table('product_stocks')
+                    ->selectRaw('detail_product_id, SUM(quantity) as total_used')
+                    ->groupBy('detail_product_id'),
+                'used',
+                fn ($join) => $join->on('detail_products.id', '=', 'used.detail_product_id')
+            )
+            ->whereBetween('detail_products.start_date', [$start, $end])
+            ->where(function ($query) {
+                $query->whereRaw('LOWER(products.title) LIKE ?', ['%hojuela%'])
+                    ->orWhereRaw('LOWER(products.title) LIKE ?', ['%leche%']);
+            })
+            ->get([
+                'products.title as product',
+                'uoms.title as unit',
+                'detail_products.quantity',
+                DB::raw('COALESCE(used.total_used, 0) as total_used'),
+            ]);
+
+        $cerrado = app(MonthClosureService::class)->isPeriodClosed($year, $month);
+
+        return collect([
+            ['key' => 'hojuelas', 'name' => 'Hojuelas', 'needle' => 'hojuela'],
+            ['key' => 'leche', 'name' => 'Leche', 'needle' => 'leche'],
+        ])->map(function ($definition) use ($rows, $cerrado) {
+            $matching = $rows->filter(
+                fn ($item) => stripos((string) $item->product, $definition['needle']) !== false
+            );
+
+            $ingresado = (int) $matching->sum('quantity');
+            $utilizado = (int) $matching->sum('total_used');
+            $restante = $ingresado - $utilizado;
+
+            return [
+                'key' => $definition['key'],
+                'name' => $definition['name'],
+                'unit' => $matching->first() ? (string) $matching->first()->unit : '',
+                'ingresado' => $ingresado,
+                'utilizado' => $utilizado,
+                'restante' => $restante,
+                'stock' => $restante,
+                'cerrado' => $cerrado,
+            ];
+        })->values()->all();
     }
 
     /**
@@ -387,8 +411,15 @@ class InicioController extends Controller
      * históricos. Los valores actuales se calculan desde la BD y se comparan
      * con la auditoría para no ocultar futuras diferencias.
      */
-    private function rosterAudit(int $year, int $month, array $current, array $dualRole): ?array
+private function rosterAudit(int $year, int $month, array $current, array $dualRole): ?array
     {
+        // Los avisos (observaciones de auditoría) de un período solo se exponen
+        // cuando ese mes ya fue cerrado por el administrador. Mientras el mes
+        // está en curso (o aún no se cierra), el card no muestra observaciones.
+        if (! app(MonthClosureService::class)->isPeriodClosed($year, $month)) {
+            return null;
+        }
+
         $period = sprintf('%04d-%02d', $year, $month);
         $audit = config("roster_audits.{$period}");
 

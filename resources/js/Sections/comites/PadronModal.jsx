@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import { pdfLoadingHtml } from '../../Components/pdfLoadingScreen';
 
 const MESES = [
     '',
@@ -39,6 +40,11 @@ export default function PadronModal({ open, onClose }) {
             toast.error('Habilita las ventanas emergentes para este sitio e inténtalo de nuevo.');
             return;
         }
+        preview.document.write(pdfLoadingHtml(
+            'Generando Padrón de Clubes',
+            `${MESES[month]} ${year} — Procesando datos del padrón, esto puede tardar unos segundos.`
+        ));
+        preview.document.close();
         try {
             const params = new URLSearchParams({ month, year });
             const res = await fetch(`${window.APP_URL || ''}/club-reconocimientos/club-padron?${params.toString()}`, {

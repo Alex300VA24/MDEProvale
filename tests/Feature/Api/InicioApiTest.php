@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use App\Models\Setting;
 use Tests\TestCase;
 use Tests\Traits\SeedsBaseData;
 
@@ -105,10 +106,14 @@ class InicioApiTest extends TestCase
             ->assertJsonPath('top_comites', []);
     }
 
-    public function test_historical_cards_show_unique_people_audit_and_dual_roles(): void
+public function test_historical_cards_show_unique_people_audit_and_dual_roles(): void
     {
         $this->seedPanelData();
         $now = now();
+
+        // Cierre administrativo de septiembre: recién con el mes cerrado se
+        // exponen los avisos/observaciones del panel de Inicio.
+        Setting::put('cierre_mes', '2026-09');
 
         DB::table('partners')->insert([
             'id' => 3,
@@ -178,6 +183,32 @@ class InicioApiTest extends TestCase
             ->assertJsonCount(3, 'stats.roster_audit.metrics.socios.observations');
     }
 
+    public function test_unclosed_month_hides_roster_audit_and_observations(): void
+    {
+        $this->seedPanelData();
+        $now = now();
+
+        Setting::put('cierre_mes', '2026-08');
+
+        DB::table('type_benefits')->insert([
+            'id' => 1,
+            'title' => 'Lactante',
+            'abbreviation' => 'LAC',
+            'min_age' => 0,
+            'max_age' => 99,
+            'priority' => 1,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/panel?periodo_anio=2026&periodo_mes=9')
+            ->assertOk()
+            ->assertJsonPath('stats.roster_audit', null)
+            ->assertJsonPath('stats.stock_productos.0.key', 'hojuelas')
+            ->assertJsonPath('stats.stock_productos.0.cerrado', false);
+    }
+
     public function test_panel_uses_balance_from_latest_entry_for_each_food(): void
     {
         $now = now();
@@ -197,15 +228,25 @@ class InicioApiTest extends TestCase
             ['detail_product_id' => 3, 'quantity' => 80, 'observation' => 'Salida por Pecosa', 'created_at' => $now, 'updated_at' => $now],
         ]);
 
+        Setting::put('cierre_mes', $now->format('Y-m'));
+
         $this->actingAs($this->adminUser())
             ->getJson(self::BASE . '/panel')
             ->assertOk()
             ->assertJsonPath('stats.stock_productos.0.key', 'hojuelas')
+            ->assertJsonPath('stats.stock_productos.0.ingresado', 120)
+            ->assertJsonPath('stats.stock_productos.0.utilizado', 35)
+            ->assertJsonPath('stats.stock_productos.0.restante', 85)
             ->assertJsonPath('stats.stock_productos.0.stock', 85)
             ->assertJsonPath('stats.stock_productos.0.unit', 'UNIDADES')
+            ->assertJsonPath('stats.stock_productos.0.cerrado', true)
             ->assertJsonPath('stats.stock_productos.1.key', 'leche')
+            ->assertJsonPath('stats.stock_productos.1.ingresado', 200)
+            ->assertJsonPath('stats.stock_productos.1.utilizado', 80)
+            ->assertJsonPath('stats.stock_productos.1.restante', 120)
             ->assertJsonPath('stats.stock_productos.1.stock', 120)
-            ->assertJsonPath('stats.stock_productos.1.unit', 'UNIDADES');
+            ->assertJsonPath('stats.stock_productos.1.unit', 'UNIDADES')
+            ->assertJsonPath('stats.stock_productos.1.cerrado', true);
     }
 
     public function test_panel_available_to_any_authenticated_user_without_module_access(): void
@@ -220,6 +261,38 @@ class InicioApiTest extends TestCase
         $this->actingAs(\App\Models\User::find($userId))
             ->getJson(self::BASE . '/panel')
             ->assertOk();
+    }
+
+    public function test_socios_vs_beneficiarios_follows_summary_period_filter(): void
+    {
+        $this->seedPanelData();
+        $now = now();
+
+        // Partner sin baja previa que solo estuvo vigente en marzo de 2026.
+        // Los partners 1 y 2 de seedPanelData siguen activos desde ~2025 y sin
+        // fecha de baja, por lo que cuentan en cualquier mes del período.
+        DB::table('people')->insert([
+            'id' => 4, 'names' => 'Rosa', 'father_lastname' => 'Apellido', 'mother_lastname' => 'Materno', 'dni' => '12345674', 'gender' => 'F', 'birthdate' => '1992-01-01', 'address' => 'Calle 4', 'place_sector_id' => 1, 'created_at' => $now, 'updated_at' => $now,
+        ]);
+        DB::table('partners')->insert([
+            'id' => 3, 'person_id' => 4, 'association_id' => 1, 'state_id' => 1,
+            'date_begin' => '2026-03-01', 'date_end' => '2026-03-31',
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+
+        // Los parámetros heredados socios_anio/socios_mes ya no mandan: la
+        // comparativa usa el período del resumen (periodo_anio/periodo_mes).
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/panel?periodo_anio=2026&periodo_mes=3&socios_anio=2019&socios_mes=0')
+            ->assertOk()
+            ->assertJsonPath('socios_vs_beneficiarios.anio', 2026)
+            ->assertJsonPath('socios_vs_beneficiarios.mes', 3)
+            ->assertJsonPath('socios_vs_beneficiarios.socios', 3);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/panel?periodo_anio=2026&periodo_mes=4')
+            ->assertOk()
+            ->assertJsonPath('socios_vs_beneficiarios.socios', 2);
     }
 
     public function test_unauthenticated_request_gets_401(): void

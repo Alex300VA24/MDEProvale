@@ -17,7 +17,6 @@ class UpdateReconocimientoRequest extends FormRequest
     {
         return [
             'document' => 'sometimes|required|string|max:100',
-            'date_document' => 'sometimes|required|date',
             'date_start' => 'sometimes|required|date',
             'date_end' => 'sometimes|required|date|after_or_equal:date_start',
         ];

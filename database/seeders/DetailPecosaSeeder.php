@@ -9,48 +9,53 @@ class DetailPecosaSeeder extends Seeder
 {
     public function run(): void
     {
-        $ruta = __DIR__ . '/data/detail_pecosas.json';
-        if (!is_file($ruta)) {
-            throw new \RuntimeException("No se encontro {$ruta}");
+        $path = __DIR__ . '/data/detail_pecosas.json';
+        if (! is_file($path)) {
+            throw new \RuntimeException("No se encontro {$path}. Ejecuta migracion_productos/creando_seeders.py.");
         }
 
-        $filas = json_decode(file_get_contents($ruta), true);
-        $idMap = PecosaSeeder::$idMap;
+        $rows = json_decode(file_get_contents($path), true);
+        if (! is_array($rows)) {
+            throw new \RuntimeException("El archivo {$path} no contiene JSON valido.");
+        }
 
-        $ahora = now();
-        $lote = [];
-        $inserted = 0;
+        $pecosaMap = PecosaSeeder::$idMap;
+        $productMap = DetailProductSeeder::$idMap;
+        $missingPecosas = collect($rows)->pluck('source_pecosa_id')->unique()->diff(array_keys($pecosaMap));
+        $missingProducts = collect($rows)->pluck('source_product_id')->unique()->diff(array_keys($productMap));
+        if ($missingPecosas->isNotEmpty() || $missingProducts->isNotEmpty()) {
+            throw new \RuntimeException(
+                'Referencias sin resolver. PEC_id=' . $missingPecosas->implode(',') .
+                '; PRO_id=' . $missingProducts->implode(',')
+            );
+        }
 
-        foreach ($filas as $fila) {
-            $originalPecosaId = $fila[6] ?? 0;
-            if (!isset($idMap[$originalPecosaId])) continue;
+        $pecosaIds = array_values($pecosaMap);
+        DB::table('detail_pecosas')->whereIn('pecosa_id', $pecosaIds)->delete();
 
-            $lote[] = [
-                'priority'             => $fila[0],
-                'quantity'             => $fila[1],
-                'delivered_quantity'   => $fila[2],
-                'unit_price'           => $fila[3],
-                'subtotal'             => $fila[4],
-                'detail_product_id'    => $fila[5],
-                'pecosa_id'            => $idMap[$originalPecosaId],
-                'product_name'         => $fila[7],
-                'product_abbreviation' => $fila[8] ?? null,
-                'uom_title'            => $fila[9] ?? null,
-                'created_at'           => $ahora,
-                'updated_at'           => $ahora,
+        $now = now();
+        $payload = [];
+        foreach ($rows as $row) {
+            $payload[] = [
+                'priority' => $row['priority'],
+                'quantity' => $row['quantity'],
+                'delivered_quantity' => $row['delivered_quantity'],
+                'unit_price' => $row['unit_price'],
+                'subtotal' => $row['subtotal'],
+                'detail_product_id' => $productMap[(int) $row['source_product_id']],
+                'pecosa_id' => $pecosaMap[(int) $row['source_pecosa_id']],
+                'product_name' => $row['product_name'],
+                'product_abbreviation' => $row['product_abbreviation'],
+                'uom_title' => $row['uom_title'],
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
-            $inserted++;
-
-            if (count($lote) >= 500) {
-                DB::table('detail_pecosas')->insert($lote);
-                $lote = [];
-            }
         }
 
-        if ($lote) {
-            DB::table('detail_pecosas')->insert($lote);
+        foreach (array_chunk($payload, 500) as $chunk) {
+            DB::table('detail_pecosas')->insert($chunk);
         }
 
-        $this->command->info("Detail pecosas insertados: {$inserted}");
+        $this->command->info('Detalles de PECOSA insertados: ' . count($rows));
     }
 }

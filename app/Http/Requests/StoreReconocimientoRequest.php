@@ -17,7 +17,6 @@ class StoreReconocimientoRequest extends FormRequest
     {
         return [
             'document' => 'required|string|max:100',
-            'date_document' => 'required|date',
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
         ];

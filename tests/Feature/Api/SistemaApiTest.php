@@ -3,6 +3,8 @@
 namespace Tests\Feature\Api;
 
 use App\Models\User;
+use App\Models\Setting;
+use App\Services\MonthClosureService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -500,6 +502,86 @@ class SistemaApiTest extends TestCase
     {
         $this->actingAs($this->createBasicUser(false))
             ->getJson(self::BASE . '/asistente-config')
+            ->assertStatus(403);
+    }
+
+    // ==================== CIERRE DE MES ====================
+
+    public function test_cierre_mes_index_returns_state_with_fallback_to_previous_month(): void
+    {
+        $previous = now()->copy()->subMonthNoOverflow();
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/cierre-mes')
+            ->assertOk()
+            ->assertJsonPath('ultimo_cerrado.anio', $previous->year)
+            ->assertJsonPath('ultimo_cerrado.mes', $previous->month)
+            ->assertJsonPath('mes_actual.anio', now()->year)
+            ->assertJsonPath('mes_actual.mes', now()->month)
+            ->assertJsonStructure(['cerrados', 'disponibles']);
+    }
+
+    public function test_store_cierre_mes_closes_a_finished_month(): void
+    {
+        $anchor = now()->copy()->startOfMonth();
+        $previous = $anchor->copy()->subMonthNoOverflow();
+        $previousPrevious = $anchor->copy()->subMonthsNoOverflow(2);
+
+        Setting::put(MonthClosureService::SETTING_CLOSED, sprintf('%04d-%02d', $previousPrevious->year, $previousPrevious->month));
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE . '/cierre-mes', ['anio' => $previous->year, 'mes' => $previous->month])
+            ->assertOk()
+            ->assertJsonPath('message', 'Mes cerrado correctamente.');
+
+        $this->assertDatabaseHas('settings', [
+            'key' => MonthClosureService::SETTING_CLOSED,
+            'value' => sprintf('%04d-%02d', $previous->year, $previous->month),
+        ]);
+    }
+
+    public function test_store_cierre_mes_rejects_current_or_future_month(): void
+    {
+        $now = now();
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE . '/cierre-mes', ['anio' => $now->year, 'mes' => $now->month])
+            ->assertStatus(422)
+            ->assertJsonPath('message', "El mes {$now->year}-{$now->month} aún no ha terminado y no puede cerrarse.");
+    }
+
+    public function test_cierre_mes_requires_sistema_access_for_store(): void
+    {
+        // Solo lectura del módulo: puede ver el estado, pero no cerrar meses.
+        $rolId = DB::table('rols')->insertGetId(['title' => 'Lector sistema', 'description' => null]);
+        DB::table('module_rol')->insert([
+            'module_id' => DB::table('modules')->where('slug', 'sistema')->value('id'),
+            'rol_id' => $rolId,
+            'can_view' => true,
+            'can_create' => false,
+            'can_edit' => false,
+            'can_delete' => false,
+        ]);
+        $userId = DB::table('users')->insertGetId([
+            'names' => 'Lector', 'father_surname' => 'Cierre', 'mother_surname' => 'Test', 'username' => 'lectorcierre',
+            'email' => 'lectorcierre@example.com', 'dni' => '00000010', 'cui' => '0', 'state_id' => 1, 'rol_id' => $rolId,
+            'password' => bcrypt('password'),
+        ]);
+        $user = User::findOrFail($userId);
+
+        $this->actingAs($user)->getJson(self::BASE . '/cierre-mes')->assertOk();
+        $this->actingAs($user)
+            ->postJson(self::BASE . '/cierre-mes', ['anio' => now()->year, 'mes' => 1])
+            ->assertStatus(403);
+    }
+
+    public function test_cierre_mes_requires_sistema_module(): void
+    {
+        $user = $this->createBasicUser(false);
+
+        $this->actingAs($user)->getJson(self::BASE . '/cierre-mes')->assertStatus(403);
+        $this->actingAs($user)
+            ->postJson(self::BASE . '/cierre-mes', ['anio' => now()->year, 'mes' => 1])
             ->assertStatus(403);
     }
 }

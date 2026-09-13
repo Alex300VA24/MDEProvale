@@ -224,7 +224,22 @@ function RosterAuditModal({ audit, metricKey, periodLabel, onClose }) {
     );
 }
 
-function StockCard({ products = [] }) {
+function StockMiniStat({ label, value, tone = 'default' }) {
+    const tones = {
+        default: 'text-navy',
+        danger: 'text-coral',
+    };
+    const bg = tone === 'danger' ? 'bg-coral-light' : 'bg-blue-light';
+
+    return (
+        <div className={`rounded-lg px-1.5 py-1.5 text-center ${bg}`}>
+            <div className={`text-base sm:text-lg font-extrabold tabular-nums tracking-tight ${tones[tone]}`}>{value}</div>
+            <div className="mt-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-wide text-slate">{label}</div>
+        </div>
+    );
+}
+
+function StockCard({ products = [], closed = false, periodLabel = '' }) {
     const formatStock = (value) => Number(value || 0).toLocaleString('es-PE');
 
     return (
@@ -234,22 +249,43 @@ function StockCard({ products = [] }) {
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg bg-teal-light text-teal">
                     <i className="fas fa-box" aria-hidden="true" />
                 </div>
-                <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full text-teal bg-teal-light whitespace-nowrap">
-                    Último ingreso
+                <span
+                    className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
+                        closed ? 'text-teal bg-teal-light' : 'text-amber bg-amber-light'
+                    }`}
+                >
+                    {closed ? `Cierre: ${periodLabel}` : 'Mes en curso'}
                 </span>
             </div>
             <div className="divide-y divide-mist">
-                {products.map((product) => (
-                    <div key={product.key} className="flex items-baseline justify-between gap-2 py-1.5 first:pt-0 last:pb-0">
-                        <span className="text-xs sm:text-sm font-semibold text-slate truncate">{product.name}</span>
-                        <span className="text-base sm:text-xl font-extrabold text-navy whitespace-nowrap">
-                            {formatStock(product.stock)}
-                            {product.unit && <span className="ml-1 text-[8px] sm:text-[10px] font-semibold text-slate">{product.unit}</span>}
-                        </span>
-                    </div>
-                ))}
+                {products.map((product) => {
+                    const faltante = product.restante < 0;
+                    return (
+                        <div key={product.key} className="py-2 sm:py-2.5 first:pt-0 last:pb-0">
+                            <div className="flex items-baseline justify-between gap-2 mb-1.5">
+                                <span className="text-xs sm:text-sm font-bold text-slate truncate">{product.name}</span>
+                                {product.unit && (
+                                    <span className="text-[9px] sm:text-[10px] font-semibold text-slate whitespace-nowrap">{product.unit}</span>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                                <StockMiniStat label="Stock mes" value={formatStock(product.ingresado)} />
+                                <StockMiniStat label="Utilizado" value={formatStock(product.utilizado)} />
+                                <StockMiniStat
+                                    label={faltante ? 'Faltante' : 'Restante'}
+                                    value={formatStock(faltante ? Math.abs(product.restante) : product.restante)}
+                                    tone={faltante ? 'danger' : 'default'}
+                                />
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
-            <div className="text-[10px] sm:text-xs font-medium text-slate mt-2">Stock disponible</div>
+            <div className="text-[10px] sm:text-xs font-medium text-slate mt-2">
+                {closed
+                    ? 'Cifras definitivas del mes cerrado'
+                    : 'Cifras parciales: el detalle definitivo aparece al cerrar el mes'}
+            </div>
         </div>
     );
 }
@@ -272,18 +308,17 @@ function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
     );
 }
 
-export default function Inicio({ onNavigate }) {
+export default function Inicio({ onNavigate, allowedSections = new Set() }) {
     const [panel, setPanel] = useState(null);
     const [error, setError] = useState(false);
     const [auditMetric, setAuditMetric] = useState(null);
 
-    // Filtros independientes: cada gráfica tiene su propio año/periodo y solo
-    // se redibuja la gráfica cuyo filtro cambió.
+// Filtros de las dos gráficas anuales (independientes entre sí). Los
+    // widgets de "Resumen del período" (periodoAnio/periodoMes) comparten el
+    // período del resumen: tarjetas KPI, stock, "Socios vs Beneficiarios" y
+    // "Top Comités" se redibujan cuando cambia.
     const [anioPecosas, setAnioPecosas] = useState(ANIO_ACTUAL);
     const [anioProductos, setAnioProductos] = useState(ANIO_ACTUAL);
-    // "Socios vs Beneficiarios" (mes 0 = año completo).
-    const [sociosAnio, setSociosAnio] = useState(ANIO_ACTUAL);
-    const [sociosMes, setSociosMes] = useState(0);
     const [periodoAnio, setPeriodoAnio] = useState(null);
     const [periodoMes, setPeriodoMes] = useState(null);
 
@@ -298,11 +333,9 @@ export default function Inicio({ onNavigate }) {
         (async () => {
             try {
                 const res = await http.get(`${BASE}/panel`, {
-                    params: {
+params: {
                         anio_pecosas: anioPecosas,
                         anio_productos: anioProductos,
-                        socios_anio: sociosAnio,
-                        socios_mes: sociosMes,
                         ...(periodoAnio && periodoMes ? { periodo_anio: periodoAnio, periodo_mes: periodoMes } : {}),
                     },
                 });
@@ -321,7 +354,7 @@ export default function Inicio({ onNavigate }) {
         return () => {
             active = false;
         };
-    }, [anioPecosas, anioProductos, sociosAnio, sociosMes, periodoAnio, periodoMes]);
+    }, [anioPecosas, anioProductos, periodoAnio, periodoMes]);
 
     // Cada gráfica se monta en su propio efecto y depende SOLO de su porción
     // de datos (serializada). Así, cambiar el filtro de una no redibuja las
@@ -541,8 +574,7 @@ export default function Inicio({ onNavigate }) {
         );
     }
 
-    const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVsBeneficiarios, top_comites: topComites } = panel;
-    const sociosPeriodoLabel = sociosMes === 0 ? `Año ${sociosAnio}` : `${MESES_LARGOS[sociosMes - 1]} ${sociosAnio}`;
+const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVsBeneficiarios, top_comites: topComites } = panel;
     const cardsPeriodLabel = periodoMes && periodoAnio ? `${MESES_LARGOS[periodoMes - 1]} ${periodoAnio}` : '';
 
     return (
@@ -567,21 +599,25 @@ export default function Inicio({ onNavigate }) {
                             Gestiona beneficiarios, club de madres y entregas de manera eficiente.
                         </p>
                         <div className="flex flex-wrap gap-3 sm:gap-4 mt-5 sm:mt-7">
-                            <button
-                                type="button"
-                                onClick={() => onNavigate?.('productos', 'new-pecosa')}
-                                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-sm sm:text-base hover:bg-white/30 transition-all border border-white/20"
-                            >
-                                <i className="fas fa-plus mr-2" />Registrar Pecosa
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => onNavigate?.('comites')}
-                                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white font-semibold rounded-lg text-sm sm:text-base border border-blue/15 hover:bg-blue-light transition-all shadow-sm"
-                                style={{ color: '#0B3A66' }}
-                            >
-                                <i className="fas fa-file-alt mr-2" />Comites
-                            </button>
+                            {allowedSections.has('productos') && (
+                                <button
+                                    type="button"
+                                    onClick={() => onNavigate?.('productos', 'new-pecosa')}
+                                    className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-sm sm:text-base hover:bg-white/30 transition-all border border-white/20"
+                                >
+                                    <i className="fas fa-plus mr-2" />Registrar Pecosa
+                                </button>
+                            )}
+                            {allowedSections.has('comites') && (
+                                <button
+                                    type="button"
+                                    onClick={() => onNavigate?.('comites')}
+                                    className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white font-semibold rounded-lg text-sm sm:text-base border border-blue/15 hover:bg-blue-light transition-all shadow-sm"
+                                    style={{ color: '#0B3A66' }}
+                                >
+                                    <i className="fas fa-file-alt mr-2" />Comités
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -636,7 +672,11 @@ export default function Inicio({ onNavigate }) {
                     detail={stats.roster_audit?.metrics?.clubes}
                     onDetail={() => setAuditMetric('clubes')}
                 />
-                <StockCard products={stats.stock_productos} />
+                <StockCard
+                    products={stats.stock_productos}
+                    closed={(stats.stock_productos ?? []).every((product) => product.cerrado)}
+                    periodLabel={cardsPeriodLabel}
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
@@ -695,16 +735,7 @@ export default function Inicio({ onNavigate }) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
                     <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-1">Socios vs Beneficiarios</h3>
-                    <p className="text-slate text-xs sm:text-sm mb-2">Vigentes · {sociosPeriodoLabel}</p>
-                    <div className="flex items-center gap-2 mb-3">
-                        <FiltroSelect value={sociosMes} onChange={setSociosMes} label="Mes de socios vs beneficiarios">
-                            <option value={0}>Año completo</option>
-                            {MESES_LARGOS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-                        </FiltroSelect>
-                        <FiltroSelect value={sociosAnio} onChange={setSociosAnio} label="Año de socios vs beneficiarios">
-                            {ANIOS.map((y) => <option key={y} value={y}>{y}</option>)}
-                        </FiltroSelect>
-                    </div>
+                    <p className="text-slate text-xs sm:text-sm mb-2">Vigentes · {cardsPeriodLabel}</p>
                     <div className="chart-wrap h-32 sm:h-36">
                         <canvas ref={donutCanvas} />
                     </div>
@@ -722,7 +753,7 @@ export default function Inicio({ onNavigate }) {
 
                 <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
                     <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-1">Top Comités</h3>
-                    <p className="text-slate text-xs sm:text-sm mb-3">Con más beneficiarios</p>
+                    <p className="text-slate text-xs sm:text-sm mb-3">Con más beneficiarios · {cardsPeriodLabel}</p>
                     <div className="chart-wrap h-36 sm:h-44">
                         {topComites.length === 0 ? (
                             <div className="empty-state">
@@ -738,38 +769,46 @@ export default function Inicio({ onNavigate }) {
                 <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-mist shadow-sm">
                     <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base mb-4">Acciones Rápidas</h3>
                     <div className="grid grid-cols-2 gap-2">
-                        <QuickButton
-                            onClick={() => onNavigate?.('socios', 'beneficiarios-padron')}
-                            icon="fa-file-pdf"
-                            label="Padrón Beneficiarios"
-                            bgClass="bg-blue-light hover:bg-blue/10"
-                            tileClass="bg-blue"
-                            textClass="text-blue"
-                        />
-                        <QuickButton
-                            onClick={() => onNavigate?.('comites', 'comites-padron')}
-                            icon="fa-file-pdf"
-                            label="Padrón Comité"
-                            bgClass="bg-amber-light hover:bg-amber/10"
-                            tileClass="bg-amber"
-                            textClass="text-amber"
-                        />
-                        <QuickButton
-                            onClick={() => onNavigate?.('movimientos', 'reparticion')}
-                            icon="fa-file-pdf"
-                            label="Repartición"
-                            bgClass="bg-teal-light hover:bg-teal/10"
-                            tileClass="bg-teal"
-                            textClass="text-teal"
-                        />
-                        <QuickButton
-                            onClick={() => onNavigate?.('productos', 'productos')}
-                            icon="fa-box"
-                            label="Productos"
-                            bgClass="bg-sky-light hover:bg-sky/10"
-                            tileClass="bg-sky"
-                            textClass="text-sky"
-                        />
+                        {allowedSections.has('socios') && (
+                            <QuickButton
+                                onClick={() => onNavigate?.('socios', 'beneficiarios-padron')}
+                                icon="fa-file-pdf"
+                                label="Padrón Beneficiarios"
+                                bgClass="bg-blue-light hover:bg-blue/10"
+                                tileClass="bg-blue"
+                                textClass="text-blue"
+                            />
+                        )}
+                        {allowedSections.has('comites') && (
+                            <QuickButton
+                                onClick={() => onNavigate?.('comites', 'comites-padron')}
+                                icon="fa-file-pdf"
+                                label="Padrón Comité"
+                                bgClass="bg-amber-light hover:bg-amber/10"
+                                tileClass="bg-amber"
+                                textClass="text-amber"
+                            />
+                        )}
+                        {allowedSections.has('movimientos') && (
+                            <QuickButton
+                                onClick={() => onNavigate?.('movimientos', 'reparticion')}
+                                icon="fa-file-pdf"
+                                label="Repartición"
+                                bgClass="bg-teal-light hover:bg-teal/10"
+                                tileClass="bg-teal"
+                                textClass="text-teal"
+                            />
+                        )}
+                        {allowedSections.has('productos') && (
+                            <QuickButton
+                                onClick={() => onNavigate?.('productos', 'productos')}
+                                icon="fa-box"
+                                label="Productos"
+                                bgClass="bg-sky-light hover:bg-sky/10"
+                                tileClass="bg-sky"
+                                textClass="text-sky"
+                            />
+                        )}
                     </div>
                 </div>
             </div>

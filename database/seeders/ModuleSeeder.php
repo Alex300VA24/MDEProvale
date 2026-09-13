@@ -10,15 +10,15 @@ class ModuleSeeder extends Seeder
     public function run()
     {
         $modules = [
-            ['name' => 'Socios y Beneficiarios', 'slug' => 'socios-beneficiarios', 'description' => 'Gesti├│n de socios y beneficiarios', 'icon' => 'fa-users', 'route' => 'socios-beneficiarios', 'order' => 1],
-            ['name' => 'Club de Madres', 'slug' => 'club-madres', 'description' => 'Gesti├│n de club de madres', 'icon' => 'fa-female', 'route' => 'club-reconocimientos', 'order' => 2],
-            ['name' => 'Reconocimientos', 'slug' => 'reconocimientos', 'description' => 'Gesti├│n de reconocimientos', 'icon' => 'fa-award', 'route' => 'club-reconocimientos', 'order' => 3],
-            ['name' => 'Productos', 'slug' => 'productos', 'description' => 'Gesti├│n de productos', 'icon' => 'fa-box', 'route' => 'productos-pecosas', 'order' => 4],
-            ['name' => 'Pecosas', 'slug' => 'pecosas', 'description' => 'Gesti├│n de pecosas', 'icon' => 'fa-file-alt', 'route' => 'productos-pecosas', 'order' => 5],
-            ['name' => 'Movimientos', 'slug' => 'movimientos', 'description' => 'Gesti├│n de movimientos', 'icon' => 'fa-exchange-alt', 'route' => 'movimientos', 'order' => 6],
-            ['name' => 'Mantenimiento', 'slug' => 'mantenimiento', 'description' => 'Gesti├│n de mantenimiento', 'icon' => 'fa-tools', 'route' => 'mantenimiento', 'order' => 7],
+            ['name' => 'Socios y Beneficiarios', 'slug' => 'socios-beneficiarios', 'description' => 'Gestión de socios y beneficiarios', 'icon' => 'fa-users', 'route' => 'socios-beneficiarios', 'order' => 1],
+            ['name' => 'Club de Madres', 'slug' => 'club-madres', 'description' => 'Gestión de club de madres', 'icon' => 'fa-female', 'route' => 'club-reconocimientos', 'order' => 2],
+            ['name' => 'Reconocimientos', 'slug' => 'reconocimientos', 'description' => 'Gestión de reconocimientos', 'icon' => 'fa-award', 'route' => 'club-reconocimientos', 'order' => 3],
+            ['name' => 'Productos', 'slug' => 'productos', 'description' => 'Gestión de productos', 'icon' => 'fa-box', 'route' => 'productos-pecosas', 'order' => 4],
+            ['name' => 'Pecosas', 'slug' => 'pecosas', 'description' => 'Gestión de pecosas', 'icon' => 'fa-file-alt', 'route' => 'productos-pecosas', 'order' => 5],
+            ['name' => 'Movimientos', 'slug' => 'movimientos', 'description' => 'Gestión de movimientos', 'icon' => 'fa-exchange-alt', 'route' => 'movimientos', 'order' => 6],
+            ['name' => 'Responsables y Raciones', 'slug' => 'responsables-raciones', 'description' => 'Gestión de responsables del programa y raciones por año', 'icon' => 'fa-sliders', 'route' => 'responsables-raciones', 'order' => 7],
             ['name' => 'Reportes', 'slug' => 'reportes', 'description' => 'Reportes del sistema', 'icon' => 'fa-chart-bar', 'route' => null, 'order' => 8],
-            ['name' => 'Sistema', 'slug' => 'sistema', 'description' => 'Configuraci├│n del sistema', 'icon' => 'fa-cogs', 'route' => 'sistema', 'order' => 9],
+            ['name' => 'Sistema', 'slug' => 'sistema', 'description' => 'Configuración del sistema', 'icon' => 'fa-cogs', 'route' => 'sistema', 'order' => 9],
         ];
 
         foreach ($modules as $module) {

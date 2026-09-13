@@ -13,13 +13,13 @@ use App\Models\TypePremises;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Client\ConnectionException;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\PDF;
 use App\Services\AssociationStateService;
 use App\Services\PresidentAccountService;
 use App\Services\ResolutionStateService;
+use App\Services\MunicipalResolutionService;
 
 class ClubReconocimientosController extends Controller
 {
@@ -322,17 +322,13 @@ $directive = Directive::create([
 
     // ==================== RESOLUCIÓN EXTERNA (Portal Municipal) ====================
 
-    private const MUNI_BASE_URL = 'https://www.muniesperanza.gob.pe';
-    private const MUNI_SEARCH_URL = self::MUNI_BASE_URL . '/website/loads/cargar_archivos.php';
-    private const MUNI_TIPO_RESOLUCION_ALCALDIA = 2;
-
     /**
      * Busca la resolución en el portal de transparencia de la Municipalidad
      * y confirma si el PDF existe, antes de abrir el modal de vista previa.
      */
     public function buscarResolucionExterna(Resolution $resolution)
     {
-        $match = $this->resolveResolucionExterna($resolution);
+        $match = app(MunicipalResolutionService::class)->resolve($resolution);
 
         if (!$match) {
             return response()->json([
@@ -362,7 +358,7 @@ $directive = Directive::create([
 
     private function streamResolucionExterna(Resolution $resolution, string $disposition)
     {
-        $match = $this->resolveResolucionExterna($resolution);
+        $match = app(MunicipalResolutionService::class)->resolve($resolution);
 
         abort_if(!$match, 404, 'No se encontró esta resolución en el portal de la Municipalidad.');
 
@@ -380,59 +376,6 @@ $directive = Directive::create([
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
         ]);
-    }
-
-    /**
-     * El buscador del portal municipal solo filtra por año + mes + texto exacto.
-     * `date_start` es la fecha real de emisión (viene del mismo reporte oficial
-     * usado para poblar la tabla resolutions), así que se usa como proxy del mes.
-     */
-    private function resolveResolucionExterna(Resolution $resolution): ?array
-    {
-        if (!$resolution->document || !$resolution->date_start) {
-            return null;
-        }
-
-        return Cache::remember('resolucion_externa_' . $resolution->id, 3600, function () use ($resolution) {
-            [$numero, $anio] = array_pad(explode('-', $resolution->document, 2), 2, null);
-
-            if (!$numero || !$anio) {
-                return null;
-            }
-
-            $mes = $resolution->date_start->month;
-
-            try {
-                $response = $this->municipalHttpClient(15)
-                    ->get(self::MUNI_SEARCH_URL, [
-                        'd' => "{$anio}|{$mes}|{$numero}|" . self::MUNI_TIPO_RESOLUCION_ALCALDIA,
-                    ]);
-            } catch (ConnectionException $e) {
-                return null;
-            }
-
-            if (!$response->successful()) {
-                return null;
-            }
-
-            if (!preg_match("/window\.open\('([^']+\.pdf)'/i", $response->body(), $pdfMatch)) {
-                return null;
-            }
-
-            $relativePath = ltrim(str_replace('../../', '', $pdfMatch[1]), '/');
-
-            // La fila tiene dos celdas que empiezan con "RESOLUCION": la categoría
-            // ("RESOLUCIONES DE ALCALDÍA") y el título con el número ("...N°0220-2025-MDE").
-            // Se exige el patrón número-guion-año para quedarse con el título.
-            preg_match('/RESOLUCION[^<]*\d{2,6}-\d{4}[^<]*/i', $response->body(), $tituloMatch);
-            preg_match('/(\d{2}\/\d{2}\/\d{4})/', $response->body(), $fechaMatch);
-
-            return [
-                'pdf_url' => self::MUNI_BASE_URL . '/' . $relativePath,
-                'titulo' => $tituloMatch[0] ?? $resolution->document,
-                'fecha' => $fechaMatch[1] ?? null,
-            ];
-        });
     }
 
     /**
@@ -618,7 +561,7 @@ $directive = Directive::create([
                 'numero'       => count($zonaGroups[$zonaNumero]['sectores'][$sector]['clubes']) + 1,
                 'codigo'       => $association->code ?? '',
                 'razon_social' => $association->company_name ?? '',
-                'nombre'       => strtoupper($association->name),
+                'nombre'       => mb_strtoupper($association->name, 'UTF-8'),
                 'direccion'    => $association->address ?? '',
                 'sector'       => $sector,
                 'beneficiarios'=> $totalBenef,
@@ -637,7 +580,7 @@ $directive = Directive::create([
             $zonaGroups[$zonaNumero]['total_zona']++;
             $zonaGroups[$zonaNumero]['total_beneficiarios'] += $totalBenef;
 
-            $rs = strtoupper(trim($association->company_name ?? ''));
+            $rs = mb_strtoupper(trim($association->company_name ?? ''), 'UTF-8');
             if (!isset($zonaGroups[$zonaNumero]['totales_rs'][$rs])) {
                 $zonaGroups[$zonaNumero]['totales_rs'][$rs] = 0;
             }
@@ -658,7 +601,7 @@ $directive = Directive::create([
             $totalesGenerales['total_beneficiarios'] += $zona['total_beneficiarios'];
 
             foreach ($zona['totales_rs'] as $rs => $count) {
-                $rsKey = strtoupper(trim($rs));
+                $rsKey = mb_strtoupper(trim($rs), 'UTF-8');
                 if ($rsKey === 'OSB') {
                     $totalesGenerales['total_osb'] += $count;
                     $totalesRS['OSB'] += $count;
@@ -731,9 +674,9 @@ $directive = Directive::create([
                 'zona'       => $zonaId ? str_pad($zonaId, 2, '0', STR_PAD_LEFT) : '',
                 'comite'     => $association->code ?? '',
                 'numero'     => $numero++,
-                'club'       => strtoupper($association->name),
+                'club'       => mb_strtoupper($association->name, 'UTF-8'),
                 'presidenta' => $people
-                    ? strtoupper(trim("{$people->names} {$people->father_lastname} {$people->mother_lastname}"))
+                    ? mb_strtoupper(trim("{$people->names} {$people->father_lastname} {$people->mother_lastname}"), 'UTF-8')
                     : '',
                 'dni'        => $people->dni ?? '',
             ];

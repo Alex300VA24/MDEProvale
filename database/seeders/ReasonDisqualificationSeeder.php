@@ -21,19 +21,19 @@ class ReasonDisqualificationSeeder extends Seeder
         ]);
 
         DB::table('reason_disqualifications')->insert([
-            'title' => 'Pas├│ la fecha de parto',
+            'title' => 'Pasó la fecha de parto',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('reason_disqualifications')->insert([
-            'title' => 'Pas├│ la fecha de lactancia',
+            'title' => 'Pasó la fecha de lactancia',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         DB::table('reason_disqualifications')->insert([
-            'title' => 'Ni├▒o mayor de 13 a├▒os',
+            'title' => 'Niño mayor de 13 años',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

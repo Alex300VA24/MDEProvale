@@ -369,15 +369,10 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
             if (debouncedFilters.search) params.search = debouncedFilters.search;
             if (debouncedFilters.association_id) params.association_id = debouncedFilters.association_id;
             if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
-            if (debouncedFilters.year && debouncedFilters.month) {
-                params.year = debouncedFilters.year;
-                params.month = debouncedFilters.month;
-            }
+            if (debouncedFilters.year) params.year = debouncedFilters.year;
+            if (debouncedFilters.month) params.month = debouncedFilters.month;
             const res = await http.get(`${BASE}/pecosas`, { params });
             setData(res.data);
-            if (!filters.year || !filters.month) {
-                setFilters((previous) => ({ ...previous, ...res.data.period }));
-            }
         } catch {
             toast.error('No se pudo cargar la lista de pecosas.');
         } finally {
@@ -470,13 +465,15 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                 </div>
                 <div className="w-full sm:w-36 shrink-0">
                     <label className={labelCls}>Mes</label>
-                    <select value={filters.month} onChange={(e) => setFilter('month', Number(e.target.value))} className={inputCls}>
+                    <select value={filters.month} onChange={(e) => setFilter('month', e.target.value ? Number(e.target.value) : '')} className={inputCls}>
+                        <option value="">Todos los meses</option>
                         {MONTHS.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
                     </select>
                 </div>
                 <div className="w-full sm:w-28 shrink-0">
                     <label className={labelCls}>Año</label>
-                    <select value={filters.year} onChange={(e) => setFilter('year', Number(e.target.value))} className={inputCls}>
+                    <select value={filters.year} onChange={(e) => setFilter('year', e.target.value ? Number(e.target.value) : '')} className={inputCls}>
+                        <option value="">Todos los años</option>
                         {YEARS.map((year) => <option key={year} value={year}>{year}</option>)}
                     </select>
                 </div>
@@ -484,7 +481,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                     <button
                         type="button"
                         onClick={() => {
-                            setFilters((previous) => ({ ...previous, search: '', association_id: '', state_id: '' }));
+                            setFilters({ search: '', association_id: '', state_id: '', year: '', month: '' });
                             setPage(1);
                         }}
                         className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
@@ -524,7 +521,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                     <td colSpan={6}>
                                         <div className="empty-state">
                                             <i className="fas fa-file-alt" />
-                                            <p>No hay pecosas en el período seleccionado</p>
+                                            <p>No hay pecosas con los filtros seleccionados</p>
                                         </div>
                                     </td>
                                 </tr>

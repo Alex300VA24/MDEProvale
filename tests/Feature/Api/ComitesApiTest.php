@@ -233,7 +233,6 @@ class ComitesApiTest extends TestCase
     {
         return [
             'document' => $document,
-            'date_document' => '2026-01-10 09:00:00',
             'date_start' => '2026-01-10',
             'date_end' => '2026-12-31',
             'state_id' => 1,
@@ -468,7 +467,7 @@ class ComitesApiTest extends TestCase
             ->getJson(self::BASE . '/reconocimientos')
             ->assertOk()
             ->assertJsonStructure([
-                'data' => ['*' => ['id', 'document', 'date_document', 'date_start', 'date_end', 'state_id', 'state']],
+                'data' => ['*' => ['id', 'document', 'date_start', 'date_end', 'state_id', 'state']],
                 'links' => [],
                 'meta' => [],
             ])
@@ -485,6 +484,29 @@ class ComitesApiTest extends TestCase
                 'years' => [],
             ])
             ->assertJsonPath('years.0', 2025);
+    }
+
+    public function test_reconocimientos_can_filter_by_start_month(): void
+    {
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . '/reconocimientos?mes=2')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.document', 'RES-002');
+    }
+
+    public function test_reconocimientos_can_be_searched_by_committee(): void
+    {
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . '/reconocimientos?search=Secundario')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.document', 'RES-002');
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . '/reconocimientos?search=Demo')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
     }
 
     public function test_store_reconocimiento_creates(): void

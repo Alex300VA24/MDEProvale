@@ -15,12 +15,12 @@ class TypeBenefitSeeder extends Seeder
     {
         /*
         insert into TiposBeneficio(descripcion, edadMinima, edadMaxima, prioridad, observaciones)
-            values('ni├▒o (0-6 a├▒os)', 0, 6, 1, ''),('ni├▒o (7-13 a├▒os)', 7, 13, 2, ''),
+            values('niño (0-6 años)', 0, 6, 1, ''),('niño (7-13 años)', 7, 13, 2, ''),
             ('adulto mayor', 65, null, 2, ''),('madre gestante', 12, null, 1, ''),
             ('madre lactante', 12, null, 1, ''),('persona con TBC', 0, null, 2, ''); 
         */
         DB::table('type_benefits')->insert([
-            'title' => 'Ni├▒o (0-6 a├▒os)',
+            'title' => 'Niño (0-6 años)',
             'min_age' => 0,
             'max_age' => 6,
             'priority' => 1,
@@ -30,7 +30,7 @@ class TypeBenefitSeeder extends Seeder
         ]);
 
         DB::table('type_benefits')->insert([
-            'title' => 'Ni├▒o (7-13 a├▒os)',
+            'title' => 'Niño (7-13 años)',
             'min_age' => 7,
             'max_age' => 13,
             'priority' => 2,

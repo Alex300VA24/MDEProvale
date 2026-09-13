@@ -22,6 +22,15 @@ class People extends Model
         'birthdate',
         'address',
         'place_sector_id',
+        'reniec_photo',
+    ];
+
+    protected $hidden = [
+        'reniec_photo',
+    ];
+
+    protected $casts = [
+        'reniec_photo' => 'encrypted',
     ];
 
     protected $appends = ['age_formatted'];

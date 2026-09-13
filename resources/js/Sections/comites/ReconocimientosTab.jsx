@@ -7,7 +7,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import ResolucionExternaModal from './ResolucionExternaModal';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, fmtDateTime, stateBadge, datetimeInputValue, datetimeToSubmit } from './format';
+import { fmtDate, stateBadge } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
@@ -16,19 +16,39 @@ const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wide
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
+const MONTHS = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+];
+
+const fmtPeriod = (resolution) => {
+    const start = fmtDate(resolution.date_start);
+    const end = fmtDate(resolution.date_end);
+
+    if (!start && !end) return 'Sin periodo';
+    return `${start || 'Sin inicio'} - ${end || 'Sin fin'}`;
+};
+
 function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
     const toast = useToast();
     const [document, setDocument] = useState(mode === 'edit' && resolution ? resolution.document || '' : '');
-    const [dateDocument, setDateDocument] = useState(
-        mode === 'edit' && resolution ? datetimeInputValue(resolution.date_document) : ''
-    );
     const [dateStart, setDateStart] = useState(mode === 'edit' && resolution ? resolution.date_start || '' : '');
     const [dateEnd, setDateEnd] = useState(mode === 'edit' && resolution ? resolution.date_end || '' : '');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!document || !dateDocument || !dateStart || !dateEnd) {
+        if (!document || !dateStart || !dateEnd) {
             toast.error('Complete los campos obligatorios de la resolución.');
             return;
         }
@@ -40,7 +60,6 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
         try {
             const payload = {
                 document,
-                date_document: datetimeToSubmit(dateDocument),
                 date_start: dateStart,
                 date_end: dateEnd,
             };
@@ -74,10 +93,6 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
                         <label className={labelCls}>Documento *</label>
                         <input type="text" value={document} onChange={(e) => setDocument(e.target.value)} className={inputCls} required maxLength={100} />
                     </div>
-                    <div className="sm:col-span-2">
-                        <label className={labelCls}>Fecha de Documento *</label>
-                        <input type="datetime-local" value={dateDocument} onChange={(e) => setDateDocument(e.target.value)} className={inputCls} required />
-                    </div>
                     <div>
                         <label className={labelCls}>Fecha de Inicio *</label>
                         <input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} className={inputCls} required />
@@ -108,12 +123,10 @@ function ReconocimientoViewModal({ resolution, onClose }) {
                     <span className="text-base font-bold text-charcoal">{resolution.document || '—'}</span>
                 </Field>
                 <FieldGrid>
-                    <Field label="Fecha de documento" value={fmtDateTime(resolution.date_document)} />
                     <Field label="Estado">
                         <span className={`badge ${stateBadge(resolution.state).cls}`}>{stateBadge(resolution.state).label}</span>
                     </Field>
-                    <Field label="Fecha de inicio" value={fmtDate(resolution.date_start)} />
-                    <Field label="Fecha de fin" value={fmtDate(resolution.date_end)} />
+                    <Field label="Periodo" value={fmtPeriod(resolution)} />
                 </FieldGrid>
             </DetailGroup>
             <DetailGroup title="Comités asociados" icon="fa-people-roof">
@@ -137,7 +150,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filters, setFilters] = useState({ search: '', state_id: '', anio: '' });
+    const [filters, setFilters] = useState({ search: '', state_id: '', anio: '', mes: '' });
     const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -159,6 +172,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
             if (debouncedFilters.search) params.search = debouncedFilters.search;
             if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
             if (debouncedFilters.anio) params.anio = debouncedFilters.anio;
+            if (debouncedFilters.mes) params.mes = debouncedFilters.mes;
             const res = await http.get(`${BASE}/reconocimientos`, { params });
             setData(res.data);
         } catch {
@@ -226,10 +240,19 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                             type="text"
                             value={filters.search}
                             onChange={(e) => setFilter('search', e.target.value)}
-                            placeholder="Buscar por documento..."
+                            placeholder="Buscar por documento o comité..."
                             className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
                         />
                     </div>
+                </div>
+                <div className="w-full sm:w-36">
+                    <label className={labelCls}>Mes</label>
+                    <select value={filters.mes} onChange={(e) => setFilter('mes', e.target.value)} className={inputCls}>
+                        <option value="">Todos</option>
+                        {MONTHS.map((month, index) => (
+                            <option key={month} value={index + 1}>{month}</option>
+                        ))}
+                    </select>
                 </div>
                 <div className="w-full sm:w-28">
                     <label className={labelCls}>Año</label>
@@ -254,7 +277,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                     <button
                         type="button"
                         onClick={() => {
-                            setFilters({ search: '', state_id: '', anio: '' });
+                            setFilters({ search: '', state_id: '', anio: '', mes: '' });
                             setPage(1);
                         }}
                         className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap shrink-0 self-end"
@@ -281,7 +304,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                         <thead>
                             <tr>
                                 <th className="px-3 sm:px-4 py-3 text-left">Documento</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Fecha de documento</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Periodo</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Comités</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
@@ -302,7 +325,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                                     return (
                                         <tr key={resolution.id} className="row-enter">
                                             <td className="px-3 sm:px-4 py-3 font-semibold">{resolution.document || '-'}</td>
-                                            <td className="px-3 sm:px-4 py-3 text-earth">{fmtDateTime(resolution.date_document)}</td>
+                                            <td className="px-3 sm:px-4 py-3 text-earth tabular-nums whitespace-nowrap">{fmtPeriod(resolution)}</td>
                                             <td className="px-3 sm:px-4 py-3">
                                                 {(resolution.associations || []).length > 0 ? (
                                                     <div className="flex flex-wrap gap-1.5">
@@ -410,7 +433,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                 message="Se eliminará esta resolución de forma permanente."
                 details={deleting ? [
                     { label: 'Documento', value: deleting.document },
-                    { label: 'Fecha', value: fmtDateTime(deleting.date_document) },
+                    { label: 'Periodo', value: fmtPeriod(deleting) },
                 ] : []}
             />
         </>

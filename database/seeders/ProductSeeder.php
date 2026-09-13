@@ -7,32 +7,32 @@ use Illuminate\Support\Facades\DB;
 
 class ProductSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
-    public function run()
+    public function run(): void
     {
-        DB::table('products')->insert([
-            'title' => 'LECHE EVAPORADA ENTERA',
-            'abbreviation' => 'LEC',
-            'state_id' => 1,
-            'uom_id' => 2,
-        ]);
-        
-        DB::table('products')->insert([
-            'title' => 'HOJUELA DE QUINUA',
-            'abbreviation' => 'HOJ',
-            'state_id' => 1,
-            'uom_id' => 1,
-        ]);
+        $path = __DIR__ . '/data/products.json';
+        if (! is_file($path)) {
+            throw new \RuntimeException("No se encontro {$path}. Ejecuta migracion_productos/creando_seeders.py.");
+        }
 
-        DB::table('products')->insert([
-            'title' => 'AZUCAR',
-            'abbreviation' => 'AZU',
-            'state_id' => 1,
-            'uom_id' => 1,
-        ]);
+        $rows = json_decode(file_get_contents($path), true);
+        if (! is_array($rows)) {
+            throw new \RuntimeException("El archivo {$path} no contiene JSON valido.");
+        }
+
+        $now = now();
+        foreach ($rows as $row) {
+            DB::table('products')->updateOrInsert(
+                ['title' => $row['title']],
+                [
+                    'abbreviation' => $row['abbreviation'],
+                    'state_id' => $row['state_id'],
+                    'uom_id' => $row['uom_id'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+
+        $this->command->info('Productos insertados: ' . count($rows));
     }
 }

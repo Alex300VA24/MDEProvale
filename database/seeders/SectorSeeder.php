@@ -61,56 +61,56 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 1 id = 8
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Las Palmeras',
+            'title' => 'Ampliación Las Palmeras',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 1 id = 9
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Las Palmeras II',
+            'title' => 'Ampliación Las Palmeras II',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 1 id = 10
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Las Palmeras V',
+            'title' => 'Ampliación Las Palmeras V',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 1 id = 11
         DB::table('sectors')->insert([
-            'title' => 'Mar├¡a Elena Moyano',
+            'title' => 'María Elena Moyano',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         // Sectores de la Zona 1 id = 12
         DB::table('sectors')->insert([
-            'title' => 'Clementina Peralta de Acu├▒a',
+            'title' => 'Clementina Peralta de Acuña',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 1 id = 13
         DB::table('sectors')->insert([
-            'title' => 'Clementina Peralta de Acu├▒a I',
+            'title' => 'Clementina Peralta de Acuña I',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 1 id = 14
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Clementina Peralta de Acu├▒a',
+            'title' => 'Ampliación Clementina Peralta de Acuña',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 1 id = 15
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Clementina Peralta de Acu├▒a I',
+            'title' => 'Ampliación Clementina Peralta de Acuña I',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 1 id = 16
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Clementina Peralta de Acu├▒a II',
+            'title' => 'Ampliación Clementina Peralta de Acuña II',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -144,13 +144,13 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 2 id = 21
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Primavera I',
+            'title' => 'Ampliación Primavera I',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         // Sectores de la Zona 2 id = 22
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Primavera II',
+            'title' => 'Ampliación Primavera II',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -229,7 +229,7 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 2 id = 35
         DB::table('sectors')->insert([
-            'title' => 'Las Orqu├¡deas',
+            'title' => 'Las Orquídeas',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -266,7 +266,7 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 3 id=41
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Nuevo Indoamerica',
+            'title' => 'Ampliación Nuevo Indoamerica',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -278,7 +278,7 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 3 id=43
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n los Diamantes',
+            'title' => 'Ampliación los Diamantes',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -290,7 +290,7 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 3 id=45
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n los Olivos',
+            'title' => 'Ampliación los Olivos',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -339,7 +339,7 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 4 id=53
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Fraternidad II',
+            'title' => 'Ampliación Fraternidad II',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -413,7 +413,7 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 6 id=65
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Virgen de la Puerta',
+            'title' => 'Ampliación Virgen de la Puerta',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -444,7 +444,7 @@ class SectorSeeder extends Seeder
         ]);
         // Sectores de la Zona 7 id=70
         DB::table('sectors')->insert([
-            'title' => 'Ampliaci├│n Santa Veronica',
+            'title' => 'Ampliación Santa Veronica',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

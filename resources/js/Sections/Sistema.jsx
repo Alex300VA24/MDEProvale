@@ -5,6 +5,7 @@ import RolesTab from './sistema/RolesTab';
 import ModulosTab from './sistema/ModulosTab';
 import NotificacionesTab from './sistema/NotificacionesTab';
 import AsistenteConfigTab from './sistema/AsistenteConfigTab';
+import CierreDeMesTab from './sistema/CierreDeMesTab';
 
 const HEADERS = {
     usuarios: { icon: 'fa-users', title: 'Gestión de Usuarios', newLabel: 'Registrar Usuario', description: 'Administra los usuarios del sistema.' },
@@ -12,6 +13,7 @@ const HEADERS = {
     modulos: { icon: 'fa-puzzle-piece', title: 'Gestión de Módulos', newLabel: 'Registrar Módulo', description: 'Administra los módulos del sistema.' },
     notificaciones: { icon: 'fa-bell', title: 'Notificaciones', description: 'Administra las notificaciones del sistema.' },
     asistente: { icon: 'fa-robot', title: 'Asistente IA', description: 'Configura el límite de consultas del asistente IA por usuario.' },
+    cierre: { icon: 'fa-calendar-check', title: 'Cierre de Mes', description: 'Cierra el mes finalizado para habilitar avisos y detalles del panel de Inicio.' },
 };
 
 export default function Sistema() {
@@ -96,6 +98,9 @@ export default function Sistema() {
                 </div>
                 <div className={tab === 'asistente' ? '' : 'hidden'}>
                     <AsistenteConfigTab can={can} />
+                </div>
+                <div className={tab === 'cierre' ? '' : 'hidden'}>
+                    <CierreDeMesTab can={can} />
                 </div>
             </div>
         </div>

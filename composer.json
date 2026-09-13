@@ -12,7 +12,8 @@
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^10.0",
         "laravel/sanctum": "^3.3",
-        "laravel/tinker": "^2.11"
+        "laravel/tinker": "^2.11",
+        "phpoffice/phpspreadsheet": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.21",

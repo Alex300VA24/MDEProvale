@@ -37,6 +37,10 @@ Route::prefix('dashboard/socios-beneficiarios')->middleware('module:socios-benef
     // Personas
     Route::get('personas', [SociosBeneficiariosController::class, 'personas'])->name('personas');
     Route::get('personas/options', [SociosBeneficiariosController::class, 'personasOptions'])->name('personas.options');
+    Route::post('personas/reniec', [SociosBeneficiariosController::class, 'consultarReniec'])
+        ->middleware('throttle:10,1')
+        ->name('personas.reniec');
+    Route::get('personas/{person}', [SociosBeneficiariosController::class, 'showPersona'])->name('personas.show');
     Route::post('personas', [SociosBeneficiariosController::class, 'storePersona'])->name('personas.store');
     Route::put('personas/{person}', [SociosBeneficiariosController::class, 'updatePersona'])->name('personas.update');
     Route::delete('personas/{person}', [SociosBeneficiariosController::class, 'destroyPersona'])->name('personas.destroy');
@@ -154,6 +158,13 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
 
         Route::post('notifications/{notification}/approve', [SistemaController::class, 'approveNotification'])->name('notifications.approve');
         Route::post('notifications/{notification}/reject', [SistemaController::class, 'rejectNotification'])->name('notifications.reject');
+
+        // Cierre de mes: el administrador cierra el mes finalizado y recién
+        // entonces se muestran los avisos/detalles históricos en Inicio.
+        Route::get('cierre-mes', [SistemaController::class, 'cierreMesIndex'])->name('cierre-mes');
+        Route::post('cierre-mes', [SistemaController::class, 'storeCierreMes'])
+            ->middleware('module:sistema,edit')
+            ->name('cierre-mes.store');
 
         // Parámetros del límite de consultas del asistente IA.
         Route::get('asistente-config', [SistemaController::class, 'asistenteConfig'])->name('asistente-config');

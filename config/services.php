@@ -18,6 +18,16 @@ return [
         'url' => env('GOOGLE_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models'),
     ],
 
+    'reniec' => [
+        'dni_usuario' => env('RENIEC_DNI_USUARIO'),
+        'ruc_usuario' => env('RENIEC_RUC_USUARIO'),
+        'password' => env('RENIEC_PASSWORD'),
+        'consultar_url' => env('RENIEC_CONSULTAR_URL', 'https://ws2.pide.gob.pe/Rest/RENIEC/Consultar?out=json'),
+        'actualizar_url' => env('RENIEC_ACTUALIZAR_URL', 'https://ws2.pide.gob.pe/Rest/RENIEC/Actualizar?out=json'),
+        'connect_timeout' => (int) env('RENIEC_CONNECT_TIMEOUT', 5),
+        'timeout' => (int) env('RENIEC_TIMEOUT', 15),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

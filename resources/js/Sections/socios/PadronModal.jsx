@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import Combobox from '../../Components/Combobox';
+import { pdfLoadingHtml } from '../../Components/pdfLoadingScreen';
 
 const MESES = [
     '',
@@ -45,6 +46,11 @@ export default function PadronModal({ open, onClose, options }) {
             toast.error('Habilita las ventanas emergentes para este sitio e inténtalo de nuevo.');
             return;
         }
+        preview.document.write(pdfLoadingHtml(
+            'Generando Padrón de Beneficiarios',
+            `${MESES[month]} ${year} — Procesando datos del padrón, esto puede tardar unos segundos.`
+        ));
+        preview.document.close();
         try {
             const params = new URLSearchParams({
                 association_id: associationId,

@@ -1,0 +1,14 @@
+[
+  {
+    "title": "LECHE EVAPORADA ENTERA",
+    "abbreviation": "LEC",
+    "state_id": 1,
+    "uom_id": 2
+  },
+  {
+    "title": "HOJUELA DE QUINUA",
+    "abbreviation": "HOJ",
+    "state_id": 1,
+    "uom_id": 1
+  }
+]

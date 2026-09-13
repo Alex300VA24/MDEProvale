@@ -14,16 +14,10 @@ class UomSeeder extends Seeder
     public function run()
     {
         // insert into UnidadMedida(descripcion) values('Bolsa'),('Tarro');
-        DB::table('uoms')->insert([
-            'title' => 'Bolsa',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('uoms')->insert([
-            'title' => 'Tarro',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $now = now();
+        DB::table('uoms')->upsert([
+            ['id' => 1, 'title' => 'Bolsa', 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'title' => 'Tarro', 'created_at' => $now, 'updated_at' => $now],
+        ], ['id'], ['title', 'updated_at']);
     }
 }

@@ -14,22 +14,11 @@ class TypePremisesSeeder extends Seeder
     public function run()
     {
         // insert into TiposLocal(descripcion) values('propio'),('provisional'),('municipalidad');
-        DB::table('type_premises')->insert([
-            'title' => 'Propio',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('type_premises')->insert([
-            'title' => 'Provisional',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('type_premises')->insert([
-            'title' => 'Municipalidad',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $now = now();
+        DB::table('type_premises')->upsert([
+            ['id' => 1, 'title' => 'Propio', 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 2, 'title' => 'Provisional', 'created_at' => $now, 'updated_at' => $now],
+            ['id' => 3, 'title' => 'Municipalidad', 'created_at' => $now, 'updated_at' => $now],
+        ], ['id'], ['title', 'updated_at']);
     }
 }

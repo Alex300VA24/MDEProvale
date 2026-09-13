@@ -28,11 +28,58 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
     const [phoneNumber, setPhoneNumber] = useState(mode === 'edit' ? persona?.phone_number ?? '' : '');
     const [placeSectorId, setPlaceSectorId] = useState(mode === 'edit' ? persona?.place_sector_id ?? '' : '');
     const [submitting, setSubmitting] = useState(false);
+    const [consultingReniec, setConsultingReniec] = useState(false);
+    const [reniecStatus, setReniecStatus] = useState(null);
+    const [reniecPhotoToken, setReniecPhotoToken] = useState(null);
 
     const placeSectorOptions = (options.place_sectors ?? []).map((ps) => ({
         id: ps.id,
         label: [ps.place?.title, ps.sector?.title].filter(Boolean).join(' - '),
     }));
+
+    const handleDniChange = (value) => {
+        setDni(value.replace(/\D/g, '').slice(0, 8));
+        setReniecStatus(null);
+        setReniecPhotoToken(null);
+    };
+
+    const handleReniecLookup = async () => {
+        if (!/^\d{8}$/.test(dni)) {
+            const message = 'Ingrese un DNI válido de 8 dígitos.';
+            setReniecStatus({ type: 'error', message });
+            toast.error(message);
+            return;
+        }
+
+        setConsultingReniec(true);
+        setReniecStatus(null);
+
+        try {
+            const response = await http.post(`${BASE}/personas/reniec`, { dni }, { timeout: 22000 });
+            const person = response.data.data;
+
+            if (person.names) setNames(person.names);
+            if (person.father_lastname) setFatherLastname(person.father_lastname);
+            if (person.mother_lastname) setMotherLastname(person.mother_lastname);
+            if (person.address) setAddress(person.address);
+            setReniecPhotoToken(person.photo_token ?? null);
+
+            const restriction = person.restriction && person.restriction !== 'NINGUNA'
+                ? ` Restricción: ${person.restriction}.`
+                : '';
+            setReniecStatus({
+                type: restriction ? 'warning' : 'success',
+                message: `Datos obtenidos de RENIEC.${restriction}`,
+            });
+        } catch (err) {
+            const message = errorMessage(err, 'No se pudo consultar RENIEC.');
+            setReniecPhotoToken(null);
+            setReniecStatus({ type: 'error', message });
+            toast.error(message);
+        } finally {
+            setConsultingReniec(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -53,6 +100,9 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                 phone_number: phoneNumber || null,
                 place_sector_id: placeSectorId || null,
             };
+            if (mode === 'create' && reniecPhotoToken) {
+                payload.reniec_photo_token = reniecPhotoToken;
+            }
             if (mode === 'edit') {
                 await http.put(`${BASE}/personas/${persona.id}`, payload);
             } else {
@@ -78,11 +128,68 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
         >
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                        <label htmlFor="persona-dni" className={labelCls}>
+                            DNI <span className="text-clay">*</span>
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                                id="persona-dni"
+                                type="text"
+                                inputMode="numeric"
+                                autoComplete="off"
+                                value={dni}
+                                maxLength={8}
+                                onChange={(e) => handleDniChange(e.target.value)}
+                                className={`${inputCls} font-mono sm:flex-1`}
+                                aria-describedby={mode === 'create' ? 'persona-dni-help persona-reniec-status' : undefined}
+                                autoFocus={mode === 'create'}
+                                required
+                            />
+                            {mode === 'create' && (
+                                <button
+                                    type="button"
+                                    onClick={handleReniecLookup}
+                                    disabled={consultingReniec || dni.length !== 8}
+                                    className="btn-secondary min-h-[44px] sm:w-48 text-xs sm:text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                                    aria-busy={consultingReniec}
+                                >
+                                    <i
+                                        className={`fas ${consultingReniec ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'} mr-2`}
+                                        aria-hidden="true"
+                                    />
+                                    {consultingReniec ? 'Consultando...' : 'Consultar RENIEC'}
+                                </button>
+                            )}
+                        </div>
+                        {mode === 'create' && (
+                            <p id="persona-dni-help" className="mt-1.5 text-xs text-earth">
+                                Consulta individual. Completa nombres, apellidos y dirección disponibles.
+                            </p>
+                        )}
+                        {mode === 'create' && (
+                            <div
+                                id="persona-reniec-status"
+                                role={reniecStatus?.type === 'error' ? 'alert' : 'status'}
+                                aria-live="polite"
+                                className={reniecStatus ? `mt-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
+                                    reniecStatus.type === 'success'
+                                        ? 'border-leaf/30 bg-leaf-light text-leaf'
+                                        : reniecStatus.type === 'warning'
+                                            ? 'border-sun/40 bg-sun-light text-amber-dark'
+                                            : 'border-clay/30 bg-clay-light text-clay'
+                                }` : ''}
+                            >
+                                {reniecStatus?.message}
+                            </div>
+                        )}
+                    </div>
                     <div>
-                        <label className={labelCls}>
+                        <label htmlFor="persona-names" className={labelCls}>
                             Nombres <span className="text-clay">*</span>
                         </label>
                         <input
+                            id="persona-names"
                             type="text"
                             value={names}
                             onChange={(e) => setNames(e.target.value)}
@@ -91,23 +198,11 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                         />
                     </div>
                     <div>
-                        <label className={labelCls}>
-                            DNI <span className="text-clay">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={dni}
-                            maxLength={8}
-                            onChange={(e) => setDni(e.target.value.replace(/\D/g, ''))}
-                            className={`${inputCls} font-mono`}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className={labelCls}>
+                        <label htmlFor="persona-father-lastname" className={labelCls}>
                             Apellido Paterno <span className="text-clay">*</span>
                         </label>
                         <input
+                            id="persona-father-lastname"
                             type="text"
                             value={fatherLastname}
                             onChange={(e) => setFatherLastname(e.target.value)}
@@ -116,10 +211,11 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                         />
                     </div>
                     <div>
-                        <label className={labelCls}>
+                        <label htmlFor="persona-mother-lastname" className={labelCls}>
                             Apellido Materno <span className="text-clay">*</span>
                         </label>
                         <input
+                            id="persona-mother-lastname"
                             type="text"
                             value={motherLastname}
                             onChange={(e) => setMotherLastname(e.target.value)}
@@ -128,8 +224,9 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                         />
                     </div>
                     <div>
-                        <label className={labelCls}>Fecha de Nacimiento</label>
+                        <label htmlFor="persona-birthdate" className={labelCls}>Fecha de Nacimiento</label>
                         <input
+                            id="persona-birthdate"
                             type="date"
                             value={birthdate}
                             max={new Date().toISOString().split('T')[0]}
@@ -138,17 +235,19 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                         />
                     </div>
                     <div>
-                        <label className={labelCls}>Género</label>
-                        <select value={gender} onChange={(e) => setGender(e.target.value)} className={inputCls}>
+                        <label htmlFor="persona-gender" className={labelCls}>Género</label>
+                        <select id="persona-gender" value={gender} onChange={(e) => setGender(e.target.value)} className={inputCls}>
                             <option value="">Seleccionar...</option>
                             <option value="F">Femenino</option>
                             <option value="M">Masculino</option>
                         </select>
                     </div>
                     <div>
-                        <label className={labelCls}>Celular</label>
+                        <label htmlFor="persona-phone" className={labelCls}>Celular</label>
                         <input
+                            id="persona-phone"
                             type="text"
+                            inputMode="numeric"
                             value={phoneNumber}
                             maxLength={9}
                             onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
@@ -167,8 +266,9 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                     </div>
                 </div>
                 <div>
-                    <label className={labelCls}>Dirección</label>
+                    <label htmlFor="persona-address" className={labelCls}>Dirección</label>
                     <input
+                        id="persona-address"
                         type="text"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
@@ -179,8 +279,8 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                     <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">
                         Cancelar
                     </button>
-                    <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
-                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
+                    <button type="submit" disabled={submitting || consultingReniec} className="btn-primary flex-1 text-xs sm:text-sm disabled:cursor-not-allowed disabled:opacity-50">
+                        <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} aria-hidden="true" />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
                 </div>
@@ -189,7 +289,47 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
     );
 }
 
-function PersonaViewModal({ persona, onClose }) {
+function ReniecPhoto({ persona, loading }) {
+    const [failed, setFailed] = useState(false);
+    const fullName = personFullName(persona);
+
+    useEffect(() => {
+        setFailed(false);
+    }, [persona.id, persona.photo]);
+
+    if (loading) {
+        return (
+            <div
+                className="h-36 w-28 shrink-0 animate-pulse rounded-xl bg-wheat"
+                role="status"
+                aria-label="Cargando foto de RENIEC"
+            />
+        );
+    }
+
+    if (!persona.photo || failed) {
+        return (
+            <div className="flex h-36 w-28 shrink-0 flex-col items-center justify-center rounded-xl bg-gray-100 px-3 text-center text-earth">
+                <i className="fas fa-user text-3xl" aria-hidden="true" />
+                <span className="mt-2 text-xs font-semibold">Sin foto RENIEC</span>
+            </div>
+        );
+    }
+
+    return (
+        <img
+            src={persona.photo}
+            alt={'Foto de RENIEC de ' + fullName}
+            width="112"
+            height="144"
+            decoding="async"
+            onError={() => setFailed(true)}
+            className="h-36 w-28 shrink-0 rounded-xl bg-gray-100 object-cover"
+        />
+    );
+}
+
+function PersonaViewModal({ persona, loading, onClose }) {
     if (!persona) return null;
     const sector = persona.place_sector
         ? [persona.place_sector.place_title, persona.place_sector.sector_title].filter(Boolean).join(' - ')
@@ -197,9 +337,14 @@ function PersonaViewModal({ persona, onClose }) {
     return (
         <DetailModal open onClose={onClose} title="Detalle de la persona" icon="fa-user" maxWidth="sm:max-w-lg">
             <DetailGroup>
-                <Field label="Nombre completo" wide>
-                    <span className="text-base font-bold text-charcoal">{personFullName(persona)}</span>
-                </Field>
+                <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+                    <ReniecPhoto persona={persona} loading={loading} />
+                    <div className="min-w-0 flex-1 self-stretch">
+                        <Field label="Nombre completo" wide>
+                            <span className="text-base font-bold text-charcoal">{personFullName(persona)}</span>
+                        </Field>
+                    </div>
+                </div>
                 <FieldGrid>
                     <Field label="DNI" value={persona.dni} mono />
                     <Field label="Género" value={persona.gender === 'F' ? 'Femenino' : persona.gender === 'M' ? 'Masculino' : ''} />
@@ -228,6 +373,7 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
     const [formMode, setFormMode] = useState('create');
     const [editing, setEditing] = useState(null);
     const [viewing, setViewing] = useState(null);
+    const [viewingLoadingId, setViewingLoadingId] = useState(null);
     const [deleting, setDeleting] = useState(null);
 
     const debouncedFilters = useDebounced(filters, 400);
@@ -271,6 +417,20 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
         setEditing(persona);
         setFormMode('edit');
         setFormOpen(true);
+    };
+
+    const openView = async (persona) => {
+        setViewing(persona);
+        setViewingLoadingId(persona.id);
+
+        try {
+            const response = await http.get(BASE + '/personas/' + persona.id);
+            setViewing((current) => current?.id === persona.id ? response.data.data : current);
+        } catch (err) {
+            toast.error(errorMessage(err, 'No se pudo cargar el detalle de la persona.'));
+        } finally {
+            setViewingLoadingId((current) => current === persona.id ? null : current);
+        }
     };
 
     const confirmDelete = async () => {
@@ -407,9 +567,10 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                                             <div className="inline-grid grid-cols-[repeat(3,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setViewing(persona)}
+                                                    onClick={() => openView(persona)}
                                                     className="btn-action col-start-1 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
                                                     title="Ver"
+                                                    aria-label={'Ver detalle de ' + personFullName(persona)}
                                                 >
                                                     <i className="fas fa-eye" />
                                                 </button>
@@ -466,7 +627,11 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
                 />
             )}
 
-            <PersonaViewModal persona={viewing} onClose={() => setViewing(null)} />
+            <PersonaViewModal
+                persona={viewing}
+                loading={viewingLoadingId === viewing?.id}
+                onClose={() => setViewing(null)}
+            />
 
             <ConfirmDialog
                 open={!!deleting}

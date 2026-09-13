@@ -9,58 +9,50 @@ class ProductStockSeeder extends Seeder
 {
     public function run(): void
     {
-        $ruta = __DIR__ . '/data/product_stocks.json';
-        if (!is_file($ruta)) {
-            throw new \RuntimeException("No se encontro {$ruta}");
+        $path = __DIR__ . '/data/product_stocks.json';
+        if (! is_file($path)) {
+            throw new \RuntimeException("No se encontro {$path}. Ejecuta migracion_productos/creando_seeders.py.");
         }
 
-        $filas = json_decode(file_get_contents($ruta), true);
+        $rows = json_decode(file_get_contents($path), true);
+        if (! is_array($rows)) {
+            throw new \RuntimeException("El archivo {$path} no contiene JSON valido.");
+        }
+
         $pecosaMap = PecosaSeeder::$idMap;
-        $detailProductIds = DB::table('detail_products')->pluck('id')->flip();
-        $transactionIds = DB::table('transactions')->pluck('id')->flip();
+        $productMap = DetailProductSeeder::$idMap;
+        $transactionMap = TransactionSeeder::$detailExitIdMap;
+        $missingPecosas = collect($rows)->pluck('source_pecosa_id')->unique()->diff(array_keys($pecosaMap));
+        $missingProducts = collect($rows)->pluck('source_product_id')->unique()->diff(array_keys($productMap));
+        $missingTransactions = collect($rows)->pluck('source_detail_id')->unique()->diff(array_keys($transactionMap));
+        if ($missingPecosas->isNotEmpty() || $missingProducts->isNotEmpty() || $missingTransactions->isNotEmpty()) {
+            throw new \RuntimeException(
+                'Referencias de stock sin resolver. PEC_id=' . $missingPecosas->implode(',') .
+                '; PRO_id=' . $missingProducts->implode(',') .
+                '; DPE_id=' . $missingTransactions->implode(',')
+            );
+        }
 
-        $ahora = now();
-        $lote = [];
-        $inserted = 0;
+        DB::table('product_stocks')->whereIn('pecosa_id', array_values($pecosaMap))->delete();
 
-        foreach ($filas as $fila) {
-            $originalPecosaId = $fila[1] ?? null;
-            $detailProductId = $fila[0] ?? null;
-
-            // Solo se conservan movimientos de las pecosas y lotes importados.
-            if (! $originalPecosaId
-                || ! isset($pecosaMap[$originalPecosaId])
-                || ! isset($detailProductIds[$detailProductId])) {
-                continue;
-            }
-
-            $newPecosaId = $pecosaMap[$originalPecosaId];
-            $transactionId = $fila[2] ?? null;
-            if ($transactionId && ! isset($transactionIds[$transactionId])) {
-                $transactionId = null;
-            }
-
-            $lote[] = [
-                'detail_product_id' => $detailProductId,
-                'pecosa_id'         => $newPecosaId,
-                'transaction_id'    => $transactionId,
-                'quantity'          => $fila[3],
-                'observation'       => $fila[4],
-                'created_at'        => $ahora,
-                'updated_at'        => $ahora,
+        $now = now();
+        $payload = [];
+        foreach ($rows as $row) {
+            $payload[] = [
+                'detail_product_id' => $productMap[(int) $row['source_product_id']],
+                'pecosa_id' => $pecosaMap[(int) $row['source_pecosa_id']],
+                'transaction_id' => $transactionMap[(int) $row['source_detail_id']],
+                'quantity' => $row['quantity'],
+                'observation' => $row['observation'],
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
-            $inserted++;
-
-            if (count($lote) >= 500) {
-                DB::table('product_stocks')->insert($lote);
-                $lote = [];
-            }
         }
 
-        if ($lote) {
-            DB::table('product_stocks')->insert($lote);
+        foreach (array_chunk($payload, 500) as $chunk) {
+            DB::table('product_stocks')->insert($chunk);
         }
 
-        $this->command->info("Product stocks insertados: {$inserted}");
+        $this->command->info('Movimientos de stock insertados: ' . count($rows));
     }
 }

@@ -5,78 +5,68 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Carga los lotes generados por migracion_final_productos.py.
- * El orden del JSON conserva los IDs usados por los demás seeders.
- */
 class DetailProductSeeder extends Seeder
 {
+    /** @var array<int, int> PRO_id de SQL Server => detail_products.id */
+    public static array $idMap = [];
+
     public function run(): void
     {
-        $ruta = __DIR__ . '/data/detail_products.json';
-
-        if (! is_file($ruta)) {
-            throw new \RuntimeException("No se encontro {$ruta}. Ejecuta migracion_final_productos.py --execute.");
+        $path = __DIR__ . '/data/detail_products.json';
+        if (! is_file($path)) {
+            throw new \RuntimeException("No se encontro {$path}. Ejecuta migracion_productos/creando_seeders.py.");
         }
 
-        $filas = json_decode(file_get_contents($ruta), true);
-        if (! is_array($filas)) {
-            throw new \RuntimeException("El archivo {$ruta} no tiene un JSON valido.");
+        $rows = json_decode(file_get_contents($path), true);
+        if (! is_array($rows)) {
+            throw new \RuntimeException("El archivo {$path} no contiene JSON valido.");
         }
 
-        $ahora = now();
-        $lote = [];
-        $cutoff = '2026-01-01';
-
-        foreach ($filas as $originalIndex => $fila) {
-            $startDate = $fila[3] ?? '';
-            if ($startDate < $cutoff) continue;
-
-            $lote[] = [
-                // Los demas JSON referencian el ID que tenia esta fila en el origen.
-                'id' => $originalIndex + 1,
-                'product_id' => $fila[0],
-                'unit_price' => $fila[1],
-                'quantity' => $fila[2],
-                'start_date' => $startDate,
-                'end_date' => $fila[4],
-                'created_at' => $ahora,
-                'updated_at' => $ahora,
-            ];
-
-            if (count($lote) >= 500) {
-                DB::table('detail_products')->insert($lote);
-                $lote = [];
+        self::$idMap = [];
+        $now = now();
+        foreach ($rows as $row) {
+            $productId = DB::table('products')->where('title', $row['product_title'])->value('id');
+            if (! $productId) {
+                throw new \RuntimeException("Producto destino no encontrado: {$row['product_title']}");
             }
+
+            DB::table('detail_products')->updateOrInsert(
+                [
+                    'product_id' => $productId,
+                    'start_date' => $row['start_date'],
+                    'end_date' => $row['end_date'],
+                ],
+                [
+                    'unit_price' => $row['unit_price'],
+                    'quantity' => $row['quantity'],
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+
+            $id = DB::table('detail_products')
+                ->where('product_id', $productId)
+                ->where('start_date', $row['start_date'])
+                ->where('end_date', $row['end_date'])
+                ->value('id');
+            self::$idMap[(int) $row['source_product_id']] = (int) $id;
         }
 
-        if ($lote) {
-            DB::table('detail_products')->insert($lote);
-        }
-
-        // El último mes del JSON es el periodo operativo del seeder.
-        $ultimaFecha = collect($filas)->pluck(4)->filter()->max();
-        if ($ultimaFecha) {
-            $inicioPeriodo = substr($ultimaFecha, 0, 7) . '-01';
-            $finPeriodo = $ultimaFecha;
-
-            DB::table('products')->update([
-                'state_id' => 4,
-                'updated_at' => $ahora,
-            ]);
-
+        $lastDate = collect($rows)->pluck('end_date')->filter()->max();
+        if ($lastDate) {
+            $periodStart = substr($lastDate, 0, 7) . '-01';
+            DB::table('products')->update(['state_id' => 4, 'updated_at' => $now]);
             DB::table('products')
-                ->whereExists(function ($query) use ($inicioPeriodo, $finPeriodo) {
+                ->whereExists(function ($query) use ($periodStart, $lastDate) {
                     $query->select(DB::raw(1))
                         ->from('detail_products')
                         ->whereColumn('detail_products.product_id', 'products.id')
-                        ->where('detail_products.start_date', '<=', $finPeriodo)
-                        ->where('detail_products.end_date', '>=', $inicioPeriodo);
+                        ->where('detail_products.start_date', '<=', $lastDate)
+                        ->where('detail_products.end_date', '>=', $periodStart);
                 })
-                ->update([
-                    'state_id' => 3,
-                    'updated_at' => $ahora,
-                ]);
+                ->update(['state_id' => 3, 'updated_at' => $now]);
         }
+
+        $this->command->info('Lotes insertados: ' . count($rows));
     }
 }

@@ -33,12 +33,16 @@ const NAV_ITEMS = [
     { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
-    { key: 'asistente', label: 'Asistente PROVALE', icon: 'fa-comments', modules: ['reportes'], action: 'assistant' },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];
 
-const BUILT_IN_MODULES = new Set(NAV_ITEMS.flatMap((item) => item.modules));
+// Reportes pertenece al chatbot flotante: nunca debe aparecer como sección
+// propia ni como módulo dinámico en el menú.
+const BUILT_IN_MODULES = new Set([
+    ...NAV_ITEMS.flatMap((item) => item.modules),
+    'reportes',
+]);
 
 function getSectionFromUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -107,8 +111,12 @@ export default function Dashboard() {
         ...dynamicItems,
         ...(helpItem ? [helpItem] : []),
     ];
+    const allowedSectionKeys = new Set(navItems.map((item) => item.key));
 
-    const [activeSection, setActiveSection] = useState(getSectionFromUrl);
+    const [activeSection, setActiveSection] = useState(() => {
+        const requestedSection = getSectionFromUrl();
+        return allowedSectionKeys.has(requestedSection) ? requestedSection : 'inicio';
+    });
     const [assistantOpen, setAssistantOpen] = useState(shouldOpenAssistantFromUrl);
     const [panelLoading, setPanelLoading] = useState(true);
     const [navigationIntent, setNavigationIntent] = useState(null);
@@ -133,6 +141,7 @@ export default function Dashboard() {
 
     const navigate = (key, action = null) => {
         if (window.innerWidth <= 768) setMobileOpen(false);
+        if (!allowedSectionKeys.has(key)) return;
         if (key === activeSection) return;
         setNavigationIntent(action ? { section: key, action } : null);
         setActiveSection(key);
@@ -147,16 +156,7 @@ export default function Dashboard() {
         window.history.pushState({ section: key }, '', url.pathname + url.search);
     };
 
-    const selectNavigationItem = (item) => {
-        if (window.innerWidth <= 768) setMobileOpen(false);
-
-        if (item.action === 'assistant') {
-            setAssistantOpen(true);
-            return;
-        }
-
-        navigate(item.key);
-    };
+    const selectNavigationItem = (item) => navigate(item.key);
 
     const hidePanelLoading = useCallback(() => setPanelLoading(false), []);
 
@@ -164,7 +164,8 @@ export default function Dashboard() {
     useEffect(() => {
         const onPop = () => {
             setNavigationIntent(null);
-            setActiveSection(getSectionFromUrl());
+            const requestedSection = getSectionFromUrl();
+            setActiveSection(allowedSectionKeys.has(requestedSection) ? requestedSection : 'inicio');
             setPanelLoading(true);
         };
         window.addEventListener('popstate', onPop);
@@ -181,7 +182,7 @@ export default function Dashboard() {
     }, []);
 
     useEffect(() => {
-        if (activeSection.startsWith('module:') && !navItems.some((item) => item.key === activeSection)) {
+        if (!allowedSectionKeys.has(activeSection)) {
             navigate('inicio');
         }
     }, [activeSection, modules]);
@@ -267,9 +268,7 @@ export default function Dashboard() {
                     <nav id="sidebar-navigation" className="px-3 py-4 overflow-y-auto overflow-x-hidden flex flex-col scrollbar-thin" style={{ height: 'calc(100% - 88px)' }}>
                         <div className="flex-1">
                             {navItems.map((item) => {
-                                const selected = item.action === 'assistant'
-                                    ? assistantOpen
-                                    : activeSection === item.key;
+                                const selected = activeSection === item.key;
 
                                 return (
                                 <button
@@ -278,8 +277,7 @@ export default function Dashboard() {
                                     onClick={() => selectNavigationItem(item)}
                                     title={!sidebarExpanded ? item.label : undefined}
                                     aria-label={item.label}
-                                    aria-current={item.action !== 'assistant' && selected ? 'page' : undefined}
-                                    aria-expanded={item.action === 'assistant' ? assistantOpen : undefined}
+                                    aria-current={selected ? 'page' : undefined}
                                     className={`nav-item flex items-center gap-4 px-4 py-3 mb-1 rounded-xl font-semibold transition-all w-full text-left ${
                                         selected
                                             ? 'active bg-white/10 text-white'
@@ -399,6 +397,7 @@ export default function Dashboard() {
                                     <ActiveComponent
                                         module={activeDynamicModule}
                                         onNavigate={activeSection === 'inicio' ? navigate : undefined}
+                                        allowedSections={allowedSectionKeys}
                                         initialAction={navigationIntent?.section === activeSection ? navigationIntent.action : null}
                                     />
                                 </div>
