@@ -23,9 +23,10 @@ class StorePecosaRequest extends FormRequest
             'delivery_date' => 'required|date',
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
-            'managing_partner_id' => 'required|exists:partners,id',
-            // El estado (VIG/VEN) lo administra el sistema: toda PECOSA nace
-            // vigente y el período anterior se vence solo (ver PecosaObserver).
+            // La presidenta se resuelve por comité y mes del padrón.
+            'managing_partner_id' => 'nullable|exists:partners,id',
+            // Estado temporal opcional para clientes antiguos; servidor lo
+            // recalcula por fecha y nunca conserva ACT/INA.
             'state_id' => ['nullable', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'association_id' => 'required|exists:associations,id',
             'details' => 'required|array|min:1',

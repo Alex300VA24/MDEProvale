@@ -239,6 +239,24 @@ class Association extends Model
      */
     public function getPresidentNameAt(string $date): ?string
     {
+        $presidenta = $this->getPresidentaAt($date);
+
+        if ($presidenta && $presidenta->people) {
+            return trim(collect([
+                $presidenta->people->names,
+                $presidenta->people->father_lastname,
+                $presidenta->people->mother_lastname,
+            ])->filter()->implode(' '));
+        }
+
+        return null;
+    }
+
+    /**
+     * Obtiene la socia presidenta vigente en una fecha específica.
+     */
+    public function getPresidentaAt(string $date): ?Partner
+    {
         $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
         if (!$presidentPosition) return null;
 
@@ -255,13 +273,9 @@ class Association extends Model
             ->latest('date_start')
             ->first();
 
-        if (!$directive) return null;
-
-        $partner = Partner::with('people')->find($directive->partner_id);
-        if ($partner && $partner->people) {
-            return $partner->people->names . ' ' . $partner->people->father_lastname;
-        }
-        return null;
+        return $directive
+            ? Partner::with('people')->find($directive->partner_id)
+            : null;
     }
 
     public function resolutionsHistory()

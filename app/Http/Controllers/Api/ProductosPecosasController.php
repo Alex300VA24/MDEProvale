@@ -11,6 +11,7 @@ use App\Http\Resources\DetailProductResource;
 use App\Http\Resources\PecosaResource;
 use App\Http\Resources\ProductResource;
 use App\Models\Association;
+use App\Models\AssociationRosterPeriod;
 use App\Models\DetailPecosa;
 use App\Models\DetailProduct;
 use App\Models\Pecosa;
@@ -241,6 +242,19 @@ class ProductosPecosasController extends Controller
                 'dni' => $r->person->dni ?? null,
             ]);
 
+        $presidentPeriods = AssociationRosterPeriod::query()
+            ->whereIn('association_id', $associations->pluck('id'))
+            ->with('presidentPartner.people:id,dni')
+            ->orderBy('period')
+            ->get(['association_id', 'period', 'president_name', 'president_partner_id'])
+            ->map(fn ($period) => [
+                'association_id' => $period->association_id,
+                'period' => $period->period?->format('Y-m-d'),
+                'partner_id' => $period->president_partner_id,
+                'name' => $period->president_name,
+                'dni' => $period->presidentPartner?->people?->dni,
+            ]);
+
         $today = now()->toDateString();
         $detailProducts = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
             ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
@@ -267,6 +281,7 @@ class ProductosPecosasController extends Controller
             'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
             'associations' => $associations,
             'filter_associations' => $filterAssociations,
+            'president_periods' => $presidentPeriods,
             'responsibles' => $responsibles,
             'detail_products' => $detailProducts,
         ]);

@@ -379,6 +379,7 @@ class ProductosPecosasApiTest extends TestCase
                 'states' => ['*' => ['id', 'title', 'abbreviation']],
                 'associations' => ['*' => ['id', 'name', 'code']],
                 'filter_associations' => ['*' => ['id', 'name', 'code', 'is_current']],
+                'president_periods' => [],
                 'responsibles' => ['*' => ['id', 'type', 'name', 'dni']],
                 'detail_products' => ['*' => ['id', 'product_id', 'product_title', 'unit_price', 'available_stock', 'active']],
             ]);
@@ -580,6 +581,97 @@ class ProductosPecosasApiTest extends TestCase
         $this->assertDatabaseHas('transactions', ['document_number' => 'PEC-001', 'quantity' => 2]);
 
         $this->assertSame(2, (int) DB::table('product_stocks')->where('pecosa_id', $pecosaId)->sum('quantity'));
+    }
+
+    public function test_store_pecosa_uses_president_from_committee_roster_month(): void
+    {
+        DB::table('states')->insert([
+            'id' => 3,
+            'title' => 'Vigente',
+            'abbreviation' => 'VIG',
+        ]);
+        DB::table('associations')->where('id', 1)->update(['state_id' => 3]);
+
+        DB::table('people')->insert([
+            'id' => 4,
+            'names' => 'Rosa',
+            'father_lastname' => 'Histórica',
+            'mother_lastname' => 'Mensual',
+            'dni' => '87654321',
+            'gender' => 'F',
+            'birthdate' => '1980-01-01',
+            'address' => 'Calle Histórica',
+            'place_sector_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('partners')->insert([
+            'id' => 2,
+            'person_id' => 4,
+            'association_id' => 1,
+            'state_id' => 1,
+            'date_begin' => '2026-03-01',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('association_roster_periods')->insert([
+            'association_id' => 1,
+            'period' => '2026-03-01',
+            'partner_count' => 20,
+            'beneficiary_count' => 35,
+            'president_name' => 'ROSA HISTÓRICA MENSUAL',
+            'president_partner_id' => 2,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . '/pecosas/options')
+            ->assertOk()
+            ->assertJsonPath('president_periods.0.association_id', 1)
+            ->assertJsonPath('president_periods.0.period', '2026-03-01')
+            ->assertJsonPath('president_periods.0.partner_id', 2)
+            ->assertJsonPath('president_periods.0.name', 'ROSA HISTÓRICA MENSUAL');
+
+        DB::table('pecosas')->insert([
+            'pecosa_number' => 'BACK-001',
+            'delivery_date' => '2026-03-10',
+            'state_id' => 3,
+            'association_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $backfill = require database_path(
+            'migrations/2026_09_13_000001_backfill_pecosa_presidents_from_roster_periods.php'
+        );
+        $backfill->up();
+
+        $this->assertDatabaseHas('pecosas', [
+            'pecosa_number' => 'BACK-001',
+            'president_id' => 2,
+            'president_name' => 'ROSA HISTÓRICA MENSUAL',
+            'president_dni' => '87654321',
+        ]);
+
+        $payload = $this->pecosaPayload('PEC-003');
+        $payload['delivery_date'] = '2026-03-10';
+        $payload['state_id'] = 3;
+        unset($payload['managing_partner_id']);
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/pecosas', $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.managing_partner_id', 2)
+            ->assertJsonPath('data.president_name', 'ROSA HISTÓRICA MENSUAL')
+            ->assertJsonPath('data.president_dni', '87654321');
+
+        $this->assertDatabaseHas('pecosas', [
+            'pecosa_number' => 'PEC-003',
+            'president_id' => 2,
+            'managing_partner_id' => 2,
+            'president_name' => 'ROSA HISTÓRICA MENSUAL',
+            'president_dni' => '87654321',
+        ]);
     }
 
     public function test_store_pecosa_rejects_insufficient_stock(): void

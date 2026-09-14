@@ -125,6 +125,29 @@ class Pecosa extends Model
     }
 
     /**
+     * Estado temporal correcto para una fecha de entrega.
+     */
+    public static function stateAbbreviationForDeliveryDate($date, $referenceDate = null): ?string
+    {
+        $deliveryIndex = self::deliveryPeriodIndex($date);
+        if ($deliveryIndex === null) {
+            return null;
+        }
+
+        [$currentYear, $currentMonth] = self::currentDeliveryPeriod($referenceDate);
+        $currentIndex = $currentYear * 12 + ($currentMonth - 1);
+
+        return $deliveryIndex < $currentIndex ? State::EXPIRED : State::CURRENT;
+    }
+
+    public static function stateIdForDeliveryDate($date, $referenceDate = null): ?int
+    {
+        $abbreviation = self::stateAbbreviationForDeliveryDate($date, $referenceDate);
+
+        return $abbreviation ? State::idFor($abbreviation) : null;
+    }
+
+    /**
      * Clasifica cada PECOSA con fecha de entrega en el estado VIG (su período de
      * repartición efectivo es el actual o uno futuro) o VEN (ya pasó). Se usa
      * para el respaldo inicial y para la sincronización diaria programada.
@@ -140,17 +163,15 @@ class Pecosa extends Model
             return 0;
         }
 
-        [$currentYear, $currentMonth] = self::currentDeliveryPeriod();
-        $currentIndex = $currentYear * 12 + ($currentMonth - 1);
         $changed = 0;
 
         self::query()
             ->whereNotNull('delivery_date')
             ->select(['id', 'state_id', 'delivery_date'])
-            ->chunkById(500, function ($pecosas) use ($currentIndex, $vigId, $venId, &$changed) {
+            ->chunkById(500, function ($pecosas) use ($vigId, $venId, &$changed) {
                 foreach ($pecosas as $pecosa) {
-                    $index = self::deliveryPeriodIndex($pecosa->delivery_date);
-                    $target = $index !== null && $index < $currentIndex ? $venId : $vigId;
+                    $abbreviation = self::stateAbbreviationForDeliveryDate($pecosa->delivery_date);
+                    $target = $abbreviation === State::EXPIRED ? $venId : $vigId;
 
                     if ((int) $pecosa->state_id !== $target) {
                         $pecosa->forceFill(['state_id' => $target])->saveQuietly();
@@ -216,11 +237,7 @@ class Pecosa extends Model
             return false;
         }
 
-        $effective = self::effectiveDeliveryDate($this->delivery_date);
-        [$currentYear, $currentMonth] = self::currentDeliveryPeriod();
-
-        return (int) $effective->year === $currentYear
-            && (int) $effective->month === $currentMonth;
+        return self::stateAbbreviationForDeliveryDate($this->delivery_date) === State::CURRENT;
     }
 
     public function getVigenciaAttribute(): string

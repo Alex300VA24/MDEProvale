@@ -3,7 +3,6 @@
 namespace App\Observers;
 
 use App\Models\Pecosa;
-use App\Models\State;
 
 class PecosaObserver
 {
@@ -29,12 +28,15 @@ class PecosaObserver
     }
 
     /**
-     * Toda PECOSA nace vigente salvo que se indique explícitamente lo contrario.
+     * Estado siempre calculado por período: VIGENTE para mes actual/futuro y
+     * VENCIDO para meses anteriores. Nunca ACTIVO/INACTIVO.
      */
-    public function creating(Pecosa $pecosa): void
+    public function saving(Pecosa $pecosa): void
     {
-        if ($pecosa->state_id === null) {
-            $pecosa->state_id = State::idFor(State::CURRENT);
+        $stateId = Pecosa::stateIdForDeliveryDate($pecosa->delivery_date);
+
+        if ($stateId !== null) {
+            $pecosa->state_id = $stateId;
         }
     }
 }

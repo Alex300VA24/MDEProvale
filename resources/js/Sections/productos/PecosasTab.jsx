@@ -34,6 +34,30 @@ function detailRowFromApi(d, options) {
     };
 }
 
+function effectivePeriod(date) {
+    if (!date) return null;
+
+    const [year, month, day] = date.split('-').map(Number);
+    if (!year || !month || !day) return null;
+
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const effective = new Date(Date.UTC(year, month - 1, 1));
+    if (day > lastDay - 7) effective.setUTCMonth(effective.getUTCMonth() + 1);
+
+    return `${effective.getUTCFullYear()}-${String(effective.getUTCMonth() + 1).padStart(2, '0')}-01`;
+}
+
+function stateForDeliveryDate(date, states) {
+    const period = effectivePeriod(date);
+    if (!period) return null;
+
+    const now = new Date();
+    const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const abbreviation = period < currentPeriod ? 'VEN' : 'VIG';
+
+    return (states || []).find((state) => state.abbreviation === abbreviation) || null;
+}
+
 function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
     const toast = useToast();
     const [pecosaNumber, setPecosaNumber] = useState(mode === 'edit' && pecosa ? pecosa.pecosa_number : '');
@@ -45,15 +69,11 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
     );
     const [presidentName, setPresidentName] = useState(
         mode === 'edit' && pecosa
-            ? pecosa.managing_partner_name || pecosa.president_name || ''
+            ? pecosa.president_name || pecosa.managing_partner_name || ''
             : ''
     );
     const [managingPartnerId, setManagingPartnerId] = useState(
         mode === 'edit' && pecosa ? pecosa.managing_partner_id ?? pecosa.managing_partner?.id ?? '' : ''
-    );
-    const [stateId, setStateId] = useState(
-        mode === 'edit' && pecosa ? pecosa.state_id ?? pecosa.state?.id ?? ''
-        : (options.states || []).find((s) => s.abbreviation === 'ACT')?.id ?? ''
     );
     const [observation, setObservation] = useState(mode === 'edit' && pecosa ? pecosa.observation : '');
     const [details, setDetails] = useState(() =>
@@ -79,16 +99,28 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
     const associations = (options.associations || []).filter((a) => a && a.id !== undefined && a.id !== null);
     const clubOptions = associations.map((a) => ({ id: a.id, label: a.name }));
     const detailOptions = (options.detail_products || []).filter((dp) => Number(dp.available_stock || 0) > 0);
+    const calculatedState = stateForDeliveryDate(deliveryDate, options.states);
 
-    const handleAssociationChange = (value) => {
-        setAssociationId(value ?? '');
-        const assoc = associations.find((a) => String(a.id) === String(value));
-        const pId = assoc?.president_partner_id;
-        setManagingPartnerId(pId ?? '');
-        if (assoc?.president_name) setPresidentName(assoc.president_name);
-        else if (pId) setPresidentName(`Presidenta seleccionada (ID: ${pId})`);
-        else setPresidentName('Sin presidenta asignada');
-    };
+    useEffect(() => {
+        const assoc = associations.find((a) => String(a.id) === String(associationId));
+        if (!assoc) {
+            setManagingPartnerId('');
+            setPresidentName('');
+            return;
+        }
+
+        const period = effectivePeriod(deliveryDate);
+        const historical = (options.president_periods || []).find(
+            (item) => String(item.association_id) === String(associationId) && item.period === period
+        );
+        const partnerId = historical ? historical.partner_id : assoc.president_partner_id;
+        const name = historical ? historical.name : assoc.president_name;
+
+        setManagingPartnerId(partnerId ?? '');
+        setPresidentName(name || 'Sin presidenta registrada para este mes');
+    }, [associationId, deliveryDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleAssociationChange = (value) => setAssociationId(value ?? '');
 
     const addDetail = () => setDetails((prev) => [...prev, emptyDetailRow(`new-${Date.now()}-${prev.length}`)]);
 
@@ -117,7 +149,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!pecosaNumber || !associationId || !deliveryDate || !managingPartnerId || !stateId) {
+        if (!pecosaNumber || !associationId || !deliveryDate) {
             toast.error('Complete los campos obligatorios de la pecosa.');
             return;
         }
@@ -135,7 +167,6 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                 managing_partner_id: managingPartnerId,
                 chief_id: chiefId ?? null,
                 storekeeper_id: storekeeperId ?? null,
-                state_id: stateId,
                 observation: observation || null,
                 details: details.map((d) => ({
                     detail_product_id: d.detail_product_id,
@@ -202,17 +233,19 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                         <label className={labelCls}>Programa Vaso de Leche</label>
                         <input type="text" readOnly value={storekeeperName || ''} className={readonlyCls} />
                     </div>
-                    {mode === 'edit' && (
                     <div>
-                        <label className={labelCls}>Estado *</label>
-                        <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
-                            <option value="">Seleccionar...</option>
-                            {(options.states || []).map((s) => (
-                                <option key={s.id} value={s.id}>{s.title}</option>
-                            ))}
-                        </select>
+                        <label className={labelCls}>Estado</label>
+                        <input
+                            type="text"
+                            value={calculatedState?.title || ''}
+                            readOnly
+                            aria-describedby="pecosa-state-help"
+                            className={readonlyCls}
+                        />
+                        <p id="pecosa-state-help" className="mt-1 text-xs text-earth">
+                            Calculado automáticamente según mes de entrega.
+                        </p>
                     </div>
-                    )}
                     <div className="md:col-span-2">
                         <label className={labelCls}>Observaciones</label>
                         <textarea rows="2" value={observation} onChange={(e) => setObservation(e.target.value)} placeholder="Detalles adicionales de la entrega..." className={inputCls} />
@@ -308,7 +341,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                     </Field>
                     <Field label="Club de madres" value={pecosa.association_name || pecosa.association?.name} wide />
                     <Field label="Fecha de entrega" value={fmtDate(pecosa.delivery_date)} />
-                    <Field label="Presidenta" value={pecosa.managing_partner_name || pecosa.president_name} />
+                    <Field label="Presidenta" value={pecosa.president_name || pecosa.managing_partner_name} />
                     <Field label="Productos">
                         <span className="text-lg font-bold text-leaf">{details.length}</span>
                     </Field>
@@ -510,7 +543,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                 <th className="px-3 sm:px-4 py-3 text-left">Número Pecosa</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Club de Madres</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Fecha Entrega</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Responsable</th>
+                                <th className="px-3 sm:px-4 py-3 text-left">Presidenta</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Estado</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
@@ -535,7 +568,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                             ) : '-'}
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-earth">{fmtDate(pecosa.delivery_date) || '-'}</td>
-                                        <td className="px-3 sm:px-4 py-3">{pecosa.managing_partner_name || pecosa.president_name || ''}</td>
+                                        <td className="px-3 sm:px-4 py-3">{pecosa.president_name || pecosa.managing_partner_name || ''}</td>
                                         <td className="px-3 sm:px-4 py-3">
                                             {pecosa.state ? (
                                                 <span className={`badge ${stateClass(pecosa.state)}`}>{pecosa.state.title || 'Sin estado'}</span>

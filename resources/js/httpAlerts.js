@@ -27,6 +27,8 @@ const safeRedirect = (redirect) => {
     }
 };
 
+const CSRF_RELOAD_KEY = 'provale-csrf-reload';
+
 export function showSessionExpired(redirect) {
     if (activeSessionAlert) {
         return activeSessionAlert;
@@ -49,9 +51,34 @@ export function showSessionExpired(redirect) {
         },
     }).then(() => {
         window.location.assign(destination);
+    }).finally(() => {
+        activeSessionAlert = null;
     });
 
     return activeSessionAlert;
+}
+
+// Un 419 con `csrf_expired` significa que la sesión sigue viva pero el token
+// CSRF quedó desincronizado (p. ej. login/logout en otra pestaña). No hay que
+// sacar al usuario: se recarga la página para refrescar el token y seguir.
+export function reloadForCsrfExpired() {
+    const now = Date.now();
+
+    try {
+        const lastReload = Number(sessionStorage.getItem(CSRF_RELOAD_KEY) || 0);
+        sessionStorage.setItem(CSRF_RELOAD_KEY, String(now));
+
+        // Si ya se recargó hace poco y vuelve a fallar, se reporta como fin de sesión.
+        if (now - lastReload < 10000) {
+            showSessionExpired();
+            return;
+        }
+    } catch {
+        showSessionExpired();
+        return;
+    }
+
+    window.location.reload();
 }
 
 const HTTP_ALERTS = {
@@ -130,6 +157,12 @@ function showHttpAlert(status) {
 export function registerInertiaErrorAlerts(router) {
     router.on('httpException', (event) => {
         const { status, data } = event.detail.response;
+
+        if (status === 419 && data?.csrf_expired) {
+            event.preventDefault();
+            reloadForCsrfExpired();
+            return;
+        }
 
         if ([401, 419].includes(status)) {
             event.preventDefault();

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Pecosa;
 use App\Models\User;
 use Carbon\Carbon;
 use Database\Seeders\DatabaseSeeder;
@@ -58,6 +59,8 @@ class FullDatabaseSeederTest extends TestCase
         $this->assertSame(2, DB::table('products')->count());
         $this->assertSame(12, DB::table('detail_products')->count());
         $this->assertSame(539, DB::table('pecosas')->count());
+        $expiredStateId = DB::table('states')->where('abbreviation', 'VEN')->value('id');
+        $this->assertSame(539, DB::table('pecosas')->where('state_id', $expiredStateId)->count());
         $this->assertSame(924, DB::table('detail_pecosas')->count());
         $this->assertSame(924, DB::table('product_stocks')->count());
         $this->assertSame(936, DB::table('transactions')->count());
@@ -138,5 +141,37 @@ class FullDatabaseSeederTest extends TestCase
             $this->assertSame((int) $period->partner_count, $partnerCount, "Socias fuera de sincronia en {$period->period}.");
             $this->assertSame((int) $period->beneficiary_count, $beneficiaryCount, "Beneficiarios fuera de sincronia en {$period->period}.");
         }
+
+        $presidentsByPeriod = $periods->keyBy(
+            fn ($period) => $period->association_id . '|' . substr((string) $period->period, 0, 10)
+        );
+        $coveredPecosas = 0;
+        $presidentMismatches = [];
+
+        foreach (DB::table('pecosas')->get([
+            'pecosa_number',
+            'association_id',
+            'delivery_date',
+            'president_id',
+            'president_name',
+        ]) as $pecosa) {
+            $period = Pecosa::effectiveDeliveryDate($pecosa->delivery_date)
+                ->startOfMonth()
+                ->toDateString();
+            $roster = $presidentsByPeriod->get($pecosa->association_id . '|' . $period);
+
+            if (! $roster) {
+                continue;
+            }
+
+            $coveredPecosas++;
+            if ($pecosa->president_name !== $roster->president_name
+                || (int) $pecosa->president_id !== (int) $roster->president_partner_id) {
+                $presidentMismatches[] = $pecosa->pecosa_number;
+            }
+        }
+
+        $this->assertGreaterThan(0, $coveredPecosas, 'Ninguna PECOSA coincidió con el padrón mensual.');
+        $this->assertSame([], $presidentMismatches, 'PECOSAs con presidenta distinta al padrón mensual.');
     }
 }

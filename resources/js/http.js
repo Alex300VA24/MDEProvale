@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { showSessionExpired } from './httpAlerts';
+import { reloadForCsrfExpired, showSessionExpired } from './httpAlerts';
 
 /**
  * Cliente axios para las llamadas JSON del dashboard (Sanctum SPA).
@@ -48,6 +48,8 @@ http.interceptors.response.use(
 
         if (data?.wrong_portal && data?.redirect) {
             window.location.assign(data.redirect);
+        } else if (status === 419 && data?.csrf_expired) {
+            reloadForCsrfExpired();
         } else if ([401, 419].includes(status)) {
             showSessionExpired(data?.redirect);
         }

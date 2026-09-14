@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Pecosa;
+use App\Models\State;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -23,11 +25,29 @@ class PecosaSeeder extends Seeder
         }
 
         $associationIds = DB::table('associations')->pluck('id', 'code');
+        $stateIds = DB::table('states')
+            ->whereIn('abbreviation', [State::CURRENT, State::EXPIRED])
+            ->pluck('id', 'abbreviation');
+        if (! isset($stateIds[State::CURRENT], $stateIds[State::EXPIRED])) {
+            throw new \RuntimeException('Faltan estados VIGENTE/VENCIDO para importar PECOSAs.');
+        }
         $responsibleIds = DB::table('responsibles')
             ->join('people', 'people.id', '=', 'responsibles.person_id')
             ->select('responsibles.id', 'responsibles.type', 'people.dni')
             ->get()
             ->keyBy(fn ($row) => "{$row->type}:{$row->dni}");
+        $presidentsByPeriod = DB::table('association_roster_periods as roster')
+            ->leftJoin('partners', 'partners.id', '=', 'roster.president_partner_id')
+            ->leftJoin('people', 'people.id', '=', 'partners.person_id')
+            ->get([
+                'roster.association_id',
+                'roster.period',
+                'roster.president_name',
+                'roster.president_partner_id',
+                'roster.beneficiary_count',
+                'people.dni as president_dni',
+            ])
+            ->keyBy(fn ($row) => $row->association_id . '|' . substr((string) $row->period, 0, 10));
 
         self::$idMap = [];
         $now = now();
@@ -41,23 +61,33 @@ class PecosaSeeder extends Seeder
 
             $chief = $responsibleIds->get('chief:' . ($row['chief_dni'] ?? ''));
             $storekeeper = $responsibleIds->get('storekeeper:' . ($row['storekeeper_dni'] ?? ''));
+            $effectivePeriod = Pecosa::effectiveDeliveryDate($row['delivery_date'])
+                ->startOfMonth()
+                ->toDateString();
+            $president = $presidentsByPeriod->get($associationId . '|' . $effectivePeriod);
+            $stateAbbreviation = Pecosa::stateAbbreviationForDeliveryDate($row['delivery_date']);
             $payload[] = [
                 'pecosa_number' => $row['pecosa_number'],
                 'observation' => $row['observation'],
                 'delivery_date' => $row['delivery_date'] . ' 00:00:00',
                 'chief_id' => $chief->id ?? null,
                 'storekeeper_id' => $storekeeper->id ?? null,
-                'managing_partner_id' => null,
-                'president_id' => null,
-                'state_id' => $row['state_id'],
+                'managing_partner_id' => $president->president_partner_id ?? null,
+                'president_id' => $president->president_partner_id ?? null,
+                'state_id' => $stateIds[$stateAbbreviation],
                 'association_id' => $associationId,
                 'chief_name' => $row['chief_name'],
                 'chief_dni' => $row['chief_dni'],
                 'storekeeper_name' => $row['storekeeper_name'],
                 'storekeeper_dni' => $row['storekeeper_dni'],
+                'managing_partner_name' => $president->president_name ?? null,
+                'managing_partner_dni' => $president->president_dni ?? null,
+                'president_name' => $president->president_name ?? null,
+                'president_dni' => $president->president_dni ?? null,
                 'association_name' => $row['association_name'],
                 'association_code' => $row['association_code'],
                 'association_address' => $row['association_address'],
+                'beneficiaries_count' => $president->beneficiary_count ?? null,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -73,15 +103,22 @@ class PecosaSeeder extends Seeder
                     'delivery_date',
                     'chief_id',
                     'storekeeper_id',
+                    'managing_partner_id',
+                    'president_id',
                     'state_id',
                     'association_id',
                     'chief_name',
                     'chief_dni',
                     'storekeeper_name',
                     'storekeeper_dni',
+                    'managing_partner_name',
+                    'managing_partner_dni',
+                    'president_name',
+                    'president_dni',
                     'association_name',
                     'association_code',
                     'association_address',
+                    'beneficiaries_count',
                     'updated_at',
                 ]
             );

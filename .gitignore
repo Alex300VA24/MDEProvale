@@ -79,6 +79,7 @@ Desktop.ini
 /migracion_socios/
 /migracion_responsables/*.csv
 /public/fichas/
+resoluciones_comites.xlsx
 
 # Seeders: se versionan catálogos, orquestador, seeders temporales y JSONs
 /database/seeders/*
@@ -106,6 +107,9 @@ Desktop.ini
 !/database/seeders/ProductSeeder.php
 !/database/seeders/ResponsibleSeeder.php
 !/database/seeders/AssociationSeeder.php
+!/database/seeders/AssociationRosterPeriodSeeder.php
+!/database/seeders/CierreMesSeeder.php
+!/database/seeders/RosterCleanupSeeder.php
 # Seeders temporales (PHP delgados que leen JSON)
 !/database/seeders/PeopleSeeder.php
 !/database/seeders/TemporalPartnerSeeder.php
@@ -138,3 +142,4 @@ Desktop.ini
 *.sql
 *.sqlite
 !database/*.sqlite.example
+

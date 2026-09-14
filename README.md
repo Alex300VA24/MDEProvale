@@ -85,8 +85,12 @@ nombre que quieras; la URL usará ese nombre).
 
 ```bash
 composer install
-npm install
+npm ci
 ```
+
+`composer.lock` y `package-lock.json` están versionados; por eso se recomienda
+usar `npm ci` para instalar exactamente las versiones probadas. Usa `npm install`
+solo si necesitas actualizar el lockfile.
 
 ### 3.3 Archivo `.env` y clave de la aplicación
 
@@ -130,30 +134,24 @@ Con `php artisan` no hay comando para crearla; usa la consulta SQL o phpMyAdmin.
 
 ### 3.5 Migraciones y datos iniciales
 
-**Si el proyecto trae la carpeta `database/seeders`** (porque lo copiaste como
-carpeta/zip completo, no como clon Git), puedes generar todo desde cero:
+El repositorio incluye los seeders y los JSON necesarios para una instalación
+completa. Después de crear `DBSYSPROVALE`, ejecuta:
 
 ```bash
 php artisan migrate:fresh --seed
 ```
 
-Esto crea las tablas y deja datos: estados, roles, módulos y permisos, usuarios,
-productos, socio/asociaciones, etc.
-
-**Si clonaste solo con Git**, los seeders (a excepción de 4 manifiestos) están
-ignorados por diseño del `.gitignore`, así que importa el **dump SQL** que
-comparte el equipo:
-
-```bash
-mysql -u root DBSYSPROVALE < dump.sql
-# o en phpMyAdmin: Importar -> elegir el .sql -> Continuar
-```
-
-En ambos casos, aplica las migraciones pendientes con:
+Esto crea las tablas y carga catálogos, usuarios, socios, beneficiarios,
+productos, PECOSAs y demás datos iniciales. Para una actualización que conserve
+los datos existentes, usa solo:
 
 ```bash
 php artisan migrate
 ```
+
+Los archivos `.sql` no forman parte del repositorio. Si recibes un dump de otro
+entorno, impórtalo desde phpMyAdmin o con el cliente MySQL antes de ejecutar las
+migraciones pendientes.
 
 > ⚠️ **Nunca dejes config en caché.** Si existe `bootstrap/cache/config.php`, los
 > tests y algunos comandos pueden quedarse apuntando a la BD de desarrollo y
@@ -387,7 +385,7 @@ npm run build:assets   # Build definitivo: Vite + Mix
 
 | Síntoma | Causa / solución |
 |---------|------------------|
-| Página en blanco / sin estilos / `Vite manifest not found` | Falta `npm install` + `npm run build` (o `npm run dev`). |
+| Página en blanco / sin estilos / `Vite manifest not found` | Falta `npm ci` + `npm run build:assets` (o `npm run dev`). |
 | Se ve la interfaz vieja tras actualizar | Falta `npm run build:assets` (los `resources/js`/`css` cambiaron). |
 | Error de conexión a BD | Revisa `.env` (host, puerto, base, usuario, clave) y que MySQL esté arrancado. |
 | Sesión expira sola / error 419 al guardar | `APP_URL`/`SESSION_DOMAIN` no coinciden con la URL real (sección 4/5). |
@@ -404,29 +402,33 @@ npm run build:assets   # Build definitivo: Vite + Mix
 ## 10. Resumen rápido
 
 ```bash
-# 1. Dependencias
-composer install
-npm install
+# 1. Clonar y entrar al proyecto
+git clone <url-del-repositorio> MDEProvale
+cd MDEProvale
 
-# 2. Configuración
+# 2. Dependencias
+composer install
+npm ci
+
+# 3. Configuración
 copy .env.example .env
 php artisan key:generate
 # editar .env: APP_URL (sección 3.3), DB_DATABASE, DB_USERNAME, DB_PASSWORD
 
-# 3. Base de datos (crear en MySQL/phpMyAdmin)
+# 4. Base de datos (crear en MySQL/phpMyAdmin)
 # CREATE DATABASE DBSYSPROVALE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-# 4. Datos
-php artisan migrate:fresh --seed   # si vienen seeders; si no, importar dump.sql
+# 5. Datos
+php artisan migrate:fresh --seed
 php artisan config:clear
 
-# 5. Assets
+# 6. Assets
 npm run build:assets
 
-# 6a. Opción A
+# 7a. Opción A
 php artisan serve                 # http://127.0.0.1:8000
 
-# 6b. Opción B (XAMPP)
+# 7b. Opción B (XAMPP)
 #   proyecto en C:\xampp\htdocs\MDEProvale
 #   start Apache + MySQL en el Control Panel
 #   abrir http://localhost/MDEProvale/public
@@ -441,7 +443,9 @@ repositorio.
 ## 11. Higiene del repositorio
 
 No se versionan dependencias, archivos `.env`, claves, cachés, logs, cobertura,
-artefactos compilados ni salidas temporales de herramientas. Tampoco se suben
+artefactos compilados ni salidas temporales de herramientas. Los seeders
+invocados por `DatabaseSeeder` y sus JSON de `database/seeders/data/` sí se
+versionan porque forman parte de la instalación inicial. Tampoco se suben
 prototipos HTML de la raíz que ya tengan su vista Blade equivalente.
 
 Los insumos locales de migración pueden contener DNI, nombres u otros datos

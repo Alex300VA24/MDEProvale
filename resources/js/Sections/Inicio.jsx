@@ -96,34 +96,147 @@ const donutCenterText = {
     },
 };
 
-function StatCard({ icon, iconClass, barClass, badge, badgeClass, value, label, detail, onDetail, className = '' }) {
+function StatCard({
+    icon,
+    iconClass,
+    barClass,
+    badge,
+    badgeClass,
+    value,
+    label,
+    subtitle,
+    breakdown,
+    chip,
+    detail,
+    onDetail,
+    className = '',
+}) {
     const hasObservations = Boolean(detail?.observations?.length);
+    const isVerified = detail?.verified;
+
+    // Badge inteligente: si no se especifica badge manual, mostrar estado de auditoría
+    const badgeContent = badge || (
+        detail ? (
+            isVerified ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-leaf-light text-leaf border border-leaf/25">
+                    <i className="fas fa-check text-[9px]" aria-hidden="true" />
+                    Auditado
+                </span>
+            ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sun-light text-sun border border-amber/30">
+                    <i className="fas fa-exclamation text-[9px]" aria-hidden="true" />
+                    Revisión
+                </span>
+            )
+        ) : (
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-mist/60 text-slate">
+                Padrón
+            </span>
+        )
+    );
 
     return (
-        <div className={`stat-card stagger-enter bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden flex flex-col ${className}`}>
+        <div className={`stat-card stagger-enter bg-white rounded-2xl p-4 sm:p-5 border border-mist shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${className}`}>
             <div className={`absolute top-0 left-0 right-0 h-1 ${barClass}`} />
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg ${iconClass}`}>
-                    <i className={`fas ${icon}`} />
+            
+            <div>
+                {/* Header del card: icono y badge contextual */}
+                <div className="flex items-center justify-between gap-2 mb-2 sm:mb-2.5">
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg shadow-sm ${iconClass}`}>
+                        <i className={`fas ${icon}`} aria-hidden="true" />
+                    </div>
+                    <div>
+                        {typeof badgeContent === 'string' ? (
+                            <span className={`text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded-full inline-block truncate max-w-[8.5rem] ${badgeClass || 'bg-mist/60 text-slate'}`} title={badgeContent}>
+                                {badgeContent}
+                            </span>
+                        ) : (
+                            badgeContent
+                        )}
+                    </div>
                 </div>
-                <span className={`max-w-[8rem] truncate text-[11px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full ${badgeClass}`} title={badge}>{badge}</span>
+
+                {/* Cifra principal */}
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-navy leading-none mb-1 tracking-tight tabular-nums">
+                    {value}
+                </div>
+
+                {/* Título y subtítulo descriptivo */}
+                <div className="text-xs sm:text-sm font-bold text-charcoal leading-snug">
+                    {label}
+                </div>
+                {subtitle && (
+                    <div className="text-[11px] sm:text-xs text-slate font-medium mt-0.5">
+                        {subtitle}
+                    </div>
+                )}
+
+                {/* Desglose comparativo intermedio para aprovechar el espacio */}
+                {breakdown && (
+                    <div className="mt-2.5 mb-2 grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-canvas/80 border border-mist/70 text-center">
+                        <div className="min-w-0">
+                            <span className="block text-[10px] font-bold text-slate uppercase tracking-wider truncate">
+                                {breakdown.left.label}
+                            </span>
+                            <span className="block text-xs sm:text-sm font-extrabold text-charcoal tabular-nums truncate">
+                                {breakdown.left.value}
+                            </span>
+                        </div>
+                        <div className="min-w-0 border-l border-mist/80 pl-1.5">
+                            <span className="block text-[10px] font-bold text-slate uppercase tracking-wider truncate">
+                                {breakdown.right.label}
+                            </span>
+                            <span className={`block text-xs sm:text-sm font-extrabold tabular-nums truncate ${breakdown.right.colorClass || 'text-blue'}`}>
+                                {breakdown.right.value}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Chip informativo contextual */}
+                {chip && (
+                    <div className={`flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg border ${chip.bgClass || 'bg-canvas text-slate border-mist/60'}`}>
+                        <span className="inline-flex items-center gap-1.5 truncate">
+                            {chip.icon && <i className={`fas ${chip.icon} text-xs`} aria-hidden="true" />}
+                            <span className="truncate">{chip.label}</span>
+                        </span>
+                        <span className="font-bold tabular-nums ml-1 shrink-0">{chip.value}</span>
+                    </div>
+                )}
             </div>
-            <div className="text-2xl sm:text-4xl font-bold text-navy leading-none mb-1 tabular-nums">{value}</div>
-            <div className="text-xs sm:text-sm font-medium text-slate flex-1">{label}</div>
-            {hasObservations && (
-                <button
-                    type="button"
-                    onClick={onDetail}
-                    className="mt-3 min-h-11 w-full inline-flex items-center justify-between gap-2 rounded-lg bg-amber-light px-3 py-2 text-xs sm:text-sm font-bold text-sun transition-colors hover:bg-amber/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber focus-visible:ring-offset-2"
-                    aria-label={`Ver detalle y observaciones de ${label}`}
-                >
-                    <span className="inline-flex items-center gap-2">
-                        <i className="fas fa-circle-exclamation" aria-hidden="true" />
-                        Ver detalle
-                    </span>
-                    <i className="fas fa-chevron-right text-[10px]" aria-hidden="true" />
-                </button>
-            )}
+
+            {/* Pie de tarjeta: acción refinada de auditoría o estado conforme */}
+            <div className="mt-3 pt-2.5 border-t border-mist/70">
+                {hasObservations ? (
+                    <button
+                        type="button"
+                        onClick={onDetail}
+                        className={`group/btn w-full inline-flex items-center justify-between text-xs font-semibold py-1.5 px-2.5 rounded-lg transition-all ${
+                            isVerified
+                                ? 'bg-blue-light/50 text-blue hover:bg-blue-light hover:text-navy border border-blue/20'
+                                : 'bg-sun-light/60 text-sun hover:bg-sun-light hover:text-amber-dark border border-amber/30'
+                        }`}
+                        aria-label={`Ver detalle y observaciones de ${label}`}
+                    >
+                        <span className="inline-flex items-center gap-1.5 truncate">
+                            <i className={`text-xs ${isVerified ? 'fas fa-shield-halved text-teal' : 'fas fa-triangle-exclamation text-amber'}`} aria-hidden="true" />
+                            <span>{isVerified ? 'Auditoría conforme' : 'Ver observaciones'}</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] opacity-75 group-hover/btn:opacity-100 group-hover/btn:translate-x-0.5 transition-all shrink-0">
+                            <span>Detalle</span>
+                            <i className="fas fa-chevron-right text-[9px]" aria-hidden="true" />
+                        </span>
+                    </button>
+                ) : (
+                    <div className="flex items-center justify-between text-[11px] text-slate/80 py-1">
+                        <span className="inline-flex items-center gap-1.5">
+                            <i className="fas fa-circle-check text-leaf text-xs" aria-hidden="true" />
+                            <span>Registros vigentes</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-slate/60 uppercase">Normal</span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -224,67 +337,116 @@ function RosterAuditModal({ audit, metricKey, periodLabel, onClose }) {
     );
 }
 
-function StockMiniStat({ label, value, tone = 'default' }) {
-    const tones = {
-        default: 'text-navy',
-        danger: 'text-coral',
-    };
-    const bg = tone === 'danger' ? 'bg-coral-light' : 'bg-blue-light';
-
-    return (
-        <div className={`rounded-lg px-1.5 py-1.5 text-center ${bg}`}>
-            <div className={`text-base sm:text-lg font-extrabold tabular-nums tracking-tight ${tones[tone]}`}>{value}</div>
-            <div className="mt-0.5 text-[8px] sm:text-[9px] font-bold uppercase tracking-wide text-slate">{label}</div>
-        </div>
-    );
-}
-
-function StockCard({ products = [], closed = false, periodLabel = '' }) {
+function StockCard({ products = [], closed = false, periodLabel = '', className = '' }) {
     const formatStock = (value) => Number(value || 0).toLocaleString('es-PE');
 
     return (
-        <div className="stat-card stagger-enter bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-mist shadow-sm relative overflow-hidden">
+        <div className={`stat-card stagger-enter bg-white rounded-2xl p-4 sm:p-5 border border-mist shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${className}`}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal to-[#5ec4b3]" />
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center text-sm sm:text-lg bg-teal-light text-teal">
-                    <i className="fas fa-box" aria-hidden="true" />
+
+            <div>
+                {/* Header del card */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg bg-teal-light text-teal shadow-sm">
+                        <i className="fas fa-boxes-stacked" aria-hidden="true" />
+                    </div>
+                    <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+                            closed
+                                ? 'text-teal bg-teal-light border-teal/25'
+                                : 'text-amber-dark bg-amber-light border-amber/30'
+                        }`}
+                    >
+                        <i className={`fas ${closed ? 'fa-lock' : 'fa-clock'} text-[9px]`} aria-hidden="true" />
+                        {closed ? 'Mes cerrado' : 'En curso'}
+                    </span>
                 </div>
-                <span
-                    className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap ${
-                        closed ? 'text-teal bg-teal-light' : 'text-amber bg-amber-light'
-                    }`}
-                >
-                    {closed ? `Cierre: ${periodLabel}` : 'Mes en curso'}
+
+                <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs sm:text-sm font-bold text-charcoal leading-snug">
+                        Stock de Alimentos
+                    </div>
+                    <span className="text-[11px] font-medium text-slate">
+                        {products.length} {products.length === 1 ? 'producto' : 'productos'}
+                    </span>
+                </div>
+
+                {/* Lista de productos con avance visual y desglose */}
+                <div className="space-y-2.5">
+                    {products.map((product) => {
+                        const faltante = product.restante < 0;
+                        const ingresado = Number(product.ingresado || 0);
+                        const utilizado = Number(product.utilizado || 0);
+                        const pct = ingresado > 0 ? Math.min(100, Math.round((utilizado / ingresado) * 100)) : 0;
+
+                        return (
+                            <div key={product.key} className="bg-canvas/60 rounded-xl p-2 sm:p-2.5 border border-mist/60">
+                                <div className="flex items-center justify-between gap-1 mb-1">
+                                    <span className="text-xs font-bold text-charcoal truncate">{product.name}</span>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        {product.unit && (
+                                            <span className="text-[10px] font-semibold text-slate bg-white px-1.5 py-0.5 rounded border border-mist">
+                                                {product.unit}
+                                            </span>
+                                        )}
+                                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+                                            pct >= 100 ? 'bg-leaf-light text-leaf' : 'bg-blue-light text-blue'
+                                        }`}>
+                                            {pct}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Barra de avance de distribución */}
+                                <div className="w-full bg-mist/60 h-1.5 rounded-full overflow-hidden mb-1.5">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-500 ${
+                                            pct >= 100 ? 'bg-teal' : pct > 0 ? 'bg-blue' : 'bg-slate/30'
+                                        }`}
+                                        style={{ width: `${pct}%` }}
+                                    />
+                                </div>
+
+                                {/* Desglose numérico de 3 columnas */}
+                                <div className="grid grid-cols-3 gap-1 text-center bg-white rounded-lg py-1 px-1 border border-mist/50">
+                                    <div className="min-w-0">
+                                        <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">Stock</span>
+                                        <span className="block text-xs sm:text-[13px] font-extrabold text-navy tabular-nums truncate">
+                                            {formatStock(product.ingresado)}
+                                        </span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">Salida</span>
+                                        <span className="block text-xs sm:text-[13px] font-extrabold text-blue tabular-nums truncate">
+                                            {formatStock(product.utilizado)}
+                                        </span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">
+                                            {faltante ? 'Falta' : 'Saldo'}
+                                        </span>
+                                        <span className={`block text-xs sm:text-[13px] font-extrabold tabular-nums truncate ${
+                                            faltante ? 'text-coral' : 'text-leaf'
+                                        }`}>
+                                            {formatStock(faltante ? Math.abs(product.restante) : product.restante)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Footer de cierre */}
+            <div className="mt-3 pt-2.5 border-t border-mist/70 flex items-center justify-between text-[11px] text-slate font-medium">
+                <span className="inline-flex items-center gap-1.5 truncate">
+                    <i className={`fas ${closed ? 'fa-circle-check text-leaf' : 'fa-clock-rotate-left text-amber'} text-xs`} aria-hidden="true" />
+                    <span>{closed ? 'Cifras definitivas' : 'En proceso'}</span>
                 </span>
-            </div>
-            <div className="divide-y divide-mist">
-                {products.map((product) => {
-                    const faltante = product.restante < 0;
-                    return (
-                        <div key={product.key} className="py-2 sm:py-2.5 first:pt-0 last:pb-0">
-                            <div className="flex items-baseline justify-between gap-2 mb-1.5">
-                                <span className="text-xs sm:text-sm font-bold text-slate truncate">{product.name}</span>
-                                {product.unit && (
-                                    <span className="text-[9px] sm:text-[10px] font-semibold text-slate whitespace-nowrap">{product.unit}</span>
-                                )}
-                            </div>
-                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-                                <StockMiniStat label="Stock mes" value={formatStock(product.ingresado)} />
-                                <StockMiniStat label="Utilizado" value={formatStock(product.utilizado)} />
-                                <StockMiniStat
-                                    label={faltante ? 'Faltante' : 'Restante'}
-                                    value={formatStock(faltante ? Math.abs(product.restante) : product.restante)}
-                                    tone={faltante ? 'danger' : 'default'}
-                                />
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            <div className="text-[10px] sm:text-xs font-medium text-slate mt-2">
-                {closed
-                    ? 'Cifras definitivas del mes cerrado'
-                    : 'Cifras parciales: el detalle definitivo aparece al cerrar el mes'}
+                <span className="text-[10px] font-bold text-slate/70 uppercase shrink-0">
+                    {closed ? 'Auditado' : 'Parcial'}
+                </span>
             </div>
         </div>
     );
@@ -643,10 +805,25 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     icon="fa-users"
                     iconClass="bg-blue-light text-blue"
                     barClass="bg-gradient-to-r from-blue to-sky"
-                    badge={cardsPeriodLabel}
-                    badgeClass="text-blue bg-blue-light"
                     value={nfmt(stats.total_socios)}
-                    label="Socias únicas corregidas"
+                    label="Socias únicas"
+                    subtitle="Padrón nominal depurado"
+                    breakdown={
+                        stats.roster_audit?.metrics?.socios
+                            ? {
+                                left: { label: 'Excel base', value: nfmt(stats.roster_audit.metrics.socios.excel) },
+                                right: { label: 'Relaciones BD', value: nfmt(stats.roster_audit.metrics.socios.database), colorClass: 'text-blue' },
+                            }
+                            : {
+                                left: { label: 'Padrón activo', value: nfmt(stats.total_socios) },
+                                right: { label: 'Doble rol', value: nfmt(stats.dual_role?.total || 0), colorClass: 'text-blue' },
+                            }
+                    }
+                    chip={
+                        stats.dual_role?.total
+                            ? { icon: 'fa-people-arrows-left-right', label: 'Doble rol (LAC/GES)', value: `${nfmt(stats.dual_role.total)} pers.`, bgClass: 'bg-blue-light/50 text-blue border-blue/20' }
+                            : { icon: 'fa-shield-check', label: 'Padrón nominal', value: 'Conforme', bgClass: 'bg-leaf-light/50 text-leaf border-leaf/20' }
+                    }
                     detail={stats.roster_audit?.metrics?.socios}
                     onDetail={() => setAuditMetric('socios')}
                 />
@@ -654,10 +831,26 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     icon="fa-user-check"
                     iconClass="bg-sky-light text-sky"
                     barClass="bg-gradient-to-r from-sky to-[#7ec3e8]"
-                    badge={cardsPeriodLabel}
-                    badgeClass="text-sky bg-sky-light"
                     value={nfmt(stats.total_beneficiarios)}
-                    label="Beneficiarios únicos corregidos"
+                    label="Beneficiarios únicos"
+                    subtitle="Población atendida activa"
+                    breakdown={
+                        stats.roster_audit?.metrics?.beneficiarios
+                            ? {
+                                left: { label: 'Excel base', value: nfmt(stats.roster_audit.metrics.beneficiarios.excel) },
+                                right: { label: 'Relaciones BD', value: nfmt(stats.roster_audit.metrics.beneficiarios.database), colorClass: 'text-sky' },
+                            }
+                            : {
+                                left: { label: 'Beneficiarios', value: nfmt(stats.total_beneficiarios) },
+                                right: { label: 'Estado', value: 'Vigentes', colorClass: 'text-sky' },
+                            }
+                    }
+                    chip={{
+                        icon: 'fa-fingerprint',
+                        label: 'DNI / Identidad',
+                        value: 'Sin duplicados',
+                        bgClass: 'bg-sky-light/50 text-sky border-sky/20',
+                    }}
                     detail={stats.roster_audit?.metrics?.beneficiarios}
                     onDetail={() => setAuditMetric('beneficiarios')}
                 />
@@ -666,9 +859,27 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     iconClass="bg-amber-light text-amber"
                     barClass="bg-gradient-to-r from-amber to-[#f0c567]"
                     badge={`${stats.total_pecosas} PECOSAs`}
-                    badgeClass="text-amber bg-amber-light"
+                    badgeClass="text-amber-dark bg-amber-light border border-amber/30"
                     value={nfmt(stats.total_comites)}
                     label="Clubes del padrón"
+                    subtitle="Comités de Vaso de Leche"
+                    breakdown={
+                        stats.roster_audit?.metrics?.clubes
+                            ? {
+                                left: { label: 'Padrón oficial', value: nfmt(stats.roster_audit.metrics.clubes.excel) },
+                                right: { label: 'Activos en BD', value: nfmt(stats.roster_audit.metrics.clubes.database), colorClass: 'text-amber-dark' },
+                            }
+                            : {
+                                left: { label: 'Comités activos', value: nfmt(stats.total_comites) },
+                                right: { label: 'PECOSAs mes', value: nfmt(stats.total_pecosas), colorClass: 'text-amber-dark' },
+                            }
+                    }
+                    chip={{
+                        icon: 'fa-truck-ramp-box',
+                        label: 'Cobertura PECOSA',
+                        value: `${stats.total_pecosas} entregas`,
+                        bgClass: 'bg-amber-light/50 text-amber-dark border-amber/25',
+                    }}
                     detail={stats.roster_audit?.metrics?.clubes}
                     onDetail={() => setAuditMetric('clubes')}
                 />

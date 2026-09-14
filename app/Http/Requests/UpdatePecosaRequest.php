@@ -24,7 +24,10 @@ class UpdatePecosaRequest extends FormRequest
             'delivery_date' => 'sometimes|required|date',
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
-            'managing_partner_id' => 'sometimes|required|exists:partners,id',
+            // La presidenta se resuelve por comité y mes del padrón.
+            'managing_partner_id' => 'nullable|exists:partners,id',
+            // Estado temporal opcional para clientes antiguos; servidor lo
+            // recalcula por fecha y nunca conserva ACT/INA.
             'state_id' => ['sometimes', 'required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'association_id' => 'sometimes|required|exists:associations,id',
             'details' => 'sometimes|required|array|min:1',

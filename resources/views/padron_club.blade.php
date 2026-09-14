@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Padrón de Club de Madres - Resoluciones de Reconocimiento</title>
+    <title>Padrón de Club de Madres - Resoluciones de Reconocimiento - {{ $periodo ?? '' }}</title>
     <style>
         * {
             margin: 0;
@@ -291,7 +291,7 @@
                                     PADRÓN DE CLUB DE MADRES Y/O COMITÉS DEL PROGRAMA VASO DE LECHE
                                 </div>
                                 <div style="font-size: 9pt; font-weight: bold; margin: 0;">
-                                    RESOLUCIONES DE RECONOCIMIENTO
+                                    RESOLUCIONES DE RECONOCIMIENTO - {{ $periodo ?? '' }}
                                 </div>
                             </td>
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Padrón de Beneficiarios - Club de Madres</title>
+    <title>Padrón de Beneficiarios - Club de Madres - {{ ucfirst($mes_nombre ?? '') }} {{ $anio ?? '' }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         @page { size: landscape; margin: 1.5mm 3mm 1.5mm 3mm; }

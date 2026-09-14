@@ -61,6 +61,11 @@ class ProductMigrationSeederTest extends TestCase
         $this->assertSame(924, DB::table('transactions')->where('type_transaction_id', $salidaId)->count());
         $this->assertSame(0, DB::table('product_stocks')->whereNull('transaction_id')->count());
 
+        $expiredStateId = DB::table('states')->where('abbreviation', 'VEN')->value('id');
+        $administrativeStateIds = DB::table('states')->whereIn('abbreviation', ['ACT', 'INA'])->pluck('id');
+        $this->assertSame(539, DB::table('pecosas')->where('state_id', $expiredStateId)->count());
+        $this->assertSame(0, DB::table('pecosas')->whereIn('state_id', $administrativeStateIds)->count());
+
         $this->assertSame('2026-03-01', (string) DB::table('detail_products')->min('start_date'));
         $this->assertSame('2026-02-26 00:00:00', (string) DB::table('pecosas')->min('delivery_date'));
         $this->assertSame(0, DB::table('detail_pecosas')->whereNull('detail_product_id')->count());

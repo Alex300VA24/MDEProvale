@@ -158,109 +158,109 @@ class ResolutionAssociationSeeder extends Seeder
             // Comité 230 - SANTISIMO SACRAMENTO | Resolución 3
             ['code' => '230', 'document' => '0082-2026', 'date_start' => '2026-01-23', 'date_end' => '2028-01-23'],
             // Comité 240 - VIRGEN DE LA PUERTA (SAN MARTIN) | Resolución 2
-            ['code' => '240', 'document' => '0356-2024', 'date_start' => '2026-07-14', 'date_end' => '2028-07-14'],
+            ['code' => '240', 'document' => '0356-2024', 'date_start' => '2024-05-28', 'date_end' => '2026-05-28'],
             // Comité 240 - VIRGEN DE LA PUERTA (SAN MARTIN) | Resolución 3
             ['code' => '240', 'document' => '0641-2026', 'date_start' => '2026-07-14', 'date_end' => '2028-07-14'],
             // Comité 246 - LOS GERANIOS | Resolución 2
-            ['code' => '246', 'document' => '0551-2023', 'date_start' => '2025-05-12', 'date_end' => '2027-05-12'],
+            ['code' => '246', 'document' => '0551-2023', 'date_start' => '2023-04-27', 'date_end' => '2025-04-27'],
             // Comité 246 - LOS GERANIOS | Resolución 3
             ['code' => '246', 'document' => '0605-2025', 'date_start' => '2025-05-12', 'date_end' => '2027-05-12'],
             // Comité 250 - HIJAS DE SION | Resolución 2
-            ['code' => '250', 'document' => '1206-2022', 'date_start' => '2024-11-08', 'date_end' => '2026-11-08'],
+            ['code' => '250', 'document' => '1206-2022', 'date_start' => '2022-10-07', 'date_end' => '2024-10-07'],
             // Comité 250 - HIJAS DE SION | Resolución 3
             ['code' => '250', 'document' => '1118-2024', 'date_start' => '2024-11-08', 'date_end' => '2026-11-08'],
             // Comité 253 - NUEVO PARAISO | Resolución 2
-            ['code' => '253', 'document' => '0151-2023', 'date_start' => '2025-03-07', 'date_end' => '2027-03-07'],
+            ['code' => '253', 'document' => '0151-2023', 'date_start' => '2020-11-30', 'date_end' => '2022-11-30'],
             // Comité 253 - NUEVO PARAISO | Resolución 3
-            ['code' => '253', 'document' => '0200-2025', 'date_start' => '2025-03-07', 'date_end' => '2027-03-07'],
+            ['code' => '253', 'document' => '0260-2025', 'date_start' => '2025-03-07', 'date_end' => '2027-03-07'],
             // Comité 255 - UNIDAS | Resolución 2
-            ['code' => '255', 'document' => '1312-2022', 'date_start' => '2024-12-04', 'date_end' => '2026-12-04'],
+            ['code' => '255', 'document' => '1312-2022', 'date_start' => '2022-11-17', 'date_end' => '2024-12-04'],
             // Comité 255 - UNIDAS | Resolución 3
             ['code' => '255', 'document' => '1249-2024', 'date_start' => '2024-12-04', 'date_end' => '2026-12-04'],
             // Comité 258 - MANOS SOLIDARIAS | Resolución 2
-            ['code' => '258', 'document' => '0147-2023', 'date_start' => '2025-02-18', 'date_end' => '2027-02-18'],
+            ['code' => '258', 'document' => '0147-2023', 'date_start' => '2023-01-27', 'date_end' => '2025-01-27'],
             // Comité 258 - MANOS SOLIDARIAS | Resolución 3
             ['code' => '258', 'document' => '0172-2025', 'date_start' => '2025-02-18', 'date_end' => '2027-02-18'],
             // Comité 265 - CLEMENTINA PERALTA DE ACUÑA | Resolución 2
-            ['code' => '265', 'document' => '0244-2023', 'date_start' => '2025-03-24', 'date_end' => '2027-03-24'],
+            ['code' => '265', 'document' => '0244-2023', 'date_start' => '2023-02-20', 'date_end' => '2025-02-20'],
             // Comité 265 - CLEMENTINA PERALTA DE ACUÑA | Resolución 3
-            ['code' => '265', 'document' => '0255-2025', 'date_start' => '2025-03-24', 'date_end' => '2027-03-24'],
+            ['code' => '265', 'document' => '0299-2025', 'date_start' => '2025-03-24', 'date_end' => '2027-03-24'],
             // Comité 270 - CLEMENTINA PERALTA DE ACUÑA | Resolución 2
-            ['code' => '270', 'document' => '0240-2023', 'date_start' => '2025-04-04', 'date_end' => '2027-04-04'],
+            ['code' => '270', 'document' => '0240-2023', 'date_start' => '2023-02-16', 'date_end' => '2025-02-16'],
             // Comité 270 - CLEMENTINA PERALTA DE ACUÑA | Resolución 3
             ['code' => '270', 'document' => '0334-2025', 'date_start' => '2025-04-04', 'date_end' => '2027-04-04'],
             // Comité 271 - ROSITA DE AMOR | Resolución 2
-            ['code' => '271', 'document' => '1175-2025', 'date_start' => '2025-11-07', 'date_end' => '2027-11-07'],
+            ['code' => '271', 'document' => '1179-2025', 'date_start' => '2025-11-07', 'date_end' => '2027-11-07'],
             // Comité 273 - EDITH SONRISAS DE NIÑOS | Resolución 2
-            ['code' => '273', 'document' => '0257-2025', 'date_start' => '2025-03-05', 'date_end' => '2027-03-05'],
+            ['code' => '273', 'document' => '0257-2025', 'date_start' => '2025-03-06', 'date_end' => '2027-03-06'],
             // Comité 274 - MARTIN MAMAY | Resolución 2
-            ['code' => '274', 'document' => '0770-2023', 'date_start' => '2025-02-12', 'date_end' => '2027-02-12'],
+            ['code' => '274', 'document' => '0770-2023', 'date_start' => '2023-06-19', 'date_end' => '2025-06-19'],
             // Comité 274 - MARTIN MAMAY | Resolución 3
             ['code' => '274', 'document' => '0155-2025', 'date_start' => '2025-02-12', 'date_end' => '2027-02-12'],
             // Comité 275 - BUEN SOCORRO | Resolución 2
-            ['code' => '275', 'document' => '1713-2022', 'date_start' => '2025-02-12', 'date_end' => '2027-02-12'],
+            ['code' => '275', 'document' => '1713-2022', 'date_start' => '2022-12-23', 'date_end' => '2024-12-23'],
             // Comité 275 - BUEN SOCORRO | Resolución 3
             ['code' => '275', 'document' => '0154-2025', 'date_start' => '2025-02-12', 'date_end' => '2027-02-12'],
             // Comité 280 - VIRGEN DE LA PUERTA (SANTA VERONICA) | Resolución 2
-            ['code' => '280', 'document' => '1204-2022', 'date_start' => '2024-11-22', 'date_end' => '2026-11-22'],
+            ['code' => '280', 'document' => '1264-2022', 'date_start' => '2022-10-28', 'date_end' => '2024-10-28'],
             // Comité 280 - VIRGEN DE LA PUERTA (SANTA VERONICA) | Resolución 3
             ['code' => '280', 'document' => '1174-2024', 'date_start' => '2024-11-22', 'date_end' => '2026-11-22'],
             // Comité 295 - NIÑO MANUELITO | Resolución 2
-            ['code' => '295', 'document' => '0173-2024', 'date_start' => '2026-04-08', 'date_end' => '2028-04-08'],
+            ['code' => '295', 'document' => '0173-2024', 'date_start' => '2024-03-26', 'date_end' => '2026-03-26'],
             // Comité 295 - NIÑO MANUELITO | Resolución 3
             ['code' => '295', 'document' => '0333-2026', 'date_start' => '2026-04-08', 'date_end' => '2028-04-08'],
             // Comité 300 - ZOILA DE LATORRE DE HAYA (SANTA VERONICA) | Resolución 2
-            ['code' => '300', 'document' => '1432-2023', 'date_start' => '2025-11-17', 'date_end' => '2027-11-17'],
+            ['code' => '300', 'document' => '1432-2023', 'date_start' => '2023-10-20', 'date_end' => '2025-10-20'],
             // Comité 300 - ZOILA DE LATORRE DE HAYA (SANTA VERONICA) | Resolución 3
             ['code' => '300', 'document' => '1217-2025', 'date_start' => '2025-11-17', 'date_end' => '2027-11-17'],
             // Comité 302 - MUJERES LUCHANDO POR UN FUTURO MEJOR | Resolución 2
             ['code' => '302', 'document' => '0317-2025', 'date_start' => '2025-03-28', 'date_end' => '2027-03-28'],
             // Comité 305 - VICTOR RAUL | Resolución 2
-            ['code' => '305', 'document' => '0015-2024', 'date_start' => '2026-02-24', 'date_end' => '2028-02-24'],
+            ['code' => '305', 'document' => '0015-2024', 'date_start' => '2024-01-11', 'date_end' => '2026-01-11'],
             // Comité 305 - VICTOR RAUL | Resolución 3
             ['code' => '305', 'document' => '0205-2026', 'date_start' => '2026-02-24', 'date_end' => '2028-02-24'],
-            // Comité 313 - DOMITILA CHINGANA | Resolución 2
-            ['code' => '313', 'document' => '0512-2024', 'date_start' => '2026-08-19', 'date_end' => '2028-08-19'],
-            // Comité 313 - DOMITILA CHINGANA | Resolución 3
-            ['code' => '313', 'document' => '0750-2026', 'date_start' => '2026-08-19', 'date_end' => '2028-08-19'],
+            // Comité 313 - DOMITILA CHUNGARA | Resolución 2
+            ['code' => '313', 'document' => '0612-2024', 'date_start' => '2024-07-12', 'date_end' => '2026-07-12'],
+            // Comité 313 - DOMITILA CHUNGARA | Resolución 3
+            ['code' => '313', 'document' => '0756-2026', 'date_start' => '2026-08-19', 'date_end' => '2028-08-19'],
             // Comité 320 - JERUSALEN MADRES UNIDAS | Resolución 2
             ['code' => '320', 'document' => '1181-2025', 'date_start' => '2025-11-07', 'date_end' => '2027-11-07'],
             // Comité 325 - ZOILA DE LATORRE DE HAYA (JERUSALEN) | Resolución 2
-            ['code' => '325', 'document' => '0035-2024', 'date_start' => '2026-03-20', 'date_end' => '2028-03-20'],
+            ['code' => '325', 'document' => '0035-2024', 'date_start' => '2024-01-19', 'date_end' => '2026-01-19'],
             // Comité 325 - ZOILA DE LATORRE DE HAYA (JERUSALEN) | Resolución 3
-            ['code' => '325', 'document' => '0295-2026', 'date_start' => '2026-03-20', 'date_end' => '2028-03-20'],
+            ['code' => '325', 'document' => '0296-2026', 'date_start' => '2026-03-20', 'date_end' => '2028-03-20'],
             // Comité 340 - NTRA SRA PERPETUO SOCORRO | Resolución 2
-            ['code' => '340', 'document' => '1208-2023', 'date_start' => '2025-11-07', 'date_end' => '2027-11-07'],
+            ['code' => '340', 'document' => '1208-2023', 'date_start' => '2023-09-25', 'date_end' => '2025-09-25'],
             // Comité 340 - NTRA SRA PERPETUO SOCORRO | Resolución 3
             ['code' => '340', 'document' => '1180-2025', 'date_start' => '2025-11-07', 'date_end' => '2027-11-07'],
             // Comité 350 - SAN JOSE | Resolución 2
-            ['code' => '350', 'document' => '0048-2024', 'date_start' => '2026-03-13', 'date_end' => '2028-03-13'],
+            ['code' => '350', 'document' => '0046-2024', 'date_start' => '2024-01-23', 'date_end' => '2026-01-23'],
             // Comité 350 - SAN JOSE | Resolución 3
-            ['code' => '350', 'document' => '0207-2026', 'date_start' => '2026-03-13', 'date_end' => '2028-03-13'],
+            ['code' => '350', 'document' => '0267-2026', 'date_start' => '2026-03-13', 'date_end' => '2028-03-13'],
             // Comité 360 - MANUEL AREVALO | Resolución 2
-            ['code' => '360', 'document' => '1256-2022', 'date_start' => '2024-11-20', 'date_end' => '2026-11-20'],
+            ['code' => '360', 'document' => '1256-2022', 'date_start' => '2022-10-25', 'date_end' => '2024-10-25'],
             // Comité 360 - MANUEL AREVALO | Resolución 3
             ['code' => '360', 'document' => '1162-2024', 'date_start' => '2024-11-20', 'date_end' => '2026-11-20'],
             // Comité 365 - RAMIRO PRIALE PRIALE | Resolución 2
-            ['code' => '365', 'document' => '0793-2023', 'date_start' => '2025-07-22', 'date_end' => '2027-07-22'],
+            ['code' => '365', 'document' => '0793-2023', 'date_start' => '2023-06-26', 'date_end' => '2025-06-26'],
             // Comité 365 - RAMIRO PRIALE PRIALE | Resolución 3
-            ['code' => '365', 'document' => '0625-2025', 'date_start' => '2025-07-22', 'date_end' => '2027-07-22'],
+            ['code' => '365', 'document' => '0825-2025', 'date_start' => '2025-07-22', 'date_end' => '2027-07-22'],
             // Comité 370 - JEHOVA ES MI PASTOR | Resolución 2
-            ['code' => '370', 'document' => '1244-2022', 'date_start' => '2024-12-13', 'date_end' => '2026-12-13'],
+            ['code' => '370', 'document' => '1244-2022', 'date_start' => '2022-10-20', 'date_end' => '2024-10-20'],
             // Comité 370 - JEHOVA ES MI PASTOR | Resolución 3
             ['code' => '370', 'document' => '1288-2024', 'date_start' => '2024-12-13', 'date_end' => '2026-12-13'],
             // Comité 375 - JESUS ME GUIA | Resolución 2
-            ['code' => '375', 'document' => '0046-2024', 'date_start' => '2026-04-09', 'date_end' => '2028-04-08'],
+            ['code' => '375', 'document' => '0046-2024', 'date_start' => '2024-01-23', 'date_end' => '2026-01-23'],
             // Comité 375 - JESUS ME GUIA | Resolución 3
-            ['code' => '375', 'document' => '0240-2026', 'date_start' => '2026-04-09', 'date_end' => '2028-04-08'],
+            ['code' => '375', 'document' => '0340-2026', 'date_start' => '2026-04-09', 'date_end' => '2028-04-08'],
             // Comité 378 - EL ANGEL | Resolución 2
-            ['code' => '378', 'document' => '0748-2026', 'date_start' => '2026-08-17', 'date_end' => '2028-08-17'],
+            ['code' => '378', 'document' => '0749-2026', 'date_start' => '2026-08-17', 'date_end' => '2028-08-17'],
             // Comité 380 - TANIA SOLEDAD BACA ROMERO | Resolución 2
-            ['code' => '380', 'document' => '0041-2024', 'date_start' => '2026-03-13', 'date_end' => '2028-03-13'],
+            ['code' => '380', 'document' => '0041-2024', 'date_start' => '2024-01-22', 'date_end' => '2026-01-22'],
             // Comité 380 - TANIA SOLEDAD BACA ROMERO | Resolución 3
-            ['code' => '380', 'document' => '0266-2026', 'date_start' => '2026-03-13', 'date_end' => '2028-03-13'],
+            ['code' => '380', 'document' => '0265-2026', 'date_start' => '2026-03-13', 'date_end' => '2028-03-13'],
             // Comité 385 - TANIA SOLEDAD BACA ROMERO II | Resolución 2
-            ['code' => '385', 'document' => '1245-2022', 'date_start' => '2024-12-02', 'date_end' => '2026-12-02'],
+            ['code' => '385', 'document' => '1245-2022', 'date_start' => '2022-10-20', 'date_end' => '2024-10-20'],
             // Comité 385 - TANIA SOLEDAD BACA ROMERO II | Resolución 3
             ['code' => '385', 'document' => '1243-2024', 'date_start' => '2024-12-02', 'date_end' => '2026-12-02'],
         ];

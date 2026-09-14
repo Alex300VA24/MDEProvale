@@ -49,17 +49,19 @@ class SchedulingService
         $presidentPosition = Position::where('title', 'like', '%PRESIDENTA%')->first();
         $directivesByResolution = $this->getPresidentDirectivesByAssociation($associationIds, $presidentPosition ? $presidentPosition->id : null, $estadoActivo ? $estadoActivo->id : null);
 
-        $pecosasByAssociation = Pecosa::with('detailPecosas:id,pecosa_id,quantity')
+        $pecosasByAssociation = Pecosa::with('detailPecosas:id,pecosa_id,quantity,product_abbreviation')
             ->whereIn('association_id', $associationIds)
             ->whereBetween('delivery_date', [$pecosaFrom->toDateString(), $pecosaTo->toDateString()])
             ->get()
             ->keyBy('association_id');
 
-        return $associations->map(function ($association) use ($directivesByResolution, $pecosasByAssociation, $startDate, $endDate) {
+        return $associations->map(function ($association) use ($directivesByResolution, $pecosasByAssociation, $startDate, $endDate, $racionLabel) {
             $presidenta = $this->resolvePresidentName($association, $directivesByResolution);
             [$totalBenef, $primeraPrioridad, $segundaPrioridad] = $this->calculatePriorities($association, $startDate, $endDate);
             $pecosa = $pecosasByAssociation->get($association->id);
             $bolsas = $pecosa ? $pecosa->detailPecosas->sum('quantity') : 0;
+            $lecheQty = $pecosa ? $pecosa->detailPecosas->where('product_abbreviation', 'LEC')->sum('quantity') : 0;
+            $hojuelaQty = $pecosa ? $pecosa->detailPecosas->where('product_abbreviation', 'HOJ')->sum('quantity') : 0;
 
             $directive = $this->findDirective($association, $directivesByResolution);
 
@@ -74,6 +76,8 @@ class SchedulingService
                 'total_beneficiarios' => $totalBenef,
                 'bolsas' => $bolsas,
                 'kilos' => 0,
+                'leche' => $lecheQty,
+                'hojuela' => $hojuelaQty,
                 'racion' => $racionLabel,
                 'fecha_entrega' => $pecosa ? date('d/m/Y', strtotime($pecosa->delivery_date)) : '',
                 'recibe' => $presidenta,

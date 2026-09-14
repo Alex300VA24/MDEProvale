@@ -4,11 +4,11 @@ namespace App\Services;
 
 use App\DTOs\PecosaSnapshotDTO;
 use App\Models\Association;
+use App\Models\AssociationRosterPeriod;
 use App\Models\DetailPecosa;
 use App\Models\Pecosa;
 use App\Models\VerifiedDocument;
 use App\Models\Responsible;
-use App\Models\Partner;
 use App\Models\Transaction;
 use App\Models\TypeTransaction;
 use App\Repositories\PartnerRepository;
@@ -47,7 +47,10 @@ class PecosaService
     public function createPecosa(array $data): Pecosa
     {
         $association = Association::findOrFail($data['association_id']);
-        if (!$association->isHabilitado() && empty($data['managing_partner_id'])) {
+        $president = $this->resolvePresidentForDeliveryPeriod($data);
+        if (!$association->isHabilitado()
+            && empty($data['managing_partner_id'])
+            && empty($president['name'])) {
             throw new \DomainException('La asociación no está vigente. Renueve su resolución antes de registrar la PECOSA.');
         }
 
@@ -67,8 +70,10 @@ class PecosaService
             }
         }
 
-        return DB::transaction(function () use ($data, $detailProductsById) {
-            $snapshot = $this->buildPecosaSnapshotDTO($data);
+        return DB::transaction(function () use ($data, $detailProductsById, $president) {
+            $data['president_id'] = $president['partner_id'];
+            $data['managing_partner_id'] = $president['partner_id'];
+            $snapshot = $this->buildPecosaSnapshotDTO($data, $president);
             $pecosa = Pecosa::create(array_merge($data, $snapshot->toArray()));
 
             $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
@@ -123,7 +128,10 @@ class PecosaService
             DetailPecosa::where('pecosa_id', $pecosa->id)->delete();
             Transaction::where('document_number', $pecosa->pecosa_number)->delete();
 
-            $snapshot = $this->buildPecosaSnapshotDTO($data);
+            $president = $this->resolvePresidentForDeliveryPeriod($data);
+            $data['president_id'] = $president['partner_id'];
+            $data['managing_partner_id'] = $president['partner_id'];
+            $snapshot = $this->buildPecosaSnapshotDTO($data, $president);
             $pecosa->update(array_merge($data, $snapshot->toArray()));
 
             $detailProductsById = $this->productRepo->getDetailProductsByIds(collect($data['details'])->pluck('detail_product_id'));
@@ -214,23 +222,21 @@ class PecosaService
         return $pecosas->map(fn (Pecosa $pecosa) => $this->buildComprobanteData($pecosa))->all();
     }
 
-    private function buildPecosaSnapshotDTO(array $data): PecosaSnapshotDTO
+    private function buildPecosaSnapshotDTO(array $data, array $president): PecosaSnapshotDTO
     {
         $chief = isset($data['chief_id']) ? Responsible::with('person')->find($data['chief_id']) : null;
         $storekeeper = isset($data['storekeeper_id']) ? Responsible::with('person')->find($data['storekeeper_id']) : null;
-        $managingPartner = isset($data['managing_partner_id']) ? Partner::with('people')->find($data['managing_partner_id']) : null;
         $association = Association::with(['placeSector.place', 'placeSector.sector'])->find($data['association_id']);
-        $president = $association ? $association->getPresidenta() : null;
 
         return new PecosaSnapshotDTO(
             $chief ? ($chief->person ? self::formatName($chief->person) : null) : null,
             $chief ? ($chief->person ? $chief->person->dni : null) : null,
             $storekeeper ? ($storekeeper->person ? self::formatName($storekeeper->person) : null) : null,
             $storekeeper ? ($storekeeper->person ? $storekeeper->person->dni : null) : null,
-            $managingPartner ? ($managingPartner->people ? self::formatName($managingPartner->people) : null) : null,
-            $managingPartner ? ($managingPartner->people ? $managingPartner->people->dni : null) : null,
-            $president ? ($president->people ? self::formatName($president->people) : null) : null,
-            $president ? ($president->people ? $president->people->dni : null) : null,
+            $president['name'],
+            $president['dni'],
+            $president['name'],
+            $president['dni'],
             $association ? $association->name : null,
             $association ? $association->code : null,
             $association ? $association->address : null,
@@ -239,6 +245,48 @@ class PecosaService
             $association ? ($association->placeSector ? ($association->placeSector->sector ? $association->placeSector->sector->title : null) : null) : null,
             $association ? $this->partnerRepo->countBeneficiariesForAssociationAtDate($association->id, $data['delivery_date']) : 0,
         );
+    }
+
+    /**
+     * Resuelve la presidenta del comité en el mes efectivo de reparto.
+     * El padrón mensual es la fuente principal; las directivas son respaldo
+     * para fechas sin padrón importado.
+     *
+     * @return array{partner_id:?int,name:?string,dni:?string}
+     */
+    private function resolvePresidentForDeliveryPeriod(array $data): array
+    {
+        $association = Association::findOrFail($data['association_id']);
+        $effectiveDate = Pecosa::effectiveDeliveryDate($data['delivery_date']);
+        $period = $effectiveDate->copy()->startOfMonth()->toDateString();
+
+        $roster = AssociationRosterPeriod::with('presidentPartner.people')
+            ->where('association_id', $association->id)
+            ->whereDate('period', $period)
+            ->first();
+
+        if ($roster) {
+            $partner = $roster->presidentPartner;
+            $name = trim((string) $roster->president_name);
+
+            if ($name === '' && $partner?->people) {
+                $name = self::formatName($partner->people);
+            }
+
+            return [
+                'partner_id' => $partner?->id,
+                'name' => $name !== '' ? $name : null,
+                'dni' => $partner?->people?->dni,
+            ];
+        }
+
+        $partner = $association->getPresidentaAt($effectiveDate->toDateString());
+
+        return [
+            'partner_id' => $partner?->id,
+            'name' => $partner?->people ? self::formatName($partner->people) : null,
+            'dni' => $partner?->people?->dni,
+        ];
     }
 
     private static function formatName($person): string

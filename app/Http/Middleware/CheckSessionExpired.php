@@ -44,6 +44,9 @@ class CheckSessionExpired
             }
 
             if ($request->expectsJson() || $request->ajax()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
                 return response()->json([
                     'message' => 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.',
                     'session_expired' => true,
