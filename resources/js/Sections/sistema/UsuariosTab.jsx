@@ -4,6 +4,7 @@ import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import { useDebounced } from '../socios/hooks';
+import Pagination from '../../Components/Pagination';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
@@ -53,6 +54,13 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (mode === 'create' && !stateId) {
+            const activeStateId = estados?.find((state) => state.abbreviation === 'ACT')?.id;
+            if (activeStateId) setStateId(activeStateId);
+        }
+    }, [mode, estados, stateId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -177,6 +185,7 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ search: '', rol_id: '', state_id: '' });
+    const [page, setPage] = useState(1);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
     const [editing, setEditing] = useState(null);
@@ -185,10 +194,14 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
 
     const debouncedFilters = useDebounced(filters, 400);
 
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedFilters]);
+
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const params = {};
+            const params = { per_page: 10, page };
             if (debouncedFilters.search) params.search = debouncedFilters.search;
             if (debouncedFilters.rol_id) params.rol_id = debouncedFilters.rol_id;
             if (debouncedFilters.state_id) params.state_id = debouncedFilters.state_id;
@@ -199,7 +212,7 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
         } finally {
             setLoading(false);
         }
-    }, [debouncedFilters, toast]);
+    }, [debouncedFilters, page, toast]);
 
     useEffect(() => {
         load();
@@ -392,6 +405,15 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                     </tbody>
                 </table>
             </div>
+            )}
+
+            {data && (
+                <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                    <span className="text-xs sm:text-sm text-earth font-medium">
+                        Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
+                    </span>
+                    <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
+                </div>
             )}
 
             {formOpen && (

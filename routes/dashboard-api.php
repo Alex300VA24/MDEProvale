@@ -157,6 +157,7 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
         Route::delete('roles/{rol}', [SistemaController::class, 'destroyRol'])->name('roles.destroy');
 
         Route::get('modulos', [SistemaController::class, 'modulos'])->name('modulos');
+        Route::get('modulos-options', [SistemaController::class, 'modulosOptions'])->name('modulos-options');
         Route::get('module-icons', [SistemaController::class, 'moduleIcons'])->name('module-icons');
         Route::post('modulos', [SistemaController::class, 'storeModulo'])->name('modulos.store');
         Route::put('modulos/{modulo}', [SistemaController::class, 'updateModulo'])->name('modulos.update');

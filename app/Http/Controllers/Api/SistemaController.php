@@ -45,12 +45,11 @@ class SistemaController extends Controller
             $query->where('state_id', $request->input('state_id'));
         }
 
-        $usuarios = $query->get();
+        $usuarios = $query->paginate((int) $request->input('per_page', 10));
 
-        return response()->json([
-            'data' => UserResource::collection($usuarios),
+        return UserResource::collection($usuarios)->additional([
             'roles' => Rol::where('is_active', true)->orderBy('title')->get(['id', 'title']),
-            'estados' => State::administrative()->orderBy('title')->get(['id', 'title']),
+            'estados' => State::administrative()->orderBy('title')->get(['id', 'title', 'abbreviation']),
         ]);
     }
 
@@ -103,11 +102,11 @@ class SistemaController extends Controller
 
     // ==================== ROLES ====================
 
-    public function roles()
+    public function roles(Request $request)
     {
-        $roles = Rol::withCount('users')->with('modules')->orderBy('title')->get();
+        $roles = Rol::withCount('users')->with('modules')->orderBy('title')->paginate((int) $request->input('per_page', 10));
 
-        return response()->json(['data' => RolResource::collection($roles)]);
+        return RolResource::collection($roles);
     }
 
     public function storeRol(StoreRolRequest $request)
@@ -192,11 +191,16 @@ class SistemaController extends Controller
 
     // ==================== MÓDULOS ====================
 
-    public function modulos()
+    public function modulos(Request $request)
     {
-        $modulos = Module::orderBy('order')->get();
+        $modulos = Module::orderBy('order')->paginate((int) $request->input('per_page', 10));
 
-        return response()->json(['data' => ModuleResource::collection($modulos)]);
+        return ModuleResource::collection($modulos);
+    }
+
+    public function modulosOptions()
+    {
+        return response()->json(['data' => ModuleResource::collection(Module::orderBy('order')->get())]);
     }
 
     public function moduleIcons()

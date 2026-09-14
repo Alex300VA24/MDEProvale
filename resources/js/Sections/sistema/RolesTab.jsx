@@ -4,6 +4,7 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
+import Pagination from '../../Components/Pagination';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
@@ -153,8 +154,9 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
 
 const RolesTab = forwardRef(function RolesTab({ can }, ref) {
     const toast = useToast();
-    const [roles, setRoles] = useState(null);
+    const [data, setData] = useState(null);
     const [modulos, setModulos] = useState([]);
+    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -165,17 +167,17 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
         setLoading(true);
         try {
             const [rolesRes, modulosRes] = await Promise.all([
-                http.get(`${BASE}/roles`),
-                http.get(`${BASE}/modulos`),
+                http.get(`${BASE}/roles`, { params: { per_page: 10, page } }),
+                http.get(`${BASE}/modulos-options`),
             ]);
-            setRoles(rolesRes.data.data);
+            setData(rolesRes.data);
             setModulos(modulosRes.data.data);
         } catch {
             toast.error('No se pudo cargar la lista de roles.');
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, [page, toast]);
 
     useEffect(() => {
         load();
@@ -208,7 +210,7 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
         }
     };
 
-    if (loading && !roles) {
+    if (loading && !data) {
         return (
             <div className="flex items-center justify-center py-10 text-earth">
                 <i className="fas fa-spinner fa-spin mr-2" /> Cargando roles...
@@ -216,7 +218,7 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
         );
     }
 
-    if (!roles) return null;
+    if (!data) return null;
 
     return (
         <>
@@ -232,7 +234,7 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                         </tr>
                     </thead>
                     <tbody>
-                        {roles.map((rol) => (
+                        {data.data.map((rol) => (
                             <tr key={rol.id} className="row-enter">
                                 <td className="px-3 sm:px-4 py-3 font-semibold">
                                     {rol.title}
@@ -277,6 +279,13 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                <span className="text-xs sm:text-sm text-earth font-medium">
+                    Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
+                </span>
+                <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
             </div>
 
             {formOpen && (

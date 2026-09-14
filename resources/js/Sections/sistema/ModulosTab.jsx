@@ -5,6 +5,7 @@ import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import IconSelect from '../../Components/IconSelect';
+import Pagination from '../../Components/Pagination';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
@@ -102,7 +103,8 @@ function ModuloFormModal({ mode, modulo, iconOptions, iconsLoading, onClose, onS
 
 const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
     const toast = useToast();
-    const [modulos, setModulos] = useState(null);
+    const [data, setData] = useState(null);
+    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
@@ -114,14 +116,14 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await http.get(`${BASE}/modulos`);
-            setModulos(res.data.data);
+            const res = await http.get(`${BASE}/modulos`, { params: { per_page: 10, page } });
+            setData(res.data);
         } catch {
             toast.error('No se pudo cargar la lista de módulos.');
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, [page, toast]);
 
     useEffect(() => {
         load();
@@ -168,7 +170,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
         }
     };
 
-    if (loading && !modulos) {
+    if (loading && !data) {
         return (
             <div className="flex items-center justify-center py-10 text-earth">
                 <i className="fas fa-spinner fa-spin mr-2" /> Cargando módulos...
@@ -176,7 +178,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
         );
     }
 
-    if (!modulos) return null;
+    if (!data) return null;
 
     return (
         <>
@@ -192,7 +194,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                         </tr>
                     </thead>
                     <tbody>
-                        {modulos.map((m) => (
+                        {data.data.map((m) => (
                             <tr key={m.id} className="row-enter">
                                 <td className="px-3 sm:px-4 py-3 font-semibold">
                                     <i className={`fas ${m.icon || 'fa-square'} text-leaf mr-2`} />
@@ -238,6 +240,13 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="flex items-center justify-between px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                <span className="text-xs sm:text-sm text-earth font-medium">
+                    Mostrando {data.meta?.from ?? 0} - {data.meta?.to ?? 0} de {data.meta?.total ?? 0} registros
+                </span>
+                <Pagination links={data.meta?.links} meta={data.meta} onPage={setPage} loading={loading} />
             </div>
 
             {formOpen && (

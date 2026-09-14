@@ -77,7 +77,12 @@ class SistemaApiTest extends TestCase
         $this->actingAs($this->adminUser())
             ->getJson(self::BASE . '/usuarios')
             ->assertOk()
-            ->assertJsonStructure(['data', 'roles', 'estados'])
+            ->assertJsonStructure([
+                'data',
+                'roles',
+                'estados' => [['id', 'title', 'abbreviation']],
+            ])
+            ->assertJsonPath('estados.0.abbreviation', 'ACT')
             ->assertJsonCount(1, 'data');
     }
 
