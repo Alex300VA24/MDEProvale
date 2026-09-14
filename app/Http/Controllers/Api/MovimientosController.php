@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Resources\TransactionResource;
 use App\Models\DetailProduct;
+use App\Models\DistributionAssignment;
+use App\Models\DistributionPeriod;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\TypeTransaction;
 use App\Services\ReparticionService;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MovimientosController extends Controller
 {
@@ -138,9 +141,82 @@ class MovimientosController extends Controller
         }
 
         $report = $this->reparticionService->buildReport($racion, $year, $month);
-        $report['pdf_url'] = route('movimientos.reparticion', ['year' => $year, 'month' => $month]);
-        $report['pdf_firma_url'] = route('movimientos.reparticion-con-firma', ['year' => $year, 'month' => $month]);
+        $common = ['year' => $year, 'month' => $month];
+        $report['exports'] = [
+            'reparto_pdf' => route('movimientos.distribucion.export', [...$common, 'document' => 'reparto', 'format' => 'pdf']),
+            'reparto_excel' => route('movimientos.distribucion.export', [...$common, 'document' => 'reparto', 'format' => 'xlsx']),
+            'cargo_pdf' => route('movimientos.distribucion.export', [...$common, 'document' => 'cargo', 'format' => 'pdf']),
+            'cargo_excel' => route('movimientos.distribucion.export', [...$common, 'document' => 'cargo', 'format' => 'xlsx']),
+            'fiscalizacion_pdf' => route('movimientos.distribucion.export', [...$common, 'document' => 'fiscalizacion', 'format' => 'pdf']),
+            'fiscalizacion_excel' => route('movimientos.distribucion.export', [...$common, 'document' => 'fiscalizacion', 'format' => 'xlsx']),
+            'acta_pdf' => route('movimientos.distribucion.export', [...$common, 'document' => 'acta', 'format' => 'pdf']),
+        ];
+        $report['pdf_url'] = $report['exports']['reparto_pdf'];
+        $report['pdf_firma_url'] = $report['exports']['acta_pdf'];
 
         return response()->json($report, 200, [], JSON_PRESERVE_ZERO_FRACTION);
+    }
+
+    public function saveReparticion(Request $request)
+    {
+        $validated = $request->validate([
+            'year' => 'required|integer|min:2000|max:2100',
+            'month' => 'required|integer|min:1|max:12',
+            'service_days' => 'required|integer|min:28|max:31',
+            'milk_grams_per_beneficiary' => 'required|numeric|gt:0|max:10000',
+            'oat_grams_per_beneficiary' => 'required|numeric|gt:0|max:10000',
+            'milk_can_grams' => 'required|numeric|gt:0|max:10000',
+            'oat_bag_grams' => 'required|numeric|gt:0|max:10000',
+            'milk_cans_per_box' => 'required|integer|min:1|max:1000',
+            'oat_kg_per_sack' => 'required|integer|min:1|max:1000',
+            'assignments' => 'present|array',
+            'assignments.*.association_id' => 'required|integer|exists:associations,id',
+            'assignments.*.route_number' => 'required|integer|min:1|max:999',
+            'assignments.*.beneficiary_adjustment' => 'required|integer|min:-100000|max:100000',
+            'assignments.*.observation' => 'nullable|string|max:250',
+        ]);
+
+        $calendarDays = (int) date('t', strtotime(sprintf('%04d-%02d-01', $validated['year'], $validated['month'])));
+        if ($validated['service_days'] > $calendarDays) {
+            return response()->json([
+                'message' => "El período seleccionado admite como máximo {$calendarDays} días de atención.",
+                'errors' => ['service_days' => ["Use un valor entre 28 y {$calendarDays}."]],
+            ], 422);
+        }
+
+        $racion = $this->reparticionService->getActiveRacion($validated['year'], $validated['month']);
+        if (! $racion) {
+            return response()->json(['message' => 'No hay ración configurada para el período seleccionado.'], 422);
+        }
+
+        DB::transaction(function () use ($validated) {
+            $period = DistributionPeriod::updateOrCreate(
+                ['year' => $validated['year'], 'month' => $validated['month']],
+                collect($validated)->except(['year', 'month', 'assignments'])->all()
+            );
+
+            $associationIds = collect($validated['assignments'])->pluck('association_id')->unique()->values();
+            $deleteQuery = $period->assignments();
+            if ($associationIds->isNotEmpty()) {
+                $deleteQuery->whereNotIn('association_id', $associationIds);
+            }
+            $deleteQuery->delete();
+
+            foreach ($validated['assignments'] as $assignment) {
+                DistributionAssignment::updateOrCreate(
+                    [
+                        'distribution_period_id' => $period->id,
+                        'association_id' => $assignment['association_id'],
+                    ],
+                    [
+                        'route_number' => $assignment['route_number'],
+                        'beneficiary_adjustment' => $assignment['beneficiary_adjustment'],
+                        'observation' => $assignment['observation'] ?? null,
+                    ]
+                );
+            }
+        });
+
+        return $this->reparticion($request);
     }
 }

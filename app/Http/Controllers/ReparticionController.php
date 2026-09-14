@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Services\ReparticionService;
+use App\Services\DistributionExcelService;
 use App\Models\VerifiedDocument;
 use App\Services\PDFService;
 use App\Services\SchedulingService;
 use App\Services\VerifiedDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ReparticionController extends Controller
 {
@@ -18,7 +20,8 @@ class ReparticionController extends Controller
         ReparticionService $reparticionService,
         private VerifiedDocumentService $verifiedDocumentService,
         private SchedulingService $schedulingService,
-        private PDFService $pdfService
+        private PDFService $pdfService,
+        private DistributionExcelService $distributionExcelService
     ) {
         $this->reparticionService = $reparticionService;
     }
@@ -129,5 +132,49 @@ class ReparticionController extends Controller
             'currentMonth' => $currentMonth,
             'currentYear' => $currentYear,
         ], $filename, 'a4', 'landscape');
+    }
+
+    public function export(Request $request)
+    {
+        $validated = $request->validate([
+            'year' => 'required|integer|min:2000|max:2100',
+            'month' => 'required|integer|min:1|max:12',
+            'document' => 'required|in:reparto,cargo,fiscalizacion,acta',
+            'format' => 'required|in:pdf,xlsx',
+            'product_mode' => 'nullable|in:complete,milk,oat',
+        ]);
+
+        abort_if($validated['document'] === 'acta' && $validated['format'] !== 'pdf', 422, 'El acta solo se emite en PDF.');
+
+        $racion = $this->reparticionService->getActiveRacion($validated['year'], $validated['month']);
+        abort_unless($racion, 404, 'No hay ración configurada para el período seleccionado.');
+
+        $report = $this->reparticionService->buildReport($racion, $validated['year'], $validated['month']);
+        $document = $validated['document'];
+        $productMode = $validated['product_mode'] ?? 'complete';
+        $baseFilename = $document . '-' . $validated['year'] . '-' . sprintf('%02d', $validated['month']);
+
+        if ($validated['format'] === 'xlsx') {
+            $spreadsheet = $this->distributionExcelService->build($report, $document);
+
+            return response()->streamDownload(function () use ($spreadsheet) {
+                (new Xlsx($spreadsheet))->save('php://output');
+                $spreadsheet->disconnectWorksheets();
+            }, $baseFilename . '.xlsx', [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+        }
+
+        $view = match ($document) {
+            'cargo' => 'movimientos.cargo_general',
+            'fiscalizacion' => 'movimientos.fiscalizacion',
+            'acta' => 'movimientos.acta_entrega',
+            default => 'movimientos.reparto_vueltas',
+        };
+
+        return $this->pdfService->stream($view, [
+            ...$report,
+            'productMode' => $productMode,
+        ], $baseFilename . '.pdf', 'a4', 'landscape');
     }
 }

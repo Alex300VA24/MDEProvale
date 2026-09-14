@@ -135,7 +135,7 @@ class SociosBeneficiariosApiTest extends TestCase
             ->assertJsonStructure(['place_sectors' => []]);
     }
 
-    public function test_reniec_photo_is_saved_encrypted_and_only_returned_in_person_detail(): void
+    public function test_reniec_photo_is_saved_encrypted_and_only_returned_by_photo_endpoint(): void
     {
         $user = $this->userWithAccess();
         $photoBase64 = base64_encode("\xFF\xD8\xFF\xD9");
@@ -192,13 +192,22 @@ class SociosBeneficiariosApiTest extends TestCase
         $detail = $this->actingAs($user)
             ->getJson(self::BASE . "/personas/{$personId}")
             ->assertOk()
-            ->assertJsonPath('data.photo', $photoDataUri);
+            ->assertJsonMissingPath('data.photo');
+
+        $photo = $this->actingAs($user)
+            ->getJson(self::BASE . "/personas/{$personId}/reniec-photo")
+            ->assertOk()
+            ->assertExactJson(['data' => ['photo' => $photoDataUri]]);
+
         $this->assertStringContainsString('no-store', (string) $detail->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', (string) $photo->headers->get('Cache-Control'));
 
         $this->actingAs($user)
             ->getJson(self::BASE . '/personas')
             ->assertOk()
             ->assertJsonMissingPath('data.0.photo');
+
+        Http::assertSentCount(2);
     }
 
     public function test_personas_reniec_endpoint_rejects_invalid_dni_without_calling_pide(): void

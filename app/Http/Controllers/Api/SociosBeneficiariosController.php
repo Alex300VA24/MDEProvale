@@ -250,10 +250,26 @@ class SociosBeneficiariosController extends Controller
     public function showPersona(Request $request, People $person)
     {
         $person->load('placeSector.place:id,title', 'placeSector.sector:id,title');
-        $data = (new PersonaResource($person))->resolve($request);
-        $data['photo'] = $person->reniec_photo;
 
-        return response()->json(['data' => $data])
+        return response()->json([
+            'data' => (new PersonaResource($person))->resolve($request),
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function fotoReniec(People $person, ReniecService $reniec)
+    {
+        try {
+            $reniecPerson = $reniec->consultar($person->dni);
+        } catch (ReniecException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'code' => $exception->resultCode(),
+            ], $exception->httpStatus())->header('Cache-Control', 'no-store, private');
+        }
+
+        return response()->json([
+            'data' => ['photo' => $reniecPerson['photo'] ?? null],
+        ])
             ->header('Cache-Control', 'no-store, private');
     }
 

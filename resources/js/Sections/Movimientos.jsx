@@ -111,7 +111,7 @@ export default function Movimientos({ initialAction }) {
                     </>
                 )}
 
-                {tab === 'reparticion' && <ReparticionTab />}
+                {tab === 'reparticion' && <ReparticionTab can={can} />}
             </div>
         </div>
     );

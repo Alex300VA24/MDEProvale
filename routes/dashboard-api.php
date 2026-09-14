@@ -40,6 +40,9 @@ Route::prefix('dashboard/socios-beneficiarios')->middleware('module:socios-benef
     Route::post('personas/reniec', [SociosBeneficiariosController::class, 'consultarReniec'])
         ->middleware('throttle:10,1')
         ->name('personas.reniec');
+    Route::get('personas/{person}/reniec-photo', [SociosBeneficiariosController::class, 'fotoReniec'])
+        ->middleware('throttle:10,1')
+        ->name('personas.reniec-photo');
     Route::get('personas/{person}', [SociosBeneficiariosController::class, 'showPersona'])->name('personas.show');
     Route::post('personas', [SociosBeneficiariosController::class, 'storePersona'])->name('personas.store');
     Route::put('personas/{person}', [SociosBeneficiariosController::class, 'updatePersona'])->name('personas.update');
@@ -109,6 +112,9 @@ Route::prefix('dashboard/movimientos')->middleware('module:movimientos')->name('
 
     // Repartición mensual (reporte de raciones por comité + enlace al PDF)
     Route::get('reparticion', [MovimientosController::class, 'reparticion'])->name('reparticion');
+    Route::put('reparticion', [MovimientosController::class, 'saveReparticion'])
+        ->middleware('module:movimientos,edit')
+        ->name('reparticion.update');
 });
 
 // ==================== MÓDULO: RESPONSABLES Y RACIONES ====================

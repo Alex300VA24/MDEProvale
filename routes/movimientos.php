@@ -13,4 +13,5 @@ Route::middleware('module:movimientos')->group(function () {
     Route::get('movimientos-reparticion', [ReparticionController::class, 'pdf'])->name('movimientos.reparticion');
     Route::get('movimientos-reparticion-con-firma', [ReparticionController::class, 'pdfConFirma'])->name('movimientos.reparticion-con-firma');
     Route::get('movimientos-reparticion-tabla', [ReparticionController::class, 'index'])->name('movimientos.reparticion-tabla');
+    Route::get('movimientos-distribucion-exportar', [ReparticionController::class, 'export'])->name('movimientos.distribucion.export');
 });

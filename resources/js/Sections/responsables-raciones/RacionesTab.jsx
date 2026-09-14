@@ -36,8 +36,8 @@ function RacionFormModal({ mode, racion, onClose, onSaved }) {
     const [year, setYear] = useState(mode === 'edit' ? racion.year : new Date().getFullYear());
     const [monthStart, setMonthStart] = useState(mode === 'edit' ? racion.month_start : 1);
     const [monthEnd, setMonthEnd] = useState(mode === 'edit' ? racion.month_end : 12);
-    const [hojuelas, setHojuelas] = useState(mode === 'edit' ? racion.racion_hojuelas_gramos : '');
-    const [leche, setLeche] = useState(mode === 'edit' ? racion.racion_leche_militros : '');
+    const [hojuelas, setHojuelas] = useState(mode === 'edit' ? racion.racion_hojuelas_gramos : 51.5);
+    const [leche, setLeche] = useState(mode === 'edit' ? racion.racion_leche_militros : 44);
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -99,12 +99,12 @@ function RacionFormModal({ mode, racion, onClose, onSaved }) {
                     </div>
                 </div>
                 <div>
-                    <label className={labelCls}>Ración Hojuelas (gramos)</label>
-                    <input type="number" step="0.01" min="0" value={hojuelas} onChange={(e) => setHojuelas(e.target.value)} className={inputCls} required placeholder="Ej: 50.00" />
+                    <label className={labelCls}>Hojuela por beneficiario/día (gramos)</label>
+                    <input type="number" step="0.01" min="0" value={hojuelas} onChange={(e) => setHojuelas(e.target.value)} className={inputCls} required placeholder="Ej: 51.50" />
                 </div>
                 <div>
-                    <label className={labelCls}>Ración Leche (mililitros)</label>
-                    <input type="number" step="0.01" min="0" value={leche} onChange={(e) => setLeche(e.target.value)} className={inputCls} required placeholder="Ej: 410.00" />
+                    <label className={labelCls}>Leche por beneficiario/día (gramos)</label>
+                    <input type="number" step="0.01" min="0" value={leche} onChange={(e) => setLeche(e.target.value)} className={inputCls} required placeholder="Ej: 44.00" />
                 </div>
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
@@ -211,7 +211,7 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                         <tr>
                             <th className="px-3 sm:px-4 py-3 text-left">Período</th>
                             <th className="px-3 sm:px-4 py-3 text-left">Ración Hojuelas (g)</th>
-                            <th className="px-3 sm:px-4 py-3 text-left">Ración Leche (ml)</th>
+                            <th className="px-3 sm:px-4 py-3 text-left">Ración Leche (g)</th>
                             <th className="px-3 sm:px-4 py-3 text-center">Estado</th>
                             <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                         </tr>
@@ -246,7 +246,7 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                                         {getMonthName(r.month_start)} - {getMonthName(r.month_end)} {r.year}
                                     </td>
                                     <td className="px-3 sm:px-4 py-3">{r.racion_hojuelas_gramos} g</td>
-                                    <td className="px-3 sm:px-4 py-3">{r.racion_leche_militros} ml</td>
+                                    <td className="px-3 sm:px-4 py-3">{r.racion_leche_militros} g</td>
                                     <td className="px-3 sm:px-4 py-3 text-center">
                                         <span className={`badge ${r.active ? 'badge-current' : 'badge-expired'}`}>
                                             {r.active ? 'Vigente' : 'Vencido'}
@@ -310,7 +310,7 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
                 details={deleting ? [
                     { label: 'Período', value: `${getMonthName(deleting.month_start)} - ${getMonthName(deleting.month_end)} ${deleting.year}` },
                     { label: 'Ración Hojuelas', value: `${deleting.racion_hojuelas_gramos} g` },
-                    { label: 'Ración Leche', value: `${deleting.racion_leche_militros} ml` },
+                    { label: 'Ración Leche', value: `${deleting.racion_leche_militros} g` },
                 ] : []}
             />
         </>

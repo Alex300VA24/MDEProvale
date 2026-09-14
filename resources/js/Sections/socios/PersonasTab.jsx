@@ -61,15 +61,16 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
             if (person.names) setNames(person.names);
             if (person.father_lastname) setFatherLastname(person.father_lastname);
             if (person.mother_lastname) setMotherLastname(person.mother_lastname);
-            if (person.address) setAddress(person.address);
+            setAddress(person.address ?? '');
             setReniecPhotoToken(person.photo_token ?? null);
 
             const restriction = person.restriction && person.restriction !== 'NINGUNA'
                 ? ` Restricción: ${person.restriction}.`
                 : '';
+            const missingAddress = person.address ? '' : ' RENIEC no devolvió una dirección.';
             setReniecStatus({
-                type: restriction ? 'warning' : 'success',
-                message: `Datos obtenidos de RENIEC.${restriction}`,
+                type: restriction || missingAddress ? 'warning' : 'success',
+                message: `Datos obtenidos de RENIEC.${restriction}${missingAddress}`,
             });
         } catch (err) {
             const message = errorMessage(err, 'No se pudo consultar RENIEC.');
@@ -424,8 +425,25 @@ const PersonasTab = forwardRef(function PersonasTab({ options, can }, ref) {
         setViewingLoadingId(persona.id);
 
         try {
-            const response = await http.get(BASE + '/personas/' + persona.id);
-            setViewing((current) => current?.id === persona.id ? response.data.data : current);
+            const [detailResult, photoResult] = await Promise.allSettled([
+                http.get(BASE + '/personas/' + persona.id),
+                http.get(BASE + '/personas/' + persona.id + '/reniec-photo', { timeout: 22000 }),
+            ]);
+
+            if (detailResult.status === 'rejected') {
+                throw detailResult.reason;
+            }
+
+            const detail = detailResult.value.data.data;
+            const photo = photoResult.status === 'fulfilled'
+                ? photoResult.value.data.data?.photo ?? null
+                : null;
+
+            setViewing((current) => current?.id === persona.id ? { ...detail, photo } : current);
+
+            if (photoResult.status === 'rejected') {
+                toast.info(errorMessage(photoResult.reason, 'No se pudo obtener la foto de RENIEC.'));
+            }
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo cargar el detalle de la persona.'));
         } finally {
