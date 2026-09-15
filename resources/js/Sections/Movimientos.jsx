@@ -111,7 +111,9 @@ export default function Movimientos({ initialAction }) {
                     </>
                 )}
 
-                {tab === 'reparticion' && <ReparticionTab can={can} />}
+                {tab === 'reparticion' && (
+                    <ReparticionTab can={can} onGoToMovimientos={() => setTab('kardex')} />
+                )}
             </div>
         </div>
     );

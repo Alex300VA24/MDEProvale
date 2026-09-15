@@ -453,6 +453,40 @@ class SociosBeneficiariosApiTest extends TestCase
         $this->assertDatabaseHas('beneficiaries', ['person_id' => $beneficiaryPersonId, 'partner_id' => $partnerId]);
     }
 
+    public function test_store_beneficiario_uses_current_state_by_default(): void
+    {
+        [$partnerId, $relationshipId] = $this->seedPartnerWithRelationship();
+        $beneficiaryPersonId = $this->seedPerson();
+        $currentStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
+            'title' => 'Vigente',
+            'abbreviation' => \App\Models\State::CURRENT,
+        ]);
+        $typeBenefitId = \Illuminate\Support\Facades\DB::table('type_benefits')->insertGetId([
+            'title' => 'Primera infancia',
+            'abbreviation' => 'PIN',
+            'min_age' => 0,
+            'max_age' => 6,
+            'priority' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/beneficiarios', [
+                'person_id' => $beneficiaryPersonId,
+                'partner_id' => $partnerId,
+                'relationship_id' => $relationshipId,
+                'date_begin' => now()->toDateString(),
+                'type_benefit_id' => $typeBenefitId,
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('beneficiary_histories', [
+            'beneficiary_id' => $response->json('data.id'),
+            'state_id' => $currentStateId,
+        ]);
+    }
+
     public function test_update_beneficiario_updates_relationship(): void
     {
         [$partnerId, $relationshipId] = $this->seedPartnerWithRelationship();
@@ -493,6 +527,7 @@ class SociosBeneficiariosApiTest extends TestCase
         $this->assertDatabaseMissing('beneficiaries', ['id' => $beneficiarieId]);
     }
 
+
     public function test_user_without_module_access_gets_403(): void
     {
         $user = $this->userWithAccess();
@@ -507,5 +542,75 @@ class SociosBeneficiariosApiTest extends TestCase
     {
         $this->getJson(self::BASE . '/partners')
             ->assertUnauthorized();
+    }
+
+    public function test_show_beneficiario_returns_data(): void
+    {
+        [$partnerId, $relationshipId] = $this->seedPartnerWithRelationship();
+        $beneficiaryPersonId = $this->seedPerson();
+        $beneficiarieId = \Illuminate\Support\Facades\DB::table('beneficiaries')->insertGetId([
+            'person_id' => $beneficiaryPersonId,
+            'partner_id' => $partnerId,
+            'relationship_id' => $relationshipId,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson(self::BASE . "/beneficiarios/{$beneficiarieId}")
+            ->assertOk()
+            ->assertJsonPath('data.id', $beneficiarieId)
+            ->assertJsonPath('data.person.id', $beneficiaryPersonId);
+    }
+
+    public function test_document_attachment_upload_download_destroy(): void
+    {
+        [$partnerId] = $this->seedPartnerWithRelationship();
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('test_document.pdf', '%PDF-1.4 test content bytes');
+
+        $uploadResponse = $this->actingAs($this->userWithAccess())
+            ->post(self::BASE . '/documents', [
+                'attachable_type' => 'partner',
+                'attachable_id' => $partnerId,
+                'document_type' => 'ficha_fisica',
+                'file' => $file,
+            ])
+            ->assertCreated();
+
+        $attachmentId = $uploadResponse->json('id') ?? $uploadResponse->json('data.id');
+        $this->assertNotEmpty($attachmentId);
+
+        $downloadResponse = $this->actingAs($this->userWithAccess())
+            ->get(self::BASE . "/documents/{$attachmentId}")
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->assertNotEmpty($downloadResponse->getContent());
+
+        $this->actingAs($this->userWithAccess())
+            ->deleteJson(self::BASE . "/documents/{$attachmentId}")
+            ->assertStatus(204);
+
+        $this->assertDatabaseMissing('document_attachments', ['id' => $attachmentId]);
+    }
+
+    public function test_imprimir_ficha_blank_pdf(): void
+    {
+        $response = $this->actingAs($this->userWithAccess())
+            ->get('/socios-beneficiarios/beneficiarios-imprimir')
+            ->assertOk();
+
+        $this->assertStringContainsString('application/pdf', $response->headers->get('content-type'));
+    }
+
+    public function test_imprimir_ficha_partner_pdf(): void
+    {
+        [$partnerId] = $this->seedPartnerWithRelationship();
+
+        $response = $this->actingAs($this->userWithAccess())
+            ->get("/socios-beneficiarios/socios/{$partnerId}/ficha")
+            ->assertOk();
+
+        $this->assertStringContainsString('application/pdf', $response->headers->get('content-type'));
     }
 }

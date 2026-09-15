@@ -22,6 +22,8 @@ class BeneficiarieResource extends JsonResource
                     'mother_lastname' => $this->person->mother_lastname,
                     'dni' => $this->person->dni,
                     'birthdate' => $this->person->birthdate,
+                    'gender' => $this->person->gender,
+                    'address' => $this->person->address,
                     'age_formatted' => $this->person->age_formatted,
                 ];
             }),
@@ -48,6 +50,8 @@ class BeneficiarieResource extends JsonResource
                     'type_benefit_id' => $h->type_benefit_id,
                     'state_id' => $h->state_id,
                     'reason_disqualification_id' => $h->reason_disqualification_id,
+                    'is_malnourished' => (bool) $h->is_malnourished,
+                    'is_disabled' => (bool) $h->is_disabled,
                     'type_benefit' => $h->typeBenefit
                         ? ['id' => $h->typeBenefit->id, 'title' => $h->typeBenefit->title, 'abbreviation' => $h->typeBenefit->abbreviation]
                         : null,
@@ -55,6 +59,17 @@ class BeneficiarieResource extends JsonResource
                     'reason_disqualification' => $h->reasonDisqualification
                         ? ['id' => $h->reasonDisqualification->id, 'title' => $h->reasonDisqualification->title]
                         : null,
+                ]);
+            }),
+            'documents' => $this->whenLoaded('documents', function () {
+                return $this->documents->map(fn ($doc) => [
+                    'id' => $doc->id,
+                    'document_type' => $doc->document_type,
+                    'file_name' => $doc->file_name,
+                    'mime_type' => $doc->mime_type,
+                    'file_size' => $doc->file_size,
+                    'created_at' => $doc->created_at?->toISOString(),
+                    'url' => route('api.socios-beneficiarios.documents.show', $doc->id),
                 ]);
             }),
         ];

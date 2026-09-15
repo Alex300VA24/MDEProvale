@@ -31,10 +31,19 @@ class ReparticionController extends Controller
         $currentYear = (int) $request->get('year', date('Y'));
         $currentMonth = (int) $request->get('month', date('n'));
 
+        if ($this->reparticionService->isBeforeFirstRecordedPeriod($currentYear, $currentMonth)) {
+            return redirect()->route('movimientos.index')
+                ->with('error', $this->reparticionService->periodRecordNotFoundMessage($currentYear, $currentMonth));
+        }
+
         $racion = $this->reparticionService->getActiveRacion($currentYear, $currentMonth);
         if (!$racion) {
             return redirect()->route('movimientos.index')
                 ->with('error', 'No hay ración configurada para el período ' . $currentMonth . '/' . $currentYear . '. Configure las raciones en Responsables y Raciones.');
+        }
+        if (! $this->reparticionService->hasIngresoForPeriod($currentYear, $currentMonth)) {
+            return redirect()->route('movimientos.index')
+                ->with('error', $this->reparticionService->ingresoRequiredMessage($currentYear, $currentMonth));
         }
 
         $report = $this->reparticionService->buildReport($racion, $currentYear, $currentMonth);
@@ -57,10 +66,19 @@ class ReparticionController extends Controller
         $currentYear = (int) $request->get('year', date('Y'));
         $currentMonth = (int) $request->get('month', date('n'));
 
+        if ($this->reparticionService->isBeforeFirstRecordedPeriod($currentYear, $currentMonth)) {
+            return redirect()->route('movimientos.index')
+                ->with('error', $this->reparticionService->periodRecordNotFoundMessage($currentYear, $currentMonth));
+        }
+
         $racion = $this->reparticionService->getActiveRacion($currentYear, $currentMonth);
         if (!$racion) {
             return redirect()->route('movimientos.index')
                 ->with('error', 'No hay ración configurada para el período ' . $currentMonth . '/' . $currentYear . '. Configure las raciones en Responsables y Raciones.');
+        }
+        if (! $this->reparticionService->hasIngresoForPeriod($currentYear, $currentMonth)) {
+            return redirect()->route('movimientos.index')
+                ->with('error', $this->reparticionService->ingresoRequiredMessage($currentYear, $currentMonth));
         }
 
         $report = $this->reparticionService->buildReport($racion, $currentYear, $currentMonth);
@@ -117,6 +135,16 @@ class ReparticionController extends Controller
         $sector = $request->filled('sector') ? (string) $request->get('sector') : null;
 
         abort_unless($currentMonth >= 1 && $currentMonth <= 12, 422, 'El mes seleccionado no es válido.');
+        abort_if(
+            $this->reparticionService->isBeforeFirstRecordedPeriod($currentYear, $currentMonth),
+            404,
+            $this->reparticionService->periodRecordNotFoundMessage($currentYear, $currentMonth)
+        );
+        abort_unless(
+            $this->reparticionService->hasIngresoForPeriod($currentYear, $currentMonth),
+            422,
+            $this->reparticionService->ingresoRequiredMessage($currentYear, $currentMonth)
+        );
 
         $clubs = $this->schedulingService->generateProgramacionEntrega(
             $currentMonth,
@@ -145,11 +173,23 @@ class ReparticionController extends Controller
         ]);
 
         abort_if($validated['document'] === 'acta' && $validated['format'] !== 'pdf', 422, 'El acta solo se emite en PDF.');
+        abort_if(
+            $this->reparticionService->isBeforeFirstRecordedPeriod($validated['year'], $validated['month']),
+            404,
+            $this->reparticionService->periodRecordNotFoundMessage($validated['year'], $validated['month'])
+        );
 
         $racion = $this->reparticionService->getActiveRacion($validated['year'], $validated['month']);
         abort_unless($racion, 404, 'No hay ración configurada para el período seleccionado.');
+        abort_unless(
+            $this->reparticionService->hasIngresoForPeriod($validated['year'], $validated['month']),
+            422,
+            $this->reparticionService->ingresoRequiredMessage($validated['year'], $validated['month'])
+        );
 
         $report = $this->reparticionService->buildReport($racion, $validated['year'], $validated['month']);
+        $issuedAt = now();
+        $report['issued_at'] = $issuedAt;
         $document = $validated['document'];
         $productMode = $validated['product_mode'] ?? 'complete';
         $baseFilename = $document . '-' . $validated['year'] . '-' . sprintf('%02d', $validated['month']);
@@ -175,6 +215,7 @@ class ReparticionController extends Controller
         return $this->pdfService->stream($view, [
             ...$report,
             'productMode' => $productMode,
+            'issuedAt' => $issuedAt,
         ], $baseFilename . '.pdf', 'a4', 'landscape');
     }
 }

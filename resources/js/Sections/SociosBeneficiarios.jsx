@@ -3,7 +3,6 @@ import { usePage } from '@inertiajs/react';
 import http from '../http';
 import SociosTab from './socios/SociosTab';
 import BeneficiariosTab from './socios/BeneficiariosTab';
-import PersonasTab from './socios/PersonasTab';
 import PadronModal from './socios/PadronModal';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
@@ -11,13 +10,11 @@ const BASE = '/api/dashboard/socios-beneficiarios';
 const TABS = [
     { key: 'socios', label: 'Socios', icon: 'fa-user-friends' },
     { key: 'beneficiarios', label: 'Beneficiarios', icon: 'fa-hand-holding-heart' },
-    { key: 'personas', label: 'Personas', icon: 'fa-users' },
 ];
 
 const HEADERS = {
     socios: { icon: 'fa-user-friends', title: 'Socios y Beneficiarios', description: 'Administra los socios registrados y sus beneficiarios.' },
     beneficiarios: { icon: 'fa-hand-holding-heart', title: 'Gestión de Beneficiarios', description: 'Administra los beneficiarios registrados en el sistema.' },
-    personas: { icon: 'fa-users', title: 'Personas Registradas', description: 'Administra las personas registradas en el sistema.' },
 };
 
 export default function SociosBeneficiarios({ initialAction }) {
@@ -35,7 +32,6 @@ export default function SociosBeneficiarios({ initialAction }) {
     const [padronOpen, setPadronOpen] = useState(false);
     const sociosRef = useRef(null);
     const beneficiariosRef = useRef(null);
-    const personasRef = useRef(null);
 
     useEffect(() => {
         let active = true;
@@ -69,7 +65,23 @@ export default function SociosBeneficiarios({ initialAction }) {
         if (options && initialAction === 'beneficiarios-padron') setPadronOpen(true);
     }, [options, initialAction]);
 
-    const header = HEADERS[tab];
+    const header = HEADERS[tab] || HEADERS.socios;
+
+    const handlePartnerSaved = (partner) => {
+        if (!partner?.id) return;
+
+        setOptions((previous) => {
+            if (!previous) return previous;
+            const updatedPartner = { id: partner.id, name: partner.name };
+            return {
+                ...previous,
+                partners: [
+                    updatedPartner,
+                    ...(previous.partners ?? []).filter((item) => item.id !== partner.id),
+                ],
+            };
+        });
+    };
 
     return (
         <>
@@ -123,12 +135,12 @@ export default function SociosBeneficiarios({ initialAction }) {
                         {tab === 'beneficiarios' && (
                             <>
                                 <a
-                                    href={`${window.APP_URL || ''}/fichas/fichaBeneficiario.pdf`}
+                                    href={`${window.APP_URL}/socios-beneficiarios/beneficiarios-imprimir`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
                                 >
-                                    <i className="fas fa-print" aria-hidden="true" /> Imprimir Ficha Beneficiario
+                                    <i className="fas fa-print" aria-hidden="true" /> Ficha Beneficiario
                                 </a>
                                 {can.create && (
                                     <button
@@ -141,15 +153,6 @@ export default function SociosBeneficiarios({ initialAction }) {
                                 )}
                             </>
                         )}
-                        {can.create && tab === 'personas' && (
-                            <button
-                                type="button"
-                                onClick={() => personasRef.current?.openCreate()}
-                                className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                            >
-                                <i className="fas fa-plus" aria-hidden="true" /> Registrar Persona
-                            </button>
-                        )}
                     </div>
                 </div>
 
@@ -160,13 +163,15 @@ export default function SociosBeneficiarios({ initialAction }) {
                         </div>
                     )}
                     <div className={tab === 'socios' ? '' : 'hidden'}>
-                        <SociosTab ref={sociosRef} options={options ?? {}} can={can} />
+                        <SociosTab
+                            ref={sociosRef}
+                            options={options ?? {}}
+                            can={can}
+                            onPartnerSaved={handlePartnerSaved}
+                        />
                     </div>
                     <div className={tab === 'beneficiarios' ? '' : 'hidden'}>
                         <BeneficiariosTab ref={beneficiariosRef} options={options ?? {}} can={can} />
-                    </div>
-                    <div className={tab === 'personas' ? '' : 'hidden'}>
-                        <PersonasTab ref={personasRef} options={options ?? {}} can={can} />
                     </div>
                 </div>
             </div>

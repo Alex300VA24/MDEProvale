@@ -133,11 +133,25 @@ class MovimientosController extends Controller
         $year = (int) $request->input('year', date('Y'));
         $month = (int) $request->input('month', date('n'));
 
+        if ($this->reparticionService->isBeforeFirstRecordedPeriod($year, $month)) {
+            return response()->json([
+                'code' => 'PERIOD_RECORD_NOT_FOUND',
+                'message' => $this->reparticionService->periodRecordNotFoundMessage($year, $month),
+            ], 404);
+        }
+
         $racion = $this->reparticionService->getActiveRacion($year, $month);
         if (!$racion) {
             return response()->json([
                 'message' => "No hay ración configurada para el período {$month}/{$year}. Configure las raciones en Responsables y Raciones.",
             ], 404);
+        }
+
+        if (! $this->reparticionService->hasIngresoForPeriod($year, $month)) {
+            return response()->json([
+                'code' => 'INGRESO_REQUIRED',
+                'message' => $this->reparticionService->ingresoRequiredMessage($year, $month),
+            ], 422);
         }
 
         $report = $this->reparticionService->buildReport($racion, $year, $month);
@@ -176,6 +190,13 @@ class MovimientosController extends Controller
             'assignments.*.observation' => 'nullable|string|max:250',
         ]);
 
+        if ($this->reparticionService->isBeforeFirstRecordedPeriod($validated['year'], $validated['month'])) {
+            return response()->json([
+                'code' => 'PERIOD_RECORD_NOT_FOUND',
+                'message' => $this->reparticionService->periodRecordNotFoundMessage($validated['year'], $validated['month']),
+            ], 404);
+        }
+
         $calendarDays = (int) date('t', strtotime(sprintf('%04d-%02d-01', $validated['year'], $validated['month'])));
         if ($validated['service_days'] > $calendarDays) {
             return response()->json([
@@ -187,6 +208,13 @@ class MovimientosController extends Controller
         $racion = $this->reparticionService->getActiveRacion($validated['year'], $validated['month']);
         if (! $racion) {
             return response()->json(['message' => 'No hay ración configurada para el período seleccionado.'], 422);
+        }
+
+        if (! $this->reparticionService->hasIngresoForPeriod($validated['year'], $validated['month'])) {
+            return response()->json([
+                'code' => 'INGRESO_REQUIRED',
+                'message' => $this->reparticionService->ingresoRequiredMessage($validated['year'], $validated['month']),
+            ], 422);
         }
 
         DB::transaction(function () use ($validated) {

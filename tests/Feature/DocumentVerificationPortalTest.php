@@ -231,6 +231,40 @@ class DocumentVerificationPortalTest extends TestCase
         $this->assertStringNotContainsString('autenticidad', $signatureRegister);
     }
 
+    public function test_distribution_official_documents_share_municipal_header_and_emission_time(): void
+    {
+        $issuedAt = \Carbon\Carbon::create(2026, 9, 14, 10, 11, 12);
+        $common = [
+            'start_date' => '2026-09-01',
+            'end_date' => '2026-09-30',
+            'days_in_month' => 30,
+            'associations' => collect(),
+            'issuedAt' => $issuedAt,
+            'total_beneficiarios' => 0,
+            'total_leche_tarros' => 0,
+            'total_leche_cajas' => 0,
+            'total_leche_sueltos' => 0,
+            'total_hojuelas_kg' => 0,
+            'total_hojuelas_sacos' => 0,
+            'total_hojuelas_sueltos' => 0,
+        ];
+        $views = [
+            'movimientos.reparto_vueltas' => [...$common, 'vueltas' => collect()],
+            'movimientos.cargo_general' => $common,
+            'movimientos.fiscalizacion' => $common,
+            'movimientos.acta_entrega' => [...$common, 'productMode' => 'complete'],
+        ];
+
+        foreach ($views as $view => $data) {
+            $html = View::make($view, $data)->render();
+
+            $this->assertStringContainsString("public/img/muni2.png", str_replace('\\', '/', $html), $view);
+            $this->assertStringContainsString('MUNICIPALIDAD DISTRITAL', $html, $view);
+            $this->assertStringContainsString('FECHA: 14/09/2026', $html, $view);
+            $this->assertStringContainsString('HORA: 10:11:12', $html, $view);
+        }
+    }
+
     public function test_only_president_role_can_open_private_portal(): void
     {
         $this->get(route('president-portal.index'))->assertRedirect(route('president.login'));

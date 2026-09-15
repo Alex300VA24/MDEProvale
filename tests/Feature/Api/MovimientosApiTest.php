@@ -191,6 +191,8 @@ class MovimientosApiTest extends TestCase
         DB::table('raciones')->insert([
             'id' => 1,
             'year' => (string) $now->year,
+            'month_start' => 1,
+            'month_end' => 12,
             'racion_leche_militros' => 410,
             'racion_hojuelas_gramos' => 50,
             'active' => true,
@@ -515,9 +517,99 @@ class MovimientosApiTest extends TestCase
     public function test_reparticion_returns_404_without_racion(): void
     {
         $this->actingAs($this->adminUser())
-            ->getJson(self::BASE . '/reparticion?year=1990&month=1')
+            ->getJson(self::BASE . '/reparticion?year=2027&month=3')
             ->assertStatus(404)
-            ->assertJsonPath('message', 'No hay ración configurada para el año 1990. Configure las raciones en Responsables y Raciones.');
+            ->assertJsonPath('message', 'No hay ración configurada para el período 3/2027. Configure las raciones en Responsables y Raciones.');
+    }
+
+    public function test_periods_before_march_2026_report_that_no_record_exists(): void
+    {
+        $this->seedReparticionContext();
+        $this->seedIngresoForPeriod(2026, 2);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/reparticion?year=2026&month=2')
+            ->assertStatus(404)
+            ->assertJsonPath('code', 'PERIOD_RECORD_NOT_FOUND')
+            ->assertJsonPath(
+                'message',
+                'No se encuentra registro de la repartición para febrero de 2026. Los registros disponibles comienzan en marzo de 2026.'
+            );
+    }
+
+    public function test_reparticion_requires_an_ingreso_in_the_same_period(): void
+    {
+        $this->seedReparticionContext();
+        $year = now()->year;
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/reparticion?year=' . $year . '&month=10')
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'INGRESO_REQUIRED')
+            ->assertJsonPath(
+                'message',
+                "La repartición de octubre de {$year} aún no está habilitada. Registre al menos un ingreso de producto en ese período para generar, guardar o exportar la repartición."
+            );
+
+        $this->seedIngresoForPeriod($year, 11);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/reparticion?year=' . $year . '&month=10')
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'INGRESO_REQUIRED');
+
+        $this->seedIngresoForPeriod($year, 10);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE . '/reparticion?year=' . $year . '&month=10')
+            ->assertOk();
+    }
+
+    public function test_reparticion_recognizes_imported_lots_as_ingreso_in_march_and_august(): void
+    {
+        $this->seedReparticionContext();
+
+        foreach ([3, 8] as $month) {
+            DB::table('detail_products')->where('id', 1)->update([
+                'start_date' => sprintf('2026-%02d-01', $month),
+                'end_date' => date('Y-m-t', strtotime(sprintf('2026-%02d-01', $month))),
+            ]);
+
+            $this->actingAs($this->adminUser())
+                ->getJson(self::BASE . '/reparticion?year=2026&month=' . $month)
+                ->assertOk();
+        }
+    }
+
+    public function test_reparticion_save_and_exports_are_blocked_without_ingreso(): void
+    {
+        $this->seedReparticionContext();
+        $year = now()->year;
+
+        $this->actingAs($this->adminUser())
+            ->putJson(self::BASE . '/reparticion', [
+                'year' => $year,
+                'month' => 10,
+                'service_days' => 31,
+                'milk_grams_per_beneficiary' => 410,
+                'oat_grams_per_beneficiary' => 50,
+                'milk_can_grams' => 410,
+                'oat_bag_grams' => 1000,
+                'milk_cans_per_box' => 48,
+                'oat_kg_per_sack' => 30,
+                'assignments' => [],
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('code', 'INGRESO_REQUIRED');
+
+        $this->actingAs($this->adminUser())
+            ->get(route('movimientos.distribucion.export', [
+                'year' => $year,
+                'month' => 10,
+                'document' => 'cargo',
+                'format' => 'pdf',
+            ]))
+            ->assertStatus(422);
     }
 
     public function test_reparticion_computes_rations_and_totals(): void
@@ -525,18 +617,24 @@ class MovimientosApiTest extends TestCase
         $this->seedReparticionContext();
 
         $year = now()->year;
-        $days = (int) date('t', strtotime("$year-1-01")); // enero => 31
+        $days = (int) date('t', strtotime("$year-3-01"));
+        $this->seedIngresoForPeriod($year, 3);
 
         $this->actingAs($this->adminUser())
-            ->getJson(self::BASE . '/reparticion?year=' . $year . '&month=1')
+            ->getJson(self::BASE . '/reparticion?year=' . $year . '&month=3')
             ->assertOk()
             ->assertJsonPath('total_beneficiarios', 1)
             ->assertJsonPath('days_in_month', $days)
             ->assertJsonPath('associations.0.beneficiarios', 1)
             ->assertJsonPath('associations.0.leche_litros', $days)
             ->assertJsonPath('associations.0.leche_tarros', $days % 48)
-            ->assertJsonPath('associations.0.hojuelas_kg', round(($days * 50) / 1000))
-            ->assertJsonPath('pdf_url', url('movimientos-reparticion?year=' . $year . '&month=1'));
+            ->assertJsonPath('associations.0.hojuelas_kg', (int) round(($days * 50) / 1000))
+            ->assertJsonPath('pdf_url', route('movimientos.distribucion.export', [
+                'year' => $year,
+                'month' => 3,
+                'document' => 'reparto',
+                'format' => 'pdf',
+            ]));
     }
 
     // ==================== HELPERS ====================
@@ -556,6 +654,22 @@ class MovimientosApiTest extends TestCase
             ->assertStatus(201);
 
         return (int) $response->json('data.id');
+    }
+
+    private function seedIngresoForPeriod(int $year, int $month): void
+    {
+        DB::table('transactions')->insert([
+            'quantity' => 100,
+            'unit_price' => 5,
+            'total_price' => 500,
+            'detail_product_id' => 1,
+            'type_transaction_id' => 2,
+            'transaction_date' => sprintf('%04d-%02d-15', $year, $month),
+            'product_name' => 'Arroz',
+            'uom_title' => 'UNIDAD',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     private function createSalida(int $quantity): int

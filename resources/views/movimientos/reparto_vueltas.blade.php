@@ -27,8 +27,10 @@
 <footer>Página <span class="page"></span></footer>
 @forelse($vueltas as $routeIndex => $route)
 <section class="route">
-    <h1>REPARTO LOGÍSTICO POR VUELTAS — PROGRAMA VASO DE LECHE</h1>
-    <div class="meta">Período {{ date('d/m/Y', strtotime($start_date)) }} - {{ date('d/m/Y', strtotime($end_date)) }}</div>
+    @include('movimientos.partials.official_header', [
+        'headerTitle' => 'REPARTO LOGÍSTICO POR VUELTAS - PROGRAMA VASO DE LECHE',
+        'headerSubtitle' => 'PERÍODO ' . date('d/m/Y', strtotime($start_date)) . ' - ' . date('d/m/Y', strtotime($end_date)),
+    ])
     <div class="route-title">VUELTA N° {{ $route['vuelta'] }}</div>
     <table>
         <colgroup><col style="width:3%"><col style="width:5%"><col style="width:15%"><col style="width:13%"><col style="width:16%"><col style="width:9%"><col style="width:6%"><col style="width:6%"><col style="width:5%"><col style="width:5%"><col style="width:6%"><col style="width:5%"><col style="width:5%"></colgroup>
@@ -45,7 +47,11 @@
     @endif
 </section>
 @empty
-<h1>REPARTO LOGÍSTICO POR VUELTAS</h1><p style="text-align:center">No hay comités con beneficiarios para este período.</p>
+@include('movimientos.partials.official_header', [
+    'headerTitle' => 'REPARTO LOGÍSTICO POR VUELTAS - PROGRAMA VASO DE LECHE',
+    'headerSubtitle' => 'PERÍODO ' . date('d/m/Y', strtotime($start_date)) . ' - ' . date('d/m/Y', strtotime($end_date)),
+])
+<p style="text-align:center">No hay comités con beneficiarios para este período.</p>
 @endforelse
 </body>
 </html>

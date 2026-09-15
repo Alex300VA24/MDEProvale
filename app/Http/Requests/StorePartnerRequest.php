@@ -24,6 +24,15 @@ class StorePartnerRequest extends FormRequest
             'date_begin' => 'required|date',
             'date_end' => 'nullable|date|after_or_equal:date_begin',
             'observations' => 'nullable|string',
+            'marital_status' => 'nullable|string|max:50',
+            'education_level' => 'nullable|string|max:50',
+            'occupation' => 'nullable|string|max:100',
+            'children_count' => 'nullable|integer|min:0',
+            'is_pregnant' => 'nullable|boolean',
+            'is_lactating' => 'nullable|boolean',
+            'spouse_occupation' => 'nullable|string|max:100',
+            'spouse_education_level' => 'nullable|string|max:50',
+            'family_income' => 'nullable|numeric|min:0',
             'beneficiaries' => 'nullable|array',
             'beneficiaries.*.person_id' => 'required|exists:people,id',
             'beneficiaries.*.relationship_id' => 'required|exists:relationships,id',
@@ -35,6 +44,8 @@ class StorePartnerRequest extends FormRequest
             'beneficiaries.*.height' => 'nullable|numeric|min:0',
             'beneficiaries.*.hmg' => 'nullable|numeric|min:0',
             'beneficiaries.*.reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
+            'beneficiaries.*.is_malnourished' => 'nullable|boolean',
+            'beneficiaries.*.is_disabled' => 'nullable|boolean',
         ];
     }
 

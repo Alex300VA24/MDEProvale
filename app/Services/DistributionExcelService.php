@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class DistributionExcelService
@@ -31,10 +32,11 @@ class DistributionExcelService
             default => $this->reparto($sheet, $report),
         };
 
-        $sheet->freezePane('A4');
+        $sheet->freezePane('A6');
         $sheet->setShowGridlines(false);
         $sheet->getPageSetup()->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)->setFitToWidth(1)->setFitToHeight(0);
         $sheet->getPageMargins()->setTop(0.3)->setBottom(0.3)->setLeft(0.2)->setRight(0.2);
+        $sheet->getPageSetup()->setRowsToRepeatAtTopByStartAndEnd(1, 3);
 
         return $spreadsheet;
     }
@@ -42,15 +44,53 @@ class DistributionExcelService
     private function title(Worksheet $sheet, string $title, array $report, int $columns): int
     {
         $last = $this->column($columns);
-        $sheet->mergeCells("A1:{$last}1")->setCellValue('A1', $title);
-        $sheet->mergeCells("A2:{$last}2")->setCellValue(
-            'A2',
-            'Período: ' . date('d/m/Y', strtotime($report['start_date'])) . ' - ' . date('d/m/Y', strtotime($report['end_date']))
-        );
-        $sheet->getStyle("A1:{$last}2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $titleEnd = $this->column($columns - 2);
+        $metaStart = $this->column($columns - 1);
+        $issuedAt = $report['issued_at'] ?? null;
+        $issuedDate = $issuedAt instanceof \DateTimeInterface
+            ? $issuedAt->format('d/m/Y')
+            : date('d/m/Y');
+        $issuedTime = $issuedAt instanceof \DateTimeInterface
+            ? $issuedAt->format('H:i:s')
+            : date('H:i:s');
 
-        return 3;
+        $sheet->mergeCells('A1:B3');
+        $sheet->mergeCells('C1:D1')->setCellValue('C1', 'MUNICIPALIDAD DISTRITAL');
+        $sheet->mergeCells('C2:D2')->setCellValue('C2', 'DE LA ESPERANZA');
+        $sheet->mergeCells('C3:D3')->setCellValue('C3', 'O.F. Vaso de Leche');
+        $sheet->mergeCells("E1:{$titleEnd}2")->setCellValue('E1', $title);
+        $sheet->mergeCells("E3:{$titleEnd}3")->setCellValue(
+            'E3',
+            'PERÍODO ' . date('d/m/Y', strtotime($report['start_date'])) . ' - ' . date('d/m/Y', strtotime($report['end_date']))
+        );
+        $sheet->mergeCells("{$metaStart}1:{$last}1")->setCellValue("{$metaStart}1", 'FECHA: ' . $issuedDate);
+        $sheet->mergeCells("{$metaStart}2:{$last}2")->setCellValue("{$metaStart}2", 'HORA: ' . $issuedTime);
+        $sheet->mergeCells("{$metaStart}3:{$last}3");
+
+        $logoPath = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . 'muni2.png';
+        if (is_file($logoPath)) {
+            $logo = new Drawing();
+            $logo->setName('Logo Municipalidad Distrital de La Esperanza');
+            $logo->setPath($logoPath);
+            $logo->setHeight(48);
+            $logo->setCoordinates('A1');
+            $logo->setOffsetX(8);
+            $logo->setOffsetY(3);
+            $logo->setWorksheet($sheet);
+        }
+
+        $sheet->getRowDimension(1)->setRowHeight(22);
+        $sheet->getRowDimension(2)->setRowHeight(19);
+        $sheet->getRowDimension(3)->setRowHeight(18);
+        $sheet->getStyle("A1:{$last}3")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+        $sheet->getStyle('C1:D3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('C1:D2')->getFont()->setBold(true)->setSize(8);
+        $sheet->getStyle("E1:{$titleEnd}3")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle("{$metaStart}1:{$last}3")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle("{$metaStart}1:{$last}2")->getFont()->setBold(true)->setSize(8);
+
+        return 5;
     }
 
     private function cargo(Worksheet $sheet, array $report): void
@@ -118,8 +158,8 @@ class DistributionExcelService
     private function finish(Worksheet $sheet, int $columns, int $lastRow, array $widths): void
     {
         $last = $this->column($columns);
-        $sheet->getStyle("A3:{$last}{$lastRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB('FFB7C4C7');
-        $sheet->getStyle("A3:{$last}{$lastRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
+        $sheet->getStyle("A5:{$last}{$lastRow}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setARGB('FFB7C4C7');
+        $sheet->getStyle("A5:{$last}{$lastRow}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
         foreach ($widths as $index => $width) {
             $sheet->getColumnDimension($this->column($index + 1))->setWidth($width);
         }

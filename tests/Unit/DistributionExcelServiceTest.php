@@ -17,6 +17,7 @@ class DistributionExcelServiceTest extends TestCase
         ];
         $report = [
             'start_date' => '2026-09-01', 'end_date' => '2026-09-30',
+            'issued_at' => new \DateTimeImmutable('2026-09-14 10:11:12'),
             'vueltas' => [[
                 'vuelta' => 1, 'clubs' => collect([$club]), 'total_beneficiarios' => 100,
                 'total_leche' => 322, 'leche_cajas' => 6, 'leche_tarros' => 34,
@@ -29,9 +30,15 @@ class DistributionExcelServiceTest extends TestCase
         ];
 
         $spreadsheet = (new DistributionExcelService())->build($report, 'reparto');
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $this->assertSame('Reparto por vueltas', $spreadsheet->getActiveSheet()->getTitle());
-        $this->assertSame('REPARTO LOGÍSTICO POR VUELTAS - PROGRAMA VASO DE LECHE', $spreadsheet->getActiveSheet()->getCell('A1')->getValue());
-        $this->assertStringContainsString('VUELTA N° 1', $spreadsheet->getActiveSheet()->getCell('A3')->getValue());
+        $this->assertSame('Reparto por vueltas', $sheet->getTitle());
+        $this->assertSame('MUNICIPALIDAD DISTRITAL', $sheet->getCell('C1')->getValue());
+        $this->assertSame('REPARTO LOGÍSTICO POR VUELTAS - PROGRAMA VASO DE LECHE', $sheet->getCell('E1')->getValue());
+        $this->assertSame('PERÍODO 01/09/2026 - 30/09/2026', $sheet->getCell('E3')->getValue());
+        $this->assertSame('FECHA: 14/09/2026', $sheet->getCell('L1')->getValue());
+        $this->assertSame('HORA: 10:11:12', $sheet->getCell('L2')->getValue());
+        $this->assertStringContainsString('VUELTA N° 1', $sheet->getCell('A5')->getValue());
+        $this->assertCount(1, $sheet->getDrawingCollection());
     }
 }

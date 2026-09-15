@@ -20,6 +20,7 @@ Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->middleware
     Route::post('socios', [PartnerController::class, 'store'])->name('socios.store');
     Route::put('socios/{partner}', [PartnerController::class, 'update'])->name('socios.update');
     Route::delete('socios/{partner}', [PartnerController::class, 'destroy'])->name('socios.destroy');
+    Route::get('socios/{partner}/ficha', [PartnerController::class, 'imprimirFicha'])->name('socios.ficha');
 
     // Beneficiarios
     Route::get('beneficiarios', [BeneficiarieController::class, 'index'])->name('beneficiarios.index');

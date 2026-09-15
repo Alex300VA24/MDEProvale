@@ -9,28 +9,57 @@ import Pagination from '../../Components/Pagination';
 import { useDebounced } from './hooks';
 import { formatDate, personFullName, personLabel, stateClass } from './format';
 import errorMessage from '../../errorMessage';
+import ReniecPhoto from './ReniecPhoto';
+import PersonaInlineFields, { submitInlinePersona } from './PersonaInlineFields';
+import DocumentosSection, { PendingDocumentSection, uploadDocumentAttachment } from './DocumentosSection';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
 const selectCls =
-    'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
-const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
+    'w-full px-4 py-2 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+const labelCls = 'block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls = selectCls;
-
-const peopleSearch = async (q) => {
-    const res = await http.get('/api/search/people', { params: { q, limit: 30 } });
-    return (res.data.results || []).map((r) => ({ id: r.id, label: r.text }));
-};
+const Optional = () => <span className="text-earth font-normal normal-case tracking-normal">(opcional)</span>;
 
 function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
     const toast = useToast();
-    const [personId, setPersonId] = useState(mode === 'edit' && partner ? partner.person_id : null);
-    const [personLabelState, setPersonLabelState] = useState(mode === 'edit' && partner?.person ? personLabel(partner.person) : '');
+    const [personState, setPersonState] = useState({
+        isNew: mode === 'create',
+        personId: mode === 'edit' && partner ? partner.person_id : null,
+        personLabel: mode === 'edit' && partner?.person ? personLabel(partner.person) : '',
+        personData: {
+            dni: partner?.person?.dni || '',
+            names: partner?.person?.names || '',
+            father_lastname: partner?.person?.father_lastname || '',
+            mother_lastname: partner?.person?.mother_lastname || '',
+            birthdate: partner?.person?.birthdate || '',
+            gender: partner?.person?.gender || 'F',
+            address: partner?.person?.address || '',
+            phone_number: partner?.person?.phone_number || '',
+            place_sector_id: partner?.person?.place_sector_id || '',
+        },
+        reniecPhotoToken: null,
+    });
+
     const [associationId, setAssociationId] = useState(mode === 'edit' && partner ? partner.association_id : '');
-    const [dateBegin, setDateBegin] = useState(partner?.date_begin || '');
+    const [dateBegin, setDateBegin] = useState(partner?.date_begin || new Date().toISOString().split('T')[0]);
     const [dateEnd, setDateEnd] = useState(partner?.date_end || '');
-    const [stateId, setStateId] = useState(mode === 'edit' && partner ? partner.state_id : ((options.states || []).find((s) => s.abbreviation === 'ACT')?.id ?? ''));
+    const [stateId, setStateId] = useState(
+        mode === 'edit' && partner ? partner.state_id : ((options.states || []).find((s) => s.abbreviation === 'VIG')?.id ?? '')
+    );
     const [observations, setObservations] = useState(partner?.observations || '');
+
+    // Ficha fields
+    const [maritalStatus, setMaritalStatus] = useState(partner?.marital_status || '');
+    const [educationLevel, setEducationLevel] = useState(partner?.education_level || '');
+    const [occupation, setOccupation] = useState(partner?.occupation || '');
+    const [childrenCount, setChildrenCount] = useState(partner?.children_count ?? '');
+    const [isPregnant, setIsPregnant] = useState(Boolean(partner?.is_pregnant));
+    const [isLactating, setIsLactating] = useState(Boolean(partner?.is_lactating));
+    const [spouseOccupation, setSpouseOccupation] = useState(partner?.spouse_occupation || '');
+    const [spouseEducationLevel, setSpouseEducationLevel] = useState(partner?.spouse_education_level || '');
+    const [familyIncome, setFamilyIncome] = useState(partner?.family_income || '');
+    const [pendingDocument, setPendingDocument] = useState({ documentType: 'ficha_fisica', file: null });
     const [submitting, setSubmitting] = useState(false);
 
     const associationOptions = (options.associations || []).map((a) => ({ id: a.id, label: a.name }));
@@ -38,29 +67,56 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!personId || !associationId || !stateId || !dateBegin) {
-            toast.error('Complete los campos obligatorios del socio.');
+        if (!associationId || !dateBegin) {
+            toast.error('Complete el club y la fecha de inicio.');
             return;
         }
+
         setSubmitting(true);
         try {
+            const resolvedPersonId = await submitInlinePersona(personState);
+
             const payload = {
-                person_id: personId,
+                person_id: resolvedPersonId,
                 association_id: associationId,
-                state_id: stateId,
+                state_id: stateId || (options.states || [])[0]?.id,
                 date_begin: dateBegin,
                 date_end: dateEnd || null,
                 observations: observations || null,
+                marital_status: maritalStatus || null,
+                education_level: educationLevel || null,
+                occupation: occupation || null,
+                children_count: childrenCount === '' ? null : Number(childrenCount),
+                is_pregnant: Boolean(isPregnant),
+                is_lactating: Boolean(isLactating),
+                spouse_occupation: spouseOccupation || null,
+                spouse_education_level: spouseEducationLevel || null,
+                family_income: familyIncome === '' ? null : familyIncome,
             };
 
+            let savedPartner;
             if (mode === 'edit') {
-                await http.put(`${BASE}/partners/${partner.id}`, payload);
+                const response = await http.put(`${BASE}/partners/${partner.id}`, payload);
+                savedPartner = response.data?.data;
                 toast.success('Socio actualizado correctamente.');
             } else {
-                await http.post(`${BASE}/partners`, payload);
-                toast.success('Socio creado exitosamente.');
+                const response = await http.post(`${BASE}/partners`, payload);
+                savedPartner = response.data?.data;
+
+                if (pendingDocument.file) {
+                    try {
+                        await uploadDocumentAttachment('partner', savedPartner?.id, pendingDocument);
+                        toast.success('Socio y documento registrados exitosamente.');
+                    } catch (documentError) {
+                        const detail = errorMessage(documentError, 'No se pudo subir el archivo.');
+                        toast.error(`Socio registrado, pero el archivo no se subió. ${detail} Abra Editar para reintentarlo.`);
+                    }
+                } else {
+                    toast.success('Socio registrado exitosamente.');
+                }
             }
-            onSaved();
+
+            onSaved(savedPartner);
         } catch (err) {
             toast.error(errorMessage(err, 'Ocurrió un error al guardar el socio.'));
         } finally {
@@ -72,61 +128,236 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Socio' : 'Registrar Socio'}
+            title={mode === 'edit' ? 'Editar Ficha del Socio' : 'Registrar Ficha de Socio'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-user-plus'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
-            maxWidth="sm:max-w-2xl"
+            maxWidth="sm:max-w-4xl"
         >
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-                <div>
-                    <label className={labelCls}>Persona *</label>
-                    <Combobox
-                        value={personId}
-                        onChange={setPersonId}
-                        onSelect={(opt) => setPersonLabelState(opt.label)}
-                        onSearch={peopleSearch}
-                        selectedLabel={personLabelState}
-                        placeholder="Buscar persona por nombre o DNI..."
-                        minQuery={2}
-                    />
-                </div>
-                <div>
-                    <label className={labelCls}>Club *</label>
-                    <Combobox value={associationId} onChange={setAssociationId} options={associationOptions} placeholder="Seleccionar club..." />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className={labelCls}>Fecha Inicio *</label>
-                        <input type="date" value={dateBegin} onChange={(e) => setDateBegin(e.target.value)} className={inputCls} required />
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+                {/* Selector / Creador Inline de Persona */}
+                <PersonaInlineFields
+                    value={personState}
+                    onChange={setPersonState}
+                    options={options}
+                    title="Datos de la Socia / Madre Titular"
+                />
+
+                {/* Datos de Afiliación */}
+                <div className="rounded-xl border border-wheat bg-white p-3 sm:p-4 space-y-3">
+                    <span className="text-xs font-bold text-charcoal uppercase tracking-wider block border-b border-wheat/60 pb-1.5">
+                        <i className="fas fa-building text-leaf mr-1.5" /> Datos del Comité y Período
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="sm:col-span-2">
+                            <label className={labelCls}>Club / Comité del Vaso de Leche *</label>
+                            <Combobox
+                                value={associationId}
+                                onChange={setAssociationId}
+                                options={associationOptions}
+                                placeholder="Seleccionar club..."
+                            />
+                        </div>
+                        <div>
+                            <label className={labelCls}>Fecha Inicio *</label>
+                            <input
+                                type="date"
+                                value={dateBegin}
+                                onChange={(e) => setDateBegin(e.target.value)}
+                                className={inputCls}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className={labelCls}>Fecha Fin <Optional /></label>
+                            <input
+                                type="date"
+                                value={dateEnd}
+                                onChange={(e) => setDateEnd(e.target.value)}
+                                className={inputCls}
+                            />
+                        </div>
+                        {mode === 'edit' && (
+                            <div className="sm:col-span-2">
+                                <label className={labelCls}>Estado *</label>
+                                <Combobox
+                                    value={stateId}
+                                    onChange={setStateId}
+                                    options={stateOptions}
+                                    placeholder="Seleccionar..."
+                                />
+                            </div>
+                        )}
                     </div>
-                    <div>
-                        <label className={labelCls}>Fecha Fin</label>
-                        <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className={inputCls} />
+                </div>
+
+                {/* Datos Socioeconómicos de la Ficha */}
+                <div className="rounded-xl border border-wheat bg-white p-3 sm:p-4 space-y-3">
+                    <span className="text-xs font-bold text-charcoal uppercase tracking-wider block border-b border-wheat/60 pb-1.5">
+                        <i className="fas fa-file-invoice text-leaf mr-1.5" /> Datos Socioeconómicos y Familiares (Ficha)
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className={labelCls}>Estado Civil <Optional /></label>
+                            <select
+                                value={maritalStatus}
+                                onChange={(e) => setMaritalStatus(e.target.value)}
+                                className={inputCls}
+                            >
+                                <option value="">Seleccionar...</option>
+                                <option value="SOLTERA">Soltera/o</option>
+                                <option value="CASADA">Casada/o</option>
+                                <option value="CONVIVIENTE">Conviviente</option>
+                                <option value="SEPARADA">Separada/o</option>
+                                <option value="VIUDA">Viuda/o</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className={labelCls}>Grado de Instrucción <Optional /></label>
+                            <select
+                                value={educationLevel}
+                                onChange={(e) => setEducationLevel(e.target.value)}
+                                className={inputCls}
+                            >
+                                <option value="">Seleccionar...</option>
+                                <option value="NINGUNO">Ninguno</option>
+                                <option value="INICIAL">Inicial</option>
+                                <option value="PRIMARIA">Primaria</option>
+                                <option value="SECUNDARIA">Secundaria</option>
+                                <option value="SUPERIOR">Superior</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className={labelCls}>Ocupación de la Socia <Optional /></label>
+                            <input
+                                type="text"
+                                value={occupation}
+                                onChange={(e) => setOccupation(e.target.value)}
+                                placeholder="Ej: Comerciante, Su casa"
+                                className={inputCls}
+                            />
+                        </div>
                     </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className={labelCls}>Nº de Hijos <Optional /></label>
+                            <input
+                                type="number"
+                                min="0"
+                                value={childrenCount}
+                                onChange={(e) => setChildrenCount(e.target.value)}
+                                placeholder="0"
+                                className={inputCls}
+                            />
+                        </div>
+                        <div className="sm:col-span-2 flex items-center gap-6 pt-5">
+                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-charcoal">
+                                <input
+                                    type="checkbox"
+                                    checked={isPregnant}
+                                    onChange={(e) => setIsPregnant(e.target.checked)}
+                                    className="rounded border-wheat text-leaf focus:ring-leaf h-4 w-4"
+                                />
+                                Gestando <Optional />
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-charcoal">
+                                <input
+                                    type="checkbox"
+                                    checked={isLactating}
+                                    onChange={(e) => setIsLactating(e.target.checked)}
+                                    className="rounded border-wheat text-leaf focus:ring-leaf h-4 w-4"
+                                />
+                                Lactando <Optional />
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-wheat/60 pt-3">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                            Datos del Cónyuge e Ingresos
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label className={labelCls}>Ocupación del Cónyuge <Optional /></label>
+                                <input
+                                    type="text"
+                                    value={spouseOccupation}
+                                    onChange={(e) => setSpouseOccupation(e.target.value)}
+                                    placeholder="Ej: Obrero, Conductor"
+                                    className={inputCls}
+                                />
+                            </div>
+                            <div>
+                                <label className={labelCls}>Grado Instr. Cónyuge <Optional /></label>
+                                <input
+                                    type="text"
+                                    value={spouseEducationLevel}
+                                    onChange={(e) => setSpouseEducationLevel(e.target.value)}
+                                    placeholder="Ej: Secundaria"
+                                    className={inputCls}
+                                />
+                            </div>
+                            <div>
+                                <label className={labelCls}>Ingreso Familiar (S/) <Optional /></label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={familyIncome}
+                                    onChange={(e) => setFamilyIncome(e.target.value)}
+                                    placeholder="1025.00"
+                                    className={inputCls}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-                {mode === 'edit' && (
+
                 <div>
-                    <label className={labelCls}>Estado *</label>
-                    <Combobox value={stateId} onChange={setStateId} options={stateOptions} placeholder="Seleccionar..." />
-                </div>
-                )}
-                <div>
-                    <label className={labelCls}>Observaciones</label>
+                    <label className={labelCls}>Observaciones <Optional /></label>
                     <textarea
                         rows="2"
                         value={observations}
                         onChange={(e) => setObservations(e.target.value)}
+                        placeholder="Notas u observaciones adicionales..."
                         className={inputCls}
                     />
                 </div>
+
+                {mode === 'create' && (
+                    <PendingDocumentSection
+                        attachableType="partner"
+                        value={pendingDocument}
+                        onChange={setPendingDocument}
+                        inputId="new-partner-document"
+                        title="Expediente de la Socia"
+                    />
+                )}
+
+                {mode === 'edit' && partner && (
+                    <div className="rounded-xl border border-wheat bg-white p-3 sm:p-4">
+                        <DocumentosSection
+                            attachableType="partner"
+                            attachableId={partner.id}
+                            initialDocuments={partner.documents || []}
+                            highlightType="ficha_fisica"
+                            title="Expediente de la Socia (Ficha física, DNI, carnet)"
+                        />
+                    </div>
+                )}
 
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">
                         Cancelar
                     </button>
-                    <button type="submit" disabled={submitting} className="btn-primary flex-1 text-xs sm:text-sm">
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="btn-primary flex-1 text-xs sm:text-sm disabled:opacity-50"
+                    >
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
-                        {mode === 'edit' ? 'Actualizar' : 'Guardar'}
+                        {mode === 'edit' ? 'Actualizar Socio' : 'Guardar Socio'}
                     </button>
                 </div>
             </form>
@@ -136,51 +367,97 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
 
 function SocioViewModal({ partner, onClose }) {
     if (!partner) return null;
+    const [photo, setPhoto] = useState(null);
+    const [loadingPhoto, setLoadingPhoto] = useState(false);
     const latestHistory = (b) => (b.histories && b.histories.length ? b.histories[0] : null);
     const stateCls = stateClass(partner.state);
 
+    useEffect(() => {
+        if (!partner?.person?.id) return;
+        setLoadingPhoto(true);
+        http.get(`${BASE}/personas/${partner.person.id}/reniec-photo`, { timeout: 22000 })
+            .then((res) => setPhoto(res.data?.data?.photo ?? null))
+            .catch(() => setPhoto(null))
+            .finally(() => setLoadingPhoto(false));
+    }, [partner?.id, partner?.person?.id]);
+
     return (
-        <DetailModal open onClose={onClose} title="Detalle del socio" icon="fa-user" maxWidth="sm:max-w-3xl">
+        <DetailModal open onClose={onClose} title="Detalle del Socio / Ficha" icon="fa-user" maxWidth="sm:max-w-4xl">
             <DetailGroup>
-                <Field label="Nombre" wide>
-                    <span className="text-base font-bold text-charcoal">{personFullName(partner.person) || 'Sin nombre'}</span>
-                </Field>
-                <FieldGrid>
-                    <Field label="DNI" value={partner.person?.dni} mono />
-                    <Field label="Estado">
-                        <span className={`badge ${stateCls}`}>{partner.state?.title || 'N/A'}</span>
-                    </Field>
-                    <Field label="Club" value={partner.association?.name} />
-                    <Field label="Beneficiarios">
-                        <span className="text-lg font-bold text-leaf">{partner.beneficiaries_count ?? 0}</span>
-                    </Field>
-                    <Field label="Fecha de inicio" value={formatDate(partner.date_begin)} />
-                    <Field label="Fecha de fin" value={formatDate(partner.date_end)} />
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 mb-3">
+                    <ReniecPhoto persona={{ ...partner.person, photo }} loading={loadingPhoto} />
+                    <div className="min-w-0 flex-1 w-full space-y-2">
+                        <Field label="Socia Titular" wide>
+                            <span className="text-base font-bold text-charcoal">{personFullName(partner.person) || 'Sin nombre'}</span>
+                        </Field>
+                        <FieldGrid cols={3}>
+                            <Field label="DNI" value={partner.person?.dni} mono />
+                            <Field label="Estado">
+                                <span className={`badge ${stateCls}`}>{partner.state?.title || 'N/A'}</span>
+                            </Field>
+                            <Field label="Club" value={partner.association?.name} />
+                        </FieldGrid>
+                        <FieldGrid cols={3}>
+                            <Field label="Fecha de inicio" value={formatDate(partner.date_begin)} />
+                            <Field label="Fecha de fin" value={formatDate(partner.date_end)} />
+                            <Field label="Beneficiarios">
+                                <span className="text-base font-bold text-leaf">{partner.beneficiaries_count ?? 0}</span>
+                            </Field>
+                        </FieldGrid>
+                    </div>
+                </div>
+            </DetailGroup>
+
+            {/* Datos de Ficha */}
+            <DetailGroup title="Datos de la Ficha Individual" icon="fa-id-card">
+                <FieldGrid cols={3}>
+                    <Field label="Estado Civil" value={partner.marital_status} />
+                    <Field label="Grado de Instrucción" value={partner.education_level} />
+                    <Field label="Ocupación" value={partner.occupation} />
+                    <Field label="Nº de Hijos" value={partner.children_count} />
+                    <Field label="Condición Actual" value={[partner.is_pregnant ? 'Gestando' : '', partner.is_lactating ? 'Lactando' : ''].filter(Boolean).join(', ') || 'Ninguna'} />
+                    <Field label="Ingreso Familiar" value={partner.family_income ? `S/ ${partner.family_income}` : ''} />
+                    <Field label="Ocupación Cónyuge" value={partner.spouse_occupation} />
+                    <Field label="Grado Instr. Cónyuge" value={partner.spouse_education_level} />
                 </FieldGrid>
             </DetailGroup>
 
+            {/* Sección Documentos Adjuntos y Ficha Física */}
+            <DetailGroup title="Ficha Física y Documentos de la Socia" icon="fa-paperclip">
+                <DocumentosSection
+                    attachableType="partner"
+                    attachableId={partner.id}
+                    initialDocuments={partner.documents || []}
+                    highlightType="ficha_fisica"
+                    title="Expediente de la Socia (Ficha física, DNI, carnet)"
+                    canUpload={false}
+                    canDelete={false}
+                    canDownload={false}
+                />
+            </DetailGroup>
+
             {partner.beneficiaries_count > 0 && (
-                <DetailGroup title="Lista de beneficiarios" icon="fa-hand-holding-heart">
+                <DetailGroup title="Beneficiarios Registrados" icon="fa-hand-holding-heart">
                     <div className="space-y-3">
                         {(partner.beneficiaries || []).map((b) => {
                             const h = latestHistory(b);
                             return (
-                                <div key={b.id} className="rounded-xl border border-mist bg-base/60 p-4">
-                                    <FieldGrid>
+                                <div key={b.id} className="rounded-xl border border-mist bg-base/60 p-3">
+                                    <FieldGrid cols={3}>
                                         <Field label="Nombre" value={personFullName(b.person)} />
                                         <Field label="DNI" value={b.person?.dni} mono />
                                         <Field label="Parentesco" value={b.relationship?.title} />
                                     </FieldGrid>
-                                    <div className="mt-3 border-t border-mist pt-3">
-                                        <FieldGrid cols={3}>
-                                            <Field label="Peso" value={h?.weight} />
-                                            <Field label="Talla" value={h?.height} />
-                                            <Field label="Hemoglobina (HMG)" value={h?.hmg} />
-                                            <Field label="Fecha de inicio" value={formatDate(h?.date_begin)} />
-                                            <Field label="Fecha de fin" value={formatDate(h?.date_end)} />
-                                            <Field label="Tipo de beneficio" value={h?.type_benefit?.title} />
+                                    <div className="mt-2 border-t border-mist/80 pt-2">
+                                        <FieldGrid cols={4}>
+                                            <Field label="Peso" value={h?.weight ? `${h.weight} kg` : ''} />
+                                            <Field label="Talla" value={h?.height ? `${h.height} cm` : ''} />
+                                            <Field label="HMG" value={h?.hmg} />
+                                            <Field label="Condición" value={[h?.is_malnourished ? 'Desnutrido' : '', h?.is_disabled ? 'Discapacitado' : ''].filter(Boolean).join(', ') || 'Normal'} />
+                                            <Field label="Tipo beneficio" value={h?.type_benefit?.title} />
                                             <Field label="Estado" value={h?.state?.title} />
-                                            <Field label="Motivo de descalificación" value={h?.reason_disqualification?.title || 'Ninguno'} />
+                                            <Field label="Inicio" value={formatDate(h?.date_begin)} />
+                                            <Field label="Fin" value={formatDate(h?.date_end)} />
                                         </FieldGrid>
                                     </div>
                                 </div>
@@ -199,7 +476,7 @@ function SocioViewModal({ partner, onClose }) {
     );
 }
 
-const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
+const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -283,62 +560,54 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                     onSubmit={(e) => e.preventDefault()}
                     className="flex flex-col lg:flex-row flex-wrap items-end gap-2 sm:gap-3"
                 >
-                    {/* Buscar – ocupa el espacio restante */}
                     <div className="w-full lg:flex-1 min-w-[160px]">
-                    <label className={labelCls}>Buscar</label>
-                    <div className="relative">
-                        <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none"/>
-                        <input
-                            type="text"
-                            value={filters.search}
-                            onChange={(e) => setFilter('search', e.target.value)}
-                            placeholder="Buscar por nombre o DNI"
-                            className="w-full pl-10 pr-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                        <label className={labelCls}>Buscar</label>
+                        <div className="relative">
+                            <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-earth pointer-events-none" />
+                            <input
+                                type="text"
+                                value={filters.search}
+                                onChange={(e) => setFilter('search', e.target.value)}
+                                placeholder="Buscar por nombre o DNI"
+                                className="w-full pl-10 pr-4 py-2 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="w-full sm:w-[400px] lg:w-[400px] shrink-0">
+                        <label className={labelCls}>Club</label>
+                        <Combobox
+                            value={filters.association_id}
+                            onChange={(v) => setFilter('association_id', v ?? '')}
+                            options={associationOptions}
+                            placeholder="Comités"
+                            allowClear
                         />
                     </div>
-                    </div>
 
-                    {/* Club – ancho fijo */}
-                    <div className="w-full sm:w-[400px] lg:w-[400px] shrink-0">
-                    <label className={labelCls}>Club</label>
-                    <Combobox
-                        value={filters.association_id}
-                        onChange={(v) => setFilter('association_id', v ?? '')}
-                        options={associationOptions}
-                        placeholder="Comités"
-                        allowClear
-                    />
-                    </div>
-
-                    {/* Estado – ancho fijo */}
                     <div className="w-full sm:w-40 lg:w-40 shrink-0">
-                    <label className={labelCls}>Estado</label>
-                    <Combobox
-                        value={filters.state_id}
-                        onChange={(v) => setFilter('state_id', v ?? '')}
-                        options={stateOptions}
-                        placeholder="Estados"
-                        allowClear
-                    />
+                        <label className={labelCls}>Estado</label>
+                        <Combobox
+                            value={filters.state_id}
+                            onChange={(v) => setFilter('state_id', v ?? '')}
+                            options={stateOptions}
+                            placeholder="Estados"
+                            allowClear
+                        />
                     </div>
 
-                    {/* Botón Limpiar filtros – con label oculto que conserva el espacio */}
                     <div className="w-full sm:w-auto shrink-0 flex flex-col">
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                        setFilters({ search: '', association_id: '', state_id: '' });
-                        setPage(1);
-                        }}
-                        className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
-                    >
-                        <i className="fa-solid fa-eraser" /> Limpiar
-                    </button>
-                    <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>
-                        {/* Ocupa espacio pero no se ve */}
-                        Hola
-                    </p>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setFilters({ search: '', association_id: '', state_id: '' });
+                                setPage(1);
+                            }}
+                            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-leaf border border-leaf rounded-md px-2.5 py-1.5 hover:opacity-80 whitespace-nowrap"
+                        >
+                            <i className="fa-solid fa-eraser" /> Limpiar
+                        </button>
+                        <p style={{ visibility: 'hidden', height: 6, margin: 0, padding: 0 }}>_</p>
                     </div>
                 </form>
             </div>
@@ -357,7 +626,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                                 <th className="px-3 sm:px-4 py-3 text-left">Socio</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">DNI</th>
                                 <th className="px-3 sm:px-4 py-3 text-left">Club</th>
-                                <th className="px-3 sm:px-4 py-3 text-left">Beneficiarios</th>
+                                <th className="px-3 sm:px-4 py-3 text-center">Beneficiarios</th>
                                 <th className="px-3 sm:px-4 py-3 text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -385,30 +654,46 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                                             <span className="font-bold text-leaf">{partner.beneficiaries_count ?? 0}</span>
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
-                                            <div className="inline-grid grid-cols-[repeat(3,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
+                                            <div className="inline-grid grid-cols-[repeat(4,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
+                                                {/* Imprimir ficha */}
+                                                <a
+                                                    href={`${window.APP_URL}/socios-beneficiarios/socios/${partner.id}/ficha`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
+                                                    title="Imprimir ficha A4"
+                                                >
+                                                    <i className="fas fa-print" />
+                                                </a>
+
+                                                {/* Ver */}
                                                 <button
                                                     type="button"
                                                     onClick={() => setViewing(partner)}
-                                                    className="btn-action col-start-1 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
-                                                    title="Ver"
+                                                    className="btn-action bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
+                                                    title="Ver detalle"
                                                 >
                                                     <i className="fas fa-eye" />
                                                 </button>
+
+                                                {/* Editar */}
                                                 {can.edit && (
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(partner)}
-                                                        className="btn-action col-start-2 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                        className="btn-action bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                         title="Editar"
                                                     >
                                                         <i className="fas fa-edit" />
                                                     </button>
                                                 )}
+
+                                                {/* Eliminar */}
                                                 {can.del && (
                                                     <button
                                                         type="button"
                                                         onClick={() => setDeleting(partner)}
-                                                        className="btn-action col-start-3 bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                        className="btn-action bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                         title="Eliminar"
                                                     >
                                                         <i className="fas fa-trash" />
@@ -440,9 +725,10 @@ const SociosTab = forwardRef(function SociosTab({ options, can }, ref) {
                     partner={editing}
                     options={options}
                     onClose={() => setFormOpen(false)}
-                    onSaved={() => {
+                    onSaved={(savedPartner) => {
                         setFormOpen(false);
                         load();
+                        onPartnerSaved?.(savedPartner);
                     }}
                 />
             )}

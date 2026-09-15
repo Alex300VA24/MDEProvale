@@ -1,0 +1,63 @@
+{
+  "fecha_hora_impresion": "21/07/2026 10:33 AM",
+  "municipalidad": "MUNICIPALIDAD DISTRITAL DE LA ESPERANZA-TRUJILLO",
+  "tipo_municipalidad": "MUNICIPALIDAD DISTRITAL",
+  "departamento": "LA LIBERTAD",
+  "provincia": "TRUJILLO",
+  "mes_reportado": "JUNIO",
+  "anio_reportado": 2026,
+  "fecha_reporte": "21/07/2026",
+  "numero_expediente": "",
+  "codigo_envio": "PVL-2061-2026-II-06-1",
+  "compras_alimentos": [
+    {
+      "clasificacion": "D-",
+      "producto": "LECHE EVAPORADA ENTERA",
+      "marca": "GLORIA",
+      "origen": "NACIONAL",
+      "proveedor": "NEGOCIOS INNOVACIONES E INGENIERIA S.A.",
+      "ruc": "20600989040",
+      "tipo_comprobante": "FACTURA",
+      "serie": "F001",
+      "numero_comprobante": "19654",
+      "fecha_emision": "26/06/2026",
+      "cantidad_kg": null,
+      "cantidad_litros": 4959.57,
+      "importe": 49209.24
+    },
+    {
+      "clasificacion": "DA",
+      "producto": "HOJUELA DE QUINUA AVENA AZUCARADA FORTIFICADA CON VITAMINAS Y MINERALES",
+      "marca": "FACLAC",
+      "origen": "NACIONAL",
+      "proveedor": "PROCESADORA Y AGROINDUSTRIA ESPERANZA E.I.R.L.",
+      "ruc": "20600907558",
+      "tipo_comprobante": "FACTURA",
+      "serie": "E001",
+      "numero_comprobante": "2602",
+      "fecha_emision": "26/06/2026",
+      "cantidad_kg": 6182.00,
+      "cantidad_litros": null,
+      "importe": 48219.60
+    }
+  ],
+  "total_compras_alimentos": 97428.84,
+  "compras_insumos": [],
+  "total_compras_insumos": 0.00,
+  "donaciones": [],
+  "total_donaciones": 0.00,
+  "total_gastos_operativos": 0.00,
+  "total_gastos": 97428.84,
+  "financiamiento": {
+    "saldo_inicial_tesoro": -74567.82,
+    "transferencia_tesoro": 99155.00,
+    "recursos_directamente_recaudados": 0.00,
+    "foncomun": 0.00,
+    "donaciones": 0.00,
+    "intereses": 0.00,
+    "total_recursos": 24587.18,
+    "saldo_final": -72841.66
+  },
+  "presidente_comite_administracion": "WILMER SANCHEZ RUIZ",
+  "director_administracion": "MANUEL SOTO RIVADENEIRA"
+}

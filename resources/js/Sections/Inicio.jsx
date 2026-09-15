@@ -105,8 +105,6 @@ function StatCard({
     value,
     label,
     subtitle,
-    breakdown,
-    chip,
     detail,
     onDetail,
     className = '',
@@ -171,38 +169,6 @@ function StatCard({
                     </div>
                 )}
 
-                {/* Desglose comparativo intermedio para aprovechar el espacio */}
-                {breakdown && (
-                    <div className="mt-2.5 mb-2 grid grid-cols-2 gap-1.5 p-2 rounded-xl bg-canvas/80 border border-mist/70 text-center">
-                        <div className="min-w-0">
-                            <span className="block text-[10px] font-bold text-slate uppercase tracking-wider truncate">
-                                {breakdown.left.label}
-                            </span>
-                            <span className="block text-xs sm:text-sm font-extrabold text-charcoal tabular-nums truncate">
-                                {breakdown.left.value}
-                            </span>
-                        </div>
-                        <div className="min-w-0 border-l border-mist/80 pl-1.5">
-                            <span className="block text-[10px] font-bold text-slate uppercase tracking-wider truncate">
-                                {breakdown.right.label}
-                            </span>
-                            <span className={`block text-xs sm:text-sm font-extrabold tabular-nums truncate ${breakdown.right.colorClass || 'text-blue'}`}>
-                                {breakdown.right.value}
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                {/* Chip informativo contextual */}
-                {chip && (
-                    <div className={`flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg border ${chip.bgClass || 'bg-canvas text-slate border-mist/60'}`}>
-                        <span className="inline-flex items-center gap-1.5 truncate">
-                            {chip.icon && <i className={`fas ${chip.icon} text-xs`} aria-hidden="true" />}
-                            <span className="truncate">{chip.label}</span>
-                        </span>
-                        <span className="font-bold tabular-nums ml-1 shrink-0">{chip.value}</span>
-                    </div>
-                )}
             </div>
 
             {/* Pie de tarjeta: acción refinada de auditoría o estado conforme */}
@@ -338,7 +304,11 @@ function RosterAuditModal({ audit, metricKey, periodLabel, onClose }) {
 }
 
 function StockCard({ products = [], closed = false, periodLabel = '', className = '' }) {
+    const [index, setIndex] = useState(0);
     const formatStock = (value) => Number(value || 0).toLocaleString('es-PE');
+    const activeIndex = index % Math.max(1, products.length);
+    const product = products[activeIndex];
+    const nextProduct = () => setIndex((i) => (i + 1) % Math.max(1, products.length));
 
     return (
         <div className={`stat-card stagger-enter bg-white rounded-2xl p-4 sm:p-5 border border-mist shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${className}`}>
@@ -366,76 +336,85 @@ function StockCard({ products = [], closed = false, periodLabel = '', className 
                     <div className="text-xs sm:text-sm font-bold text-charcoal leading-snug">
                         Stock de Alimentos
                     </div>
-                    <span className="text-[11px] font-medium text-slate">
-                        {products.length} {products.length === 1 ? 'producto' : 'productos'}
-                    </span>
+                    {products.length > 1 && (
+                        <span className="text-[11px] font-medium text-slate">{activeIndex + 1}/{products.length}</span>
+                    )}
                 </div>
 
-                {/* Lista de productos con avance visual y desglose */}
-                <div className="space-y-2.5">
-                    {products.map((product) => {
-                        const faltante = product.restante < 0;
-                        const ingresado = Number(product.ingresado || 0);
-                        const utilizado = Number(product.utilizado || 0);
-                        const pct = ingresado > 0 ? Math.min(100, Math.round((utilizado / ingresado) * 100)) : 0;
+                {/* Producto activo con avance visual y desglose */}
+                {product && (() => {
+                    const faltante = product.restante < 0;
+                    const ingresado = Number(product.ingresado || 0);
+                    const utilizado = Number(product.utilizado || 0);
+                    const pct = ingresado > 0 ? Math.min(100, Math.round((utilizado / ingresado) * 100)) : 0;
 
-                        return (
-                            <div key={product.key} className="bg-canvas/60 rounded-xl p-2 sm:p-2.5 border border-mist/60">
-                                <div className="flex items-center justify-between gap-1 mb-1">
-                                    <span className="text-xs font-bold text-charcoal truncate">{product.name}</span>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        {product.unit && (
-                                            <span className="text-[10px] font-semibold text-slate bg-white px-1.5 py-0.5 rounded border border-mist">
-                                                {product.unit}
-                                            </span>
-                                        )}
-                                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
-                                            pct >= 100 ? 'bg-leaf-light text-leaf' : 'bg-blue-light text-blue'
-                                        }`}>
-                                            {pct}%
+                    return (
+                        <div className="bg-canvas/60 rounded-xl p-2 sm:p-2.5 border border-mist/60">
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                                <span className="text-xs font-bold text-charcoal truncate">{product.name}</span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    {product.unit && (
+                                        <span className="text-[10px] font-semibold text-slate bg-white px-1.5 py-0.5 rounded border border-mist">
+                                            {product.unit}
                                         </span>
-                                    </div>
-                                </div>
-
-                                {/* Barra de avance de distribución */}
-                                <div className="w-full bg-mist/60 h-1.5 rounded-full overflow-hidden mb-1.5">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-500 ${
-                                            pct >= 100 ? 'bg-teal' : pct > 0 ? 'bg-blue' : 'bg-slate/30'
-                                        }`}
-                                        style={{ width: `${pct}%` }}
-                                    />
-                                </div>
-
-                                {/* Desglose numérico de 3 columnas */}
-                                <div className="grid grid-cols-3 gap-1 text-center bg-white rounded-lg py-1 px-1 border border-mist/50">
-                                    <div className="min-w-0">
-                                        <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">Stock</span>
-                                        <span className="block text-xs sm:text-[13px] font-extrabold text-navy tabular-nums truncate">
-                                            {formatStock(product.ingresado)}
-                                        </span>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">Salida</span>
-                                        <span className="block text-xs sm:text-[13px] font-extrabold text-blue tabular-nums truncate">
-                                            {formatStock(product.utilizado)}
-                                        </span>
-                                    </div>
-                                    <div className="min-w-0">
-                                        <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">
-                                            {faltante ? 'Falta' : 'Saldo'}
-                                        </span>
-                                        <span className={`block text-xs sm:text-[13px] font-extrabold tabular-nums truncate ${
-                                            faltante ? 'text-coral' : 'text-leaf'
-                                        }`}>
-                                            {formatStock(faltante ? Math.abs(product.restante) : product.restante)}
-                                        </span>
-                                    </div>
+                                    )}
+                                    <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+                                        pct >= 100 ? 'bg-leaf-light text-leaf' : 'bg-blue-light text-blue'
+                                    }`}>
+                                        {pct}%
+                                    </span>
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+
+                            {/* Barra de avance de distribución */}
+                            <div className="w-full bg-mist/60 h-1.5 rounded-full overflow-hidden mb-1.5">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${
+                                        pct >= 100 ? 'bg-teal' : pct > 0 ? 'bg-blue' : 'bg-slate/30'
+                                    }`}
+                                    style={{ width: `${pct}%` }}
+                                />
+                            </div>
+
+                            {/* Desglose numérico de 3 columnas */}
+                            <div className="grid grid-cols-3 gap-1 text-center bg-white rounded-lg py-1 px-1 border border-mist/50">
+                                <div className="min-w-0">
+                                    <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">Stock</span>
+                                    <span className="block text-xs sm:text-[13px] font-extrabold text-navy tabular-nums truncate">
+                                        {formatStock(product.ingresado)}
+                                    </span>
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">Salida</span>
+                                    <span className="block text-xs sm:text-[13px] font-extrabold text-blue tabular-nums truncate">
+                                        {formatStock(product.utilizado)}
+                                    </span>
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="block text-[9px] font-bold text-slate uppercase tracking-wider">
+                                        {faltante ? 'Falta' : 'Saldo'}
+                                    </span>
+                                    <span className={`block text-xs sm:text-[13px] font-extrabold tabular-nums truncate ${
+                                        faltante ? 'text-coral' : 'text-leaf'
+                                    }`}>
+                                        {formatStock(faltante ? Math.abs(product.restante) : product.restante)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {products.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={nextProduct}
+                                    className="mt-2 w-full inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold py-1.5 rounded-lg bg-white border border-mist text-slate hover:text-teal hover:border-teal/40 transition-colors"
+                                >
+                                    <i className="fas fa-arrows-rotate text-[10px]" aria-hidden="true" />
+                                    Cambiar producto
+                                </button>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* Footer de cierre */}
@@ -808,22 +787,6 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     value={nfmt(stats.total_socios)}
                     label="Socias únicas"
                     subtitle="Padrón nominal depurado"
-                    breakdown={
-                        stats.roster_audit?.metrics?.socios
-                            ? {
-                                left: { label: 'Excel base', value: nfmt(stats.roster_audit.metrics.socios.excel) },
-                                right: { label: 'Relaciones BD', value: nfmt(stats.roster_audit.metrics.socios.database), colorClass: 'text-blue' },
-                            }
-                            : {
-                                left: { label: 'Padrón activo', value: nfmt(stats.total_socios) },
-                                right: { label: 'Doble rol', value: nfmt(stats.dual_role?.total || 0), colorClass: 'text-blue' },
-                            }
-                    }
-                    chip={
-                        stats.dual_role?.total
-                            ? { icon: 'fa-people-arrows-left-right', label: 'Doble rol (LAC/GES)', value: `${nfmt(stats.dual_role.total)} pers.`, bgClass: 'bg-blue-light/50 text-blue border-blue/20' }
-                            : { icon: 'fa-shield-check', label: 'Padrón nominal', value: 'Conforme', bgClass: 'bg-leaf-light/50 text-leaf border-leaf/20' }
-                    }
                     detail={stats.roster_audit?.metrics?.socios}
                     onDetail={() => setAuditMetric('socios')}
                 />
@@ -834,23 +797,6 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     value={nfmt(stats.total_beneficiarios)}
                     label="Beneficiarios únicos"
                     subtitle="Población atendida activa"
-                    breakdown={
-                        stats.roster_audit?.metrics?.beneficiarios
-                            ? {
-                                left: { label: 'Excel base', value: nfmt(stats.roster_audit.metrics.beneficiarios.excel) },
-                                right: { label: 'Relaciones BD', value: nfmt(stats.roster_audit.metrics.beneficiarios.database), colorClass: 'text-sky' },
-                            }
-                            : {
-                                left: { label: 'Beneficiarios', value: nfmt(stats.total_beneficiarios) },
-                                right: { label: 'Estado', value: 'Vigentes', colorClass: 'text-sky' },
-                            }
-                    }
-                    chip={{
-                        icon: 'fa-fingerprint',
-                        label: 'DNI / Identidad',
-                        value: 'Sin duplicados',
-                        bgClass: 'bg-sky-light/50 text-sky border-sky/20',
-                    }}
                     detail={stats.roster_audit?.metrics?.beneficiarios}
                     onDetail={() => setAuditMetric('beneficiarios')}
                 />
@@ -863,23 +809,6 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     value={nfmt(stats.total_comites)}
                     label="Clubes del padrón"
                     subtitle="Comités de Vaso de Leche"
-                    breakdown={
-                        stats.roster_audit?.metrics?.clubes
-                            ? {
-                                left: { label: 'Padrón oficial', value: nfmt(stats.roster_audit.metrics.clubes.excel) },
-                                right: { label: 'Activos en BD', value: nfmt(stats.roster_audit.metrics.clubes.database), colorClass: 'text-amber-dark' },
-                            }
-                            : {
-                                left: { label: 'Comités activos', value: nfmt(stats.total_comites) },
-                                right: { label: 'PECOSAs mes', value: nfmt(stats.total_pecosas), colorClass: 'text-amber-dark' },
-                            }
-                    }
-                    chip={{
-                        icon: 'fa-truck-ramp-box',
-                        label: 'Cobertura PECOSA',
-                        value: `${stats.total_pecosas} entregas`,
-                        bgClass: 'bg-amber-light/50 text-amber-dark border-amber/25',
-                    }}
                     detail={stats.roster_audit?.metrics?.clubes}
                     onDetail={() => setAuditMetric('clubes')}
                 />

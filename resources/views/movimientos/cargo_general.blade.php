@@ -7,9 +7,6 @@
         @page { size: A4 landscape; margin: 10mm 8mm 12mm; }
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; color: #17242b; font-size: 8px; margin: 0; }
-        .head { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-        .head td { border: 0; vertical-align: middle; }
-        .logo { width: 58px; }
         h1 { font-size: 14px; margin: 0 0 4px; text-align: center; color: #143f58; }
         .period { text-align: center; font-size: 9px; }
         table.data { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -27,11 +24,10 @@
 </head>
 <body>
 <footer>Página <span class="page"></span></footer>
-<table class="head"><tr>
-    <td style="width:150px"><img class="logo" src="{{ public_path('img/muni2.png') }}" alt="Municipalidad"><br><strong>MUNICIPALIDAD DISTRITAL<br>DE LA ESPERANZA</strong></td>
-    <td><h1>CARGO GENERAL DE ENTREGA DE PRODUCTOS - PROGRAMA VASO DE LECHE</h1><div class="period">Período: {{ date('d/m/Y', strtotime($start_date)) }} - {{ date('d/m/Y', strtotime($end_date)) }}</div></td>
-    <td style="width:150px;text-align:right">Emisión: {{ now()->format('d/m/Y H:i') }}</td>
-</tr></table>
+@include('movimientos.partials.official_header', [
+    'headerTitle' => 'CARGO GENERAL DE ENTREGA DE PRODUCTOS - PROGRAMA VASO DE LECHE',
+    'headerSubtitle' => 'PERÍODO ' . date('d/m/Y', strtotime($start_date)) . ' - ' . date('d/m/Y', strtotime($end_date)),
+])
 <table class="data">
     <colgroup><col style="width:3%"><col style="width:6%"><col style="width:16%"><col style="width:14%"><col style="width:17%"><col style="width:10%"><col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:8%"></colgroup>
     <thead><tr><th>N°</th><th>CÓDIGO</th><th>CLUB DE MADRES</th><th>PRESIDENTA</th><th>DIRECCIÓN</th><th>SECTOR</th><th>BENEFICIARIOS</th><th>TOTAL LECHE (TARROS)</th><th>TOTAL HOJUELA (KG)</th><th>FIRMA</th></tr></thead>

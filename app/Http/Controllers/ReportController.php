@@ -7,6 +7,7 @@ use App\Models\Pecosa;
 use App\Models\Partner;
 use App\Models\Product;
 use App\Services\SchedulingService;
+use App\Services\ReparticionService;
 use Barryvdh\DomPDF\Facade\PDF;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,10 @@ class ReportController extends Controller
 {
     private SchedulingService $schedulingService;
 
-    public function __construct(SchedulingService $schedulingService)
+    public function __construct(
+        SchedulingService $schedulingService,
+        private ReparticionService $reparticionService
+    )
     {
         $this->schedulingService = $schedulingService;
     }
@@ -24,6 +28,17 @@ class ReportController extends Controller
         $mes = $request->get('month', date('n'));
         $anio = $request->get('year', date('Y'));
         $sector = $request->get('sector', '');
+
+        abort_if(
+            $this->reparticionService->isBeforeFirstRecordedPeriod((int) $anio, (int) $mes),
+            404,
+            $this->reparticionService->periodRecordNotFoundMessage((int) $anio, (int) $mes)
+        );
+        abort_unless(
+            $this->reparticionService->hasIngresoForPeriod((int) $anio, (int) $mes),
+            422,
+            $this->reparticionService->ingresoRequiredMessage((int) $anio, (int) $mes)
+        );
 
         $clubes = $this->schedulingService->generateProgramacionEntrega((int)$mes, (int)$anio, $sector ?: null);
 

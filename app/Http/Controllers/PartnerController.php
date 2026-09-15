@@ -18,6 +18,7 @@ use App\Services\BeneficiaryReportService;
 use App\Services\VerifiedDocumentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\PDF;
 
 class PartnerController extends Controller
 {
@@ -171,5 +172,26 @@ class PartnerController extends Controller
             }
             return redirect()->back()->with('error', $e->getMessage());
         }
+    }
+
+    public function imprimirFicha(Partner $partner)
+    {
+        $partner->load([
+            'people.placeSector.place',
+            'people.placeSector.sector',
+            'association',
+            'beneficiaries.person',
+            'beneficiaries.relationship',
+            'beneficiaries.histories' => fn ($q) => $q->orderByDesc('date_begin'),
+            'beneficiaries.histories.typeBenefit',
+            'beneficiaries.histories.state',
+        ]);
+
+        $logoPath = public_path('img/muni2.png');
+        $pdf = PDF::loadView('ficha_beneficiario', compact('partner', 'logoPath'));
+        $pdf->setPaper('a4', 'portrait');
+
+        $safeName = Str::slug($partner->name ?: 'socio-' . $partner->id);
+        return $pdf->stream("ficha-socio-{$safeName}.pdf");
     }
 }

@@ -78,6 +78,8 @@ class PartnerService
                     'beneficiary_id' => $ben->id,
                     'state_id' => $b['history_state_id'],
                     'reason_disqualification_id' => $b['reason_disqualification_id'] ?? null,
+                    'is_malnourished' => (bool) ($b['is_malnourished'] ?? false),
+                    'is_disabled' => (bool) ($b['is_disabled'] ?? false),
                 ]);
             }
         }

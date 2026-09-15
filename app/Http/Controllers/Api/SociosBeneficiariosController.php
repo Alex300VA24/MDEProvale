@@ -13,6 +13,7 @@ use App\Http\Resources\PartnerResource;
 use App\Http\Resources\PersonaResource;
 use App\Models\Association;
 use App\Models\Beneficiarie;
+use App\Models\DocumentAttachment;
 use App\Models\Partner;
 use App\Models\People;
 use App\Models\PlaceSector;
@@ -20,6 +21,7 @@ use App\Models\ReasonDisqualification;
 use App\Models\Relationship;
 use App\Models\State;
 use App\Models\TypeBenefit;
+use App\Services\DocumentAttachmentService;
 use App\Services\PartnerService;
 use App\Services\ReniecService;
 use Illuminate\Contracts\Encryption\DecryptException;
@@ -30,28 +32,32 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class SociosBeneficiariosController extends Controller
 {
     private const PARTNER_WITH = [
-        'people:id,names,father_lastname,mother_lastname,dni,address',
+        'people',
         'association:id,name,code',
         'state:id,title',
-        'beneficiaries.person:id,names,father_lastname,mother_lastname,dni,birthdate',
+        'beneficiaries.person',
         'beneficiaries.relationship:id,title',
         'beneficiaries.histories.typeBenefit:id,title,abbreviation',
         'beneficiaries.histories.state:id,title',
         'beneficiaries.histories.reasonDisqualification:id,title',
+        'documents',
     ];
 
     private const BENEFICIARIO_WITH = [
-        'person',
-        'partner.people:id,names,father_lastname',
+        'person.placeSector.place:id,title',
+        'person.placeSector.sector:id,title',
+        'partner.people:id,names,father_lastname,dni',
         'relationship',
         'histories.typeBenefit:id,title,abbreviation',
         'histories.state:id,title',
         'histories.reasonDisqualification:id,title',
+        'documents',
     ];
 
     private PartnerService $partnerService;
@@ -66,7 +72,24 @@ class SociosBeneficiariosController extends Controller
     public function partners(Request $request)
     {
         $query = Partner::query()
-            ->select(['partners.id', 'partners.person_id', 'partners.association_id', 'partners.state_id', 'partners.date_begin', 'partners.date_end', 'partners.observations'])
+            ->select([
+                'partners.id',
+                'partners.person_id',
+                'partners.association_id',
+                'partners.state_id',
+                'partners.date_begin',
+                'partners.date_end',
+                'partners.observations',
+                'partners.marital_status',
+                'partners.education_level',
+                'partners.occupation',
+                'partners.children_count',
+                'partners.is_pregnant',
+                'partners.is_lactating',
+                'partners.spouse_occupation',
+                'partners.spouse_education_level',
+                'partners.family_income',
+            ])
             ->with(self::PARTNER_WITH)
             ->withCount('beneficiaries');
 
@@ -95,7 +118,7 @@ class SociosBeneficiariosController extends Controller
     {
         return response()->json([
             'associations' => Association::select(['id', 'name', 'code'])->orderBy('name')->get(),
-            'states' => State::temporal()->get(['id', 'title']),
+            'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
             'people' => People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
                 ->orderBy('id', 'desc')
                 ->limit(100)
@@ -312,7 +335,27 @@ class SociosBeneficiariosController extends Controller
             'histories.typeBenefit:id,title,abbreviation',
             'histories.state:id,title',
             'histories.reasonDisqualification:id,title',
+            'documents',
         ])->activeDuring($startDate, $endDate);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('person', function ($q) use ($search) {
+                $q->searchIdentity($search);
+            });
+        }
+
+        if ($request->filled('partner_id')) {
+            $query->where('partner_id', $request->partner_id);
+        }
+
+        if ($request->filled('relationship_id')) {
+            $query->where('relationship_id', $request->relationship_id);
+        }
+
+        $beneficiaries = $query->orderBy('id', 'desc')
+            ->paginate((int) $request->input('per_page', 10));
+
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -360,6 +403,8 @@ class SociosBeneficiariosController extends Controller
             'type_benefit_id' => 'nullable|exists:type_benefits,id',
             'history_state_id' => 'nullable|exists:states,id',
             'reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
+            'is_malnourished' => 'nullable|boolean',
+            'is_disabled' => 'nullable|boolean',
         ];
     }
 
@@ -385,6 +430,8 @@ class SociosBeneficiariosController extends Controller
             'type_benefit_id' => $data['type_benefit_id'],
             'state_id' => $data['history_state_id'],
             'reason_disqualification_id' => $data['reason_disqualification_id'] ?? null,
+            'is_malnourished' => (bool) ($data['is_malnourished'] ?? false),
+            'is_disabled' => (bool) ($data['is_disabled'] ?? false),
         ];
 
         $history = $beneficiarie->histories()
@@ -398,6 +445,11 @@ class SociosBeneficiariosController extends Controller
         }
     }
 
+    public function showBeneficiario(Beneficiarie $beneficiarie)
+    {
+        return new BeneficiarieResource($beneficiarie->load(self::BENEFICIARIO_WITH));
+    }
+
     public function storeBeneficiario(Request $request)
     {
         $validated = $request->validate(array_merge([
@@ -405,6 +457,8 @@ class SociosBeneficiariosController extends Controller
             'partner_id' => 'required|exists:partners,id',
             'relationship_id' => 'required|exists:relationships,id',
         ], $this->beneficiarioHistoryRules()));
+
+        $validated['history_state_id'] = State::idFor(State::CURRENT);
 
         $beneficiarie = Beneficiarie::create([
             'person_id' => $validated['person_id'],
@@ -461,6 +515,51 @@ class SociosBeneficiariosController extends Controller
                 ], fn ($value) => $value !== null));
             }
         }
+
+        return response()->json(null, 204);
+    }
+
+    // ==================== DOCUMENTOS ADJUNTOS ====================
+
+    public function uploadDocument(Request $request, DocumentAttachmentService $attachmentService)
+    {
+        $validated = $request->validate([
+            'attachable_type' => ['required', 'string', Rule::in(['partner', 'beneficiarie'])],
+            'attachable_id' => ['required', 'integer'],
+            'document_type' => ['required', 'string', Rule::in(DocumentAttachment::TYPES)],
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+        ]);
+
+        $model = $validated['attachable_type'] === 'partner'
+            ? Partner::findOrFail($validated['attachable_id'])
+            : Beneficiarie::findOrFail($validated['attachable_id']);
+
+        $attachment = $attachmentService->store($model, $validated['document_type'], $request->file('file'));
+
+        return response()->json([
+            'id' => $attachment->id,
+            'document_type' => $attachment->document_type,
+            'file_name' => $attachment->file_name,
+            'mime_type' => $attachment->mime_type,
+            'file_size' => $attachment->file_size,
+            'created_at' => $attachment->created_at?->toISOString(),
+            'url' => route('api.socios-beneficiarios.documents.show', $attachment->id),
+        ], 201);
+    }
+
+    public function downloadDocument(DocumentAttachment $documentAttachment, DocumentAttachmentService $attachmentService)
+    {
+        $content = $attachmentService->getDecryptedContent($documentAttachment);
+
+        return response($content, 200, [
+            'Content-Type' => $documentAttachment->mime_type,
+            'Content-Disposition' => 'inline; filename="' . $documentAttachment->file_name . '"',
+        ]);
+    }
+
+    public function destroyDocument(DocumentAttachment $documentAttachment, DocumentAttachmentService $attachmentService)
+    {
+        $attachmentService->delete($documentAttachment);
 
         return response()->json(null, 204);
     }

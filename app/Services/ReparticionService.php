@@ -3,12 +3,75 @@
 namespace App\Services;
 
 use App\Models\Association;
+use App\Models\DetailProduct;
 use App\Models\DistributionPeriod;
 use App\Models\Racion;
+use App\Models\Transaction;
 use Illuminate\Support\Collection;
 
 class ReparticionService
 {
+    private const FIRST_RECORDED_YEAR = 2026;
+    private const FIRST_RECORDED_MONTH = 3;
+
+    public function isBeforeFirstRecordedPeriod(int $year, int $month): bool
+    {
+        return ($year * 12 + $month)
+            < (self::FIRST_RECORDED_YEAR * 12 + self::FIRST_RECORDED_MONTH);
+    }
+
+    public function hasIngresoForPeriod(int $year, int $month): bool
+    {
+        if ($this->isBeforeFirstRecordedPeriod($year, $month)) {
+            return false;
+        }
+
+        $startDate = sprintf('%04d-%02d-01', $year, $month);
+        $endDate = date('Y-m-t', strtotime($startDate));
+
+        $hasTransaction = Transaction::query()
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->where('quantity', '>', 0)
+            ->whereHas('typeTransaction', fn ($query) => $query
+                ->whereRaw('LOWER(TRIM(title)) = ?', ['ingreso']))
+            ->exists();
+
+        if ($hasTransaction) {
+            return true;
+        }
+
+        // Los ingresos migrados anteriores al módulo de movimientos existen
+        // como lotes de producto, aunque no siempre tengan transacción asociada.
+        return DetailProduct::query()
+            ->whereBetween('start_date', [$startDate, $endDate])
+            ->where('quantity', '>', 0)
+            ->exists();
+    }
+
+    public function periodRecordNotFoundMessage(int $year, int $month): string
+    {
+        $months = [
+            1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril',
+            5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto',
+            9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
+        ];
+        $period = ($months[$month] ?? sprintf('mes %02d', $month)) . ' de ' . $year;
+
+        return "No se encuentra registro de la repartición para {$period}. Los registros disponibles comienzan en marzo de 2026.";
+    }
+
+    public function ingresoRequiredMessage(int $year, int $month): string
+    {
+        $months = [
+            1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril',
+            5 => 'mayo', 6 => 'junio', 7 => 'julio', 8 => 'agosto',
+            9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
+        ];
+        $period = ($months[$month] ?? sprintf('mes %02d', $month)) . ' de ' . $year;
+
+        return "La repartición de {$period} aún no está habilitada. Registre al menos un ingreso de producto en ese período para generar, guardar o exportar la repartición.";
+    }
+
     public function getActiveRacion(int $year, int $month): ?Racion
     {
         return Racion::forMonth($year, $month)->first();

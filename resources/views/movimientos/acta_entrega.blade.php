@@ -30,10 +30,12 @@
     $columnCount = 7 + ($showMilk ? 1 : 0) + ($showOat ? 1 : 0);
 @endphp
 <footer>Página <span class="page"></span></footer>
-<h1>ACTA DE ENTREGA DE PRODUCTOS — PROGRAMA VASO DE LECHE</h1>
-<h2>{{ $productTitle }} · Período {{ date('d/m/Y', strtotime($start_date)) }} - {{ date('d/m/Y', strtotime($end_date)) }}</h2>
+@include('movimientos.partials.official_header', [
+    'headerTitle' => 'ACTA DE ENTREGA DE PRODUCTOS - PROGRAMA VASO DE LECHE',
+    'headerSubtitle' => $productTitle . ' · PERÍODO ' . date('d/m/Y', strtotime($start_date)) . ' - ' . date('d/m/Y', strtotime($end_date)),
+])
 <table>
-    <thead><tr><th>N°</th><th>CÓD.</th><th>CLUB DE MADRES</th><th>PRESIDENTA</th><th>DIRECCIÓN</th><th>SECTOR</th><th>BENEF.</th>@if($showMilk)<th>LECHE (TARROS)</th>@endif @if($showOat)<th>HOJUELA (KG)</th>@endif<th>FIRMA DE RECEPCIÓN {{ $isComplete ? '' : ($showMilk ? '— LECHE' : '— HOJUELA') }}</th></tr></thead>
+    <thead><tr><th>N°</th><th>CÓD.</th><th>CLUB DE MADRES</th><th>PRESIDENTA</th><th>DIRECCIÓN</th><th>SECTOR</th><th>BENEF.</th>@if($showMilk)<th>LECHE (TARROS)</th>@endif @if($showOat)<th>HOJUELA (KG)</th>@endif<th>FIRMA DE RECEPCIÓN {{ $isComplete ? '' : ($showMilk ? '- LECHE' : '- HOJUELA') }}</th></tr></thead>
     <tbody>
     @foreach($associations as $index => $club)
         <tr><td class="num">{{ $index + 1 }}</td><td class="num">{{ $club['codigo'] }}</td><td>{{ $club['nombre'] }}</td><td>{{ $club['presidenta'] }}</td><td>{{ $club['direccion'] }}</td><td>{{ $club['sector'] }}</td><td class="num">{{ $club['beneficiarios'] }}</td>@if($showMilk)<td class="num">{{ $club['leche_total'] }}</td>@endif @if($showOat)<td class="num">{{ $club['hojuelas_kg'] }}</td>@endif<td></td></tr>

@@ -61,7 +61,7 @@ class PresidentPortalController extends Controller
             }
 
             $racion = $this->reparticionService->getActiveRacion($year, $month);
-            if ($racion) {
+            if ($racion && $this->reparticionService->hasIngresoForPeriod($year, $month)) {
                 $allocation = $this->reparticionService
                     ->buildReport($racion, $year, $month)['associations']
                     ->firstWhere('id', $association->id);

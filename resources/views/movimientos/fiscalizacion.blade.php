@@ -21,8 +21,10 @@
 </head>
 <body>
 <footer>Página <span class="page"></span></footer>
-<h1>REPORTE DE CONTROL Y FISCALIZACIÓN — RACIÓN POR DÍA</h1>
-<div class="meta">Programa Vaso de Leche · Período {{ date('d/m/Y', strtotime($start_date)) }} - {{ date('d/m/Y', strtotime($end_date)) }} · {{ $days_in_month }} días de atención</div>
+@include('movimientos.partials.official_header', [
+    'headerTitle' => 'REPORTE DE CONTROL Y FISCALIZACIÓN - RACIÓN POR DÍA',
+    'headerSubtitle' => 'PROGRAMA VASO DE LECHE · PERÍODO ' . date('d/m/Y', strtotime($start_date)) . ' - ' . date('d/m/Y', strtotime($end_date)) . ' · ' . $days_in_month . ' DÍAS DE ATENCIÓN',
+])
 <table>
     <colgroup><col style="width:3%"><col style="width:6%"><col style="width:16%"><col style="width:14%"><col style="width:9%"><col style="width:7%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:9%"><col style="width:11%"></colgroup>
     <thead><tr><th>N°</th><th>CÓDIGO</th><th>CLUB DE MADRES</th><th>PRESIDENTA</th><th>SECTOR</th><th>BENEFICIARIOS</th><th>TOTAL LECHE</th><th>TOTAL HOJUELA</th><th>RACIÓN LECHE/DÍA</th><th>RACIÓN HOJ./DÍA</th><th>OBSERVACIONES</th></tr></thead>

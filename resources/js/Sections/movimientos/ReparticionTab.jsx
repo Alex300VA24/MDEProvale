@@ -40,7 +40,7 @@ function ExportButton({ href, icon, children, tone = 'secondary', disabled = fal
     return <a href={disabled ? undefined : href} target="_blank" rel="noreferrer" aria-disabled={disabled} className={className}><i className={`fas ${icon}`} aria-hidden="true" />{children}</a>;
 }
 
-export default function ReparticionTab({ can = {} }) {
+export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
     const toast = useToast();
     const now = new Date();
     const [year, setYear] = useState(now.getFullYear());
@@ -51,6 +51,7 @@ export default function ReparticionTab({ can = {} }) {
     const [productMode, setProductMode] = useState('complete');
     const [advanced, setAdvanced] = useState(false);
     const [notice, setNotice] = useState(null);
+    const [noticeCode, setNoticeCode] = useState(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [dirty, setDirty] = useState(false);
@@ -75,12 +76,14 @@ export default function ReparticionTab({ can = {} }) {
         if (!debouncedYear || debouncedYear < 2000 || debouncedYear > 2100) return;
         setLoading(true);
         setNotice(null);
+        setNoticeCode(null);
         try {
             const response = await http.get(BASE, { params: { year: debouncedYear, month } });
             receiveReport(response.data);
         } catch (error) {
             setReport(null);
             setConfig(null);
+            setNoticeCode(error?.response?.data?.code ?? null);
             setNotice(errorMessage(error, 'No se pudo generar el reporte de distribución.'));
         } finally {
             setLoading(false);
@@ -168,7 +171,7 @@ export default function ReparticionTab({ can = {} }) {
                 </div>
             </div>
 
-            {notice && <div className="empty-state" role="alert"><i className="fas fa-circle-exclamation" aria-hidden="true" /><p>{notice}</p><button type="button" onClick={load} className="btn-secondary mt-3">Reintentar</button></div>}
+            {notice && <div className="empty-state" role="alert"><i className="fas fa-circle-exclamation" aria-hidden="true" /><h4 className="font-extrabold text-charcoal">Repartición no disponible</h4><p>{notice}</p><div className="mt-3 flex w-full flex-wrap justify-center gap-2">{noticeCode === 'INGRESO_REQUIRED' && can.create && <button type="button" onClick={onGoToMovimientos} className="btn-primary inline-flex h-11 min-w-48 items-center justify-center px-6 py-0"><i className="fas fa-right-left mr-2 text-sm" aria-hidden="true" />Ir a Movimientos</button>}<button type="button" onClick={load} className="btn-secondary inline-flex h-11 min-w-48 items-center justify-center px-6 py-0">Reintentar</button></div></div>}
 
             {report && config && <>
                 <section className="mb-5 rounded-2xl border border-mist bg-cream/50 p-4" aria-labelledby="formula-title">

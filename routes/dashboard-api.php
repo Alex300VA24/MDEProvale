@@ -51,9 +51,15 @@ Route::prefix('dashboard/socios-beneficiarios')->middleware('module:socios-benef
     // Beneficiarios
     Route::get('beneficiarios', [SociosBeneficiariosController::class, 'beneficiarios'])->name('beneficiarios');
     Route::get('beneficiarios/options', [SociosBeneficiariosController::class, 'beneficiariosOptions'])->name('beneficiarios.options');
+    Route::get('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'showBeneficiario'])->name('beneficiarios.show');
     Route::post('beneficiarios', [SociosBeneficiariosController::class, 'storeBeneficiario'])->name('beneficiarios.store');
     Route::put('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'updateBeneficiario'])->name('beneficiarios.update');
     Route::delete('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'destroyBeneficiario'])->name('beneficiarios.destroy');
+
+    // Documentos adjuntos
+    Route::post('documents', [SociosBeneficiariosController::class, 'uploadDocument'])->name('documents.upload');
+    Route::get('documents/{documentAttachment}', [SociosBeneficiariosController::class, 'downloadDocument'])->name('documents.show');
+    Route::delete('documents/{documentAttachment}', [SociosBeneficiariosController::class, 'destroyDocument'])->name('documents.destroy');
 });
 
 // ==================== MÓDULO: COMITÉS (CLUB DE MADRES + RECONOCIMIENTOS) ====================

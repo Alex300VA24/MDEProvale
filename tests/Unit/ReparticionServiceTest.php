@@ -46,4 +46,16 @@ class ReparticionServiceTest extends TestCase
         $this->assertSame($at31Days['milk_total'], $at31Days['milk_boxes'] * 48 + $at31Days['milk_loose_cans']);
         $this->assertSame($at31Days['oat_total'], $at31Days['oat_sacks'] * 30 + $at31Days['oat_loose_kg']);
     }
+
+    public function test_periods_before_march_2026_are_outside_the_available_history(): void
+    {
+        $service = new ReparticionService();
+
+        $this->assertTrue($service->isBeforeFirstRecordedPeriod(2026, 2));
+        $this->assertFalse($service->isBeforeFirstRecordedPeriod(2026, 3));
+        $this->assertSame(
+            'No se encuentra registro de la repartición para febrero de 2026. Los registros disponibles comienzan en marzo de 2026.',
+            $service->periodRecordNotFoundMessage(2026, 2)
+        );
+    }
 }

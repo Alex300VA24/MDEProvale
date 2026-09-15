@@ -9,6 +9,7 @@ import Pagination from '../../Components/Pagination';
 import { useDebounced } from './hooks';
 import { formatDate, personFullName } from './format';
 import errorMessage from '../../errorMessage';
+import ReniecPhoto from './ReniecPhoto';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -287,46 +288,6 @@ function PersonaFormModal({ mode, persona, options, onClose, onSaved }) {
                 </div>
             </form>
         </Modal>
-    );
-}
-
-function ReniecPhoto({ persona, loading }) {
-    const [failed, setFailed] = useState(false);
-    const fullName = personFullName(persona);
-
-    useEffect(() => {
-        setFailed(false);
-    }, [persona.id, persona.photo]);
-
-    if (loading) {
-        return (
-            <div
-                className="h-36 w-28 shrink-0 animate-pulse rounded-xl bg-wheat"
-                role="status"
-                aria-label="Cargando foto de RENIEC"
-            />
-        );
-    }
-
-    if (!persona.photo || failed) {
-        return (
-            <div className="flex h-36 w-28 shrink-0 flex-col items-center justify-center rounded-xl bg-gray-100 px-3 text-center text-earth">
-                <i className="fas fa-user text-3xl" aria-hidden="true" />
-                <span className="mt-2 text-xs font-semibold">Sin foto RENIEC</span>
-            </div>
-        );
-    }
-
-    return (
-        <img
-            src={persona.photo}
-            alt={'Foto de RENIEC de ' + fullName}
-            width="112"
-            height="144"
-            decoding="async"
-            onError={() => setFailed(true)}
-            className="h-36 w-28 shrink-0 rounded-xl bg-gray-100 object-cover"
-        />
     );
 }
 
