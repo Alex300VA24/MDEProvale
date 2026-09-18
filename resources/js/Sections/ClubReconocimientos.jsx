@@ -4,6 +4,7 @@ import http from '../http';
 import ComitesTab from './comites/ComitesTab';
 import ReconocimientosTab from './comites/ReconocimientosTab';
 import PadronModal from './comites/PadronModal';
+import PdfLinkButton from '../Components/PdfLinkButton';
 
 const BASE = '/api/dashboard/club-madres';
 
@@ -123,24 +124,24 @@ export default function ClubReconocimientos({ initialAction }) {
                                 </button>
                             )}
                             {can.comites.view && tab === 'comites' && (
-                                <a
+                                <PdfLinkButton
                                     href={`${window.APP_URL || ''}/club-reconocimientos/acta-renuncia`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                    loadingTitle="Generando Acta de Renuncia"
+                                    icon="fa-file-signature"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60"
                                 >
-                                    <i className="fas fa-file-signature" aria-hidden="true" /> Acta de Renuncia
-                                </a>
+                                    Acta de Renuncia
+                                </PdfLinkButton>
                             )}
                             {can.comites.view && tab === 'comites' && (
-                                <a
+                                <PdfLinkButton
                                     href={`${window.APP_URL || ''}/club-reconocimientos/acta-reuniones`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                    loadingTitle="Generando Acta de Reuniones"
+                                    icon="fa-users-line"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60"
                                 >
-                                    <i className="fas fa-users-line" aria-hidden="true" /> Acta de Reuniones
-                                </a>
+                                    Acta de Reuniones
+                                </PdfLinkButton>
                             )}
                             {can.comites.view && tab === 'comites' && can.comites.create && (
                                 <button

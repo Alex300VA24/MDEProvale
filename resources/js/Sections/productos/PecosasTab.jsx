@@ -6,6 +6,7 @@ import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/Det
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
+import PdfLinkButton from '../../Components/PdfLinkButton';
 import { useDebounced } from '../socios/hooks';
 import { dateValue, detailOptionLabel, fmtDate, stateClass } from './format';
 import errorMessage from '../../errorMessage';
@@ -578,15 +579,12 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
                                             <div className="inline-grid grid-cols-[repeat(4,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
-                                                <a
+                                                <PdfLinkButton
                                                     href={`${window.APP_URL || ''}/productos-pecosas/pecosas/${pecosa.id}/comprobante`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="btn-action col-start-1 bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
-                                                    title="Generar Comprobante"
-                                                >
-                                                    <i className="fas fa-file-pdf" />
-                                                </a>
+                                                    loadingTitle="Generando Comprobante" title="Generar Comprobante"
+                                                    className="btn-action col-start-1 bg-leaf-light text-leaf hover:bg-leaf hover:text-white disabled:opacity-60"
+                                                    aria-label="Generar Comprobante"
+                                                />
                                                 <button
                                                     type="button"
                                                     onClick={() => setViewing(pecosa)}

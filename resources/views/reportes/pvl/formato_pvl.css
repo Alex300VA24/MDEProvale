@@ -1,0 +1,48 @@
+@page {
+  size: A4 landscape;
+  margin: 7mm 9mm 10mm 9mm;
+  @bottom-center {
+    content: "Página " counter(page) "/2";
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 6pt;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 6.2pt; line-height: 1.05; }
+.page { min-height: 190mm; position: relative; }
+.page + .page { page-break-before: always; }
+.print-time { position: absolute; right: 0; top: -3mm; font-size: 5.8pt; }
+.header { text-align: center; position: relative; margin-bottom: 3.8mm; }
+.header .cg { font-weight: 700; font-size: 10.6pt; margin: 0 0 1.6mm; }
+.header .annex { font-size: 7.6pt; margin-bottom: 2.6mm; }
+.header .title { font-weight: 700; font-size: 10.2pt; }
+.header .format { position: absolute; right: 11mm; top: 5mm; font-weight: 700; font-size: 8.3pt; }
+.table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.table th, .table td { border: 0.6pt solid #000; padding: 0.75mm 0.55mm; vertical-align: middle; overflow-wrap: anywhere; }
+.table th { font-weight: 700; text-align: center; }
+.table td { text-align: center; }
+.table .left { text-align: left; }
+.table .right { text-align: right; }
+.table .top { vertical-align: top; }
+.meta { margin-bottom: 4mm; }
+.meta .label { font-weight: 700; text-align: left; font-size: 4.9pt; }
+.meta .value { text-align: left; font-size: 5.7pt; }
+.meta td { padding: 1mm 0.8mm; }
+.section-label { border: 0.6pt solid #000; border-bottom: none; padding: 0.75mm 1mm 0.55mm; font-weight: 700; font-size: 5.4pt; margin-top: 2.5mm; }
+.purchase-table th, .purchase-table td { padding: 0.55mm 0.4mm; line-height: 1; }
+.purchase-table th { font-size: 4.7pt; }
+.purchase-table td { font-size: 4.9pt; }
+.purchase-table .food { font-size: 4.8pt; }
+.summary-row { margin-top: 1.8mm; }
+.summary-row td { padding: 0.55mm 0.6mm; }
+.finance-table td { padding: 0.75mm 0.6mm; }
+.finance-table .label { text-align: left; }
+.finance-table .value { text-align: right; width: 16%; }
+.signature-grid td { height: 27mm; vertical-align: top; position: relative; text-align: left; }
+.signature-grid .caption { font-weight: 700; font-size: 5.1pt; margin-bottom: 8mm; display: block; }
+.signature-grid .name { font-size: 6pt; }
+.signature-grid .sigline { position: absolute; bottom: 1.5mm; left: 50%; transform: translateX(-50%); font-size: 4.8pt; }
+.footer-page { position: absolute; right: 0; bottom: 0; display: block; font-size: 6pt; }
+.nowrap { white-space: nowrap; }

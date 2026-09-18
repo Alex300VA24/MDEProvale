@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import PortalLayout, { portalPath } from '../../Layouts/PortalLayout';
+import PdfLinkButton from '../../Components/PdfLinkButton';
 
 const nf = new Intl.NumberFormat('es-PE');
 const money = (v) => (v === null || v === undefined ? '—' : `S/ ${new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)}`);
@@ -23,9 +24,13 @@ export default function Pecosa({ association, pecosa }) {
                     {pecosa.vigente
                         ? <span className="status status-ready"><i className="fas fa-circle-check" aria-hidden="true" /> Vigente</span>
                         : <span className="status status-expired"><i className="fas fa-ban" aria-hidden="true" /> Vencido</span>}
-                    <a className="btn-primary portal-primary-action" href={portalPath(`/portal-presidentas/pecosas/${pecosa.id}/pdf`)} target="_blank" rel="noopener noreferrer">
-                        <i className="fas fa-file-pdf" aria-hidden="true" /> Ver PDF
-                    </a>
+                    <PdfLinkButton
+                        href={portalPath(`/portal-presidentas/pecosas/${pecosa.id}/pdf`)}
+                        loadingTitle="Generando Pecosa"
+                        className="btn-primary portal-primary-action disabled:opacity-60"
+                    >
+                        Ver PDF
+                    </PdfLinkButton>
                 </div>
             </div>
 

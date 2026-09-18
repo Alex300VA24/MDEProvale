@@ -3,6 +3,7 @@ import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import { useDebounced } from '../socios/hooks';
 import errorMessage from '../../errorMessage';
+import PdfLinkButton from '../../Components/PdfLinkButton';
 
 const BASE = '/api/dashboard/movimientos/reparticion';
 const PAGE_SIZE = 12;
@@ -38,6 +39,11 @@ function calculate(club, assignment, config) {
 function ExportButton({ href, icon, children, tone = 'secondary', disabled = false }) {
     const className = `${tone === 'primary' ? 'btn-primary' : 'btn-secondary'} inline-flex min-h-11 items-center justify-center gap-2 text-xs sm:text-sm ${disabled ? 'pointer-events-none opacity-40' : ''}`;
     return <a href={disabled ? undefined : href} target="_blank" rel="noreferrer" aria-disabled={disabled} className={className}><i className={`fas ${icon}`} aria-hidden="true" />{children}</a>;
+}
+
+function ExportPdfButton({ href, icon, children, tone = 'secondary', disabled = false, loadingTitle }) {
+    const className = `${tone === 'primary' ? 'btn-primary' : 'btn-secondary'} inline-flex min-h-11 items-center justify-center gap-2 text-xs sm:text-sm disabled:opacity-40 disabled:pointer-events-none`;
+    return <PdfLinkButton href={disabled ? '' : href} icon={icon} disabled={disabled} loadingTitle={loadingTitle} className={className}>{children}</PdfLinkButton>;
 }
 
 export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
@@ -230,10 +236,10 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
                     <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><h4 id="documents-title" className="font-extrabold text-charcoal">Documentos oficiales</h4><p className="text-sm text-earth mt-1">PDF para firma y Excel para control operativo. Reparto separa cada vuelta por página.</p></div><div className="w-full sm:w-64"><label htmlFor="product-mode" className={labelCls}>Producto del acta</label><select id="product-mode" value={productMode} onChange={(event) => setProductMode(event.target.value)} className={inputCls}><option value="complete">Leche + Hojuela</option><option value="milk">Solo Leche</option><option value="oat">Solo Hojuela</option></select></div></div>
                     {dirty && <div role="status" className="mt-3 rounded-xl bg-sun-light px-3 py-2 text-sm font-semibold text-amber-900"><i className="fas fa-circle-info mr-2" aria-hidden="true" />Guarde cambios para exportar totales actualizados.</div>}
                     <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Reparto por vueltas</strong><div className="flex gap-2"><ExportButton href={report.exports.reparto_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty}>PDF</ExportButton><ExportButton href={report.exports.reparto_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
-                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Cargo general</strong><div className="flex gap-2"><ExportButton href={report.exports.cargo_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty}>PDF</ExportButton><ExportButton href={report.exports.cargo_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
-                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Fiscalización</strong><div className="flex gap-2"><ExportButton href={report.exports.fiscalizacion_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty}>PDF</ExportButton><ExportButton href={report.exports.fiscalizacion_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
-                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Acta condicional</strong><ExportButton href={actaUrl} icon="fa-file-signature" tone="primary" disabled={dirty}>Abrir acta PDF</ExportButton></div>
+                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Reparto por vueltas</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.reparto_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Reparto por Vueltas">PDF</ExportPdfButton><ExportButton href={report.exports.reparto_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
+                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Cargo general</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.cargo_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Cargo General">PDF</ExportPdfButton><ExportButton href={report.exports.cargo_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
+                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Fiscalización</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.fiscalizacion_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Fiscalización">PDF</ExportPdfButton><ExportButton href={report.exports.fiscalizacion_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
+                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Acta condicional</strong><ExportPdfButton href={actaUrl} icon="fa-file-signature" tone="primary" disabled={dirty} loadingTitle="Generando Acta Condicional">Abrir acta PDF</ExportPdfButton></div>
                     </div>
                 </section>
             </>}

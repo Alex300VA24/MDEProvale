@@ -11,6 +11,7 @@ const ProductosPecosas = lazy(() => import('../Sections/ProductosPecosas'));
 const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos'));
 const Movimientos = lazy(() => import('../Sections/Movimientos'));
 const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
+const ReportesPvl = lazy(() => import('../Sections/ReportesPvl'));
 const Sistema = lazy(() => import('../Sections/Sistema'));
 const Ayuda = lazy(() => import('../Sections/Ayuda'));
 
@@ -21,6 +22,7 @@ const SECTION_COMPONENTS = {
     comites: ClubReconocimientos,
     movimientos: Movimientos,
     'responsables-raciones': ResponsablesRaciones,
+    reportes: ReportesPvl,
     sistema: Sistema,
     ayuda: Ayuda,
 };
@@ -33,25 +35,19 @@ const NAV_ITEMS = [
     { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
+    { key: 'reportes', label: 'Reportes PVL', icon: 'fa-file-shield', modules: ['reportes'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];
 
-// Reportes pertenece al chatbot flotante: nunca debe aparecer como sección
-// propia ni como módulo dinámico en el menú.
 const BUILT_IN_MODULES = new Set([
     ...NAV_ITEMS.flatMap((item) => item.modules),
-    'reportes',
 ]);
 
 function getSectionFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const section = params.get('section');
     return SECTION_COMPONENTS[section] || section?.startsWith('module:') ? section : 'inicio';
-}
-
-function shouldOpenAssistantFromUrl() {
-    return new URLSearchParams(window.location.search).get('section') === 'reportes';
 }
 
 function DynamicModule({ module }) {
@@ -117,7 +113,7 @@ export default function Dashboard() {
         const requestedSection = getSectionFromUrl();
         return allowedSectionKeys.has(requestedSection) ? requestedSection : 'inicio';
     });
-    const [assistantOpen, setAssistantOpen] = useState(shouldOpenAssistantFromUrl);
+    const [assistantOpen, setAssistantOpen] = useState(false);
     const [panelLoading, setPanelLoading] = useState(true);
     const [navigationIntent, setNavigationIntent] = useState(null);
     const [sidebarExpanded, setSidebarExpanded] = useState(
@@ -170,15 +166,6 @@ export default function Dashboard() {
         };
         window.addEventListener('popstate', onPop);
         return () => window.removeEventListener('popstate', onPop);
-    }, []);
-
-    // Los enlaces antiguos a ?section=reportes ahora abren el chatbot sin
-    // mantener una sección duplicada en el historial del navegador.
-    useEffect(() => {
-        const url = new URL(window.location.href);
-        if (url.searchParams.get('section') !== 'reportes') return;
-        url.searchParams.delete('section');
-        window.history.replaceState({ section: 'inicio' }, '', url.pathname + url.search);
     }, []);
 
     useEffect(() => {

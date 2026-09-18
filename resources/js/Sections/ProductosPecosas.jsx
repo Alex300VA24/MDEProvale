@@ -4,6 +4,7 @@ import http from '../http';
 import ProductosTab from './productos/ProductosTab';
 import PecosasTab from './productos/PecosasTab';
 import PecosasPdfMensualModal from './productos/PecosasPdfMensualModal';
+import PdfLinkButton from '../Components/PdfLinkButton';
 
 const BASE = '/api/dashboard/productos-pecosas';
 
@@ -116,14 +117,14 @@ export default function ProductosPecosas({ initialAction }) {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {can.pecosas.view && tab === 'pecosas' && (
-                                <a
+                                <PdfLinkButton
                                     href={`${window.APP_URL || ''}/productos-pecosas/acta-supervision`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                    loadingTitle="Generando Acta de Supervisión"
+                                    icon="fa-clipboard-check"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60"
                                 >
-                                    <i className="fas fa-clipboard-check" aria-hidden="true" /> Acta de Supervisión
-                                </a>
+                                    Acta de Supervisión
+                                </PdfLinkButton>
                             )}
                             {can.pecosas.view && tab === 'pecosas' && (
                                 <button

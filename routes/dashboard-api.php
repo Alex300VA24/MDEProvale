@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
 use App\Http\Controllers\Api\SistemaController;
 use App\Http\Controllers\Api\SociosBeneficiariosController;
+use App\Http\Controllers\Api\PvlReportsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,6 +25,18 @@ use Illuminate\Support\Facades\Route;
 // Sin middleware de módulo: la sección "Inicio" es visible para cualquier
 // usuario autenticado (ver NAV_ITEMS en Dashboard.jsx, modules: []).
 Route::get('dashboard/inicio/panel', [InicioController::class, 'panel'])->name('api.inicio.panel');
+
+// ==================== REPORTES PVL INTELIGENTES ====================
+Route::prefix('dashboard/reportes-pvl')->middleware('module:reportes')->name('api.reportes-pvl.')->group(function () {
+    Route::get('/', [PvlReportsController::class, 'index'])->name('index');
+    Route::post('analizar', [PvlReportsController::class, 'analyze'])->name('runs.store');
+    Route::get('runs/{pvlReportRun}', [PvlReportsController::class, 'show'])->name('runs.show');
+    Route::post('runs/{pvlReportRun}/generar', [PvlReportsController::class, 'markGenerated'])->name('runs.generate');
+    Route::delete('runs/{pvlReportRun}', [PvlReportsController::class, 'destroyRun'])->name('runs.destroy');
+    Route::post('documents', [PvlReportsController::class, 'storeDocument'])->name('documents.store');
+    Route::get('documents/{pvlDocument}/download', [PvlReportsController::class, 'downloadDocument'])->name('documents.download');
+    Route::delete('documents/{pvlDocument}', [PvlReportsController::class, 'destroyDocument'])->name('documents.destroy');
+});
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================
 Route::prefix('dashboard/socios-beneficiarios')->middleware('module:socios-beneficiarios')->name('api.socios-beneficiarios.')->group(function () {

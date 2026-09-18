@@ -4,6 +4,7 @@ import http from '../http';
 import SociosTab from './socios/SociosTab';
 import BeneficiariosTab from './socios/BeneficiariosTab';
 import PadronModal from './socios/PadronModal';
+import PdfLinkButton from '../Components/PdfLinkButton';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -134,14 +135,14 @@ export default function SociosBeneficiarios({ initialAction }) {
                         )}
                         {tab === 'beneficiarios' && (
                             <>
-                                <a
+                                <PdfLinkButton
                                     href={`${window.APP_URL}/socios-beneficiarios/beneficiarios-imprimir`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
+                                    loadingTitle="Generando Ficha de Beneficiario"
+                                    icon="fa-print"
+                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60"
                                 >
-                                    <i className="fas fa-print" aria-hidden="true" /> Ficha Beneficiario
-                                </a>
+                                    Ficha Beneficiario
+                                </PdfLinkButton>
                                 {can.create && (
                                     <button
                                         type="button"

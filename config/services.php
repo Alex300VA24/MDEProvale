@@ -2,14 +2,19 @@
 
 return [
 
-    'ai' => [
+'ai' => [
         'provider' => env('AI_PROVIDER', 'groq'),
+        'structured_retries' => max(1, (int) env('AI_STRUCTURED_RETRIES', 3)),
+        'structured_retry_base_ms' => max(0, (int) env('AI_STRUCTURED_RETRY_BASE_MS', 1000)),
     ],
 
     'groq' => [
         'key' => env('GROQ_API_KEY'),
         'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b'),
+        'vision_model' => env('GROQ_VISION_MODEL', 'qwen/qwen3.8-27b'),
         'url' => env('GROQ_API_URL', 'https://api.groq.com/openai/v1/chat/completions'),
+        'structured_strict' => env('GROQ_STRUCTURED_STRICT', true),
+        'report_max_tokens' => (int) env('GROQ_REPORT_MAX_TOKENS', 8192),
     ],
 
     'google_ai' => [

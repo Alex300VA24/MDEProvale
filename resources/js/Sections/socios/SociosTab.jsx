@@ -6,6 +6,7 @@ import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/Det
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
+import PdfLinkButton from '../../Components/PdfLinkButton';
 import { useDebounced } from './hooks';
 import { formatDate, personFullName, personLabel, stateClass } from './format';
 import errorMessage from '../../errorMessage';
@@ -656,15 +657,13 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
                                         <td className="px-3 sm:px-4 py-3 text-center">
                                             <div className="inline-grid grid-cols-[repeat(4,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
                                                 {/* Imprimir ficha */}
-                                                <a
+                                                <PdfLinkButton
                                                     href={`${window.APP_URL}/socios-beneficiarios/socios/${partner.id}/ficha`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
+                                                    loadingTitle="Generando Ficha del Socio"
+                                                    icon="fa-print"
+                                                    className="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white disabled:opacity-60"
                                                     title="Imprimir ficha A4"
-                                                >
-                                                    <i className="fas fa-print" />
-                                                </a>
+                                                />
 
                                                 {/* Ver */}
                                                 <button

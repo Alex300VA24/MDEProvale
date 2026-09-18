@@ -22,10 +22,12 @@ class AssistantGuidanceService
         // "creame un reporte de pecosas" NO es la guía para registrar una pecosa.
         if ($this->hasAny($question, ['reporte', 'informe', 'descargar pdf', 'en pdf', 'exportar', 'imprimir'])) {
             return "Sobre los reportes en PDF:\n"
-                . "- No existe una pantalla para armar reportes a mano: los genero yo cuando me lo pides de forma explícita.\n"
-                . "- Pídelo con una sola entidad y un periodo simple, por ejemplo: crea un reporte de pecosas de este mes, o crea un reporte de beneficiarios del comité (nombre).\n"
-                . "- Te dejaré el botón Ver reporte para abrirlo en una pestaña nueva; desde ahí lo imprimes o lo guardas en PDF.\n"
-                . "- Si necesitas cruzar varios datos o columnas especiales, dime primero qué dato principal y qué periodo necesitas.";
+                . "- Para los anexos oficiales, abre Reportes PVL, elige Formato PVL, Ración A o ambos, selecciona mes y año y pulsa Analizar información.\n"
+                . "- Al elegir ambos, el sistema genera también un informe sustentatorio con métricas, matriz de acreditación, fuentes, conclusiones y anexos.\n"
+                . "- El envío a Contraloría solo se acredita cuando existe una constancia indexada y un código de envío confirmado.\n"
+                . "- Revisa datos faltantes, conflictos, advertencias y fuentes; Generar PDF se habilita cuando no quedan errores críticos.\n"
+                . "- Para un reporte genérico, pídemelo con una sola entidad y un periodo simple, por ejemplo: crea un reporte de pecosas de este mes.\n"
+                . "- Te dejaré el botón Ver reporte para abrirlo en una pestaña nueva.";
         }
 
         if ($this->hasAll($question, ['comite', 'benefici']) && $this->hasAny($question, ['mas', 'mayor', 'top'])) {
