@@ -449,6 +449,74 @@ function QuickButton({ onClick, icon, label, bgClass, tileClass, textClass }) {
     );
 }
 
+// Tarjeta de avisos de normas municipales relevantes para el PVL (ordenanzas,
+// resoluciones, decretos y acuerdos detectados por el escaneo diario +
+// clasificación IA). Se oculta por completo si no hay avisos recientes, para
+// no dejar una caja vacía en el panel.
+function AvisosNormativa() {
+    const [avisos, setAvisos] = useState([]);
+    const [loaded, setLoaded] = useState(false);
+
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            try {
+                const res = await http.get('/api/dashboard/sistema/notifications', {
+                    params: { type: 'normativa_pvl', limit: 5 },
+                });
+                if (active) setAvisos(res.data?.data ?? []);
+            } catch {
+                /* silencioso: widget informativo, no bloquea el panel */
+            } finally {
+                if (active) setLoaded(true);
+            }
+        })();
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    if (!loaded || avisos.length === 0) return null;
+
+    return (
+        <div className="panel-card bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-mist shadow-sm mb-6 sm:mb-8">
+            <div className="flex items-center gap-2 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-amber-light text-amber flex items-center justify-center flex-shrink-0">
+                    <i className="fas fa-scale-balanced" aria-hidden="true" />
+                </div>
+                <div>
+                    <h3 className="dashboard-section-title font-extrabold text-sm sm:text-base">Avisos normativos PVL</h3>
+                    <p className="text-slate text-xs sm:text-sm">Normas municipales recientes relevantes para el programa</p>
+                </div>
+            </div>
+            <ul className="space-y-3">
+                {avisos.map((aviso) => (
+                    <li key={aviso.id} className="rounded-lg border border-mist/70 bg-canvas/40 p-3 sm:p-3.5">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="font-bold text-charcoal text-sm truncate">{aviso.title}</p>
+                                {aviso.description && (
+                                    <p className="text-xs sm:text-sm text-slate mt-1 leading-relaxed">{aviso.description}</p>
+                                )}
+                            </div>
+                            {aviso.metadata?.pdf_url && (
+                                <a
+                                    href={aviso.metadata.pdf_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-blue hover:underline whitespace-nowrap"
+                                >
+                                    <i className="fas fa-file-pdf" aria-hidden="true" /> Ver PDF
+                                </a>
+                            )}
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
 export default function Inicio({ onNavigate, allowedSections = new Set() }) {
     const [panel, setPanel] = useState(null);
     const [error, setError] = useState(false);
@@ -763,6 +831,8 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     </div>
                 </div>
             </div>
+
+            <AvisosNormativa />
 
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
                 <div>

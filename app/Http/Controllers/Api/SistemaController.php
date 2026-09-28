@@ -257,10 +257,18 @@ class SistemaController extends Controller
             ->orderBy('requested_at', 'desc');
 
         if (!$user->isAdmin()) {
-            $query->where('requested_by', $user->id);
+            $query->where(fn ($q) => $q
+                ->where('requested_by', $user->id)
+                ->orWhereIn('type', Notification::SYSTEM_WIDE_TYPES));
         }
 
-        return response()->json(['data' => NotificationResource::collection($query->limit(100)->get())]);
+        if ($type = $request->query('type')) {
+            $query->where('type', $type);
+        }
+
+        $limit = min(100, max(1, (int) $request->query('limit', 100)));
+
+        return response()->json(['data' => NotificationResource::collection($query->limit($limit)->get())]);
     }
 
     public function unreadNotificationsCount(Request $request)
@@ -276,7 +284,9 @@ class SistemaController extends Controller
 
         $query = Notification::where('is_seen', false);
         if (!$user->isAdmin()) {
-            $query->where('requested_by', $user->id);
+            $query->where(fn ($q) => $q
+                ->where('requested_by', $user->id)
+                ->orWhereIn('type', Notification::SYSTEM_WIDE_TYPES));
         }
         $query->update(['is_seen' => true, 'seen_at' => now()]);
 

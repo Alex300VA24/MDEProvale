@@ -44,6 +44,12 @@ const BUILT_IN_MODULES = new Set([
     ...NAV_ITEMS.flatMap((item) => item.modules),
 ]);
 
+// Etiquetas legibles para el tipo de notificación (fallback: mostrar el valor crudo).
+const NOTIF_TYPE_LABELS = {
+    password_reset: 'Recuperación de contraseña',
+    normativa_pvl: 'Normativa PVL',
+};
+
 function getSectionFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const section = params.get('section');
@@ -438,8 +444,8 @@ export default function Dashboard() {
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <span className="px-2 py-1 bg-blue-light text-blue text-xs font-bold rounded">{n.type}</span>
-                                                            {n.status && n.status !== 'pending' && (
+                                                            <span className="px-2 py-1 bg-blue-light text-blue text-xs font-bold rounded">{NOTIF_TYPE_LABELS[n.type] || n.type}</span>
+                                                            {n.status && n.status !== 'pending' && n.status !== 'informativo' && (
                                                                 <span className={`px-2 py-1 text-xs font-bold rounded ${
                                                                     n.status === 'approved'
                                                                         ? 'bg-teal-light text-teal'
@@ -451,6 +457,16 @@ export default function Dashboard() {
                                                         </div>
                                                         <p className="font-bold text-navy">{n.title}</p>
                                                         <p className="text-sm text-slate mt-1">{n.description}</p>
+                                                        {n.metadata?.pdf_url && (
+                                                            <a
+                                                                href={n.metadata.pdf_url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue mt-2 hover:underline"
+                                                            >
+                                                                <i className="fas fa-file-pdf" aria-hidden="true" /> Ver documento
+                                                            </a>
+                                                        )}
                                                         {n.requested_at && (
                                                             <p className="text-xs text-slate mt-2">{n.requested_at}</p>
                                                         )}

@@ -58,6 +58,11 @@ class Notification extends Model
         return self::where('is_seen', false)->count();
     }
 
+    // Tipos de aviso del sistema (sin dueño individual): visibles para todos los
+    // usuarios autenticados, a diferencia de las solicitudes personales
+    // (ej. recuperación de contraseña) que solo ve el admin o quien las pidió.
+    public const SYSTEM_WIDE_TYPES = ['normativa_pvl'];
+
     public static function unreadCountForUser(?User $user): int
     {
         if (!$user || !$user->id) {
@@ -68,8 +73,10 @@ class Notification extends Model
             return self::where('is_seen', false)->count();
         }
 
-        return self::where('requested_by', $user->id)
-            ->where('is_seen', false)
+        return self::where('is_seen', false)
+            ->where(fn ($query) => $query
+                ->where('requested_by', $user->id)
+                ->orWhereIn('type', self::SYSTEM_WIDE_TYPES))
             ->count();
     }
 

@@ -15,6 +15,7 @@ class NotificationResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'is_seen' => (bool) $this->is_seen,
+            'metadata' => $this->metadata,
             'requested_at' => $this->requested_at?->toISOString(),
             'processed_at' => $this->processed_at?->toISOString(),
             'requested_by_name' => $this->whenLoaded('requestedByUser', fn () => $this->requestedByUser?->names),
