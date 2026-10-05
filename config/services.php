@@ -4,6 +4,7 @@ return [
 
 'ai' => [
         'provider' => env('AI_PROVIDER', 'groq'),
+        'chat_max_tokens' => max(1024, (int) env('AI_CHAT_MAX_TOKENS', 8192)),
         'structured_retries' => max(1, (int) env('AI_STRUCTURED_RETRIES', 3)),
         'structured_retry_base_ms' => max(0, (int) env('AI_STRUCTURED_RETRY_BASE_MS', 1000)),
     ],

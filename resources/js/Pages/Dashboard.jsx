@@ -12,6 +12,7 @@ const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos')
 const Movimientos = lazy(() => import('../Sections/Movimientos'));
 const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
 const ReportesPvl = lazy(() => import('../Sections/ReportesPvl'));
+const BaseConocimiento = lazy(() => import('../Sections/BaseConocimiento'));
 const Sistema = lazy(() => import('../Sections/Sistema'));
 const Ayuda = lazy(() => import('../Sections/Ayuda'));
 
@@ -23,6 +24,7 @@ const SECTION_COMPONENTS = {
     movimientos: Movimientos,
     'responsables-raciones': ResponsablesRaciones,
     reportes: ReportesPvl,
+    'base-conocimiento': BaseConocimiento,
     sistema: Sistema,
     ayuda: Ayuda,
 };
@@ -36,6 +38,7 @@ const NAV_ITEMS = [
     { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
     { key: 'reportes', label: 'Reportes PVL', icon: 'fa-file-shield', modules: ['reportes'] },
+    { key: 'base-conocimiento', label: 'Base de Conocimiento IA', icon: 'fa-database', modules: ['base-conocimiento'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
     { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
 ];

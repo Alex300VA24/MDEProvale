@@ -52,6 +52,12 @@ class MovimientosApiTest extends TestCase
     {
         $now = now();
 
+        DB::table('states')->insert([
+            'id' => 2,
+            'title' => 'Vigente',
+            'abbreviation' => 'VIG',
+        ]);
+
         DB::table('uoms')->insert(['id' => 1, 'title' => 'UNIDAD', 'created_at' => $now, 'updated_at' => $now]);
 
         DB::table('products')->insert([
@@ -60,7 +66,7 @@ class MovimientosApiTest extends TestCase
                 'title' => 'Arroz',
                 'abbreviation' => 'ARROZ',
                 'code' => 'P001',
-                'state_id' => 1,
+                'state_id' => 2,
                 'uom_id' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -70,7 +76,7 @@ class MovimientosApiTest extends TestCase
                 'title' => 'Aceite',
                 'abbreviation' => 'ACE',
                 'code' => 'P002',
-                'state_id' => 1,
+                'state_id' => 2,
                 'uom_id' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -107,7 +113,7 @@ class MovimientosApiTest extends TestCase
         DB::table('resolutions')->insert([
             'id' => 1,
             'document' => 'RES-001',
-            'state_id' => 1,
+            'state_id' => 2,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -119,7 +125,7 @@ class MovimientosApiTest extends TestCase
             'company_name' => 'Comité Demo SAC',
             'address' => 'Av. Demo 123',
             'resolution_id' => 1,
-            'state_id' => 1,
+            'state_id' => 2,
             'place_sector_id' => 1,
             'type_premises_id' => 1,
             'created_at' => $now,
@@ -492,7 +498,7 @@ class MovimientosApiTest extends TestCase
                 'chief_id' => 1,
                 'storekeeper_id' => 2,
                 'managing_partner_id' => 1,
-                'state_id' => 1,
+                'state_id' => 2,
                 'association_id' => 1,
                 'details' => [
                     ['detail_product_id' => 1, 'quantity' => 2],

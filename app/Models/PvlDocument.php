@@ -35,13 +35,14 @@ class PvlDocument extends Model
         'mime_type',
         'file_size',
         'file_hash',
+        'file_path',
         'file_data',
         'index_status',
         'index_error',
         'created_by',
     ];
 
-    protected $hidden = ['file_data'];
+    protected $hidden = ['file_data', 'file_path'];
 
     protected $casts = [
         'file_data' => 'encrypted',

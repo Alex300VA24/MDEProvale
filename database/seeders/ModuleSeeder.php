@@ -19,6 +19,7 @@ class ModuleSeeder extends Seeder
             ['name' => 'Responsables y Raciones', 'slug' => 'responsables-raciones', 'description' => 'Gestión de responsables del programa y raciones por año', 'icon' => 'fa-sliders', 'route' => 'responsables-raciones', 'order' => 7],
             ['name' => 'Reportes', 'slug' => 'reportes', 'description' => 'Reportes del sistema', 'icon' => 'fa-chart-bar', 'route' => null, 'order' => 8],
             ['name' => 'Sistema', 'slug' => 'sistema', 'description' => 'Configuración del sistema', 'icon' => 'fa-cogs', 'route' => 'sistema', 'order' => 9],
+            ['name' => 'Base de Conocimiento IA', 'slug' => 'base-conocimiento', 'description' => 'Documentos indexados con IA para consultas tipo RAG', 'icon' => 'fa-database', 'route' => 'base-conocimiento', 'order' => 10],
         ];
 
         foreach ($modules as $module) {

@@ -9,10 +9,18 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
+use Tests\Traits\SeedsBaseData;
 
 class EmailVerificationTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsBaseData;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seedBaseData();
+    }
 
     public function test_email_verification_screen_can_be_rendered()
     {

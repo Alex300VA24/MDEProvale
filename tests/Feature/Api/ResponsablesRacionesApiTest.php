@@ -110,7 +110,8 @@ class ResponsablesRacionesApiTest extends TestCase
     public function test_raciones_endpoint_returns_json_collection(): void
     {
         DB::table('raciones')->insert([
-            'year' => '2026', 'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
+            'year' => '2026', 'month_start' => 1, 'month_end' => 12,
+            'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $this->actingAs($this->adminUser())
@@ -125,6 +126,8 @@ class ResponsablesRacionesApiTest extends TestCase
         $this->actingAs($this->adminUser())
             ->postJson(self::BASE . '/raciones', [
                 'year' => 2027,
+                'month_start' => 1,
+                'month_end' => 12,
                 'racion_hojuelas_gramos' => 50,
                 'racion_leche_militros' => 410,
             ])
@@ -135,30 +138,36 @@ class ResponsablesRacionesApiTest extends TestCase
         $this->assertDatabaseHas('raciones', ['year' => 2027]);
     }
 
-    public function test_store_racion_rejects_duplicate_year(): void
+    public function test_store_racion_rejects_overlapping_period(): void
     {
         DB::table('raciones')->insert([
-            'year' => '2026', 'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
+            'year' => '2026', 'month_start' => 1, 'month_end' => 6,
+            'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $this->actingAs($this->adminUser())
             ->postJson(self::BASE . '/raciones', [
                 'year' => 2026,
+                'month_start' => 6,
+                'month_end' => 12,
                 'racion_hojuelas_gramos' => 60,
                 'racion_leche_militros' => 420,
             ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors('year');
+            ->assertJsonValidationErrors('month_start');
     }
 
     public function test_update_racion_updates_values_but_not_year(): void
     {
         $id = DB::table('raciones')->insertGetId([
-            'year' => '2026', 'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
+            'year' => '2026', 'month_start' => 1, 'month_end' => 12,
+            'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $this->actingAs($this->adminUser())
             ->putJson(self::BASE . "/raciones/{$id}", [
+                'month_start' => 2,
+                'month_end' => 11,
                 'racion_hojuelas_gramos' => 55,
                 'racion_leche_militros' => 415,
             ])
@@ -172,7 +181,8 @@ class ResponsablesRacionesApiTest extends TestCase
     public function test_destroy_racion_deletes(): void
     {
         $id = DB::table('raciones')->insertGetId([
-            'year' => '2026', 'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
+            'year' => '2026', 'month_start' => 1, 'month_end' => 12,
+            'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $this->actingAs($this->adminUser())
@@ -200,7 +210,8 @@ class ResponsablesRacionesApiTest extends TestCase
         ]);
 
         $id = DB::table('raciones')->insertGetId([
-            'year' => '2026', 'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
+            'year' => '2026', 'month_start' => 1, 'month_end' => 12,
+            'racion_hojuelas_gramos' => 50, 'racion_leche_militros' => 410, 'active' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
         $this->actingAs(\App\Models\User::find($userId))

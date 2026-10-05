@@ -51,6 +51,12 @@ class ProductosPecosasApiTest extends TestCase
 
         $now = now();
 
+        DB::table('states')->insert([
+            'id' => 2,
+            'title' => 'Vigente',
+            'abbreviation' => 'VIG',
+        ]);
+
         DB::table('uoms')->insert(['id' => 1, 'title' => 'UNIDAD', 'created_at' => $now, 'updated_at' => $now]);
 
         DB::table('products')->insert([
@@ -58,7 +64,7 @@ class ProductosPecosasApiTest extends TestCase
             'title' => 'Arroz',
             'abbreviation' => 'ARROZ',
             'code' => 'P001',
-            'state_id' => 1,
+            'state_id' => 2,
             'uom_id' => 1,
             'created_at' => $now,
             'updated_at' => $now,
@@ -97,7 +103,7 @@ class ProductosPecosasApiTest extends TestCase
         DB::table('resolutions')->insert([
             'id' => 1,
             'document' => 'RES-001',
-            'state_id' => 1,
+            'state_id' => 2,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -109,7 +115,7 @@ class ProductosPecosasApiTest extends TestCase
             'company_name' => 'Comité Demo SAC',
             'address' => 'Av. Demo 123',
             'resolution_id' => 1,
-            'state_id' => 1,
+            'state_id' => 2,
             'place_sector_id' => 1,
             'type_premises_id' => 1,
             'created_at' => $now,
@@ -147,7 +153,7 @@ class ProductosPecosasApiTest extends TestCase
             'resolution_id' => 1,
             'partner_id' => 1,
             'position_id' => 1,
-            'state_id' => 1,
+            'state_id' => 2,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -174,7 +180,7 @@ class ProductosPecosasApiTest extends TestCase
             'chief_id' => 1,
             'storekeeper_id' => 2,
             'managing_partner_id' => 1,
-            'state_id' => 1,
+            'state_id' => 2,
             'association_id' => 1,
             'details' => [
                 ['detail_product_id' => 1, 'quantity' => $quantity],
@@ -214,7 +220,7 @@ class ProductosPecosasApiTest extends TestCase
                 'title' => 'Aceite',
                 'abbreviation' => 'ACE',
                 'code' => 'P002',
-                'state_id' => 1,
+                'state_id' => 2,
                 'uom_id' => 1,
             ])
             ->assertStatus(201)
@@ -231,7 +237,7 @@ class ProductosPecosasApiTest extends TestCase
                 'title' => 'Arroz Duplicado',
                 'abbreviation' => 'ARROZ2',
                 'code' => 'P001',
-                'state_id' => 1,
+                'state_id' => 2,
                 'uom_id' => 1,
             ])
             ->assertStatus(422);
@@ -361,7 +367,7 @@ class ProductosPecosasApiTest extends TestCase
                 'meta' => [],
             ])
             ->assertJsonPath('data.0.association_id', 1)
-            ->assertJsonPath('data.0.state_id', 1)
+            ->assertJsonPath('data.0.state_id', 2)
             ->assertJsonPath('data.0.managing_partner_id', 1)
             ->assertJsonPath('data.0.chief_id', 1)
             ->assertJsonPath('data.0.storekeeper_id', 2)
@@ -388,8 +394,9 @@ class ProductosPecosasApiTest extends TestCase
     public function test_pecosas_filter_options_include_non_current_associations(): void
     {
         DB::table('states')->insert([
-            ['id' => 2, 'title' => 'Vigente', 'abbreviation' => 'VIG'],
-            ['id' => 3, 'title' => 'Vencido', 'abbreviation' => 'VEN'],
+            'id' => 3,
+            'title' => 'Vencido',
+            'abbreviation' => 'VEN',
         ]);
 
         DB::table('associations')->where('id', 1)->update(['state_id' => 2]);
@@ -585,12 +592,7 @@ class ProductosPecosasApiTest extends TestCase
 
     public function test_store_pecosa_uses_president_from_committee_roster_month(): void
     {
-        DB::table('states')->insert([
-            'id' => 3,
-            'title' => 'Vigente',
-            'abbreviation' => 'VIG',
-        ]);
-        DB::table('associations')->where('id', 1)->update(['state_id' => 3]);
+        DB::table('associations')->where('id', 1)->update(['state_id' => 2]);
 
         DB::table('people')->insert([
             'id' => 4,
@@ -636,7 +638,7 @@ class ProductosPecosasApiTest extends TestCase
         DB::table('pecosas')->insert([
             'pecosa_number' => 'BACK-001',
             'delivery_date' => '2026-03-10',
-            'state_id' => 3,
+            'state_id' => 2,
             'association_id' => 1,
             'created_at' => now(),
             'updated_at' => now(),
@@ -655,7 +657,7 @@ class ProductosPecosasApiTest extends TestCase
 
         $payload = $this->pecosaPayload('PEC-003');
         $payload['delivery_date'] = '2026-03-10';
-        $payload['state_id'] = 3;
+        $payload['state_id'] = 2;
         unset($payload['managing_partner_id']);
 
         $this->actingAs($this->userWithAccess())
@@ -697,7 +699,7 @@ class ProductosPecosasApiTest extends TestCase
                 'chief_id' => 1,
                 'storekeeper_id' => 2,
                 'managing_partner_id' => 1,
-                'state_id' => 1,
+                'state_id' => 2,
                 'association_id' => 1,
                 'details' => [
                     ['detail_product_id' => 1, 'quantity' => 4],

@@ -120,7 +120,8 @@
             word-wrap: break-word;
             line-height: 1.15;
         }
-        .col-highlight-leche { background-color: #dff3e4; font-weight: bold; }
+        .col-recibe { text-align: left; padding-left: 3px; overflow-wrap: break-word; }
+        .manual-entry { background: #fff; }
         .total-row { background-color: #e8e8e8; font-weight: bold; }
         .total-label { text-align: right; padding-right: 8px; vertical-align: middle; }
 
@@ -142,20 +143,27 @@
     @endphp
     <table class="main-table">
         <colgroup>
+            <col style="width: 18px;">
             <col style="width: 22px;">
-            <col style="width: 30px;">
-            <col style="width: 200px;">
-            <col style="width: 160px;">
-            <col style="width: 150px;">
-            <col style="width: 100px;">
-            <col style="width: 32px;">
-            <col style="width: 32px;">
-            <col style="width: 32px;">
-            <col style="width: 160px;">
+            <col style="width: 90px;">
+            <col style="width: 70px;">
+            <col style="width: 65px;">
+            <col style="width: 71px;">
+            <col style="width: 23px;">
+            <col style="width: 23px;">
+            <col style="width: 23px;">
+            <col style="width: 23px;">
+            <col style="width: 20px;">
+            <col style="width: 20px;">
+            <col style="width: 20px;">
+            <col style="width: 38px;">
+            <col style="width: 65px;">
+            <col style="width: 35px;">
+            <col style="width: 118px;">
         </colgroup>
         <thead>
             <tr>
-                <td colspan="10" style="border: none; padding: 0 0 4px 0;">
+                <td colspan="17" style="border: none; padding: 0 0 4px 0;">
                     <table class="header-table">
                         <tr>
                             <td class="header-brand">
@@ -187,31 +195,44 @@
                 </td>
             </tr>
             <tr>
-                <th style="width: 22px;">N.°</th>
-                <th style="width: 30px;">CÓD.</th>
-                <th style="width: 200px;">CLUB DE MADRES</th>
-                <th style="width: 160px;">PRESIDENTA</th>
-                <th style="width: 150px;">DIRECCIÓN</th>
-                <th style="width: 100px;">SECTOR</th>
-                <th style="width: 32px;">BENEF.</th>
-                <th class="col-highlight-leche" style="width: 32px;">LECHE</th>
-                <th class="col-highlight-leche" style="width: 32px;">HOJUELA</th>
-                <th style="width: 160px;">FIRMA</th>
+                <th style="width: 18px;">N.°</th>
+                <th style="width: 22px;">CÓD.</th>
+                <th style="width: 90px;">CLUB DE MADRES</th>
+                <th style="width: 70px;">PRESIDENTA</th>
+                <th style="width: 65px;">DIRECCIÓN</th>
+                <th style="width: 71px;">SECTOR</th>
+                <th style="width: 23px;">1RA<br>PRIOR.</th>
+                <th style="width: 23px;">2DA<br>PRIOR.</th>
+                <th style="width: 23px;">TOTAL<br>RAC.</th>
+                <th style="width: 23px;">BENEF.</th>
+                <th style="width: 20px;">BOLSAS</th>
+                <th style="width: 20px;">KILOS</th>
+                <th style="width: 20px;">RACIÓN</th>
+                <th style="width: 38px;">FECHA<br>ENTREGA</th>
+                <th style="width: 65px;">RECIBE</th>
+                <th style="width: 35px;">DNI</th>
+                <th style="width: 118px;">FIRMA</th>
             </tr>
         </thead>
         <tbody>
             @php
+                $totalPrimera = 0;
+                $totalSegunda = 0;
+                $totalRaciones = 0;
                 $totalBeneficiaries = 0;
-                $totalLeche = 0;
-                $totalHojuela = 0;
+                $totalBolsas = 0;
+                $totalKilos = 0;
             @endphp
             @forelse($clubs as $index => $club)
                 @php
                     $rations = ($club['primera_prioridad'] ?? 0) + ($club['segunda_prioridad'] ?? 0);
                     $beneficiaries = $club['total_beneficiarios'] ?? $rations;
+                    $totalPrimera += $club['primera_prioridad'] ?? 0;
+                    $totalSegunda += $club['segunda_prioridad'] ?? 0;
+                    $totalRaciones += $rations;
                     $totalBeneficiaries += $beneficiaries;
-                    $totalLeche += $club['leche'] ?? 0;
-                    $totalHojuela += $club['hojuela'] ?? 0;
+                    $totalBolsas += $club['bolsas'] ?? 0;
+                    $totalKilos += $club['kilos'] ?? 0;
                 @endphp
                 <tr>
                     <td class="col-n">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</td>
@@ -220,22 +241,32 @@
                     <td class="col-pres">{{ $club['presidenta'] ?? '' }}</td>
                     <td class="col-dir">{{ $club['direccion'] ?? '' }}</td>
                     <td class="col-dir">{{ $club['sector'] ?? '' }}</td>
+                    <td class="numeric">{{ $club['primera_prioridad'] ?? 0 }}</td>
+                    <td class="numeric">{{ $club['segunda_prioridad'] ?? 0 }}</td>
+                    <td class="numeric">{{ $rations }}</td>
                     <td class="numeric" style="font-weight:bold;">{{ $beneficiaries }}</td>
-                    <td class="numeric col-highlight-leche">{{ $club['leche'] ?? 0 }}</td>
-                    <td class="numeric col-highlight-leche">{{ $club['hojuela'] ?? 0 }}</td>
+                    <td class="numeric">{{ $club['bolsas'] ?? 0 }}</td>
+                    <td class="numeric">{{ $club['kilos'] ?? 0 }}</td>
+                    <td class="numeric">{{ $club['racion'] ?? '' }}</td>
+                    <td class="numeric">{{ $club['fecha_entrega'] ?? '' }}</td>
+                    <td class="col-recibe manual-entry">{{ $club['recibe'] ?? '' }}</td>
+                    <td class="numeric manual-entry">{{ $club['dni'] ?? '' }}</td>
                     <td class="signature"></td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="10" style="padding: 8px;">No hay comités para el período seleccionado.</td>
+                    <td colspan="17" style="padding: 8px;">No hay comités para el período seleccionado.</td>
                 </tr>
             @endforelse
             <tr class="total-row">
                 <td colspan="6" class="total-label">TOTAL:</td>
+                <td>{{ $totalPrimera }}</td>
+                <td>{{ $totalSegunda }}</td>
+                <td>{{ $totalRaciones }}</td>
                 <td>{{ $totalBeneficiaries }}</td>
-                <td class="col-highlight-leche">{{ $totalLeche }}</td>
-                <td class="col-highlight-leche">{{ $totalHojuela }}</td>
-                <td></td>
+                <td>{{ $totalBolsas }}</td>
+                <td>{{ $totalKilos }}</td>
+                <td colspan="5"></td>
             </tr>
         </tbody>
     </table>

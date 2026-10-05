@@ -10,6 +10,7 @@ use App\Models\PvlReportRun;
 use App\Services\Pvl\PvlRagService;
 use App\Services\Pvl\PvlReportGeneratorService;
 use App\Services\Pvl\PvlSupportingReportService;
+use App\Services\Rag\DocumentBinaryStorage;
 use App\Services\ReportePvlPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -129,7 +130,8 @@ class PvlReportsController extends Controller
             'mime_type' => $file->getMimeType() ?: $file->getClientMimeType() ?: 'application/octet-stream',
             'file_size' => $file->getSize(),
             'file_hash' => $hash,
-            'file_data' => base64_encode(gzdeflate($binary, 9)),
+            'file_path' => DocumentBinaryStorage::put('rag/pvl', $hash, $binary),
+            'file_data' => null,
             'created_by' => $request->user()?->id,
         ]);
 
@@ -160,10 +162,9 @@ class PvlReportsController extends Controller
 
     public function downloadDocument(PvlDocument $pvlDocument)
     {
-        $decoded = base64_decode($pvlDocument->file_data);
-        $binary = @gzinflate($decoded);
-        if ($binary === false) {
-            $binary = $decoded;
+        $binary = DocumentBinaryStorage::get($pvlDocument->file_path, $pvlDocument->file_data);
+        if ($binary === null) {
+            abort(404, 'Archivo no disponible.');
         }
 
         return response($binary, 200, [
@@ -175,6 +176,7 @@ class PvlReportsController extends Controller
 
     public function destroyDocument(PvlDocument $pvlDocument)
     {
+        DocumentBinaryStorage::delete($pvlDocument->file_path);
         $pvlDocument->delete();
 
         return response()->json(['message' => 'Documento y fragmentos eliminados.']);

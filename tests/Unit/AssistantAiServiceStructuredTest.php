@@ -11,6 +11,32 @@ use Tests\TestCase;
 
 class AssistantAiServiceStructuredTest extends TestCase
 {
+    public function test_gemini_chat_uses_the_configured_output_budget_for_complete_answers(): void
+    {
+        config()->set('services.ai.provider', 'google');
+        config()->set('services.ai.chat_max_tokens', 8192);
+        config()->set('services.google_ai.key', 'google-key');
+        config()->set('services.google_ai.model', 'gemini-test');
+        config()->set('services.google_ai.url', 'https://gemini.test/models');
+        Http::fake([
+            'gemini.test/*' => Http::response([
+                'candidates' => [[
+                    'finishReason' => 'STOP',
+                    'content' => ['parts' => [['text' => "## Resumen\n\nRespuesta completa."]]],
+                ]],
+            ]),
+        ]);
+
+        $answer = (new AssistantAiService())->generate(
+            [['role' => 'user', 'content' => '¿De qué trata el acuerdo?']],
+            'Responde con las fuentes disponibles.',
+        );
+
+        $this->assertSame("## Resumen\n\nRespuesta completa.", $answer);
+        Http::assertSent(fn ($request): bool => $request['generationConfig']['maxOutputTokens'] === 8192
+            && $request['generationConfig']['responseMimeType'] === 'text/plain');
+    }
+
     public function test_structured_generation_preserves_gemini_rate_limit_as_429(): void
     {
         config()->set('services.ai.provider', 'google');
@@ -221,6 +247,33 @@ class AssistantAiServiceStructuredTest extends TestCase
             return $request['model'] === 'qwen/qwen3.8-27b'
                 && $content[1]['type'] === 'image_url'
                 && str_starts_with($content[1]['image_url']['url'], 'data:image/png;base64,');
+        });
+    }
+
+    public function test_pdf_extraction_asks_gemini_for_visual_ocr_with_page_markers(): void
+    {
+        config()->set('services.ai.provider', 'google');
+        config()->set('services.google_ai.key', 'google-key');
+        config()->set('services.google_ai.model', 'gemini-test');
+        config()->set('services.google_ai.url', 'https://gemini.test/models');
+        Http::fake([
+            'gemini.test/*' => Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => "[[PAGINA:1]]\nACTA 001-2026"]]],
+                ]],
+            ]),
+        ]);
+
+        $text = (new AssistantAiService())->extractDocumentText('application/pdf', 'pdf-binario');
+
+        $this->assertSame("[[PAGINA:1]]\nACTA 001-2026", $text);
+        Http::assertSent(function ($request): bool {
+            $parts = $request['contents'][0]['parts'];
+
+            return str_contains($parts[0]['text'], 'Realiza OCR')
+                && str_contains($parts[0]['text'], '[[PAGINA:N]]')
+                && $parts[1]['inline_data']['mime_type'] === 'application/pdf'
+                && base64_decode($parts[1]['inline_data']['data'], true) === 'pdf-binario';
         });
     }
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ComitesController;
 use App\Http\Controllers\Api\InicioController;
+use App\Http\Controllers\Api\KnowledgeBaseController;
 use App\Http\Controllers\Api\ResponsablesRacionesController;
 use App\Http\Controllers\Api\MovimientosController;
 use App\Http\Controllers\Api\ProductosPecosasController;
@@ -36,6 +37,15 @@ Route::prefix('dashboard/reportes-pvl')->middleware('module:reportes')->name('ap
     Route::post('documents', [PvlReportsController::class, 'storeDocument'])->name('documents.store');
     Route::get('documents/{pvlDocument}/download', [PvlReportsController::class, 'downloadDocument'])->name('documents.download');
     Route::delete('documents/{pvlDocument}', [PvlReportsController::class, 'destroyDocument'])->name('documents.destroy');
+});
+
+// ==================== MÓDULO: BASE DE CONOCIMIENTO IA (RAG) ====================
+Route::prefix('dashboard/base-conocimiento')->middleware('module:base-conocimiento')->name('api.base-conocimiento.')->group(function () {
+    Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
+    Route::post('documents', [KnowledgeBaseController::class, 'store'])->name('documents.store');
+    Route::get('documents/{knowledgeBaseDocument}/download', [KnowledgeBaseController::class, 'download'])->name('documents.download');
+    Route::delete('documents/{knowledgeBaseDocument}', [KnowledgeBaseController::class, 'destroy'])->name('documents.destroy');
+    Route::post('preguntar', [KnowledgeBaseController::class, 'ask'])->name('ask');
 });
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================

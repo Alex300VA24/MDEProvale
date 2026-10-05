@@ -4,17 +4,14 @@ namespace App\Services\Pvl;
 
 use App\Models\PvlDocument;
 use App\Models\PvlDocumentChunk;
-use App\Services\AssistantAiService;
+use App\Services\Rag\BaseRagService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Smalot\PdfParser\Parser;
 
-class PvlRagService
+class PvlRagService extends BaseRagService
 {
-    public function __construct(private AssistantAiService $ai)
-    {
-    }
-
     public function indexDocument(PvlDocument $document, string $binary): void
     {
         $document->forceFill(['index_status' => 'INDEXANDO', 'index_error' => null])->save();
@@ -25,12 +22,17 @@ class PvlRagService
                 throw new RuntimeException('No se encontró texto legible en el documento.');
             }
 
-            $chunks = $this->chunkPages($text);
+            $size = (int) config('pvl_reports.chunk_size', 1200);
+            $overlap = (int) config('pvl_reports.chunk_overlap', 200);
+            $maxChunks = (int) config('rag.max_chunks_pvl', 120);
+            $chunks = $this->chunkPages($text, $size, $overlap, $maxChunks);
             if ($chunks === []) {
                 throw new RuntimeException('No fue posible fragmentar el documento.');
             }
 
-            DB::transaction(function () use ($document, $chunks) {
+            $embeddingModel = (string) config('rag.embedding_model', '');
+
+            DB::transaction(function () use ($document, $chunks, $embeddingModel) {
                 $document->chunks()->delete();
 
                 foreach ($chunks as $index => $chunk) {
@@ -43,6 +45,7 @@ class PvlRagService
                         'nombre_archivo' => $document->file_name,
                         'pagina' => $chunk['page'],
                         'chunk' => $index + 1,
+                        'embedding_model' => $embeddingModel ?: null,
                     ];
 
                     PvlDocumentChunk::create([
@@ -50,7 +53,10 @@ class PvlRagService
                         'page_number' => $chunk['page'],
                         'chunk_index' => $index + 1,
                         'content' => $chunk['content'],
-                        'embedding' => $this->ai->embedText($chunk['content'], 'RETRIEVAL_DOCUMENT'),
+                        'embedding' => $this->validatedEmbedding(
+                            $this->ai->embedText($chunk['content'], 'RETRIEVAL_DOCUMENT'),
+                            'pvl:index:'.$document->id
+                        ),
                         'metadata' => $metadata,
                     ]);
                 }
@@ -75,26 +81,53 @@ class PvlRagService
         $period = sprintf('%04d-%02d', $year, $month);
         $types = $this->typesFor($reportType);
         $query = $this->queryFor($reportType, $period);
-        $queryEmbedding = $this->ai->embedText($query, 'RETRIEVAL_QUERY');
+        $queryEmbedding = $this->validatedEmbedding(
+            $this->ai->embedText($query, 'RETRIEVAL_QUERY'),
+            'pvl:search:'.$period
+        );
+        $this->warnIfNoEmbedding($queryEmbedding, 'pvl:search:'.$period);
 
-        $chunks = PvlDocumentChunk::query()
+        $candidateLimit = (int) config('rag.candidate_limit', 500);
+
+        $eloquent = PvlDocumentChunk::query()
+            ->select(['id', 'pvl_document_id', 'content', 'embedding', 'page_number', 'chunk_index', 'metadata'])
             ->with('document:id,document_type,period,product_id,provider_reference,file_name,file_hash,index_status')
             ->whereHas('document', fn ($documents) => $documents
                 ->where('period', $period)
                 ->where('index_status', 'INDEXADO')
                 ->whereIn('document_type', $types))
-            ->limit(500)
-            ->get();
+            ->orderBy('id');
+
+        if ($queryEmbedding === null) {
+            $eloquent->where(function ($where) use ($query) {
+                foreach ($this->keywords($query) as $keyword) {
+                    $where->orWhere('content', 'like', '%'.$keyword.'%');
+                }
+            });
+            $candidateLimit = min($candidateLimit, (int) config('rag.lexical_candidate_limit', 200));
+        }
+
+        $chunks = $eloquent->limit($candidateLimit)->get();
+
+        if ($chunks->isEmpty() && $queryEmbedding === null) {
+            // Prefiltro demasiado estricto (ej. singular/plural): fallback
+            // a los candidatos del periodo sin filtro léxico.
+            $chunks = PvlDocumentChunk::query()
+                ->select(['id', 'pvl_document_id', 'content', 'embedding', 'page_number', 'chunk_index', 'metadata'])
+                ->with('document:id,document_type,period,product_id,provider_reference,file_name,file_hash,index_status')
+                ->whereHas('document', fn ($documents) => $documents
+                    ->where('period', $period)
+                    ->where('index_status', 'INDEXADO')
+                    ->whereIn('document_type', $types))
+                ->orderBy('id')
+                ->limit($candidateLimit)
+                ->get();
+        }
 
         return $chunks
             ->map(function (PvlDocumentChunk $chunk) use ($queryEmbedding, $query) {
-                $semantic = $queryEmbedding && $chunk->embedding
-                    ? $this->cosineSimilarity($queryEmbedding, $chunk->embedding)
-                    : 0.0;
-                $lexical = $this->lexicalScore($query, $chunk->content);
-                $score = $queryEmbedding && $chunk->embedding
-                    ? ($semantic * 0.85) + ($lexical * 0.15)
-                    : $lexical;
+                $chunkEmbedding = $this->validatedEmbedding($chunk->embedding, 'pvl:score');
+                $score = $this->hybridScore($queryEmbedding, $chunkEmbedding, $query, $chunk->content);
 
                 return [
                     'content' => $chunk->content,
@@ -108,6 +141,7 @@ class PvlRagService
                         'nombre_archivo' => $chunk->document->file_name,
                         'pagina' => $chunk->page_number,
                         'chunk' => $chunk->chunk_index,
+                        'has_embedding' => $chunkEmbedding !== null && $queryEmbedding !== null,
                     ]),
                 ];
             })
@@ -194,47 +228,6 @@ class PvlRagService
         return $text;
     }
 
-    /** @return array<int, array{page:int|null,content:string}> */
-    private function chunkPages(string $text): array
-    {
-        $pages = $this->pages($text);
-        $size = max(400, (int) config('pvl_reports.chunk_size', 1200));
-        $overlap = min($size - 100, max(0, (int) config('pvl_reports.chunk_overlap', 200)));
-        $chunks = [];
-
-        foreach ($pages as $page => $content) {
-            $content = trim(preg_replace('/[\t ]+/u', ' ', preg_replace('/\R{3,}/u', "\n\n", $content)) ?? $content);
-            $length = mb_strlen($content);
-
-            for ($offset = 0; $offset < $length; $offset += ($size - $overlap)) {
-                $chunk = trim(mb_substr($content, $offset, $size));
-                if ($chunk !== '') {
-                    $chunks[] = ['page' => $page, 'content' => $chunk];
-                }
-            }
-        }
-
-        return array_slice($chunks, 0, 120);
-    }
-
-    /** @return array<int, string> */
-    private function pages(string $text): array
-    {
-        if (! preg_match('/\[\[PAGINA:(\d+)\]\]/u', $text)) {
-            return [1 => $text];
-        }
-
-        $parts = preg_split('/\[\[PAGINA:(\d+)\]\]/u', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
-        $pages = [];
-
-        for ($index = 1; $index < count($parts); $index += 2) {
-            $page = (int) $parts[$index];
-            $pages[$page] = ($pages[$page] ?? '').($parts[$index + 1] ?? '');
-        }
-
-        return $pages ?: [1 => $text];
-    }
-
     /** @return array<int, string> */
     private function typesFor(string $reportType): array
     {
@@ -254,44 +247,5 @@ class PvlRagService
         $ration = 'distribución entrega certificados bromatológicos microbiológicos fichas técnicas lotes vencimientos composición beneficiarios comités responsables constancia de envío código de envío';
 
         return "Reporte {$reportType} del periodo {$period}. ".($reportType === 'PVL' ? $pvl : ($reportType === 'RACION_A' ? $ration : $pvl.' '.$ration));
-    }
-
-    /** @param array<int, float|int> $left @param array<int, float|int> $right */
-    private function cosineSimilarity(array $left, array $right): float
-    {
-        $length = min(count($left), count($right));
-        if ($length === 0) {
-            return 0.0;
-        }
-
-        $dot = 0.0;
-        $leftNorm = 0.0;
-        $rightNorm = 0.0;
-        for ($index = 0; $index < $length; $index++) {
-            $a = (float) $left[$index];
-            $b = (float) $right[$index];
-            $dot += $a * $b;
-            $leftNorm += $a * $a;
-            $rightNorm += $b * $b;
-        }
-
-        return ($leftNorm > 0 && $rightNorm > 0)
-            ? $dot / (sqrt($leftNorm) * sqrt($rightNorm))
-            : 0.0;
-    }
-
-    private function lexicalScore(string $query, string $content): float
-    {
-        preg_match_all('/[\pL\pN]{4,}/u', mb_strtolower($query), $queryWords);
-        preg_match_all('/[\pL\pN]{4,}/u', mb_strtolower($content), $contentWords);
-        $needles = array_unique($queryWords[0] ?? []);
-        if ($needles === []) {
-            return 0.0;
-        }
-
-        $haystack = array_flip(array_unique($contentWords[0] ?? []));
-        $matches = count(array_filter($needles, static fn ($word) => isset($haystack[$word])));
-
-        return $matches / count($needles);
     }
 }
