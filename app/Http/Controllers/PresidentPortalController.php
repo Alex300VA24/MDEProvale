@@ -196,11 +196,13 @@ class PresidentPortalController extends Controller
             $product = $detail->detailProduct->product ?? null;
             $productName = $detail->product_name ?? ($product ? $product->title : '-');
             $productAbbreviation = $detail->product_abbreviation ?? ($product ? $product->abbreviation : null);
+            $info = \App\Services\PecosaService::periodArticleInfo($productName, $detail->quantity, $pecosa->delivery_date);
             $articulos[] = [
                 'numero' => str_pad($index + 1, 2, '0', STR_PAD_LEFT),
                 'cantidad_solicitado' => $formatCantidad($detail->quantity),
-                'descripcion' => $productAbbreviation ? $productName . ' (' . $productAbbreviation . ')' : $productName,
+                'descripcion' => $info['descripcion'] ?? ($productAbbreviation ? $productName . ' (' . $productAbbreviation . ')' : $productName),
                 'cantidad_despachado' => $formatCantidad($detail->quantity),
+                'racion_dia' => $info['racion_dia'],
                 'unidad' => $detail->uom_title ?? ($product && $product->uom ? $product->uom->title : 'UNIDAD'),
                 'unitary' => number_format($detail->unit_price, 2),
                 'unitario' => number_format($detail->unit_price, 2),

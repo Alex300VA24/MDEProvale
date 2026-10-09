@@ -25,22 +25,7 @@
         <div class="format">FORMATO PVL</div>
     </header>
 
-    <table class="table meta">
-        <colgroup><col style="width:14%"><col style="width:37%"><col style="width:11%"><col style="width:18%"><col style="width:10%"><col style="width:10%"></colgroup>
-        <tr>
-            <td class="label">NOMBRE DE LA MUNICIPALIDAD:</td><td class="value" colspan="2">{{ $v('municipalidad') }}</td>
-            <td class="label">NUM. EXPEDIENTE:</td><td class="value" colspan="2">{{ $v('numero_expediente') }}</td>
-        </tr>
-        <tr>
-            <td class="value" rowspan="3">{{ $v('tipo_municipalidad', 'MUNICIPALIDAD DISTRITAL') }}</td>
-            <td class="label" rowspan="3">UBICACION<br>GEOGRAFICA</td>
-            <td class="label">DEPARTAMENTO</td><td class="value">{{ $v('departamento') }}</td>
-            <td class="label">MES REPORTADO:</td><td class="value">{{ $v('mes_reportado') }}</td>
-        </tr>
-        <tr><td class="label">PROVINCIA</td><td class="value">{{ $v('provincia') }}</td><td class="label">AÑO REPORTADO:</td><td class="value">{{ $v('anio_reportado') }}</td></tr>
-        <tr><td class="label"></td><td class="value"></td><td class="label">FECHA DE REPORTE:</td><td class="value">{{ $v('fecha_reporte') }}</td></tr>
-        <tr><td colspan="4" style="border-top:none"></td><td class="label">COD. ENVIO:</td><td class="value">{{ $v('codigo_envio') }}</td></tr>
-    </table>
+    @include('reportes._identificacion')
 
     <div class="section-label">GASTOS EN LECHE Y/O ALIMENTOS EQUIVALENTES (AVENA, SOYA, KIWICHA, ENRIQUECIDO LACTEOS, ETC.)</div>
     <table class="table purchase-table">
@@ -111,6 +96,8 @@
     <div class="footer-page">Página 1/2</div>
 </section>
 
+<div class="page-break"></div>
+
 <section class="page">
     <header class="header">
         <div class="cg">CONTRALORIA GENERAL DE LA REPUBLICA</div>
@@ -118,18 +105,11 @@
         <div class="title">INFORMACION MENSUAL DE GASTOS E INGRESOS DEL PROGRAMA DEL VASO DE LECHE</div>
         <div class="format">FORMATO PVL</div>
     </header>
-    <table class="table meta">
-        <colgroup><col style="width:14%"><col style="width:37%"><col style="width:11%"><col style="width:18%"><col style="width:10%"><col style="width:10%"></colgroup>
-        <tr><td class="label">NOMBRE DE LA MUNICIPALIDAD:</td><td class="value" colspan="2">{{ $v('municipalidad') }}</td><td class="label">NUM. EXPEDIENTE:</td><td class="value" colspan="2">{{ $v('numero_expediente') }}</td></tr>
-        <tr><td class="value" rowspan="3">{{ $v('tipo_municipalidad','MUNICIPALIDAD DISTRITAL') }}</td><td class="label" rowspan="3">UBICACION<br>GEOGRAFICA</td><td class="label">DEPARTAMENTO</td><td class="value">{{ $v('departamento') }}</td><td class="label">MES REPORTADO:</td><td class="value">{{ $v('mes_reportado') }}</td></tr>
-        <tr><td class="label">PROVINCIA</td><td class="value">{{ $v('provincia') }}</td><td class="label">AÑO REPORTADO:</td><td class="value">{{ $v('anio_reportado') }}</td></tr>
-        <tr><td class="label"></td><td class="value"></td><td class="label">FECHA DE REPORTE:</td><td class="value">{{ $v('fecha_reporte') }}</td></tr>
-        <tr><td colspan="4" style="border-top:none"></td><td class="label">COD. ENVIO:</td><td class="value">{{ $v('codigo_envio') }}</td></tr>
-    </table>
+    @include('reportes._identificacion')
     <table class="table signature-grid">
         <colgroup><col style="width:66%"><col style="width:34%"></colgroup>
-        <tr><td><span class="caption">(51) APELLIDOS Y NOMBRES DEL PRESIDENTE DEL COMITE DE ADMINISTRACION</span><span class="name">{{ $v('presidente_comite_administracion') }}</span></td><td><div style="height:24mm;display:flex;align-items:flex-end;justify-content:center;font-size:4.8pt">FIRMA Y SELLO</div></td></tr>
-        <tr><td><span class="caption">(52) APELLIDOS Y NOMBRES DEL DIRECTOR DE ADMINISTRACION</span><span class="name">{{ $v('director_administracion') }}</span></td><td><div style="height:24mm;display:flex;align-items:flex-end;justify-content:center;font-size:4.8pt">FIRMA Y SELLO</div></td></tr>
+        <tr><td><span class="caption">(51) APELLIDOS Y NOMBRES DEL PRESIDENTE DEL COMITE DE ADMINISTRACION</span><span class="name">{{ $v('presidente_comite_administracion') }}</span></td><td><span class="sigline">FIRMA Y SELLO</span></td></tr>
+        <tr><td><span class="caption">(52) APELLIDOS Y NOMBRES DEL DIRECTOR DE ADMINISTRACION</span><span class="name">{{ $v('director_administracion') }}</span></td><td><span class="sigline">FIRMA Y SELLO</span></td></tr>
     </table>
     <div class="footer-page">Página 2/2</div>
 </section>

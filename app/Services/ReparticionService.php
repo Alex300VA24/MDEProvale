@@ -128,6 +128,19 @@ class ReparticionService
         ];
     }
 
+    private function defaultRoute($code): int
+    {
+        $code = (int) $code;
+
+        foreach (config('distribution.default_routes', []) as $route => $codes) {
+            if (in_array($code, $codes, true)) {
+                return (int) $route;
+            }
+        }
+
+        return 1;
+    }
+
     public function buildReport(Racion $racion, int $year, int $month): array
     {
         $configuration = $this->getConfiguration($racion, $year, $month);
@@ -168,7 +181,7 @@ class ReparticionService
                 'beneficiarios_base' => $baseBeneficiaries,
                 'ajuste_beneficiarios' => $adjustment,
                 'beneficiarios' => $beneficiaries,
-                'vuelta' => max(1, (int) ($assignment?->route_number ?? 1)),
+                'vuelta' => max(1, (int) ($assignment?->route_number ?? $this->defaultRoute($association->code))),
                 'observacion' => $assignment?->observation ?? '',
                 'dias' => (int) $configuration['service_days'],
                 'leche_gramos' => (float) $configuration['milk_grams_per_beneficiary'],

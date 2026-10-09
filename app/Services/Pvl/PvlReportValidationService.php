@@ -26,11 +26,16 @@ class PvlReportValidationService
         }
 
         foreach ($aiOutput['datos_faltantes'] ?? [] as $missing) {
+            $field = (string) ($missing['campo'] ?? 'desconocido');
+            if ($this->hasConfirmedValue($data, $field)) {
+                continue;
+            }
+
             $this->finding(
                 $findings,
                 ! empty($missing['obligatorio']) ? 'CRITICO' : 'INFORMATIVO',
                 'DATO_FALTANTE',
-                (string) ($missing['campo'] ?? 'desconocido'),
+                $field,
                 (string) ($missing['motivo'] ?? 'Dato no encontrado en las fuentes.')
             );
         }
@@ -229,8 +234,17 @@ class PvlReportValidationService
                 'menores_1_anio', 'ninos_1_a_6', 'madres_gestantes', 'madres_lactantes',
                 'personas_7_a_13', 'personas_tbc', 'ancianos', 'discapacitados',
             ];
-            if (collect($fields)->contains(fn (string $field) => $beneficiaries[$field] === null)) {
-                $this->finding($findings, 'CRITICO', 'BENEFICIARIOS_INCOMPLETOS', 'racion_a.beneficiarios.'.$zone, 'Una o más categorías de beneficiarios no tienen valor confirmado.');
+            $missingFields = collect($fields)->filter(fn (string $field) => $beneficiaries[$field] === null);
+            if ($missingFields->isNotEmpty()) {
+                foreach ($missingFields as $field) {
+                    $this->finding(
+                        $findings,
+                        'CRITICO',
+                        'DATO_FALTANTE',
+                        'racion_a.beneficiarios.'.$zone.'.'.$field,
+                        'Categoría de beneficiarios sin valor confirmado para la zona '.$zone.'.'
+                    );
+                }
                 $beneficiaries['total'] = null;
             } else {
                 $total = array_sum(array_map(fn (string $field) => (int) $beneficiaries[$field], $fields));
@@ -349,5 +363,23 @@ class PvlReportValidationService
         }
 
         return null;
+    }
+
+    private function hasConfirmedValue(array $data, string $field): bool
+    {
+        $paths = [$field];
+        if (! str_starts_with($field, 'pvl.') && ! str_starts_with($field, 'racion_a.')) {
+            $paths[] = 'pvl.'.$field;
+            $paths[] = 'racion_a.'.$field;
+        }
+
+        foreach ($paths as $path) {
+            $value = data_get($data, $path);
+            if ($value !== null && $value !== '' && $value !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

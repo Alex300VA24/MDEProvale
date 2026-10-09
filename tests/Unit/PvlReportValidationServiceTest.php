@@ -54,6 +54,21 @@ class PvlReportValidationServiceTest extends TestCase
         $this->assertSame(PvlReportRun::REQUIERE_REVISION, $result['status']);
     }
 
+    public function test_it_ignores_stale_ai_missing_entry_when_backend_has_confirmed_value(): void
+    {
+        $ai = $this->aiOutput();
+        $ai['datos_faltantes'][] = [
+            'campo' => 'pvl.municipalidad',
+            'obligatorio' => true,
+            'motivo' => 'No encontrada por el modelo.',
+        ];
+
+        $result = $this->service->validate(['pvl' => $this->validPvl()], $ai, $this->context());
+
+        $matching = collect($result['findings'])->where('field', 'pvl.municipalidad');
+        $this->assertTrue($matching->isEmpty());
+    }
+
     public function test_it_keeps_missing_values_null_and_blocks_required_financial_data(): void
     {
         $pvl = $this->validPvl();

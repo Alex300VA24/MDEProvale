@@ -294,23 +294,54 @@ class PecosaService
         return trim(collect([$person->names, $person->father_lastname, $person->mother_lastname])->filter()->implode(' '));
     }
 
+    /**
+     * Descripción con período y ración por día de un artículo del comprobante.
+     * Leche y hojuela llevan el período (mes efectivo de reparto) entre
+     * paréntesis; el resto de productos conserva su descripción original.
+     *
+     * @return array{descripcion:?string,racion_dia:string}
+     */
+    public static function periodArticleInfo(?string $productName, $quantity, $deliveryDate): array
+    {
+        $effective = Pecosa::effectiveDeliveryDate($deliveryDate);
+        $name = mb_strtoupper(trim((string) $productName));
+        $isMilk = str_contains($name, 'LECHE');
+        $isOat = str_contains($name, 'HOJUELA') || str_contains($name, 'AVENA');
+
+        if (! $effective || (! $isMilk && ! $isOat)) {
+            return ['descripcion' => null, 'racion_dia' => ''];
+        }
+
+        $meses = ['', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+        $days = $effective->daysInMonth;
+        $period = sprintf('DEL 01 AL %02d %s %d', $days, $meses[$effective->month], $effective->year);
+        $label = $isOat ? 'HOJUELA DE QUINUA AVENA CON AZUCAR FORTIFICADA CON VITAMINAS Y MINERALES' : $name;
+
+        return [
+            'descripcion' => "{$label} ({$period})",
+            'racion_dia' => number_format((float) $quantity / $days, 2),
+        ];
+    }
+
     private function buildComprobanteData(Pecosa $pecosa): array
     {
         $formatQuantity = static function ($value): string {
             return rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
         };
 
-        $articulos = $pecosa->detailPecosas->map(function (DetailPecosa $detail, int $index) use ($formatQuantity) {
+        $articulos = $pecosa->detailPecosas->map(function (DetailPecosa $detail, int $index) use ($formatQuantity, $pecosa) {
             $product = $detail->detailProduct ? $detail->detailProduct->product : null;
             $name = trim((string) ($detail->product_name ?: ($product ? $product->title : '')));
             $abbreviation = trim((string) ($detail->product_abbreviation ?: ($product ? $product->abbreviation : '')));
             $description = $abbreviation !== '' ? "{$name} ({$abbreviation})" : $name;
+            $info = self::periodArticleInfo($name, $detail->quantity, $pecosa->delivery_date);
 
             return [
                 'numero' => str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT),
                 'cantidad_solicitado' => $formatQuantity($detail->quantity),
-                'descripcion' => $description,
+                'descripcion' => $info['descripcion'] ?? $description,
                 'cantidad_despachado' => $formatQuantity($detail->quantity),
+                'racion_dia' => $info['racion_dia'],
                 'unidad' => $detail->uom_title ?: ($product && $product->uom ? $product->uom->title : ''),
                 'unitario' => number_format((float) $detail->unit_price, 2),
                 'total' => number_format((float) $detail->quantity * (float) $detail->unit_price, 2),

@@ -6,9 +6,11 @@ use App\Exceptions\AiProviderException;
 use App\Models\PvlDocument;
 use App\Models\PvlDocumentChunk;
 use App\Models\PvlReportRun;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Pvl\PvlRagService;
 use App\Services\Pvl\PvlReportGeneratorService;
+use App\Services\Pvl\PvlReportDataMapper;
 use App\Services\Pvl\PvlSupportingReportService;
 use App\Services\ReportePvlPdfService;
 use Barryvdh\DomPDF\PDF;
@@ -48,18 +50,49 @@ class PvlReportsApiTest extends TestCase
 
     public function test_index_returns_runs_documents_products_and_supported_types(): void
     {
-        $run = $this->reportRun();
+        $run = $this->reportRun([
+            'status' => PvlReportRun::GENERADO,
+            'generated_at' => now(),
+        ]);
         $document = $this->document(['index_status' => 'INDEXADO']);
 
         $this->actingAs($this->adminUser())
             ->getJson(self::BASE)
             ->assertOk()
             ->assertJsonPath('runs.0.id', $run->id)
+            ->assertJsonPath('runs.0.status', PvlReportRun::GENERADO)
+            ->assertJsonPath('runs.0.files.0.type', 'pvl')
+            ->assertJsonPath('runs.0.files.0.preview_url', route('reportes.pvl.preview', [$run, 'pvl']))
+            ->assertJsonPath('runs.0.files.0.download_url', route('reportes.pvl.download', [$run, 'pvl']))
             ->assertJsonPath('documents.0.id', $document->id)
             ->assertJsonPath('documents.0.index_status', 'INDEXADO')
             ->assertJsonPath('document_types.0', PvlDocument::TYPES[0])
             ->assertJsonMissingPath('documents.0.file_data')
             ->assertJsonMissingPath('documents.0.file_path');
+    }
+
+    public function test_defaults_are_editable_and_returned_by_index(): void
+    {
+        $this->actingAs($this->adminUser())
+            ->putJson(self::BASE.'/defaults', [
+                'values' => [
+                    'municipality_name' => 'MUNICIPALIDAD DISTRITAL PRUEBA',
+                    'administration_committee_president' => 'RESPONSABLE PRUEBA',
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('message', 'Valores predeterminados actualizados. Se aplicarán antes del próximo análisis.');
+
+        $stored = json_decode((string) Setting::get('pvl_report_defaults'), true);
+        $this->assertSame('MUNICIPALIDAD DISTRITAL PRUEBA', $stored['municipality_name']);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE)
+            ->assertOk()
+            ->assertJsonFragment([
+                'key' => 'administration_committee_president',
+                'value' => 'RESPONSABLE PRUEBA',
+            ]);
     }
 
     public function test_store_document_saves_binary_and_indexes_with_period_traceability(): void
@@ -257,6 +290,36 @@ class PvlReportsApiTest extends TestCase
             ->assertJsonPath('message', 'Límite temporal alcanzado.');
     }
 
+    public function test_user_can_complete_an_exact_missing_field_after_analysis(): void
+    {
+        $shape = (new PvlReportDataMapper())->pvlShape();
+        $run = $this->reportRun([
+            'status' => PvlReportRun::REQUIERE_REVISION,
+            'validated_data_json' => ['pvl' => $shape],
+            'warnings_json' => [[
+                'severity' => 'ADVERTENCIA',
+                'code' => 'DATO_ADMINISTRATIVO_FALTANTE',
+                'field' => 'pvl.numero_expediente',
+                'message' => 'Campo administrativo pendiente de revisión.',
+            ]],
+            'input_snapshot_json' => ['period' => '2026-09', 'meta' => ['beneficiarios_sin_zona' => 0]],
+        ]);
+
+        $this->actingAs($this->adminUser())
+            ->putJson(self::BASE.'/runs/'.$run->id.'/missing-data', [
+                'values' => [[
+                    'path' => 'pvl.numero_expediente',
+                    'value' => 'EXP-2026-009',
+                ]],
+            ])
+            ->assertOk()
+            ->assertJsonPath('run.validated_data.pvl.numero_expediente', 'EXP-2026-009')
+            ->assertJsonFragment([
+                'campo' => 'pvl.numero_expediente',
+                'origen' => 'ENTRADA_USUARIO',
+            ]);
+    }
+
     public function test_show_hides_internal_finding_signature_and_destroy_removes_run(): void
     {
         $run = $this->reportRun([
@@ -322,6 +385,7 @@ class PvlReportsApiTest extends TestCase
             ->postJson(self::BASE.'/runs/'.$run->id.'/generar')
             ->assertOk()
             ->assertJsonPath('run.status', PvlReportRun::GENERADO)
+            ->assertJsonCount(3, 'run.files')
             ->assertJsonCount(3, 'files')
             ->assertJsonPath('files.0.type', 'pvl')
             ->assertJsonPath('files.1.type', 'racion-a')

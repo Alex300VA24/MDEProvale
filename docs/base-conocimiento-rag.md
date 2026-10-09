@@ -12,7 +12,7 @@ RAG (Retrieval-Augmented Generation) es la técnica de: en vez de que la IA "adi
 
 1. El usuario sube un archivo (`.pdf`, `.docx`, `.xls` o `.xlsx`) desde la sección **Base de Conocimiento IA** del panel.
 2. El sistema calcula un hash SHA-256 del archivo. Si ya existe un documento con el mismo hash, se rechaza como duplicado (no se vuelve a indexar dos veces el mismo archivo).
-3. El archivo se guarda comprimido dentro de la base de datos (no en disco), igual que en el módulo de Reportes PVL.
+3. El binario se guarda en el disco local privado de Laravel (`storage/app/rag/...`) y la base de datos conserva su ruta, hash y metadatos.
 4. Se dispara el proceso de indexado.
 
 ### 2. Extracción de texto
@@ -46,6 +46,31 @@ Cuando el usuario escribe una pregunta en el chat:
 5. Esos fragmentos se arman como "contexto" y se envían a Gemini junto con una instrucción del tipo: *"Responde solo con la información de este contexto, no inventes datos, cita la fuente"*.
 6. La respuesta de la IA se muestra en el chat, junto con la lista de fuentes (archivo, página y número de fragmento) que se usaron para generarla.
 
+### 6. Importación de normativa municipal para PROVALE
+
+En la pestaña **Documentos**, el botón **Extraer normativa PROVALE** consulta el repositorio oficial de la Municipalidad Distrital de La Esperanza: `https://www.muniesperanza.gob.pe/website/mde2026/normativa.php`.
+
+El flujo:
+
+1. Revisa ordenanzas, resoluciones, decretos y acuerdos publicados por el portal.
+2. Hace un prefiltro flexible, sin distinguir mayúsculas, tildes ni signos, con los términos configurados en `config/normativa.php`. Incluye Vaso de Leche, PVL, Club/Clubes de Madres, comités y productos como hojuela de quinua y avena fortificada con vitaminas y minerales.
+3. Las coincidencias expresamente configuradas en `direct_import_keywords` se consideran relevantes directamente. Para las coincidencias generales, el proveedor de IA descarta menciones incidentales.
+4. Abre la página de **Copia verificable**, resuelve su enlace interno y valida la firma `%PDF-`. Luego guarda el PDF real en `storage/app/rag/normativa` y registra en la base de datos su nombre, tipo MIME, tamaño, hash y ruta privada antes de vectorizarlo.
+5. Evita duplicados mediante el identificador oficial del portal y vuelve a intentar documentos fallidos. Las normas antiguas ya vectorizadas obtienen su copia local en la siguiente extracción, sin duplicar fragmentos.
+6. Presenta los documentos del más reciente al más antiguo. Cada norma ofrece acciones separadas para ver el PDF guardado, descargarlo y abrir la Copia verificable oficial.
+7. Incorpora los fragmentos, junto con los archivos subidos manualmente, a las respuestas de **Preguntar**. Cuando existe copia local, la fuente abre el PDF conservado por PROVALE.
+
+La acción requiere permiso de creación sobre el módulo `base-conocimiento` y usa un bloqueo temporal para impedir dos extracciones simultáneas.
+
+También se puede importar una norma puntual desde el campo **Copia verificable o número de resolución**:
+
+- Enlace oficial, por ejemplo: `https://www.muniesperanza.gob.pe/website/mde2026/norma_descargar.php?id=35639`.
+- Número de resolución, por ejemplo: `0750-2026-MDE`. El backend lo busca con el parámetro público `q` del repositorio y exige una coincidencia del número.
+
+La importación puntual se considera una selección explícita del usuario, por lo que no necesita la clasificación de relevancia por IA. Solo admite enlaces del host y la ruta oficial, limita el tamaño del PDF y no permite redirecciones a rutas de archivos ajenas al portal.
+
+Si el PDF es un escaneo sin capa de texto y el OCR de Gemini/Groq falla, el documento ya no queda descartado: se indexan como respaldo los metadatos oficiales publicados por el portal (título, tipo, número, fecha, asunto y concepto). Cada fragmento registra `text_source=portal_metadata` para conservar la trazabilidad de esa extracción parcial.
+
 ## Dónde está cada cosa en el código
 
 | Parte | Archivo |
@@ -59,16 +84,25 @@ Cuando el usuario escribe una pregunta en el chat:
 | Rutas | `routes/dashboard-api.php` (prefijo `dashboard/base-conocimiento`) |
 | Configuración (tamaño de fragmento, límites) | `config/knowledge_base.php` |
 | Pantalla del panel (subir + chat) | `resources/js/Sections/BaseConocimiento.jsx` |
+| Extracción y clasificación de normativa | `app/Services/Normativa/NormativaScraperService.php` |
+| Indexación y búsqueda de normativa | `app/Services/Normativa/NormativaRagService.php` |
+| Términos de relevancia PVL | `config/normativa.php` |
 
 ## Tablas de base de datos
 
 **`kb_documents`** — un registro por archivo subido:
 - `title`, `file_name`, `mime_type`, `file_size`
 - `file_hash`: hash SHA-256 del archivo (para detectar duplicados)
-- `file_data`: contenido del archivo comprimido y en base64 (se guarda dentro de la BD, no en disco)
+- `file_path`: ruta privada del binario en el disco local; `file_data` queda solo como compatibilidad con registros antiguos
 - `index_status`: `PENDIENTE` → `INDEXANDO` → `INDEXADO` o `ERROR`
 - `index_error`: mensaje de error si falló el indexado
 - `created_by`: usuario que lo subió
+
+**`normativa_documents`** — un registro por norma encontrada en el portal:
+- datos oficiales: tipo, número, título, asunto, concepto, fecha y enlace de Copia verificable
+- `file_name`, `mime_type`, `file_size`, `file_hash`, `file_path`: metadatos y ubicación privada del PDF descargado
+- `relevancia_pvl`, resumen y motivo de inclusión
+- `index_status` e `index_error`: estado de la vectorización
 
 **`kb_document_chunks`** — un registro por fragmento de texto:
 - `kb_document_id`: a qué documento pertenece
@@ -93,6 +127,19 @@ El sistema tiene una única variable de configuración global (`AI_PROVIDER` en 
 - `AI_PROVIDER=groq` → usa Groq. Groq no tiene endpoint de embeddings, así que sin Gemini activo, la búsqueda cae a un modo "solo por palabras clave" (mucho menos preciso) y no se pueden vectorizar documentos nuevos.
 
 Además se necesita tener configurada la variable `GOOGLE_API_KEY` con una clave válida de Google AI Studio.
+
+## Relación con Generación Inteligente de Reportes PVL
+
+Reportes PVL no entrega a Gemini una conexión SQL ni credenciales de la base de datos. El backend consulta de forma controlada las tablas del periodo (movimientos, productos, PECOSAs, raciones, beneficiarios y comités), construye una instantánea estructurada y recién entonces la envía al proveedor de IA como `datos_bd`.
+
+El orden de resolución de cada reporte es:
+
+1. Datos estructurados consultados en la base de datos del sistema.
+2. Evidencia recuperada de documentos RAG del mismo periodo.
+3. Valores predeterminados, únicamente cuando ni la BD ni los documentos aportan el dato.
+4. Conciliación de Gemini y validación determinística de Laravel.
+
+Cada campo conserva su origen (`BD`, `PREDETERMINADO`, `RAG` o `ENTRADA_USUARIO`). Si al terminar todavía falta información, la respuesta del análisis incluye la ruta exacta del campo, el motivo y si puede completarse en la revisión del análisis o requiere registrar filas/cargar un respaldo. Los predeterminados se administran en el apartado **Valores predeterminados** y cubren identidad, administración, compras, financiamiento, raciones, distribuciones, certificados, composición y beneficiarios. Se aplican antes de llamar a la IA, pero cualquier dato real hallado durante el análisis los reemplaza. Totales, saldos derivados, periodo y fecha de impresión se calculan automáticamente y no se configuran como predeterminados.
 
 ## Limitaciones conocidas
 

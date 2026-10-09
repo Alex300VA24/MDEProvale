@@ -20,6 +20,14 @@ const STATUS_LABELS = {
     BORRADOR: 'Borrador', ANALIZANDO: 'Analizando', REQUIERE_REVISION: 'Requiere revisión',
     LISTO_PARA_GENERAR: 'Listo para generar', GENERADO: 'Generado', ERROR: 'Error',
 };
+const DEFAULT_GROUP_ORDER = [
+    'Identidad municipal', 'Administración del Formato PVL', 'Responsables',
+    'Compras de alimentos · plantilla', 'Compras de insumos · plantilla', 'Donaciones · plantilla',
+    'Gastos y financiamiento PVL', 'Administración de Ración A', 'Ración de un alimento · plantilla',
+    'Ración compuesta · plantilla', 'Distribución · plantilla', 'Certificado de calidad · plantilla',
+    'Composición · plantilla', 'Beneficiarios rurales', 'Beneficiarios urbanos',
+    'Resumen de atención', 'Informe sustentatorio',
+];
 
 const labelClass = 'block mb-1 text-xs font-bold uppercase tracking-wider text-slate';
 const inputClass = 'w-full border-2 border-mist bg-white px-3 py-2.5 text-sm font-semibold text-charcoal focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/15';
@@ -61,8 +69,188 @@ function FindingList({ findings = [] }) {
     );
 }
 
+function MissingFieldsPanel({ run, canEdit, onSaved }) {
+    const toast = useToast();
+    const fields = run.missing_fields || [];
+    const [values, setValues] = useState({});
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        setValues(Object.fromEntries(fields.filter((field) => field.fillable).map((field) => [field.path, field.value ?? ''])));
+    }, [run]);
+
+    if (!fields.length) {
+        return <div className="py-6 text-center"><i className="fas fa-circle-check text-2xl text-teal" aria-hidden="true" /><p className="mt-2 text-sm font-semibold text-charcoal">No falta información obligatoria.</p></div>;
+    }
+
+    const submit = async (event) => {
+        event.preventDefault();
+        const payload = Object.entries(values)
+            .filter(([, value]) => String(value).trim() !== '')
+            .map(([path, value]) => ({ path, value: String(value).trim() }));
+        if (!payload.length) return toast.error('Complete al menos un campo editable.');
+
+        setSaving(true);
+        try {
+            const response = await http.put(`${BASE}/runs/${run.id}/missing-data`, { values: payload });
+            toast.success(response.data.message);
+            onSaved(response.data.run);
+        } catch (error) {
+            toast.error(errorMessage(error, 'No se pudieron validar los datos ingresados.'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <form onSubmit={submit} className="space-y-4">
+            <div className="border border-amber/35 bg-amber-light px-4 py-3 text-sm text-amber-dark">
+                <strong className="block">Información no encontrada en BD ni respaldos</strong>
+                <p className="mt-1">Complete campos habilitados o registre la información en su módulo de origen y vuelva a analizar. Cambios aquí aplican solo a este análisis.</p>
+            </div>
+            <div className="divide-y divide-mist border-y border-mist">
+                {fields.map((field) => (
+                    <div key={`${field.path}-${field.message}`} className="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_minmax(240px,.8fr)] md:items-center">
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className={`badge ${field.severity === 'CRITICO' ? 'bg-coral-light text-coral' : 'bg-amber-light text-amber-dark'}`}>{field.severity === 'CRITICO' ? 'Obligatorio' : 'Revisar'}</span>
+                                <strong className="text-sm text-charcoal">{field.label}</strong>
+                            </div>
+                            <p className="mt-1 text-sm text-earth">{field.message}</p>
+                            <code className="mt-1 block break-all text-[11px] text-slate">{field.path}</code>
+                        </div>
+                        {field.fillable ? (
+                            <div>
+                                <label className="sr-only" htmlFor={`missing-${field.path}`}>Completar {field.label}</label>
+                                <input id={`missing-${field.path}`} value={values[field.path] ?? ''} onChange={(event) => setValues((current) => ({ ...current, [field.path]: event.target.value }))} disabled={!canEdit || saving} maxLength={500} className={inputClass} placeholder={`Ingrese ${field.label.toLowerCase()}`} />
+                            </div>
+                        ) : <p className="text-sm font-semibold text-slate"><i className="fas fa-folder-open mr-2" aria-hidden="true" />Requiere registrar filas o cargar respaldo.</p>}
+                    </div>
+                ))}
+            </div>
+            {fields.some((field) => field.fillable) && <div className="flex justify-end"><button type="submit" disabled={!canEdit || saving} className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 disabled:opacity-50"><i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-check'}`} aria-hidden="true" />{saving ? 'Validando…' : 'Guardar y validar'}</button></div>}
+        </form>
+    );
+}
+
+function DefaultsPanel({ defaults, canEdit, onSaved }) {
+    const toast = useToast();
+    const [values, setValues] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [query, setQuery] = useState('');
+
+    useEffect(() => {
+        setValues(Object.fromEntries(defaults.map((field) => [field.key, field.value ?? ''])));
+    }, [defaults]);
+
+    const groups = useMemo(() => defaults.filter((field) => {
+        const search = query.trim().toLocaleLowerCase('es');
+        return !search || `${field.group} ${field.label} ${field.description}`.toLocaleLowerCase('es').includes(search);
+    }).reduce((result, field) => {
+        (result[field.group] ||= []).push(field);
+        return result;
+    }, {}), [defaults, query]);
+
+    const configuredCount = useMemo(() => Object.values(values).filter((value) => String(value ?? '').trim() !== '').length, [values]);
+    const groupedEntries = useMemo(() => Object.entries(groups).sort(([first], [second]) => {
+        const firstIndex = DEFAULT_GROUP_ORDER.indexOf(first);
+        const secondIndex = DEFAULT_GROUP_ORDER.indexOf(second);
+        return (firstIndex < 0 ? Number.MAX_SAFE_INTEGER : firstIndex) - (secondIndex < 0 ? Number.MAX_SAFE_INTEGER : secondIndex);
+    }), [groups]);
+
+    const submit = async (event) => {
+        event.preventDefault();
+        setSaving(true);
+        try {
+            const response = await http.put(`${BASE}/defaults`, { values });
+            toast.success(response.data.message);
+            onSaved(response.data.defaults || []);
+        } catch (error) {
+            toast.error(errorMessage(error, 'No se pudieron guardar los valores predeterminados.'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <form onSubmit={submit} className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div className="max-w-3xl">
+                    <h2 className="font-heading text-lg font-extrabold text-navy">Valores predeterminados</h2>
+                    <p className="mt-1 text-sm text-earth">Cubren los campos de PVL y Ración A cuando no existe información real. La prioridad siempre es <strong>BD → documentos → predeterminado</strong>.</p>
+                </div>
+                <div className="shrink-0 text-sm font-semibold text-slate"><span className="tabular-nums text-navy">{configuredCount}</span> de <span className="tabular-nums">{defaults.length}</span> configurados</div>
+            </div>
+            <div className="mt-5 border border-blue/20 bg-blue-light px-4 py-3 text-sm text-navy">
+                <strong className="block">Los datos reales reemplazan estos valores</strong>
+                <p className="mt-1 text-earth">Las secciones con “plantilla” completan cada fila vacía y pueden crear una fila de respaldo si no existe ninguna. Todo uso conserva el origen <strong>PREDETERMINADO</strong>.</p>
+            </div>
+            <div className="mt-5">
+                <label className={labelClass} htmlFor="defaults-search">Buscar campo o sección</label>
+                <div className="relative max-w-xl">
+                    <i className="fas fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate" aria-hidden="true" />
+                    <input id="defaults-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} className={`${inputClass} pl-10`} placeholder="Ejemplo: certificado, proveedor o beneficiarios" />
+                </div>
+            </div>
+            <div className="mt-5 border-y border-mist">
+                {groupedEntries.map(([group, fields], groupIndex) => (
+                    <details key={group} open={Boolean(query) || groupIndex < 2} className={`group ${groupIndex ? 'border-t border-mist' : ''}`}>
+                        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 py-3 font-heading text-base font-extrabold text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-blue [&::-webkit-details-marker]:hidden">
+                            <span className="min-w-0">{group}</span>
+                            <span className="flex shrink-0 items-center gap-3">
+                                <span className="text-xs font-bold text-slate">{fields.filter((field) => String(values[field.key] ?? '').trim() !== '').length}/{fields.length}</span>
+                                <i className="fas fa-chevron-down text-xs text-blue transition-transform group-open:rotate-180" aria-hidden="true" />
+                            </span>
+                        </summary>
+                        <fieldset className="grid gap-4 pb-5 sm:grid-cols-2 lg:grid-cols-3">
+                            <legend className="sr-only">{group}</legend>
+                            {fields.map((field) => {
+                                const commonProps = {
+                                    id: `default-${field.key}`,
+                                    value: values[field.key] ?? '',
+                                    onChange: (event) => setValues((current) => ({ ...current, [field.key]: event.target.value })),
+                                    disabled: !canEdit || saving,
+                                    className: inputClass,
+                                };
+
+                                return (
+                                    <div key={field.key} className="min-w-0">
+                                        <label className={labelClass} htmlFor={`default-${field.key}`}>{field.label}</label>
+                                        {field.input_type === 'select' ? (
+                                            <select {...commonProps}>
+                                                <option value="">Sin valor predeterminado</option>
+                                                {(field.options || []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                                            </select>
+                                        ) : (
+                                            <input {...commonProps} type={field.input_type || 'text'} step={field.input_type === 'number' ? 'any' : undefined} maxLength={field.input_type === 'number' ? undefined : field.max_length || 200} placeholder="Sin valor predeterminado" />
+                                        )}
+                                        <p className="mt-1 text-xs leading-relaxed text-slate">{field.description}</p>
+                                    </div>
+                                );
+                            })}
+                        </fieldset>
+                    </details>
+                ))}
+                {!Object.keys(groups).length && <div className="py-8 text-center text-sm text-earth">No hay campos que coincidan con la búsqueda.</div>}
+            </div>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="max-w-2xl text-xs text-slate">El periodo, fecha de impresión, totales y saldos derivados se calculan automáticamente. No necesitan valores predeterminados.</p>
+                <button type="submit" disabled={!canEdit || saving} className="btn-primary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 disabled:opacity-50"><i className={`fas ${saving ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}`} aria-hidden="true" />{saving ? 'Guardando…' : 'Guardar predeterminados'}</button>
+            </div>
+        </form>
+    );
+}
+
 function SourcesTable({ sources = [] }) {
     if (!sources.length) return <p className="py-5 text-sm text-earth">No se encontraron fuentes para este análisis.</p>;
+
+    const originClass = (origin) => origin === 'BD'
+        ? 'bg-teal-light text-teal'
+        : origin === 'PREDETERMINADO'
+            ? 'bg-amber-light text-amber-dark'
+            : origin === 'ENTRADA_USUARIO'
+                ? 'bg-blue-light text-blue'
+                : 'bg-blue-light text-blue';
 
     return (
         <div className="overflow-x-auto">
@@ -72,7 +260,7 @@ function SourcesTable({ sources = [] }) {
                     {sources.map((source, index) => (
                         <tr key={`${source.campo}-${source.document_id || 'db'}-${index}`}>
                             <td className="px-3 py-3 font-semibold text-charcoal">{source.campo || 'Dato relacionado'}</td>
-                            <td className="px-3 py-3"><span className="badge bg-blue-light text-blue">{source.origen || 'RAG'}</span></td>
+                            <td className="px-3 py-3"><span className={`badge ${originClass(source.origen)}`}>{source.origen || 'RAG'}</span></td>
                             <td className="px-3 py-3 text-earth">{source.archivo || source.referencia || source.entidad || '—'}</td>
                             <td className="px-3 py-3 text-earth">{source.pagina ? `Pág. ${source.pagina}` : '—'}{source.chunk ? ` · Frag. ${source.chunk}` : ''}</td>
                             <td className="px-3 py-3 text-right tabular-nums text-earth">{source.confianza != null ? `${Math.round(Number(source.confianza) * 100)} %` : '—'}</td>
@@ -112,8 +300,10 @@ function DataPreview({ data }) {
     );
 }
 
-function ReviewPanel({ run, onGenerate, generating, files, canGenerate }) {
-    const [reviewTab, setReviewTab] = useState('hallazgos');
+function ReviewPanel({ run, onGenerate, onRunUpdated, generating, canGenerate }) {
+    const [reviewTab, setReviewTab] = useState((run.missing_fields || []).length ? 'faltantes' : 'hallazgos');
+    const files = run.files || [];
+    const isGenerated = run.status === 'GENERADO';
     const counts = useMemo(() => ({
         critical: (run.findings || []).filter((item) => item.severity === 'CRITICO').length,
         warning: (run.findings || []).filter((item) => item.severity === 'ADVERTENCIA').length,
@@ -133,7 +323,7 @@ function ReviewPanel({ run, onGenerate, generating, files, canGenerate }) {
                 <div className="max-w-sm text-right">
                     <button type="button" onClick={onGenerate} disabled={!canGenerate || !run.can_generate || generating} className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-50">
                         <i className={`fas ${generating ? 'fa-spinner fa-spin' : 'fa-file-pdf'}`} aria-hidden="true" />
-                        {generating ? 'Preparando documentos…' : run.report_type === 'AMBOS' ? 'Generar 3 documentos' : 'Generar PDF'}
+                        {generating ? 'Preparando documentos…' : isGenerated ? 'Volver a generar' : run.report_type === 'AMBOS' ? 'Generar 3 documentos' : 'Generar PDF'}
                     </button>
                     {!run.can_generate && <p className="mt-2 text-xs text-coral">Resuelva los hallazgos críticos, agregue los respaldos faltantes y vuelva a analizar.</p>}
                 </div>
@@ -146,22 +336,29 @@ function ReviewPanel({ run, onGenerate, generating, files, canGenerate }) {
             </div>
 
             {files.length > 0 && (
-                <div className="flex flex-wrap gap-2 border-b border-mist bg-teal-light/40 px-4 py-3 sm:px-6" aria-live="polite">
-                    {files.map((file) => (
-                        <div key={file.type} className="flex items-center gap-2">
-                            <a href={file.preview_url} target="_blank" rel="noreferrer" className="btn-secondary inline-flex items-center gap-2 text-sm"><i className="fas fa-eye" /> Vista previa: {FILE_LABELS[file.type] || file.type}</a>
-                            <a href={file.download_url} className="btn-primary inline-flex items-center gap-2 text-sm" aria-label={`Descargar ${FILE_LABELS[file.type] || file.type}`}><i className="fas fa-download" /> Descargar</a>
-                        </div>
-                    ))}
+                <div className="border-b border-mist bg-teal-light/40 px-4 py-4 sm:px-6" aria-live="polite">
+                    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <strong className="text-sm text-teal"><i className="fas fa-circle-check mr-2" aria-hidden="true" />Documentos generados</strong>
+                        {run.generated_at && <span className="text-xs text-earth">Última generación: {run.generated_at}</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {files.map((file) => (
+                            <div key={file.type} className="flex flex-wrap items-center gap-2">
+                                <a href={file.preview_url} target="_blank" rel="noreferrer" className="btn-secondary inline-flex items-center gap-2 text-sm"><i className="fas fa-eye" aria-hidden="true" /> Abrir {FILE_LABELS[file.type] || file.type}</a>
+                                <a href={file.download_url} className="btn-primary inline-flex items-center gap-2 text-sm" aria-label={`Descargar ${FILE_LABELS[file.type] || file.type}`}><i className="fas fa-download" aria-hidden="true" /> Descargar</a>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
             <div className="flex gap-1 overflow-x-auto border-b border-mist px-4 pt-2 sm:px-6" role="tablist" aria-label="Detalle de revisión">
-                {[['hallazgos', 'Hallazgos'], ['fuentes', 'Fuentes'], ['valores', 'Valores validados']].map(([key, label]) => (
+                {[['faltantes', `Datos faltantes (${run.missing_fields?.length || 0})`], ['hallazgos', 'Todos los hallazgos'], ['fuentes', 'Fuentes'], ['valores', 'Valores validados']].map(([key, label]) => (
                     <button key={key} type="button" role="tab" aria-selected={reviewTab === key} onClick={() => setReviewTab(key)} className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-bold ${reviewTab === key ? 'border-blue text-blue' : 'border-transparent text-earth hover:text-navy'}`}>{label}</button>
                 ))}
             </div>
             <div className="px-4 py-4 sm:px-6">
+                {reviewTab === 'faltantes' && <MissingFieldsPanel run={run} canEdit={canGenerate} onSaved={onRunUpdated} />}
                 {reviewTab === 'hallazgos' && <FindingList findings={run.findings} />}
                 {reviewTab === 'fuentes' && <SourcesTable sources={run.sources} />}
                 {reviewTab === 'valores' && <DataPreview data={run.validated_data} />}
@@ -184,11 +381,11 @@ export default function ReportesPvl() {
     const [documents, setDocuments] = useState([]);
     const [products, setProducts] = useState([]);
     const [documentTypes, setDocumentTypes] = useState([]);
+    const [defaults, setDefaults] = useState([]);
     const [currentRun, setCurrentRun] = useState(null);
     const [loading, setLoading] = useState(true);
     const [analyzing, setAnalyzing] = useState(false);
     const [generating, setGenerating] = useState(false);
-    const [files, setFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [documentType, setDocumentType] = useState('factura');
     const [productId, setProductId] = useState('');
@@ -203,9 +400,21 @@ export default function ReportesPvl() {
 
     const updateReportMetadata = (field, value) => setReportMetadata((current) => ({ ...current, [field]: value }));
 
+    const applySavedDefaults = (savedDefaults) => {
+        setDefaults(savedDefaults);
+        const values = Object.fromEntries(savedDefaults.map((field) => [field.key, field.value || '']));
+        setReportMetadata((current) => ({
+            ...current,
+            recipient_name: values.supporting_recipient_name || '',
+            recipient_role: values.supporting_recipient_role || '',
+            sender_name: values.supporting_sender_name || '',
+            sender_role: values.supporting_sender_role || '',
+            place: values.supporting_place || '',
+        }));
+    };
+
     const openRun = (run) => {
         setCurrentRun(run);
-        setFiles([]);
         setWorkflowError(null);
         setReportType(run.report_type);
         setMonth(run.month);
@@ -225,6 +434,17 @@ export default function ReportesPvl() {
             setDocuments(response.data.documents || []);
             setProducts(response.data.products || []);
             setDocumentTypes(response.data.document_types || []);
+            const loadedDefaults = response.data.defaults || [];
+            setDefaults(loadedDefaults);
+            const defaultValues = Object.fromEntries(loadedDefaults.map((field) => [field.key, field.value || '']));
+            setReportMetadata((current) => ({
+                ...current,
+                recipient_name: current.recipient_name || defaultValues.supporting_recipient_name || '',
+                recipient_role: current.recipient_role || defaultValues.supporting_recipient_role || '',
+                sender_name: current.sender_name || defaultValues.supporting_sender_name || '',
+                sender_role: current.sender_role || defaultValues.supporting_sender_role || '',
+                place: current.place || defaultValues.supporting_place || '',
+            }));
         } catch (error) {
             toast.error(errorMessage(error, 'No se pudo cargar el módulo de reportes.'));
         } finally {
@@ -237,7 +457,6 @@ export default function ReportesPvl() {
     const analyze = async (event) => {
         event.preventDefault();
         setAnalyzing(true);
-        setFiles([]);
         setWorkflowError(null);
         try {
             const response = await http.post(`${BASE}/analizar`, {
@@ -320,7 +539,6 @@ export default function ReportesPvl() {
         setWorkflowError(null);
         try {
             const response = await http.post(`${BASE}/runs/${currentRun.id}/generar`);
-            setFiles(response.data.files || []);
             setCurrentRun(response.data.run);
             toast.success(response.data.message);
             await load();
@@ -339,11 +557,11 @@ export default function ReportesPvl() {
         <div className="overflow-hidden rounded-2xl border-2 border-mist bg-white shadow-sm">
             <header className="px-4 py-5 sm:px-6">
                 <h1 className="flex items-center gap-3 font-heading text-xl font-extrabold text-navy sm:text-2xl"><i className="fas fa-file-shield text-blue" /> Generación Inteligente de Reportes PVL</h1>
-                <p className="mt-1 max-w-3xl text-sm text-earth">Consolida datos del sistema y documentos trazables. Laravel valida cada cálculo antes de habilitar los anexos oficiales.</p>
+                <p className="mt-1 max-w-3xl text-sm text-earth">Consulta datos del periodo en la base del sistema, los complementa con documentos y entrega a la IA un contexto controlado. Laravel valida cada cálculo antes de habilitar los anexos.</p>
             </header>
 
             <nav className="flex gap-1 overflow-x-auto border-y-2 border-mist px-4 pt-2 sm:px-6" role="tablist" aria-label="Secciones de reportes">
-                {[['preparar', 'Preparar informe', 'fa-wand-magic-sparkles'], ['documentos', 'Fuentes documentales', 'fa-folder-open'], ['historial', 'Historial', 'fa-clock-rotate-left']].map(([key, label, icon]) => (
+                {[['preparar', 'Preparar informe', 'fa-wand-magic-sparkles'], ['predeterminados', 'Valores predeterminados', 'fa-sliders'], ['historial', 'Historial', 'fa-clock-rotate-left']].map(([key, label, icon]) => (
                     <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-bold ${tab === key ? 'border-blue text-blue' : 'border-transparent text-earth hover:text-navy'}`}><i className={`fas ${icon}`} aria-hidden="true" /> {label}</button>
                 ))}
             </nav>
@@ -382,8 +600,8 @@ export default function ReportesPvl() {
                                     </div>
                                 </div>
                             )}
-                            <div className="border-t border-mist bg-base px-4 py-3 text-xs text-earth sm:px-6" aria-live="polite"><i className="fas fa-shield-halved mr-2 text-teal" />La IA configurada extrae y concilia. No modifica plantillas ni calcula totales finales.</div>
-                            {currentRun ? <ReviewPanel run={currentRun} onGenerate={generate} generating={generating} files={files} canGenerate={can.edit} /> : <div className="empty-state border-t border-mist py-14"><i className="fas fa-file-circle-check" /><p>Seleccione periodo y tipo de informe para iniciar revisión.</p></div>}
+                            <div className="border-t border-mist bg-base px-4 py-3 text-xs text-earth sm:px-6" aria-live="polite"><i className="fas fa-database mr-2 text-teal" />Orden de consulta: base de datos del sistema, valores predeterminados para vacíos y documentos del periodo. La IA concilia; Laravel conserva cálculos y validación.</div>
+                            {currentRun ? <ReviewPanel run={currentRun} onGenerate={generate} onRunUpdated={setCurrentRun} generating={generating} canGenerate={can.edit} /> : <div className="empty-state border-t border-mist py-14"><i className="fas fa-file-circle-check" /><p>Seleccione periodo y tipo de informe para iniciar revisión.</p></div>}
                         </>
                     )}
 
@@ -407,6 +625,8 @@ export default function ReportesPvl() {
                             </div>
                         </div>
                     )}
+
+                    {tab === 'predeterminados' && <DefaultsPanel defaults={defaults} canEdit={can.edit} onSaved={applySavedDefaults} />}
 
                     {tab === 'historial' && (
                         <div className="p-4 sm:p-6">

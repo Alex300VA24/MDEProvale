@@ -15,13 +15,16 @@ class PvlReportGeneratorService
         private PvlAiReportService $aiReportService,
         private PvlReportDataMapper $mapper,
         private PvlReportValidationService $validationService,
+        private PvlReportDefaultsService $defaultsService,
     ) {
     }
 
     public function generate(string $reportType, int $year, int $month, ?int $userId, array $reportMetadata = []): PvlReportRun
     {
-        $context = $this->contextService->build($reportType, $year, $month);
-        $context['report_metadata'] = $reportMetadata;
+        $context = $this->defaultsService->apply(
+            $this->contextService->build($reportType, $year, $month),
+            $reportMetadata
+        );
         $previous = $this->previousRun($year, $month);
         $fingerprintContext = $context;
         $fingerprintContext['_validation_dependencies']['previous_run'] = $previous ? [
@@ -78,7 +81,7 @@ class PvlReportGeneratorService
             $validation = $this->validationService->validate($mapped, $aiOutput, $context, $previous);
 
             $sources = array_values(array_merge(
-                $context['trazabilidad'] ?? [],
+                $this->effectiveContextSources($context, $mapped, $aiOutput),
                 $aiOutput['trazabilidad'] ?? []
             ));
 
@@ -109,6 +112,40 @@ class PvlReportGeneratorService
             ->whereNotNull('validated_data_json')
             ->latest('id')
             ->first();
+    }
+
+    private function effectiveContextSources(array $context, array $mapped, array $aiOutput): array
+    {
+        $aiSourcePaths = collect($aiOutput['trazabilidad'] ?? [])
+            ->filter(fn (array $source) => ($source['origen'] ?? null) !== 'PREDETERMINADO')
+            ->pluck('campo')
+            ->filter()
+            ->all();
+
+        return collect($context['trazabilidad'] ?? [])
+            ->reject(function (array $source) use ($mapped, $aiSourcePaths) {
+                if (($source['origen'] ?? null) !== 'PREDETERMINADO') {
+                    return false;
+                }
+
+                $path = (string) ($source['campo'] ?? '');
+                if (str_starts_with($path, 'report_metadata.')) {
+                    return false;
+                }
+                if (in_array($path, $aiSourcePaths, true)) {
+                    return true;
+                }
+
+                $final = data_get($mapped, $path);
+                $default = $source['valor'] ?? null;
+                if (is_numeric($final) && is_numeric($default)) {
+                    return (float) $final !== (float) $default;
+                }
+
+                return (string) $final !== (string) $default;
+            })
+            ->values()
+            ->all();
     }
 
     private function fail(PvlReportRun $run, string $code, \Throwable $exception): PvlReportRun

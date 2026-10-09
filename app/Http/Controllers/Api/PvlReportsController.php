@@ -9,16 +9,20 @@ use App\Models\PvlDocument;
 use App\Models\PvlReportRun;
 use App\Services\Pvl\PvlRagService;
 use App\Services\Pvl\PvlReportGeneratorService;
+use App\Services\Pvl\PvlReportDefaultsService;
+use App\Services\Pvl\PvlReportDataMapper;
+use App\Services\Pvl\PvlReportValidationService;
 use App\Services\Pvl\PvlSupportingReportService;
 use App\Services\Rag\DocumentBinaryStorage;
 use App\Services\ReportePvlPdfService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class PvlReportsController extends Controller
 {
-    public function index()
+    public function index(PvlReportDefaultsService $defaults)
     {
         return response()->json([
             'runs' => PvlReportRun::query()
@@ -34,6 +38,23 @@ class PvlReportsController extends Controller
                 ->map(fn (PvlDocument $document) => $this->documentResource($document)),
             'products' => Product::query()->orderBy('title')->get(['id', 'title']),
             'document_types' => PvlDocument::TYPES,
+            'defaults' => $defaults->resource(),
+        ]);
+    }
+
+    public function updateDefaults(Request $request, PvlReportDefaultsService $defaults)
+    {
+        $definitions = $defaults->definitions();
+        $rules = ['values' => ['required', 'array']];
+        foreach ($definitions as $key => $definition) {
+            $rules['values.'.$key] = ['nullable', 'string', 'max:'.$definition['max_length']];
+        }
+
+        $validated = $request->validate($rules);
+
+        return response()->json([
+            'message' => 'Valores predeterminados actualizados. Se aplicarán antes del próximo análisis.',
+            'defaults' => $defaults->update($validated['values']),
         ]);
     }
 
@@ -87,6 +108,71 @@ class PvlReportsController extends Controller
         $pvlReportRun->delete();
 
         return response()->json(['message' => 'Análisis eliminado del historial.']);
+    }
+
+    public function updateMissingData(
+        Request $request,
+        PvlReportRun $pvlReportRun,
+        PvlReportDataMapper $mapper,
+        PvlReportValidationService $validationService,
+    ) {
+        $validated = $request->validate([
+            'values' => ['required', 'array', 'min:1'],
+            'values.*.path' => ['required', 'string', 'max:220'],
+            'values.*.value' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $data = $pvlReportRun->validated_data_json ?? [];
+        $allowed = collect($this->missingFields($pvlReportRun))
+            ->where('fillable', true)
+            ->pluck('path')
+            ->all();
+        $updatedPaths = [];
+
+        foreach ($validated['values'] as $item) {
+            $path = $item['path'];
+            if (! in_array($path, $allowed, true) || ! Arr::has($data, $path)) {
+                return response()->json([
+                    'message' => 'Uno de los campos no puede completarse manualmente en este análisis.',
+                    'errors' => ['values' => ['Campo no permitido: '.$path]],
+                ], 422);
+            }
+
+            $value = trim((string) ($item['value'] ?? ''));
+            data_set($data, $path, $value === '' ? null : $value);
+            $updatedPaths[] = $path;
+        }
+
+        $normalized = $mapper->map(['data' => $data], [], $pvlReportRun->report_type);
+        $context = $pvlReportRun->input_snapshot_json ?? [];
+        $aiOutput = $pvlReportRun->ai_output_json ?? [];
+        $result = $validationService->validate($normalized, $aiOutput, $context);
+        $sources = collect($pvlReportRun->sources_json ?? [])
+            ->reject(fn (array $source) => ($source['origen'] ?? null) === 'ENTRADA_USUARIO'
+                && in_array($source['campo'] ?? null, $updatedPaths, true));
+
+        foreach ($updatedPaths as $path) {
+            $sources->push([
+                'campo' => $path,
+                'valor' => data_get($result['data'], $path),
+                'origen' => 'ENTRADA_USUARIO',
+                'referencia' => 'Corrección posterior al análisis',
+            ]);
+        }
+
+        $pvlReportRun->forceFill([
+            'validated_data_json' => $result['data'],
+            'warnings_json' => $result['findings'],
+            'sources_json' => $sources->values()->all(),
+            'status' => $result['status'],
+            'generated_at' => null,
+            'error_message' => null,
+        ])->save();
+
+        return response()->json([
+            'message' => 'Datos guardados y validados nuevamente.',
+            'run' => $this->runResource($pvlReportRun->fresh()),
+        ]);
     }
 
     public function storeDocument(Request $request, PvlRagService $rag)
@@ -243,11 +329,7 @@ class PvlReportsController extends Controller
                 ? 'Anexos e informe sustentatorio listos para previsualizar o descargar.'
                 : 'PDF listo para previsualizar o descargar.',
             'run' => $this->runResource($pvlReportRun->fresh()),
-            'files' => collect($types)->map(fn (string $type) => [
-                'type' => $type,
-                'preview_url' => route('reportes.pvl.preview', [$pvlReportRun, $type]),
-                'download_url' => route('reportes.pvl.download', [$pvlReportRun, $type]),
-            ])->values(),
+            'files' => $this->reportFiles($pvlReportRun),
         ]);
     }
 
@@ -268,6 +350,7 @@ class PvlReportsController extends Controller
             'sources' => $run->sources_json ?? [],
             'conflicts' => data_get($run->ai_output_json, 'conflictos', []),
             'missing' => data_get($run->ai_output_json, 'datos_faltantes', []),
+            'missing_fields' => $this->missingFields($run),
             'observations' => data_get($run->ai_output_json, 'observaciones', []),
             'model_used' => $run->model_used,
             'prompt_version' => $run->prompt_version,
@@ -276,7 +359,25 @@ class PvlReportsController extends Controller
             'created_at' => optional($run->created_at)->format('d/m/Y H:i'),
             'generated_at' => optional($run->generated_at)->format('d/m/Y H:i'),
             'can_generate' => $run->canGenerate(),
+            'files' => $run->status === PvlReportRun::GENERADO
+                ? $this->reportFiles($run)
+                : [],
         ];
+    }
+
+    private function reportFiles(PvlReportRun $run): array
+    {
+        $types = match ($run->report_type) {
+            'PVL' => ['pvl'],
+            'RACION_A' => ['racion-a'],
+            default => ['pvl', 'racion-a', 'informe'],
+        };
+
+        return collect($types)->map(fn (string $type) => [
+            'type' => $type,
+            'preview_url' => route('reportes.pvl.preview', [$run, $type]),
+            'download_url' => route('reportes.pvl.download', [$run, $type]),
+        ])->values()->all();
     }
 
     private function analysisError(PvlReportRun $run): array
@@ -311,6 +412,47 @@ class PvlReportsController extends Controller
             'ERROR_VALIDACION' => [422, $code, 'Los datos obtenidos no pudieron validarse de forma segura.'],
             default => [500, $code ?: 'ERROR', 'El análisis no pudo completarse. Puede reintentarlo.'],
         };
+    }
+
+    private function missingFields(PvlReportRun $run): array
+    {
+        $codes = [
+            'DATO_FALTANTE', 'DATO_ADMINISTRATIVO_FALTANTE', 'BENEFICIARIOS_INCOMPLETOS',
+            'RACION_FALTANTE', 'DISTRIBUCION_FALTANTE', 'CERTIFICADO_FALTANTE',
+            'COMPOSICION_FALTANTE', 'COMPOSICION_INCOMPLETA',
+        ];
+        $data = $run->validated_data_json ?? [];
+
+        return collect($run->warnings_json ?? [])
+            ->filter(fn (array $finding) => in_array($finding['code'] ?? null, $codes, true))
+            ->unique(fn (array $finding) => ($finding['field'] ?? '').'|'.($finding['code'] ?? ''))
+            ->map(function (array $finding) use ($data) {
+                $path = (string) ($finding['field'] ?? '');
+                $isExactPath = $path !== ''
+                    && ! str_contains($path, '|')
+                    && preg_match('/^(pvl|racion_a)(\.[a-z0-9_]+|\.[0-9]+)+$/', $path) === 1;
+                $value = $isExactPath && Arr::has($data, $path) ? data_get($data, $path) : null;
+                $fillable = $isExactPath && Arr::has($data, $path) && ! is_array($value);
+
+                return [
+                    'path' => $path,
+                    'label' => $this->fieldLabel($path),
+                    'message' => $finding['message'] ?? 'Información no encontrada.',
+                    'severity' => $finding['severity'] ?? 'ADVERTENCIA',
+                    'fillable' => $fillable,
+                    'value' => $fillable ? $value : null,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function fieldLabel(string $path): string
+    {
+        $parts = array_values(array_filter(explode('.', $path), fn (string $part) => ! ctype_digit($part)));
+        $field = end($parts) ?: 'información faltante';
+
+        return ucfirst(str_replace('_', ' ', $field));
     }
 
     private function documentResource(PvlDocument $document): array

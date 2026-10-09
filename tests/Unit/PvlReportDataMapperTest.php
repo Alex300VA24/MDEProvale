@@ -38,4 +38,25 @@ class PvlReportDataMapperTest extends TestCase
         $this->assertNull($result['beneficiarios']['rural']['menores_1_anio']);
         $this->assertNull($result['raciones_compuestas'][0]['dias_prioridad_1']);
     }
+
+    public function test_real_ai_evidence_replaces_defaults_but_not_database_values(): void
+    {
+        $mapper = new PvlReportDataMapper();
+        $context = [
+            'pvl' => [
+                'municipalidad' => 'MUNICIPALIDAD DESDE BD',
+                'director_administracion' => 'DIRECTOR PREDETERMINADO',
+            ],
+            'meta' => ['campos_predeterminados' => ['pvl.director_administracion']],
+        ];
+        $aiOutput = ['data' => ['pvl' => [
+            'municipalidad' => 'MUNICIPALIDAD DOCUMENTAL',
+            'director_administracion' => 'DIRECTOR REAL DEL DOCUMENTO',
+        ]]];
+
+        $result = $mapper->map($aiOutput, $context, 'PVL')['pvl'];
+
+        $this->assertSame('MUNICIPALIDAD DESDE BD', $result['municipalidad']);
+        $this->assertSame('DIRECTOR REAL DEL DOCUMENTO', $result['director_administracion']);
+    }
 }

@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\AiProviderException;
 use App\Http\Controllers\Controller;
 use App\Models\KnowledgeBaseDocument;
+use App\Models\NormativaDocument;
 use App\Services\KnowledgeBase\KnowledgeBaseRagService;
+use App\Services\Normativa\NormativaScraperService;
 use App\Services\Rag\DocumentBinaryStorage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class KnowledgeBaseController extends Controller
 {
@@ -19,7 +22,96 @@ class KnowledgeBaseController extends Controller
                 ->limit(50)
                 ->get()
                 ->map(fn (KnowledgeBaseDocument $document) => $this->documentResource($document)),
+            'municipal_documents' => NormativaDocument::query()
+                ->where('relevancia_pvl', true)
+                ->latest('fecha_documento')
+                ->latest('id')
+                ->limit(50)
+                ->get()
+                ->map(fn (NormativaDocument $document) => $this->municipalDocumentResource($document)),
+            'municipal_source' => [
+                'url' => rtrim((string) config('normativa.base_url'), '/').config('normativa.listing_path'),
+                'keywords' => array_values((array) config('normativa.pvl_keywords', [])),
+                'indexed_count' => NormativaDocument::query()
+                    ->where('relevancia_pvl', true)
+                    ->where('index_status', 'INDEXADO')
+                    ->count(),
+                'last_import_at' => NormativaDocument::query()
+                    ->where('relevancia_pvl', true)
+                    ->max('updated_at'),
+            ],
         ]);
+    }
+
+    public function importNormativa(NormativaScraperService $scraper)
+    {
+        $lock = Cache::lock('knowledge-base:normativa-import', 900);
+        if (! $lock->get()) {
+            return response()->json([
+                'message' => 'Ya hay una extracción de normativa en curso. Espere a que termine y vuelva a cargar la lista.',
+            ], 409);
+        }
+
+        try {
+            @set_time_limit(0);
+            $result = $scraper->importRelevantDocuments();
+
+            return response()->json([
+                'message' => $result['importados'] > 0
+                    ? 'La normativa relacionada con PROVALE fue extraída e indexada.'
+                    : 'La revisión terminó sin documentos nuevos para indexar.',
+                'result' => $result,
+            ]);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'No se pudo completar la extracción desde el portal municipal. '.$exception->getMessage(),
+            ], 502);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    public function importNormativaDocument(Request $request, NormativaScraperService $scraper)
+    {
+        $validated = $request->validate([
+            'reference' => ['required', 'string', 'max:500'],
+        ]);
+        $reference = trim($validated['reference']);
+        $lock = Cache::lock('knowledge-base:normativa-document:'.sha1($reference), 180);
+
+        if (! $lock->get()) {
+            return response()->json([
+                'message' => 'Ese documento ya se está importando. Espere unos segundos y vuelva a intentarlo.',
+            ], 409);
+        }
+
+        try {
+            @set_time_limit(0);
+            $result = $scraper->importDocument($reference);
+            $document = NormativaDocument::findOrFail($result['document_id']);
+
+            return response()->json([
+                'message' => $result['ya_importado']
+                    ? 'La norma ya estaba indexada en la base de conocimiento.'
+                    : 'La copia verificable fue descargada e indexada correctamente.',
+                'result' => $result,
+                'document' => $this->municipalDocumentResource($document),
+            ], $result['ya_importado'] ? 200 : 201);
+        } catch (\InvalidArgumentException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 422);
+        } catch (\UnexpectedValueException $exception) {
+            return response()->json(['message' => $exception->getMessage()], 404);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return response()->json([
+                'message' => 'No se pudo importar la copia verificable. '.$exception->getMessage(),
+            ], 502);
+        } finally {
+            $lock->release();
+        }
     }
 
     public function store(Request $request, KnowledgeBaseRagService $rag)
@@ -130,6 +222,16 @@ class KnowledgeBaseController extends Controller
         ]);
     }
 
+    public function previewNormativaDocument(NormativaDocument $normativaDocument)
+    {
+        return $this->streamNormativaDocument($normativaDocument, 'inline');
+    }
+
+    public function downloadNormativaDocument(NormativaDocument $normativaDocument)
+    {
+        return $this->streamNormativaDocument($normativaDocument, 'attachment');
+    }
+
     public function destroy(KnowledgeBaseDocument $knowledgeBaseDocument)
     {
         DocumentBinaryStorage::delete($knowledgeBaseDocument->file_path);
@@ -169,6 +271,51 @@ class KnowledgeBaseController extends Controller
             'index_error' => $document->index_error,
             'created_at' => optional($document->created_at)->format('d/m/Y H:i'),
             'download_url' => route('api.base-conocimiento.documents.download', $document),
+            'preview_url' => route('api.base-conocimiento.documents.download', $document),
+            'sort_date' => optional($document->created_at)->toISOString(),
+            'origin' => 'upload',
         ];
+    }
+
+    private function municipalDocumentResource(NormativaDocument $document): array
+    {
+        return [
+            'id' => 'normativa-'.$document->id,
+            'title' => $document->titulo,
+            'file_name' => trim($document->tipo_documento.' '.($document->numero ? 'N° '.$document->numero : '')),
+            'mime_type' => $document->mime_type ?: 'application/pdf',
+            'file_size' => $document->file_size,
+            'index_status' => $document->index_status,
+            'index_error' => $document->index_error,
+            'created_at' => optional($document->fecha_documento)->format('d/m/Y'),
+            'sort_date' => optional($document->fecha_documento)->format('Y-m-d'),
+            'preview_url' => $document->file_path
+                ? route('api.base-conocimiento.normativa.preview', $document)
+                : null,
+            'download_url' => $document->file_path
+                ? route('api.base-conocimiento.normativa.download', $document)
+                : null,
+            'official_url' => $document->pdf_url,
+            'stored' => $document->file_path !== null,
+            'origin' => 'municipal',
+            'summary' => $document->relevancia_resumen,
+        ];
+    }
+
+    private function streamNormativaDocument(NormativaDocument $document, string $disposition)
+    {
+        $binary = DocumentBinaryStorage::get($document->file_path, null);
+        if ($binary === null) {
+            abort(404, 'El PDF municipal aún no está guardado. Ejecute nuevamente la extracción de normativa.');
+        }
+
+        $fileName = $document->file_name ?: 'NORMATIVA-'.$document->external_id.'.pdf';
+
+        return response($binary, 200, [
+            'Content-Type' => $document->mime_type ?: 'application/pdf',
+            'Content-Disposition' => $disposition.'; filename="'.addslashes($fileName).'"',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }

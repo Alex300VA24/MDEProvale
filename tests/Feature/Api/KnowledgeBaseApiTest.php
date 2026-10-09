@@ -5,8 +5,10 @@ namespace Tests\Feature\Api;
 use App\Exceptions\AiProviderException;
 use App\Models\KnowledgeBaseDocument;
 use App\Models\KnowledgeBaseDocumentChunk;
+use App\Models\NormativaDocument;
 use App\Models\User;
 use App\Services\KnowledgeBase\KnowledgeBaseRagService;
+use App\Services\Normativa\NormativaScraperService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +64,37 @@ class KnowledgeBaseApiTest extends TestCase
             ->assertJsonMissingPath('documents.0.file_path');
     }
 
+    public function test_index_orders_municipal_documents_from_newest_to_oldest(): void
+    {
+        $older = NormativaDocument::create([
+            'external_id' => 90001,
+            'tipo_id' => 2,
+            'tipo_documento' => 'RESOLUCION DE ALCALDIA',
+            'numero' => '0001-2025-MDE',
+            'titulo' => 'Norma anterior',
+            'fecha_documento' => '2025-02-01',
+            'pdf_url' => 'https://www.muniesperanza.gob.pe/website/mde2026/norma_descargar.php?id=90001',
+            'relevancia_pvl' => true,
+        ]);
+        $newer = NormativaDocument::create([
+            'external_id' => 90002,
+            'tipo_id' => 2,
+            'tipo_documento' => 'RESOLUCION DE ALCALDIA',
+            'numero' => '0002-2026-MDE',
+            'titulo' => 'Norma reciente',
+            'fecha_documento' => '2026-10-05',
+            'pdf_url' => 'https://www.muniesperanza.gob.pe/website/mde2026/norma_descargar.php?id=90002',
+            'relevancia_pvl' => true,
+        ]);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE)
+            ->assertOk()
+            ->assertJsonPath('municipal_documents.0.id', 'normativa-'.$newer->id)
+            ->assertJsonPath('municipal_documents.0.sort_date', '2026-10-05')
+            ->assertJsonPath('municipal_documents.1.id', 'normativa-'.$older->id);
+    }
+
     public function test_store_saves_binary_indexes_document_and_records_creator(): void
     {
         $binary = '%PDF-1.4 manual de procedimientos';
@@ -100,6 +133,80 @@ class KnowledgeBaseApiTest extends TestCase
         $this->assertSame(1, $document->chunks()->count());
         Storage::disk('local')->assertExists($document->file_path);
         $this->assertSame($binary, Storage::disk('local')->get($document->file_path));
+    }
+
+    public function test_import_normativa_runs_the_filtered_municipal_extraction(): void
+    {
+        $scraper = Mockery::mock(NormativaScraperService::class);
+        $scraper->shouldReceive('importRelevantDocuments')
+            ->once()
+            ->andReturn([
+                'revisados' => 120,
+                'encontrados' => 8,
+                'clasificados' => 3,
+                'importados' => 2,
+                'ya_importados' => 5,
+                'descartados' => 1,
+                'errores' => 0,
+            ]);
+        $this->app->instance(NormativaScraperService::class, $scraper);
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE.'/normativa/importar')
+            ->assertOk()
+            ->assertJsonPath('result.importados', 2)
+            ->assertJsonPath('result.ya_importados', 5)
+            ->assertJsonFragment(['message' => 'La normativa relacionada con PROVALE fue extraída e indexada.']);
+    }
+
+    public function test_imports_one_municipal_document_by_verified_link_or_resolution_number(): void
+    {
+        $document = NormativaDocument::create([
+            'external_id' => 35639,
+            'tipo_id' => 2,
+            'tipo_documento' => 'RESOLUCION DE ALCALDIA',
+            'periodo' => '2026-08',
+            'numero' => '0750-2026-MDE',
+            'titulo' => 'RESOLUCION DE ALCALDIA N°0750-2026-MDE',
+            'asunto' => 'Conforma el Comité de Administración del Programa de Vaso de Leche.',
+            'fecha_documento' => '2026-08-17',
+            'pdf_url' => 'https://www.muniesperanza.gob.pe/website/mde2026/norma_descargar.php?id=35639',
+            'relevancia_pvl' => true,
+            'index_status' => 'INDEXADO',
+        ]);
+
+        $scraper = Mockery::mock(NormativaScraperService::class);
+        $scraper->shouldReceive('importDocument')
+            ->once()
+            ->with('0750-2026-MDE')
+            ->andReturn([
+                'document_id' => $document->id,
+                'numero' => $document->numero,
+                'titulo' => $document->titulo,
+                'importado' => true,
+                'ya_importado' => false,
+                'index_status' => 'INDEXADO',
+            ]);
+        $this->app->instance(NormativaScraperService::class, $scraper);
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE.'/normativa/importar-documento', ['reference' => '0750-2026-MDE'])
+            ->assertCreated()
+            ->assertJsonPath('result.numero', '0750-2026-MDE')
+            ->assertJsonPath('document.origin', 'municipal')
+            ->assertJsonPath('document.index_status', 'INDEXADO');
+    }
+
+    public function test_importing_one_municipal_document_validates_the_reference(): void
+    {
+        $scraper = Mockery::mock(NormativaScraperService::class);
+        $scraper->shouldNotReceive('importDocument');
+        $this->app->instance(NormativaScraperService::class, $scraper);
+
+        $this->actingAs($this->adminUser())
+            ->postJson(self::BASE.'/normativa/importar-documento', ['reference' => ''])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reference');
     }
 
     public function test_store_rejects_invalid_files_before_indexing(): void
@@ -269,6 +376,45 @@ class KnowledgeBaseApiTest extends TestCase
         $this->actingAs($this->adminUser())
             ->get(route('api.base-conocimiento.documents.download', $document))
             ->assertNotFound();
+    }
+
+    public function test_municipal_pdf_can_be_previewed_and_downloaded_from_local_storage(): void
+    {
+        $document = NormativaDocument::create([
+            'external_id' => 35639,
+            'tipo_id' => 2,
+            'tipo_documento' => 'RESOLUCION DE ALCALDIA',
+            'numero' => '0750-2026-MDE',
+            'titulo' => 'RESOLUCION DE ALCALDIA N°0750-2026-MDE',
+            'fecha_documento' => '2026-08-17',
+            'pdf_url' => 'https://www.muniesperanza.gob.pe/website/mde2026/norma_descargar.php?id=35639',
+            'file_name' => 'RESOLUCION-DE-ALCALDIA-0750-2026-MDE.pdf',
+            'mime_type' => 'application/pdf',
+            'file_size' => 25,
+            'file_hash' => hash('sha256', '%PDF-1.4 contenido local'),
+            'file_path' => 'rag/normativa/norma.bin',
+            'relevancia_pvl' => true,
+            'index_status' => 'INDEXADO',
+        ]);
+        Storage::disk('local')->put($document->file_path, '%PDF-1.4 contenido local');
+
+        $this->actingAs($this->adminUser())
+            ->get(route('api.base-conocimiento.normativa.preview', $document))
+            ->assertOk()
+            ->assertHeader('Content-Disposition', 'inline; filename="RESOLUCION-DE-ALCALDIA-0750-2026-MDE.pdf"')
+            ->assertSee('%PDF-1.4 contenido local');
+
+        $this->actingAs($this->adminUser())
+            ->get(route('api.base-conocimiento.normativa.download', $document))
+            ->assertOk()
+            ->assertHeader('Content-Disposition', 'attachment; filename="RESOLUCION-DE-ALCALDIA-0750-2026-MDE.pdf"');
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE)
+            ->assertOk()
+            ->assertJsonPath('municipal_documents.0.stored', true)
+            ->assertJsonPath('municipal_documents.0.file_size', 25)
+            ->assertJsonPath('municipal_documents.0.download_url', route('api.base-conocimiento.normativa.download', $document));
     }
 
     public function test_destroy_deletes_binary_document_and_chunks(): void

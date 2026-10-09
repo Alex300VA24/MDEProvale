@@ -55,6 +55,7 @@
         .main-table .qty-col { width: 46px; }
         .main-table .uom-col { width: 65px; }
         .main-table .price-col { width: 72px; }
+        .main-table .ration-col { width: 58px; }
         .main-table .spacer-col {
             width: 10px;
             border-top: none !important;
@@ -160,6 +161,7 @@
                 <th rowspan="3">ITEM</th>
                 <th colspan="2" class="sec-hdr">SOLICITADO</th>
                 <th colspan="2" class="sec-hdr">DESPACHADO</th>
+                <th rowspan="3" class="ration-col">RACIÓN<br/>POR DÍA</th>
                 <th colspan="2" class="sec-hdr">VALORES</th>
                 <th rowspan="3" class="spacer-col">&nbsp;</th>
             </tr>
@@ -188,13 +190,14 @@
                     <td class="desc-col">{{ $art['descripcion'] ?? '' }}</td>
                     <td class="qty-col">{{ $art['cantidad_despachado'] ?? '' }}</td>
                     <td class="uom-col">{{ $art['unidad'] ?? '' }}</td>
+                    <td class="ration-col">{{ $art['racion_dia'] ?? '' }}</td>
                     <td class="price-col">{{ $art['unitario'] ?? '' }}</td>
                     <td class="price-col">{{ $art['total'] ?? '' }}</td>
                     <td class="spacer-col"></td>
                 </tr>
             @endfor
             <tr class="total-row">
-                <td colspan="6" style="text-align:right; padding-right:10px;">TOTAL:</td>
+                <td colspan="7" style="text-align:right; padding-right:10px;">TOTAL:</td>
                 <td class="price-col" style="background-color: #e0e0e0;">{{ $item['total_general'] ?? '' }}</td>
                 <td class="spacer-col"></td>
             </tr>

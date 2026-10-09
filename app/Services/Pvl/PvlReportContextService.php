@@ -20,18 +20,17 @@ class PvlReportContextService
         $period = sprintf('%04d-%02d', $year, $month);
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
-        $municipality = config('pvl_reports.municipality');
         $trace = [];
 
         $pvl = null;
         if (in_array($reportType, ['PVL', 'AMBOS'], true)) {
-            $pvl = $this->pvlData($startDate, $endDate, $municipality, $trace);
+            $pvl = $this->pvlData($startDate, $endDate, $trace);
         }
 
         $ration = null;
         $meta = ['beneficiarios_sin_zona' => 0];
         if (in_array($reportType, ['RACION_A', 'AMBOS'], true)) {
-            [$ration, $meta] = $this->rationData($startDate, $endDate, $municipality, $trace);
+            [$ration, $meta] = $this->rationData($startDate, $endDate, $trace);
         }
 
         return [
@@ -56,7 +55,7 @@ class PvlReportContextService
         ];
     }
 
-    private function pvlData(Carbon $start, Carbon $end, array $municipality, array &$trace): array
+    private function pvlData(Carbon $start, Carbon $end, array &$trace): array
     {
         $transactions = Transaction::query()
             ->with(['detailProduct.product.uom', 'typeTransaction'])
@@ -84,7 +83,7 @@ class PvlReportContextService
             'referencia' => 'Ingresos complementarios del periodo '.$start->format('Y-m'),
         ];
 
-        return array_merge($this->baseIdentity($start, $municipality), [
+        return array_merge($this->baseIdentity($start), [
             'fecha_hora_impresion' => now()->format('d/m/Y h:i A'),
             'numero_expediente' => null,
             'codigo_envio' => null,
@@ -112,7 +111,7 @@ class PvlReportContextService
     }
 
     /** @return array{0:array,1:array} */
-    private function rationData(Carbon $start, Carbon $end, array $municipality, array &$trace): array
+    private function rationData(Carbon $start, Carbon $end, array &$trace): array
     {
         $racion = Racion::forMonth($start->year, $start->month)->first();
         $distributionPeriod = DistributionPeriod::query()
@@ -199,7 +198,7 @@ class PvlReportContextService
             'referencia' => 'Beneficiarios activos del periodo '.$start->format('Y-m'),
         ];
 
-        return [array_merge($this->baseIdentity($start, $municipality), [
+        return [array_merge($this->baseIdentity($start), [
             'numero_expediente' => null,
             'codigo_envio' => null,
             'raciones_un_alimento' => [],
@@ -215,7 +214,7 @@ class PvlReportContextService
         ]), ['beneficiarios_sin_zona' => $unclassified]];
     }
 
-    private function baseIdentity(Carbon $period, array $municipality): array
+    private function baseIdentity(Carbon $period): array
     {
         $months = [
             1 => 'ENERO', 2 => 'FEBRERO', 3 => 'MARZO', 4 => 'ABRIL',
@@ -224,10 +223,11 @@ class PvlReportContextService
         ];
 
         return [
-            'municipalidad' => $municipality['name'],
-            'tipo_municipalidad' => $municipality['type'],
-            'departamento' => $municipality['department'],
-            'provincia' => $municipality['province'],
+            // Se aplican después como predeterminados auditables, antes de la IA.
+            'municipalidad' => null,
+            'tipo_municipalidad' => null,
+            'departamento' => null,
+            'provincia' => null,
             'mes_reportado' => $months[$period->month],
             'anio_reportado' => $period->year,
             'fecha_reporte' => now()->format('d/m/Y'),

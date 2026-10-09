@@ -4,6 +4,8 @@ namespace App\Services\KnowledgeBase;
 
 use App\Models\KnowledgeBaseDocument;
 use App\Models\KnowledgeBaseDocumentChunk;
+use App\Services\AssistantAiService;
+use App\Services\Normativa\NormativaRagService;
 use App\Services\Rag\BaseRagService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +19,11 @@ class KnowledgeBaseRagService extends BaseRagService
     private const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     private const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     private const XLS_MIME = 'application/vnd.ms-excel';
+
+    public function __construct(AssistantAiService $ai, private ?NormativaRagService $normativa = null)
+    {
+        parent::__construct($ai);
+    }
 
     public function indexDocument(KnowledgeBaseDocument $document, string $binary): void
     {
@@ -154,6 +161,14 @@ class KnowledgeBaseRagService extends BaseRagService
         $limit = (int) config('knowledge_base.rag_limit', 8);
         $minScore = (float) config('knowledge_base.min_score', 0.05);
         $matches = $this->search($question, $limit);
+
+        if ($this->normativa !== null) {
+            $matches = collect(array_merge($matches, $this->normativa->search($question, $limit)))
+                ->sortByDesc('score')
+                ->take($limit)
+                ->values()
+                ->all();
+        }
         $relevant = array_values(array_filter($matches, fn (array $match) => $match['score'] > $minScore));
 
         if ($relevant === []) {
@@ -199,6 +214,8 @@ class KnowledgeBaseRagService extends BaseRagService
                 'chunk' => $match['metadata']['chunk'],
                 'score' => $match['score'],
                 'extracto' => mb_substr($match['content'], 0, 240),
+                'origen' => $match['metadata']['origen'] ?? 'archivo_cargado',
+                'download_url' => $match['metadata']['download_url'] ?? null,
             ])->values()->all(),
         ];
     }

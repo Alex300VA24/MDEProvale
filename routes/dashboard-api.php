@@ -31,7 +31,9 @@ Route::get('dashboard/inicio/panel', [InicioController::class, 'panel'])->name('
 Route::prefix('dashboard/reportes-pvl')->middleware('module:reportes')->name('api.reportes-pvl.')->group(function () {
     Route::get('/', [PvlReportsController::class, 'index'])->name('index');
     Route::post('analizar', [PvlReportsController::class, 'analyze'])->name('runs.store');
+    Route::put('defaults', [PvlReportsController::class, 'updateDefaults'])->name('defaults.update');
     Route::get('runs/{pvlReportRun}', [PvlReportsController::class, 'show'])->name('runs.show');
+    Route::put('runs/{pvlReportRun}/missing-data', [PvlReportsController::class, 'updateMissingData'])->name('runs.missing-data.update');
     Route::post('runs/{pvlReportRun}/generar', [PvlReportsController::class, 'markGenerated'])->name('runs.generate');
     Route::delete('runs/{pvlReportRun}', [PvlReportsController::class, 'destroyRun'])->name('runs.destroy');
     Route::post('documents', [PvlReportsController::class, 'storeDocument'])->name('documents.store');
@@ -43,6 +45,10 @@ Route::prefix('dashboard/reportes-pvl')->middleware('module:reportes')->name('ap
 Route::prefix('dashboard/base-conocimiento')->middleware('module:base-conocimiento')->name('api.base-conocimiento.')->group(function () {
     Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
     Route::post('documents', [KnowledgeBaseController::class, 'store'])->name('documents.store');
+    Route::post('normativa/importar', [KnowledgeBaseController::class, 'importNormativa'])->name('normativa.store');
+    Route::post('normativa/importar-documento', [KnowledgeBaseController::class, 'importNormativaDocument'])->name('normativa-document.store');
+    Route::get('normativa/{normativaDocument}/ver', [KnowledgeBaseController::class, 'previewNormativaDocument'])->name('normativa.preview');
+    Route::get('normativa/{normativaDocument}/descargar', [KnowledgeBaseController::class, 'downloadNormativaDocument'])->name('normativa.download');
     Route::get('documents/{knowledgeBaseDocument}/download', [KnowledgeBaseController::class, 'download'])->name('documents.download');
     Route::delete('documents/{knowledgeBaseDocument}', [KnowledgeBaseController::class, 'destroy'])->name('documents.destroy');
     Route::post('preguntar', [KnowledgeBaseController::class, 'ask'])->name('ask');

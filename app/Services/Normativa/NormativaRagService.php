@@ -17,7 +17,8 @@ class NormativaRagService extends BaseRagService
         $document->forceFill(['index_status' => 'INDEXANDO', 'index_error' => null])->save();
 
         try {
-            $text = $this->extractText($pdfBinary);
+            $extraction = $this->extractText($pdfBinary, $document);
+            $text = $extraction['text'];
             if (trim($text) === '') {
                 throw new RuntimeException('No se encontró texto legible en el PDF.');
             }
@@ -32,7 +33,7 @@ class NormativaRagService extends BaseRagService
 
             $embeddingModel = (string) config('rag.embedding_model', '');
 
-            DB::transaction(function () use ($document, $chunks, $embeddingModel) {
+            DB::transaction(function () use ($document, $chunks, $embeddingModel, $extraction) {
                 $document->chunks()->delete();
 
                 foreach ($chunks as $index => $chunk) {
@@ -53,6 +54,7 @@ class NormativaRagService extends BaseRagService
                             'pagina' => $chunk['page'],
                             'chunk' => $index + 1,
                             'embedding_model' => $embeddingModel ?: null,
+                            'text_source' => $extraction['source'],
                         ],
                     ]);
                 }
@@ -88,7 +90,7 @@ class NormativaRagService extends BaseRagService
 
         $eloquent = NormativaDocumentChunk::query()
             ->select(['id', 'normativa_document_id', 'content', 'embedding', 'page_number', 'chunk_index'])
-            ->with('document:id,tipo_documento,numero,periodo,titulo,index_status')
+            ->with('document:id,tipo_documento,numero,periodo,titulo,pdf_url,file_path,index_status')
             ->whereHas('document', fn ($documents) => $documents->where('index_status', 'INDEXADO'))
             ->orderBy('id');
 
@@ -116,6 +118,11 @@ class NormativaRagService extends BaseRagService
                         'numero' => $chunk->document->numero,
                         'periodo' => $chunk->document->periodo,
                         'titulo' => $chunk->document->titulo,
+                        'nombre_archivo' => trim($chunk->document->tipo_documento.' '.($chunk->document->numero ? 'N° '.$chunk->document->numero : '')),
+                        'download_url' => $chunk->document->file_path
+                            ? route('api.base-conocimiento.normativa.preview', $chunk->document)
+                            : $chunk->document->pdf_url,
+                        'origen' => 'normativa_municipal',
                         'pagina' => $chunk->page_number,
                         'chunk' => $chunk->chunk_index,
                         'has_embedding' => $chunkEmbedding !== null && $queryEmbedding !== null,
@@ -128,7 +135,8 @@ class NormativaRagService extends BaseRagService
             ->all();
     }
 
-    private function extractText(string $binary): string
+    /** @return array{text:string,source:string} */
+    private function extractText(string $binary, NormativaDocument $document): array
     {
         try {
             $pdf = (new Parser())->parseContent($binary);
@@ -142,20 +150,45 @@ class NormativaRagService extends BaseRagService
             }
 
             if ($pages !== []) {
-                return implode(PHP_EOL.PHP_EOL, $pages);
+                return ['text' => implode(PHP_EOL.PHP_EOL, $pages), 'source' => 'pdf_text'];
             }
         } catch (\Throwable) {
             // Se intenta extracción vía IA a continuación.
         }
 
-        $text = $this->ai->extractDocumentText('application/pdf', $binary);
-
-        if ($text === null) {
-            Log::warning('Normativa sin texto extraíble y sin fallback de IA.', [
+        try {
+            $text = $this->ai->extractDocumentText('application/pdf', $binary);
+            if ($text !== null && trim($text) !== '') {
+                return ['text' => $text, 'source' => 'ocr_ai'];
+            }
+        } catch (\Throwable $exception) {
+            Log::warning('Falló el OCR de una norma; se indexarán sus metadatos oficiales.', [
+                'document_id' => $document->id,
                 'provider' => $this->ai->provider(),
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
             ]);
         }
 
-        return (string) ($text ?? '');
+        $metadataText = $this->officialMetadataText($document);
+        if ($metadataText !== '') {
+            return ['text' => $metadataText, 'source' => 'portal_metadata'];
+        }
+
+        return ['text' => '', 'source' => 'none'];
+    }
+
+    private function officialMetadataText(NormativaDocument $document): string
+    {
+        $fields = array_filter([
+            'Documento: '.$document->titulo,
+            $document->tipo_documento ? 'Tipo: '.$document->tipo_documento : null,
+            $document->numero ? 'Número: '.$document->numero : null,
+            $document->fecha_documento ? 'Fecha: '.$document->fecha_documento->format('d/m/Y') : null,
+            $document->asunto ? 'Asunto: '.$document->asunto : null,
+            $document->concepto ? 'Concepto: '.$document->concepto : null,
+        ]);
+
+        return $fields === [] ? '' : '[[PAGINA:1]]'.PHP_EOL.implode(PHP_EOL, $fields);
     }
 }

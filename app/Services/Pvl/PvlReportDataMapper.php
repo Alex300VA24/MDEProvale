@@ -9,18 +9,19 @@ class PvlReportDataMapper
     public function map(array $aiOutput, array $context, string $reportType): array
     {
         $aiData = is_array($aiOutput['data'] ?? null) ? $aiOutput['data'] : [];
+        $defaultPaths = array_fill_keys($context['meta']['campos_predeterminados'] ?? [], true);
         $mapped = [];
 
         if (in_array($reportType, ['PVL', 'AMBOS'], true)) {
             $candidate = is_array($aiData['pvl'] ?? null) ? $aiData['pvl'] : $aiData;
-            $merged = $this->mergeTrusted($candidate, $context['pvl'] ?? []);
+            $merged = $this->mergeTrusted($candidate, $context['pvl'] ?? [], 'pvl', $defaultPaths);
             $mapped['pvl'] = $this->project($this->pvlShape(), $merged);
             $mapped['pvl'] = $this->normalizePvl($mapped['pvl']);
         }
 
         if (in_array($reportType, ['RACION_A', 'AMBOS'], true)) {
             $candidate = is_array($aiData['racion_a'] ?? null) ? $aiData['racion_a'] : $aiData;
-            $merged = $this->mergeTrusted($candidate, $context['racion_a'] ?? []);
+            $merged = $this->mergeTrusted($candidate, $context['racion_a'] ?? [], 'racion_a', $defaultPaths);
             $mapped['racion_a'] = $this->project($this->rationShape(), $merged);
             $mapped['racion_a'] = $this->normalizeRation($mapped['racion_a']);
         }
@@ -28,8 +29,11 @@ class PvlReportDataMapper
         return $mapped;
     }
 
-    private function mergeTrusted($ai, $trusted)
+    private function mergeTrusted($ai, $trusted, string $path, array $defaultPaths)
     {
+        if (isset($defaultPaths[$path]) && $this->hasValue($ai)) {
+            return $ai;
+        }
         if ($trusted === null || $trusted === '') {
             return $ai;
         }
@@ -43,10 +47,15 @@ class PvlReportDataMapper
         $ai = is_array($ai) ? $ai : [];
         $result = $ai;
         foreach ($trusted as $key => $value) {
-            $result[$key] = $this->mergeTrusted($ai[$key] ?? null, $value);
+            $result[$key] = $this->mergeTrusted($ai[$key] ?? null, $value, $path.'.'.$key, $defaultPaths);
         }
 
         return $result;
+    }
+
+    private function hasValue(mixed $value): bool
+    {
+        return $value !== null && $value !== '' && $value !== [];
     }
 
     private function project(array $shape, array $data): array

@@ -23,18 +23,7 @@
         <div class="format">FORMATO<br>RACION A</div>
     </header>
 
-    <table class="table meta">
-        <colgroup><col style="width:19%"><col style="width:50%"><col style="width:13%"><col style="width:18%"></colgroup>
-        <tr><td class="label">NOMBRE DE LA MUNICIPALIDAD:</td><td class="value">{{ $v('municipalidad') }}</td><td class="label">MES REPORTADO:</td><td class="value">{{ $v('mes_reportado') }}</td></tr>
-        <tr><td class="label">NUM. EXPEDIENTE:</td><td class="value">{{ $v('numero_expediente') }}</td><td class="label">AÑO REPORTADO:</td><td class="value">{{ $v('anio_reportado') }}</td></tr>
-        <tr>
-            <td class="value" rowspan="3">{{ $v('tipo_municipalidad','MUNICIPALIDAD DISTRITAL') }}</td>
-            <td class="value" rowspan="3"><table class="geo-table"><tr><td class="geo-heading">UBICACION<br>GEOGRAFICA</td><td class="geo-label">DEPARTAMENTO</td><td>{{ $v('departamento') }}</td></tr><tr><td></td><td class="geo-label">PROVINCIA</td><td>{{ $v('provincia') }}</td></tr></table></td>
-            <td class="label">FECHA DE</td><td class="value">{{ $v('fecha_reporte') }}</td>
-        </tr>
-        <tr><td class="label"></td><td class="value"></td></tr>
-        <tr><td class="label">COD. ENVIO:</td><td class="value">{{ $v('codigo_envio') }}</td></tr>
-    </table>
+    @include('reportes._identificacion')
 
     <div class="section-label">RACIONES O FORMULAS DISTRIBUIDAS</div>
     <div class="section-label" style="margin-top:0">RACIONES COMPUESTAS POR UN SOLO ALIMENTO</div>
@@ -103,20 +92,14 @@
         </tbody>
     </table>
 
-    <div class="section-label">BENEFICIARIOS ZONA RURAL</div>
-    <table class="table benef-table"><thead><tr><th>MENORES DE 1<br>AÑO 46</th><th>NIÑOS DE 1 A 6<br>AÑOS 47</th><th>MADRES<br>GESTANTES 48</th><th>MADRES<br>LACTANTES 49</th><th>7 A 13 AÑOS 50</th><th>PERSONAS CON<br>TBC 51</th><th>ANCIANOS 52</th><th>DISCAPACITADOS<br>53</th><th>TOTAL 54</th></tr></thead></table>
     <div class="footer-page">Página 1/2</div>
 </section>
 
+<div class="page-break"></div>
+
 <section class="page">
     <header class="header"><div class="cg">CONTRALORIA GENERAL DE LA REPUBLICA</div><div class="annex">ANEXO N°2 DE LA DIRECTIVA N° 015-2013-CG-CRL</div><div class="title">INFORME DE LA RACION DISTRIBUIDA POR EL PROGRAMA DEL VASO DE LECHE</div><div class="format">FORMATO<br>RACION A</div></header>
-    <table class="table meta">
-        <colgroup><col style="width:19%"><col style="width:50%"><col style="width:13%"><col style="width:18%"></colgroup>
-        <tr><td class="label">NOMBRE DE LA MUNICIPALIDAD:</td><td class="value">{{ $v('municipalidad') }}</td><td class="label">MES REPORTADO:</td><td class="value">{{ $v('mes_reportado') }}</td></tr>
-        <tr><td class="label">NUM. EXPEDIENTE:</td><td class="value">{{ $v('numero_expediente') }}</td><td class="label">AÑO REPORTADO:</td><td class="value">{{ $v('anio_reportado') }}</td></tr>
-        <tr><td class="value" rowspan="3">{{ $v('tipo_municipalidad','MUNICIPALIDAD DISTRITAL') }}</td><td class="value" rowspan="3"><table class="geo-table"><tr><td class="geo-heading">UBICACION<br>GEOGRAFICA</td><td class="geo-label">DEPARTAMENTO</td><td>{{ $v('departamento') }}</td></tr><tr><td></td><td class="geo-label">PROVINCIA</td><td>{{ $v('provincia') }}</td></tr></table></td><td class="label">FECHA DE</td><td class="value">{{ $v('fecha_reporte') }}</td></tr>
-        <tr><td class="label"></td><td class="value"></td></tr><tr><td class="label">COD. ENVIO:</td><td class="value">{{ $v('codigo_envio') }}</td></tr>
-    </table>
+    @include('reportes._identificacion')
 
     <div class="section-label">BENEFICIARIOS ZONA RURAL</div>
     <table class="table benef-table"><thead><tr><th>MENORES DE 1<br>AÑO 46</th><th>NIÑOS DE 1 A 6<br>AÑOS 47</th><th>MADRES<br>GESTANTES 48</th><th>MADRES<br>LACTANTES 49</th><th>7 A 13 AÑOS 50</th><th>PERSONAS CON<br>TBC 51</th><th>ANCIANOS 52</th><th>DISCAPACITADOS<br>53</th><th>TOTAL 54</th></tr></thead><tbody><tr><td>{{ $num0($v('beneficiarios.rural.menores_1_anio',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.ninos_1_a_6',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.madres_gestantes',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.madres_lactantes',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.personas_7_a_13',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.personas_tbc',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.ancianos',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.discapacitados',null)) }}</td><td>{{ $num0($v('beneficiarios.rural.total',null)) }}</td></tr></tbody></table>
@@ -125,8 +108,8 @@
     <table class="table benef-table"><thead><tr><th>MENORES DE 1<br>AÑO 55</th><th>NIÑOS DE 1 A 6<br>AÑOS 56</th><th>MADRES<br>GESTANTES 57</th><th>MADRES<br>LACTANTES 58</th><th>7 A 13 AÑOS 59</th><th>PERSONAS CON<br>TBC 60</th><th>ANCIANOS 61</th><th>DISCAPACITADOS<br>62</th><th>TOTAL 63</th></tr></thead><tbody><tr><td>{{ $num0($v('beneficiarios.urbana.menores_1_anio',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.ninos_1_a_6',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.madres_gestantes',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.madres_lactantes',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.personas_7_a_13',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.personas_tbc',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.ancianos',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.discapacitados',null)) }}</td><td>{{ $num0($v('beneficiarios.urbana.total',null)) }}</td></tr></tbody></table>
 
     <table class="table" style="margin-top:1.5mm"><tr><td class="left" style="font-weight:700;width:83%">(64) CANTIDAD DE COMITES DEL PVL ATENDIDOS</td><td class="right">{{ $num0($v('cantidad_comites_atendidos',null)) }}</td></tr></table>
-    <table class="table signature-grid" style="margin-top:1mm"><colgroup><col style="width:56%"><col style="width:44%"></colgroup><tr><td><span class="caption">(65) APELLIDOS Y NOMBRES DEL PRESIDENTE DEL COMITE DE ADMINISTRACION</span>{{ $v('presidente_comite_administracion') }}</td><td><div style="height:22mm;display:flex;align-items:flex-end;justify-content:center;font-size:4.8pt">FIRMA Y SELLO</div></td></tr></table>
-    <table class="table signature-grid" style="margin-top:1mm"><colgroup><col style="width:34%"><col style="width:22%"><col style="width:44%"></colgroup><tr><td><span class="caption">(66) APELLIDOS Y NOMBRES DEL REPRESENTANTE DEL MINISTERIO DE SALUD</span>{{ $v('representante_ministerio_salud') }}</td><td><span class="caption">(67) PROFESION O GRADO TECNICO</span>{{ $v('profesion_representante_salud') }}</td><td><div style="height:22mm;display:flex;align-items:flex-end;justify-content:center;font-size:4.8pt">FIRMA Y SELLO</div></td></tr></table>
+    <table class="table signature-grid" style="margin-top:1mm"><colgroup><col style="width:56%"><col style="width:44%"></colgroup><tr><td><span class="caption">(65) APELLIDOS Y NOMBRES DEL PRESIDENTE DEL COMITE DE ADMINISTRACION</span><span class="name">{{ $v('presidente_comite_administracion') }}</span></td><td><span class="sigline">FIRMA Y SELLO</span></td></tr></table>
+    <table class="table signature-grid" style="margin-top:1mm"><colgroup><col style="width:34%"><col style="width:22%"><col style="width:44%"></colgroup><tr><td><span class="caption">(66) APELLIDOS Y NOMBRES DEL REPRESENTANTE DEL MINISTERIO DE SALUD</span><span class="name">{{ $v('representante_ministerio_salud') }}</span></td><td><span class="caption">(67) PROFESION O GRADO TECNICO</span><span class="name">{{ $v('profesion_representante_salud') }}</span></td><td><span class="sigline">FIRMA Y SELLO</span></td></tr></table>
     <div class="footer-page">Página 2/2</div>
 </section>
 </body>

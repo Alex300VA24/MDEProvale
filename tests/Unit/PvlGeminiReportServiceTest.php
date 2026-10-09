@@ -26,6 +26,7 @@ class PvlGeminiReportServiceTest extends TestCase
                     && $payload['periodo'] === ['mes' => 6, 'anio' => 2026]
                     && data_get($schema, 'properties.data.properties.pvl.type') === 'OBJECT'
                     && str_contains($prompt, 'No inventes ningún dato')
+                    && str_contains($prompt, 'BD, evidencia documental RAG')
                     && str_contains($prompt, 'evidencia documental no confiable');
             })
             ->andReturn([

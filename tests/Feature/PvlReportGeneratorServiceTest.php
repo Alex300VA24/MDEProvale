@@ -8,6 +8,7 @@ use App\Services\Pvl\PvlAiReportService;
 use App\Services\Pvl\PvlRagService;
 use App\Services\Pvl\PvlReportContextService;
 use App\Services\Pvl\PvlReportDataMapper;
+use App\Services\Pvl\PvlReportDefaultsService;
 use App\Services\Pvl\PvlReportGeneratorService;
 use App\Services\Pvl\PvlReportValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,7 +31,14 @@ class PvlReportGeneratorServiceTest extends TestCase
             'datos' => ['factura' => 'F001'],
             'trazabilidad' => [['campo' => 'factura', 'origen' => 'RAG']],
         ];
-        $mapped = ['pvl' => ['periodo' => '2026-09', 'factura' => 'F001']];
+        $mapped = ['pvl' => [
+            'periodo' => '2026-09',
+            'factura' => 'F001',
+            'municipalidad' => config('pvl_reports.municipality.name'),
+            'tipo_municipalidad' => config('pvl_reports.municipality.type'),
+            'departamento' => config('pvl_reports.municipality.department'),
+            'provincia' => config('pvl_reports.municipality.province'),
+        ]];
 
         $contextService = Mockery::mock(PvlReportContextService::class);
         $contextService->shouldReceive('build')->once()->with('PVL', 2026, 9)->andReturn($context);
@@ -69,7 +77,7 @@ class PvlReportGeneratorServiceTest extends TestCase
         $this->assertSame('F001', data_get($run->validated_data_json, 'pvl.factura'));
         $this->assertSame('test:model', $run->model_used);
         $this->assertSame(str_repeat('a', 64), $run->source_fingerprint);
-        $this->assertCount(2, $run->sources_json);
+        $this->assertCount(7, $run->sources_json);
         $this->assertNull($run->error_message);
     }
 
@@ -170,6 +178,13 @@ class PvlReportGeneratorServiceTest extends TestCase
         PvlReportDataMapper $mapper,
         PvlReportValidationService $validator,
     ): PvlReportGeneratorService {
-        return new PvlReportGeneratorService($contextService, $rag, $ai, $mapper, $validator);
+        return new PvlReportGeneratorService(
+            $contextService,
+            $rag,
+            $ai,
+            $mapper,
+            $validator,
+            new PvlReportDefaultsService(),
+        );
     }
 }

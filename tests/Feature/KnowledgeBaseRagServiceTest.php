@@ -6,6 +6,7 @@ use App\Models\KnowledgeBaseDocument;
 use App\Models\KnowledgeBaseDocumentChunk;
 use App\Services\AssistantAiService;
 use App\Services\KnowledgeBase\KnowledgeBaseRagService;
+use App\Services\Normativa\NormativaRagService;
 use Dompdf\Dompdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
@@ -259,6 +260,41 @@ class KnowledgeBaseRagServiceTest extends TestCase
         $this->assertSame('directiva.pdf', $result['sources'][0]['archivo']);
         $this->assertSame(4, $result['sources'][0]['pagina']);
         $this->assertStringContainsString('diez días', $result['sources'][0]['extracto']);
+    }
+
+    public function test_answer_can_use_an_indexed_municipal_norm_as_a_traceable_source(): void
+    {
+        config()->set('knowledge_base.min_score', 0.01);
+
+        $ai = Mockery::mock(AssistantAiService::class);
+        $ai->shouldReceive('embedText')->once()->andReturn(null);
+        $ai->shouldReceive('provider')->once()->andReturn('groq');
+        $ai->shouldReceive('generate')
+            ->once()
+            ->withArgs(fn (array $messages, string $prompt) => $messages[0]['content'] === '¿Quién integra el comité?'
+                && str_contains($prompt, 'RESOLUCION DE ALCALDIA N° 0750-2026-MDE')
+                && str_contains($prompt, 'Comité de Administración del Programa de Vaso de Leche'))
+            ->andReturn('El comité incluye representantes municipales y del programa [Fuente 1].');
+
+        $normativa = Mockery::mock(NormativaRagService::class);
+        $normativa->shouldReceive('search')->once()->andReturn([[
+            'content' => 'Comité de Administración del Programa de Vaso de Leche.',
+            'score' => 0.91,
+            'metadata' => [
+                'document_id' => 75,
+                'nombre_archivo' => 'RESOLUCION DE ALCALDIA N° 0750-2026-MDE',
+                'pagina' => 1,
+                'chunk' => 1,
+                'origen' => 'normativa_municipal',
+                'download_url' => 'https://www.muniesperanza.gob.pe/norma.pdf',
+            ],
+        ]]);
+
+        $result = (new KnowledgeBaseRagService($ai, $normativa))->answer('¿Quién integra el comité?');
+
+        $this->assertSame('normativa_municipal', $result['sources'][0]['origen']);
+        $this->assertSame('https://www.muniesperanza.gob.pe/norma.pdf', $result['sources'][0]['download_url']);
+        $this->assertSame(75, $result['sources'][0]['document_id']);
     }
 
     private function document(array $overrides = []): KnowledgeBaseDocument

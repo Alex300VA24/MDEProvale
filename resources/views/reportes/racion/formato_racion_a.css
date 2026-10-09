@@ -1,43 +1,41 @@
 @page {
-  size: A4 portrait;
-  margin: 8mm 9mm 10mm 9mm;
-  @bottom-center {
-    content: "Página " counter(page) "/2";
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 6.3pt;
-  }
+  margin: 0;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
-body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 6.4pt; line-height: 1.06; }
-.page { min-height: 276mm; position: relative; }
-.page + .page { page-break-before: always; }
-.header { text-align: center; position: relative; margin-bottom: 3.5mm; }
+body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 6.4pt; line-height: 1.08; }
+.page { position: relative; margin: 0 13mm; padding-top: 12mm; }
+.page-break { height: 0; page-break-after: always; }
+.header { text-align: center; position: relative; margin-bottom: 4mm; padding: 0 20mm; }
 .header .cg { font-weight: 700; font-size: 11.5pt; margin: 0 0 2mm; }
 .header .annex { font-size: 8.3pt; margin-bottom: 3mm; }
 .header .title { font-weight: 700; font-size: 10.2pt; margin-bottom: 1mm; }
-.header .format { position: absolute; right: 2mm; top: 0; text-align: left; font-weight: 700; font-size: 8.5pt; line-height: 1.05; }
+.header .format { position: absolute; right: 0; top: 0; text-align: left; font-weight: 700; font-size: 8.5pt; line-height: 1.05; }
 .table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.table th, .table td { border: 0.6pt solid #000; padding: 1mm 0.8mm; vertical-align: middle; overflow-wrap: anywhere; }
+.table th, .table td { border: 0.6pt solid #000; padding: 1mm 0.8mm; vertical-align: middle; overflow-wrap: anywhere; word-wrap: break-word; }
 .table th { font-weight: 700; text-align: center; }
 .table td { text-align: center; }
+.table thead { display: table-header-group; }
+.table tr { page-break-inside: avoid; }
 .table .left { text-align: left; }
 .table .right { text-align: right; }
 .table .top { vertical-align: top; }
 .table .tiny { font-size: 5.3pt; }
 .table .micro { font-size: 4.8pt; }
-.meta { margin-bottom: 3.3mm; }
+.meta { margin-bottom: 4mm; page-break-inside: avoid; }
 .meta td, .meta th { padding: 1mm 0.9mm; }
 .meta .label { font-weight: 700; text-align: left; font-size: 5.4pt; }
 .meta .value { text-align: left; }
+.meta .municipality-value { font-weight: 700; }
+.meta .municipality-type { vertical-align: middle; }
+.meta .geo-cell { padding: 0; }
+.meta .identifier-value, .meta .period-value { white-space: nowrap; }
 .geo-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.geo-table td { border: none; padding: 0.4mm 0.5mm; text-align: left; overflow-wrap: normal; word-break: normal; font-size: 5.4pt; }
-.geo-table td:nth-child(1) { width: 25%; }
-.geo-table td:nth-child(2) { width: 40%; padding-left: 2mm; }
-.geo-table td:nth-child(3) { width: 35%; }
+.geo-table td { border: none; padding: 0.65mm 0.7mm; text-align: left; overflow-wrap: normal; word-break: normal; font-size: 5.3pt; }
 .geo-table .geo-heading, .geo-table .geo-label { font-weight: 700; }
-.section-label { border: 0.6pt solid #000; border-bottom: none; padding: 0.8mm 1mm 0.6mm; font-weight: 700; font-size: 5.8pt; margin-top: 2mm; }
+.geo-table .geo-label { padding-left: 1.2mm; }
+.section-label { border: 0.6pt solid #000; border-bottom: none; padding: 0.8mm 1mm 0.6mm; font-weight: 700; font-size: 5.8pt; margin-top: 2.2mm; page-break-after: avoid; }
 .section-label + .table { margin-top: 0; }
 .ration-table th, .ration-table td { padding: 0.55mm 0.45mm; }
 .ration-table th { font-size: 4.75pt; line-height: 1; }
@@ -51,8 +49,9 @@ body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 6.4pt;
 .benef-table td { font-size: 6.4pt; }
 .signature-grid td { height: 24mm; vertical-align: top; position: relative; text-align: left; }
 .signature-grid .caption { font-weight: 700; font-size: 5.2pt; margin-bottom: 6mm; display: block; }
+.signature-grid .name { display: block; font-size: 6.2pt; text-align: center; }
 .signature-grid .sigline { position: absolute; bottom: 1.5mm; left: 50%; transform: translateX(-50%); font-size: 4.8pt; }
-.footer-page { position: absolute; right: 0; bottom: 0; display: block; font-size: 6.3pt; }
+.footer-page { position: absolute; right: 0; top: 286mm; display: block; font-size: 6.3pt; }
 .nowrap { white-space: nowrap; }
 .x { font-weight: 700; font-size: 7pt; }
 .empty { min-height: 4mm; }
