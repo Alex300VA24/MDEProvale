@@ -162,15 +162,19 @@
                 <th colspan="2" class="sec-hdr">SOLICITADO</th>
                 <th colspan="2" class="sec-hdr">DESPACHADO</th>
                 <th rowspan="3" class="ration-col">RACIÓN<br/>POR DÍA</th>
-                <th colspan="2" class="sec-hdr">VALORES</th>
+                @if($mostrarValores ?? true)
+                    <th colspan="2" class="sec-hdr">VALORES</th>
+                @endif
                 <th rowspan="3" class="spacer-col">&nbsp;</th>
             </tr>
             <tr>
                 <th colspan="2" class="subsec-hdr">ARTÍCULOS</th>
                 <th rowspan="2" class="qty-col">CANTIDAD<br/>DESPACHADO</th>
                 <th rowspan="2" class="uom-col">UNIDAD<br/>DE MEDIDA</th>
-                <th rowspan="2" class="price-col">UNITARIO<br/>S/.</th>
-                <th rowspan="2" class="price-col">TOTAL<br/>S/.</th>
+                @if($mostrarValores ?? true)
+                    <th rowspan="2" class="price-col">UNITARIO<br/>S/.</th>
+                    <th rowspan="2" class="price-col">TOTAL<br/>S/.</th>
+                @endif
             </tr>
             <tr>
                 <th class="qty-col">CANTIDAD</th>
@@ -191,16 +195,20 @@
                     <td class="qty-col">{{ $art['cantidad_despachado'] ?? '' }}</td>
                     <td class="uom-col">{{ $art['unidad'] ?? '' }}</td>
                     <td class="ration-col">{{ $art['racion_dia'] ?? '' }}</td>
-                    <td class="price-col">{{ $art['unitario'] ?? '' }}</td>
-                    <td class="price-col">{{ $art['total'] ?? '' }}</td>
+                    @if($mostrarValores ?? true)
+                        <td class="price-col">{{ $art['unitario'] ?? '' }}</td>
+                        <td class="price-col">{{ $art['total'] ?? '' }}</td>
+                    @endif
                     <td class="spacer-col"></td>
                 </tr>
             @endfor
-            <tr class="total-row">
-                <td colspan="7" style="text-align:right; padding-right:10px;">TOTAL:</td>
-                <td class="price-col" style="background-color: #e0e0e0;">{{ $item['total_general'] ?? '' }}</td>
-                <td class="spacer-col"></td>
-            </tr>
+            @if($mostrarValores ?? true)
+                <tr class="total-row">
+                    <td colspan="7" style="text-align:right; padding-right:10px;">TOTAL:</td>
+                    <td class="price-col" style="background-color: #e0e0e0;">{{ $item['total_general'] ?? '' }}</td>
+                    <td class="spacer-col"></td>
+                </tr>
+            @endif
         </tbody>
     </table>
 

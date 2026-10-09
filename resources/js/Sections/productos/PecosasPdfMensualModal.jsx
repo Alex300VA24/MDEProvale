@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import { pdfLoadingHtml } from '../../Components/pdfLoadingScreen';
@@ -14,11 +14,13 @@ export default function PecosasPdfMensualModal({ open, onClose }) {
     const [month, setMonth] = useState(now.getMonth() + 1);
     const [year, setYear] = useState(now.getFullYear());
     const [loading, setLoading] = useState(false);
+    const generationId = useRef(0);
 
     const years = [];
     for (let y = now.getFullYear() + 1; y >= now.getFullYear() - 6; y--) years.push(y);
 
     const handleGenerate = async () => {
+        const currentGeneration = ++generationId.current;
         setLoading(true);
         const preview = window.open('', '_blank');
         if (!preview) {
@@ -32,23 +34,38 @@ export default function PecosasPdfMensualModal({ open, onClose }) {
         ));
         preview.document.close();
 
+        const controller = new AbortController();
+        let cancelled = false;
+        const closeWatcher = window.setInterval(() => {
+            if (preview.closed) {
+                cancelled = true;
+                controller.abort();
+                if (generationId.current === currentGeneration) setLoading(false);
+                window.clearInterval(closeWatcher);
+            }
+        }, 300);
+
         try {
             const params = new URLSearchParams({ month: String(month), year: String(year) });
             const res = await fetch(`${window.APP_URL || ''}/productos-pecosas/pecosas-pdf-mensual?${params.toString()}`, {
                 headers: { Accept: 'application/json' },
+                signal: controller.signal,
             });
             if (!res.ok) {
                 const body = await res.json().catch(() => ({}));
                 throw new Error(body.message || 'No se pudo generar el PDF del período seleccionado.');
             }
             const blob = await res.blob();
-            preview.location = URL.createObjectURL(blob);
+            if (!preview.closed) preview.location = URL.createObjectURL(blob);
             onClose();
         } catch (e) {
-            preview.close();
-            toast.error(e.message);
+            if (!cancelled) {
+                if (!preview.closed) preview.close();
+                toast.error(e.message);
+            }
         } finally {
-            setLoading(false);
+            window.clearInterval(closeWatcher);
+            if (generationId.current === currentGeneration) setLoading(false);
         }
     };
 
@@ -63,7 +80,7 @@ export default function PecosasPdfMensualModal({ open, onClose }) {
         >
             <div className="p-6 space-y-5">
                 <p className="text-sm text-earth">
-                    Selecciona el mes y año para generar en un solo PDF el comprobante de salida de todas las pecosas de ese período.
+                    Selecciona el mes y año para generar en un solo PDF los comprobantes de salida sin valores de todas las pecosas de ese período.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

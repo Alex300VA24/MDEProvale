@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('dashboard/inicio/panel', [InicioController::class, 'panel'])->name('api.inicio.panel');
 
 // ==================== REPORTES PVL INTELIGENTES ====================
-Route::prefix('dashboard/reportes-pvl')->middleware('module:reportes')->name('api.reportes-pvl.')->group(function () {
+Route::prefix('dashboard/reportes-pvl')->middleware(['admin', 'module:reportes'])->name('api.reportes-pvl.')->group(function () {
     Route::get('/', [PvlReportsController::class, 'index'])->name('index');
     Route::post('analizar', [PvlReportsController::class, 'analyze'])->name('runs.store');
     Route::put('defaults', [PvlReportsController::class, 'updateDefaults'])->name('defaults.update');
@@ -42,7 +42,7 @@ Route::prefix('dashboard/reportes-pvl')->middleware('module:reportes')->name('ap
 });
 
 // ==================== MÓDULO: BASE DE CONOCIMIENTO IA (RAG) ====================
-Route::prefix('dashboard/base-conocimiento')->middleware('module:base-conocimiento')->name('api.base-conocimiento.')->group(function () {
+Route::prefix('dashboard/base-conocimiento')->middleware(['admin', 'module:base-conocimiento'])->name('api.base-conocimiento.')->group(function () {
     Route::get('/', [KnowledgeBaseController::class, 'index'])->name('index');
     Route::post('documents', [KnowledgeBaseController::class, 'store'])->name('documents.store');
     Route::post('normativa/importar', [KnowledgeBaseController::class, 'importNormativa'])->name('normativa.store');
@@ -131,6 +131,7 @@ Route::prefix('dashboard/productos-pecosas')->name('api.productos-pecosas.')->gr
     Route::middleware('module:pecosas')->group(function () {
         Route::get('pecosas', [ProductosPecosasController::class, 'pecosas'])->name('pecosas');
         Route::get('pecosas/options', [ProductosPecosasController::class, 'pecosasOptions'])->name('pecosas.options');
+        Route::get('pecosas/next-number', [ProductosPecosasController::class, 'nextPecosaNumber'])->name('pecosas.next-number');
         Route::post('pecosas', [ProductosPecosasController::class, 'storePecosa'])->name('pecosas.store');
         Route::put('pecosas/{pecosa}', [ProductosPecosasController::class, 'updatePecosa'])->name('pecosas.update');
         Route::delete('pecosas/{pecosa}', [ProductosPecosasController::class, 'destroyPecosa'])->name('pecosas.destroy');

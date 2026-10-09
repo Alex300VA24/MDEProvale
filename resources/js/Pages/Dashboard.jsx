@@ -94,12 +94,15 @@ function PanelContainer({ onReady, children }) {
 export default function Dashboard() {
     const { auth, modules } = usePage().props;
     const user = auth?.user ?? null;
+    const isAdmin = Boolean(user?.is_admin);
 
     const allowedSlugs = new Set(
         (modules ?? []).filter((m) => m.can_view).map((m) => m.slug)
     );
+    const adminOnlySections = new Set(['reportes', 'base-conocimiento']);
     const builtInItems = NAV_ITEMS.filter(
-        (item) => item.modules.length === 0 || item.modules.some((slug) => allowedSlugs.has(slug))
+        (item) => (!adminOnlySections.has(item.key) || isAdmin)
+            && (item.modules.length === 0 || item.modules.some((slug) => allowedSlugs.has(slug)))
     );
     const dynamicItems = (modules ?? [])
         .filter((module) => module.can_view && !BUILT_IN_MODULES.has(module.slug))

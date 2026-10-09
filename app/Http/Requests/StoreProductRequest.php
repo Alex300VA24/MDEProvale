@@ -5,8 +5,6 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Product;
-use App\Models\State;
-use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
@@ -19,9 +17,8 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:100',
-            'abbreviation' => 'required|string|max:20',
-            'code' => 'required|string|max:50|unique:products,code',
-            'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
+            'abbreviation' => 'nullable|string|max:20',
+            'code' => 'nullable|string|max:50|unique:products,code',
             'uom_id' => 'required|exists:uoms,id',
         ];
     }

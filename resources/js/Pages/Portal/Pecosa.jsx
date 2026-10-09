@@ -3,7 +3,6 @@ import PortalLayout, { portalPath } from '../../Layouts/PortalLayout';
 import PdfLinkButton from '../../Components/PdfLinkButton';
 
 const nf = new Intl.NumberFormat('es-PE');
-const money = (v) => (v === null || v === undefined ? '—' : `S/ ${new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)}`);
 
 export default function Pecosa({ association, pecosa }) {
     const zone = [pecosa.association_zone_code, pecosa.association_zone_name].filter(Boolean).join(' · ') || '—';
@@ -78,7 +77,6 @@ export default function Pecosa({ association, pecosa }) {
                                 <tr>
                                     <th>Producto</th><th>Unidad</th>
                                     <th className="num">Solicitado</th><th className="num">Entregado</th>
-                                    <th className="num">P. unitario</th><th className="num">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -88,8 +86,6 @@ export default function Pecosa({ association, pecosa }) {
                                         <td>{d.uom}</td>
                                         <td className="num">{nf.format(d.quantity)}</td>
                                         <td className="num">{nf.format(d.delivered_quantity)}</td>
-                                        <td className="num">{money(d.unit_price)}</td>
-                                        <td className="num">{money(d.subtotal)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -98,8 +94,6 @@ export default function Pecosa({ association, pecosa }) {
                                     <td colSpan={2}>Totales</td>
                                     <td className="num">{nf.format(pecosa.totals.quantity)}</td>
                                     <td className="num">{nf.format(pecosa.totals.delivered_quantity)}</td>
-                                    <td />
-                                    <td className="num">{money(pecosa.totals.subtotal)}</td>
                                 </tr>
                             </tfoot>
                         </table>

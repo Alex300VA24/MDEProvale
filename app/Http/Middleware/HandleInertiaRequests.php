@@ -88,6 +88,7 @@ class HandleInertiaRequests extends Middleware
                     'cui'    => $user->cui,
                     'rol_id' => $user->rol_id,
                     'rol'    => $user->rol->title ?? null,
+                    'is_admin' => $user->isAdmin(),
                 ] : null,
             ],
             'modules' => $modules,

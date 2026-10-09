@@ -58,14 +58,15 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!title || !uomId || !stateId) {
+        if (!title.trim() || !uomId || (mode === 'edit' && !stateId)) {
             toast.error('Complete los campos obligatorios del producto.');
             return;
         }
         setSubmitting(true);
         try {
-            const payload = { title, abbreviation, uom_id: uomId, state_id: stateId };
+            const payload = { title: title.trim(), abbreviation: abbreviation.trim() || null, uom_id: uomId };
             if (mode === 'edit') {
+                payload.state_id = stateId;
                 await http.put(`${BASE}/products/${product.id}`, payload);
                 toast.success('Producto actualizado correctamente.');
             } else {
@@ -108,8 +109,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                             ))}
                         </select>
                     </div>
-                    {mode === 'edit' && (
-                    <div>
+                    {mode === 'edit' && <div>
                         <label className={labelCls}>Estado *</label>
                         <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
                             <option value="">Seleccione</option>
@@ -117,8 +117,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                                 <option key={s.id} value={s.id}>{s.title}</option>
                             ))}
                         </select>
-                    </div>
-                    )}
+                    </div>}
                 </div>
                 <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>

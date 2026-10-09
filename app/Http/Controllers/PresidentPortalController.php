@@ -124,8 +124,6 @@ class PresidentPortalController extends Controller
             'uom' => $detail->uom_title ?: '—',
             'quantity' => (float) $detail->quantity,
             'delivered_quantity' => (float) ($detail->delivered_quantity ?? 0),
-            'unit_price' => $detail->unit_price !== null ? (float) $detail->unit_price : null,
-            'subtotal' => $detail->subtotal !== null ? (float) $detail->subtotal : null,
         ])->all();
 
         return Inertia::render('Portal/Pecosa', [
@@ -158,7 +156,6 @@ class PresidentPortalController extends Controller
                 'totals' => [
                     'quantity' => (float) $pecosa->detailPecosas->sum('quantity'),
                     'delivered_quantity' => (float) $pecosa->detailPecosas->sum('delivered_quantity'),
-                    'subtotal' => (float) $pecosa->detailPecosas->sum('subtotal'),
                 ],
             ],
         ]);
@@ -204,15 +201,8 @@ class PresidentPortalController extends Controller
                 'cantidad_despachado' => $formatCantidad($detail->quantity),
                 'racion_dia' => $info['racion_dia'],
                 'unidad' => $detail->uom_title ?? ($product && $product->uom ? $product->uom->title : 'UNIDAD'),
-                'unitary' => number_format($detail->unit_price, 2),
-                'unitario' => number_format($detail->unit_price, 2),
-                'total' => number_format($detail->quantity * $detail->unit_price, 2),
             ];
         }
-
-        $total_general = number_format($pecosa->detailPecosas->sum(function ($d) {
-            return $d->quantity * $d->unit_price;
-        }), 2);
 
         $associationModel = $pecosa->association;
         $zonaCode = $pecosa->association_zone_code ?: ($associationModel && $associationModel->placeSector && $associationModel->placeSector->place
@@ -237,14 +227,15 @@ class PresidentPortalController extends Controller
             'domicilio' => $pecosa->association_name ?? ($associationModel ? $associationModel->name : 'N/A'),
             'fecha' => $fechaLarga,
             'articulos' => $articulos,
-            'total_general' => 'S/. ' . $total_general,
+            'total_general' => '',
+            'mostrar_valores' => false,
             'encargado_almacen' => $pecosa->chief_name ?? '',
             'dni_encargado' => $pecosa->chief_dni ?? '',
             'control' => $pecosa->storekeeper_name ?? '',
             'dni_control' => $pecosa->storekeeper_dni ?? '',
         ];
 
-        [$document] = $this->verifiedDocumentService->issue(
+        [, $contents, $filename] = $this->verifiedDocumentService->issue(
             VerifiedDocument::TYPE_PECOSA_RECEIPT,
             'PEC-' . Str::upper(Str::slug((string) $pecosa->pecosa_number)) . '-' . Str::upper(Str::random(6)),
             [
@@ -260,7 +251,11 @@ class PresidentPortalController extends Controller
             'landscape'
         );
 
-        return redirect()->route('documents.verify', $document->token);
+        return response($contents, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, private',
+        ]);
     }
 
     public function socios(Request $request)

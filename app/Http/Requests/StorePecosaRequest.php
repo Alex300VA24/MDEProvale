@@ -18,7 +18,6 @@ class StorePecosaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pecosa_number' => 'required|string|max:50|unique:pecosas,pecosa_number',
             'observation' => 'nullable|string',
             'delivery_date' => 'required|date',
             'chief_id' => 'nullable|exists:responsibles,id',

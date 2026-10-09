@@ -44,6 +44,30 @@ class PecosaService
         return $this->pecosaRepo->searchWithFilters($filters, $perPage);
     }
 
+    public function nextPecosaNumber(bool $lock = false): string
+    {
+        $prefix = now()->format('y');
+        $query = Pecosa::query()
+            ->where('pecosa_number', 'like', $prefix . '%')
+            ->select('pecosa_number');
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        $lastSequence = $query->get()
+            ->pluck('pecosa_number')
+            ->filter(fn ($number) => preg_match('/^' . $prefix . '\\d{4}$/', (string) $number))
+            ->map(fn ($number) => (int) substr((string) $number, 2, 4))
+            ->max() ?? 0;
+
+        if ($lastSequence >= 9999) {
+            throw new \DomainException('Se agotó el correlativo de PECOSAs para este año.');
+        }
+
+        return $prefix . str_pad((string) ($lastSequence + 1), 4, '0', STR_PAD_LEFT);
+    }
+
     public function createPecosa(array $data): Pecosa
     {
         $association = Association::findOrFail($data['association_id']);
@@ -71,6 +95,7 @@ class PecosaService
         }
 
         return DB::transaction(function () use ($data, $detailProductsById, $president) {
+            $data['pecosa_number'] = $this->nextPecosaNumber(true);
             $data['president_id'] = $president['partner_id'];
             $data['managing_partner_id'] = $president['partner_id'];
             $snapshot = $this->buildPecosaSnapshotDTO($data, $president);
@@ -185,7 +210,7 @@ class PecosaService
             'association.placeSector.place',
         ]);
 
-        $data = $this->buildComprobanteData($pecosa);
+        $data = $this->buildComprobanteData($pecosa, false);
         $identifier = 'PEC-' . Str::upper(Str::slug((string) $pecosa->pecosa_number)) . '-' . Str::upper(Str::random(6));
 
         return $this->verifiedDocumentService->issue(
@@ -205,6 +230,20 @@ class PecosaService
         );
     }
 
+    public function generatePecosaCompleta(Pecosa $pecosa): array
+    {
+        $pecosa->load([
+            'detailPecosas.detailProduct.product.uom',
+            'association.placeSector.place',
+        ]);
+
+        $data = $this->buildComprobanteData($pecosa, true);
+        $pdf = $this->pdfService->generate('comprobante_salida', $data, 'a4', 'landscape');
+        $filename = Str::slug('pecosa-completa-' . $pecosa->pecosa_number) . '.pdf';
+
+        return [null, $pdf->output(), $filename];
+    }
+
     /**
      * Recopila los datos de comprobante de todas las PECOSAs del período de
      * repartición indicado, listos para renderizarse en un único PDF.
@@ -219,7 +258,7 @@ class PecosaService
             ->orderBy('pecosa_number')
             ->get();
 
-        return $pecosas->map(fn (Pecosa $pecosa) => $this->buildComprobanteData($pecosa))->all();
+        return $pecosas->map(fn (Pecosa $pecosa) => $this->buildComprobanteData($pecosa, false))->all();
     }
 
     private function buildPecosaSnapshotDTO(array $data, array $president): PecosaSnapshotDTO
@@ -323,13 +362,13 @@ class PecosaService
         ];
     }
 
-    private function buildComprobanteData(Pecosa $pecosa): array
+    private function buildComprobanteData(Pecosa $pecosa, bool $mostrarValores = true): array
     {
         $formatQuantity = static function ($value): string {
             return rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
         };
 
-        $articulos = $pecosa->detailPecosas->map(function (DetailPecosa $detail, int $index) use ($formatQuantity, $pecosa) {
+        $articulos = $pecosa->detailPecosas->map(function (DetailPecosa $detail, int $index) use ($formatQuantity, $pecosa, $mostrarValores) {
             $product = $detail->detailProduct ? $detail->detailProduct->product : null;
             $name = trim((string) ($detail->product_name ?: ($product ? $product->title : '')));
             $abbreviation = trim((string) ($detail->product_abbreviation ?: ($product ? $product->abbreviation : '')));
@@ -343,8 +382,8 @@ class PecosaService
                 'cantidad_despachado' => $formatQuantity($detail->quantity),
                 'racion_dia' => $info['racion_dia'],
                 'unidad' => $detail->uom_title ?: ($product && $product->uom ? $product->uom->title : ''),
-                'unitario' => number_format((float) $detail->unit_price, 2),
-                'total' => number_format((float) $detail->quantity * (float) $detail->unit_price, 2),
+                'unitario' => $mostrarValores ? number_format((float) $detail->unit_price, 2) : '',
+                'total' => $mostrarValores ? number_format((float) $detail->quantity * (float) $detail->unit_price, 2) : '',
             ];
         })->all();
 
@@ -366,7 +405,8 @@ class PecosaService
             'solicitante_nombre' => $pecosa->managing_partner_name ?: ($pecosa->president_name ?? ''),
             'domicilio' => $pecosa->association_name ?: ($pecosa->association->name ?? ''),
             'articulos' => $articulos,
-            'total_general' => 'S/. ' . number_format($total, 2),
+            'total_general' => $mostrarValores ? 'S/. ' . number_format($total, 2) : '',
+            'mostrar_valores' => $mostrarValores,
             'encargado_almacen' => $pecosa->chief_name ?? '',
             'dni_encargado' => $pecosa->chief_dni ?? '',
             'control' => $pecosa->storekeeper_name ?? '',

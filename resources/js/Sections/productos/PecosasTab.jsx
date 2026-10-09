@@ -61,7 +61,9 @@ function stateForDeliveryDate(date, states) {
 
 function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
     const toast = useToast();
-    const [pecosaNumber, setPecosaNumber] = useState(mode === 'edit' && pecosa ? pecosa.pecosa_number : '');
+    const [pecosaNumber, setPecosaNumber] = useState(
+        mode === 'edit' && pecosa ? pecosa.pecosa_number : options.next_pecosa_number || ''
+    );
     const [associationId, setAssociationId] = useState(
         mode === 'edit' && pecosa ? pecosa.association_id ?? pecosa.association?.id ?? '' : ''
     );
@@ -81,6 +83,21 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         mode === 'edit' && pecosa ? (pecosa.detail_pecosas || []).map((d) => detailRowFromApi(d, options)) : []
     );
     const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (mode !== 'create') return undefined;
+
+        let active = true;
+        http.get(`${BASE}/pecosas/next-number`)
+            .then(({ data }) => {
+                if (active && data?.pecosa_number) setPecosaNumber(data.pecosa_number);
+            })
+            .catch(() => {});
+
+        return () => {
+            active = false;
+        };
+    }, [mode]);
 
     const activeChief = (options.responsibles || []).find((r) => r.type === 'chief');
     const activeStorekeeper = (options.responsibles || []).find((r) => r.type === 'storekeeper');
@@ -150,7 +167,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!pecosaNumber || !associationId || !deliveryDate) {
+        if ((mode === 'edit' && !pecosaNumber) || !associationId || !deliveryDate) {
             toast.error('Complete los campos obligatorios de la pecosa.');
             return;
         }
@@ -162,7 +179,6 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         setSubmitting(true);
         try {
             const payload = {
-                pecosa_number: pecosaNumber,
                 association_id: associationId,
                 delivery_date: deliveryDate,
                 managing_partner_id: managingPartnerId,
@@ -175,11 +191,13 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                 })),
             };
             if (mode === 'edit') {
+                payload.pecosa_number = pecosaNumber;
                 await http.put(`${BASE}/pecosas/${pecosa.id}`, payload);
                 toast.success('Pecosa actualizada correctamente.');
             } else {
-                await http.post(`${BASE}/pecosas`, payload);
-                toast.success('Pecosa creada exitosamente.');
+                const { data } = await http.post(`${BASE}/pecosas`, payload);
+                const createdNumber = data?.data?.pecosa_number || data?.pecosa_number || pecosaNumber;
+                toast.success(`Pecosa ${createdNumber} creada exitosamente.`);
             }
             onSaved();
         } catch (err) {
@@ -205,8 +223,16 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                     <div>
-                        <label className={labelCls}>Número de Pecosa *</label>
-                        <input type="text" value={pecosaNumber} onChange={(e) => setPecosaNumber(e.target.value)} placeholder="000-000" className={inputCls} required />
+                        <label className={labelCls}>Número de Pecosa{mode === 'create' ? ' (automático)' : ' *'}</label>
+                        <input
+                            type="text"
+                            value={pecosaNumber}
+                            onChange={(e) => setPecosaNumber(e.target.value)}
+                            placeholder="YYNNNN"
+                            className={mode === 'create' ? readonlyCls : inputCls}
+                            readOnly={mode === 'create'}
+                            required={mode === 'edit'}
+                        />
                     </div>
                     <div>
                         <label className={labelCls}>Club de Madres *</label>
@@ -368,6 +394,18 @@ function PecosaViewModal({ pecosa, onClose }) {
                     </div>
                 </DetailGroup>
             )}
+            <div className="flex justify-end border-t border-mist pt-4">
+                <PdfLinkButton
+                    href={`${window.APP_URL || ''}/productos-pecosas/pecosas/${pecosa.id}/pecosa-completa`}
+                    loadingTitle="Generando Pecosa completa"
+                    loadingMessage="Preparando el documento con valores para uso interno."
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-leaf px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    title="Generar Pecosa completa"
+                    aria-label="Generar Pecosa completa con valores"
+                >
+                    Pecosa completa
+                </PdfLinkButton>
+            </div>
         </DetailModal>
     );
 }

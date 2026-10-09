@@ -189,9 +189,24 @@ class PecosaController extends Controller
 
     public function generarComprobante(Pecosa $pecosa)
     {
-        [$document] = $this->pecosaService->generateComprobante($pecosa, request()->user()?->id);
+        [, $contents, $filename] = $this->pecosaService->generateComprobante($pecosa, request()->user()?->id);
 
-        return redirect()->route('documents.verify', $document->token);
+        return response($contents, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, private',
+        ]);
+    }
+
+    public function generarPecosaCompleta(Pecosa $pecosa)
+    {
+        [, $contents, $filename] = $this->pecosaService->generatePecosaCompleta($pecosa);
+
+        return response($contents, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Cache-Control' => 'no-store, private',
+        ]);
     }
 
     public function reportes()
@@ -219,7 +234,7 @@ class PecosaController extends Controller
         $periodo = Carbon::create((int) $data['year'], (int) $data['month'], 1)->locale('es')->translatedFormat('F_Y');
         $filename = 'pecosas-' . Str::slug($periodo) . '.pdf';
 
-        return $this->pdfService->stream('comprobante_salida_lote', ['items' => $items], $filename, 'a4', 'landscape');
+        return $this->pdfService->stream('comprobante_salida_lote', ['items' => $items, 'mostrarValores' => false], $filename, 'a4', 'landscape');
     }
 
     /**

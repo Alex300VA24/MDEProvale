@@ -28,6 +28,7 @@ use App\Services\StockService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProductosPecosasController extends Controller
 {
@@ -129,7 +130,16 @@ class ProductosPecosasController extends Controller
 
     public function storeProduct(StoreProductRequest $request)
     {
-        $product = Product::create($request->validated());
+        $validated = $request->validated();
+        $validated['state_id'] = State::idFor(State::CURRENT);
+        if (!$validated['state_id']) {
+            return response()->json(['message' => 'No se encontró el estado Vigente para crear el producto.'], 422);
+        }
+        $validated['abbreviation'] = ($validated['abbreviation'] ?? null)
+            ?: Str::upper(Str::substr(Str::ascii($validated['title']), 0, 5));
+        $validated['abbreviation'] = $validated['abbreviation'] ?: 'PROD';
+
+        $product = Product::create($validated);
 
         return (new ProductResource($product->load(['state:id,title', 'uom:id,title'])))
             ->response()
@@ -138,7 +148,12 @@ class ProductosPecosasController extends Controller
 
     public function updateProduct(UpdateProductRequest $request, Product $product)
     {
-        $product->update($request->validated());
+        $validated = $request->validated();
+        if (array_key_exists('abbreviation', $validated) && !$validated['abbreviation']) {
+            $title = $validated['title'] ?? $product->title;
+            $validated['abbreviation'] = Str::upper(Str::substr(Str::ascii($title), 0, 5)) ?: 'PROD';
+        }
+        $product->update($validated);
 
         return new ProductResource($product->load(['state:id,title', 'uom:id,title']));
     }
@@ -279,12 +294,18 @@ class ProductosPecosasController extends Controller
 
         return response()->json([
             'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
+            'next_pecosa_number' => $this->pecosaService->nextPecosaNumber(),
             'associations' => $associations,
             'filter_associations' => $filterAssociations,
             'president_periods' => $presidentPeriods,
             'responsibles' => $responsibles,
             'detail_products' => $detailProducts,
         ]);
+    }
+
+    public function nextPecosaNumber()
+    {
+        return response()->json(['pecosa_number' => $this->pecosaService->nextPecosaNumber()]);
     }
 
     public function storePecosa(StorePecosaRequest $request)
