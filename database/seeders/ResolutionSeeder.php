@@ -229,6 +229,7 @@ class ResolutionSeeder extends Seeder
             DB::table('resolutions')->updateOrInsert(
                 $resolution,
                 [
+                    'date_document' => $resolution['date_start'],
                     'state_id' => $resolution['date_end'] >= $today ? $currentStateId : $expiredStateId,
                     'file_path' => null,
                     'created_at' => $timestamp,

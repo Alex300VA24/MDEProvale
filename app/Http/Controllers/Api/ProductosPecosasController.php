@@ -14,6 +14,8 @@ use App\Models\Association;
 use App\Models\AssociationRosterPeriod;
 use App\Models\DetailPecosa;
 use App\Models\DetailProduct;
+use App\Models\DistributionAssignment;
+use App\Models\DistributionPeriod;
 use App\Models\Pecosa;
 use App\Models\Position;
 use App\Models\Product;
@@ -24,6 +26,8 @@ use App\Models\Uom;
 use App\Repositories\PecosaRepository;
 use App\Repositories\ProductRepository;
 use App\Services\PecosaService;
+use App\Services\ReparticionService;
+use App\Services\SchedulingService;
 use App\Services\StockService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -50,7 +54,9 @@ class ProductosPecosasController extends Controller
         ProductRepository $productRepo,
         PecosaRepository $pecosaRepo,
         PecosaService $pecosaService,
-        StockService $stockService
+        StockService $stockService,
+        private SchedulingService $schedulingService,
+        private ReparticionService $reparticionService
     ) {
         $this->productRepo = $productRepo;
         $this->pecosaRepo = $pecosaRepo;
@@ -178,6 +184,148 @@ class ProductosPecosasController extends Controller
         $product->delete();
 
         return response()->json(null, 204);
+    }
+
+    public function programacionEntrega(Request $request)
+    {
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'between:2019,2100'],
+            'month' => ['required', 'integer', 'between:1,12'],
+            'sector' => ['nullable', 'string', 'max:150'],
+        ]);
+
+        $year = (int) $validated['year'];
+        $month = (int) $validated['month'];
+        $sector = trim((string) ($validated['sector'] ?? ''));
+
+        if ($this->reparticionService->isBeforeFirstRecordedPeriod($year, $month)) {
+            return response()->json([
+                'message' => $this->reparticionService->periodRecordNotFoundMessage($year, $month),
+                'code' => 'PERIOD_NOT_FOUND',
+            ], 404);
+        }
+
+        if (! $this->reparticionService->hasIngresoForPeriod($year, $month)) {
+            return response()->json([
+                'message' => $this->reparticionService->ingresoRequiredMessage($year, $month),
+                'code' => 'INGRESO_REQUIRED',
+            ], 422);
+        }
+
+        $allRows = collect($this->schedulingService->generateProgramacionEntrega($month, $year));
+        $racion = $this->reparticionService->getActiveRacion($year, $month);
+        $calculation = null;
+        if ($racion) {
+            $configuration = $this->reparticionService->getConfiguration($racion, $year, $month);
+            unset($configuration['assignments']);
+            $calculation = $configuration;
+        }
+        $sectors = $allRows->pluck('sector')->filter()->unique()->sort()->values();
+        $rows = $sector === ''
+            ? $allRows
+            : $allRows->where('sector', $sector)->values();
+
+        return response()->json([
+            'data' => $rows->values(),
+            'sectors' => $sectors,
+            'summary' => [
+                'committees' => $rows->count(),
+                'beneficiaries' => $rows->sum('total_beneficiarios'),
+                'milk' => $rows->sum('leche'),
+                'milk_rounded' => $rows->sum('leche_redondeo'),
+                'oat' => $rows->sum('hojuela'),
+                'oat_rounded' => $rows->sum('hojuela_redondeo'),
+            ],
+            'pdf_url' => route('productos-pecosas.pecosas.programacion-entrega', array_filter([
+                'year' => $year,
+                'month' => $month,
+                'sector' => $sector,
+            ], fn ($value) => $value !== '')),
+            'period' => ['year' => $year, 'month' => $month],
+            'calculation' => $calculation,
+        ]);
+    }
+
+    public function updateProgramacionEntrega(Request $request)
+    {
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'between:2019,2100'],
+            'month' => ['required', 'integer', 'between:1,12'],
+            'sector' => ['nullable', 'string', 'max:150'],
+            'rows' => ['required', 'array', 'min:1'],
+            'rows.*.association_id' => ['required', 'integer', 'distinct', 'exists:associations,id'],
+            'rows.*.total_beneficiarios' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'rows.*.leche' => ['required', 'numeric', 'min:0', 'max:999999999999.99'],
+            'rows.*.leche_redondeo' => ['required', 'integer', 'min:0', 'max:999999999999'],
+            'rows.*.hojuela' => ['required', 'numeric', 'min:0', 'max:999999999999.99'],
+            'rows.*.hojuela_redondeo' => ['required', 'integer', 'min:0', 'max:999999999999'],
+        ]);
+
+        $year = (int) $validated['year'];
+        $month = (int) $validated['month'];
+
+        if ($this->reparticionService->isBeforeFirstRecordedPeriod($year, $month)) {
+            return response()->json([
+                'message' => $this->reparticionService->periodRecordNotFoundMessage($year, $month),
+                'code' => 'PERIOD_NOT_FOUND',
+            ], 404);
+        }
+
+        $racion = $this->reparticionService->getActiveRacion($year, $month);
+        if (! $racion) {
+            return response()->json(['message' => 'No hay ración configurada para el período seleccionado.'], 422);
+        }
+
+        if (! $this->reparticionService->hasIngresoForPeriod($year, $month)) {
+            return response()->json([
+                'message' => $this->reparticionService->ingresoRequiredMessage($year, $month),
+                'code' => 'INGRESO_REQUIRED',
+            ], 422);
+        }
+
+        $baseRows = collect($this->schedulingService->generateProgramacionEntrega($month, $year))
+            ->keyBy('association_id');
+        $unknownAssociation = collect($validated['rows'])
+            ->contains(fn ($row) => ! $baseRows->has($row['association_id']));
+        if ($unknownAssociation) {
+            return response()->json(['message' => 'Uno de los comités no pertenece a la programación seleccionada.'], 422);
+        }
+
+        $configuration = $this->reparticionService->getConfiguration($racion, $year, $month);
+
+        DB::transaction(function () use ($validated, $year, $month, $configuration, $baseRows) {
+            $period = DistributionPeriod::firstOrCreate(
+                ['year' => $year, 'month' => $month],
+                [
+                    'service_days' => $configuration['service_days'],
+                    'milk_grams_per_beneficiary' => $configuration['milk_grams_per_beneficiary'],
+                    'oat_grams_per_beneficiary' => $configuration['oat_grams_per_beneficiary'],
+                    'milk_can_grams' => $configuration['milk_can_grams'],
+                    'oat_bag_grams' => $configuration['oat_bag_grams'],
+                    'milk_cans_per_box' => $configuration['milk_cans_per_box'],
+                    'oat_kg_per_sack' => $configuration['oat_kg_per_sack'],
+                ]
+            );
+
+            foreach ($validated['rows'] as $row) {
+                $baseBeneficiaries = (int) $baseRows->get($row['association_id'])['beneficiarios_base'];
+                DistributionAssignment::updateOrCreate(
+                    [
+                        'distribution_period_id' => $period->id,
+                        'association_id' => $row['association_id'],
+                    ],
+                    [
+                        'beneficiary_adjustment' => (int) $row['total_beneficiarios'] - $baseBeneficiaries,
+                        'scheduled_milk' => round((float) $row['leche'], 2),
+                        'scheduled_milk_rounded' => (int) $row['leche_redondeo'],
+                        'scheduled_oat' => round((float) $row['hojuela'], 2),
+                        'scheduled_oat_rounded' => (int) $row['hojuela_redondeo'],
+                    ]
+                );
+            }
+        });
+
+        return $this->programacionEntrega($request);
     }
 
     // ==================== PECOSAS ====================

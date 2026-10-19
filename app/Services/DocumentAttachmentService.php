@@ -13,13 +13,19 @@ class DocumentAttachmentService
         $raw = file_get_contents($file->getRealPath());
         $compressed = base64_encode(gzdeflate($raw, 9));
 
-        return $attachable->documents()->create([
+        $payload = [
             'document_type' => $documentType,
             'file_name' => $file->getClientOriginalName(),
             'mime_type' => $file->getClientMimeType() ?: 'application/octet-stream',
             'file_size' => $file->getSize(),
             'file_data' => $compressed,
-        ]);
+        ];
+
+        if (in_array($documentType, [DocumentAttachment::TYPE_EXPEDIENTE_UNICO, DocumentAttachment::TYPE_CONADIS], true)) {
+            return $attachable->documents()->updateOrCreate(['document_type' => $documentType], $payload);
+        }
+
+        return $attachable->documents()->create($payload);
     }
 
     public function getDecryptedContent(DocumentAttachment $attachment): string

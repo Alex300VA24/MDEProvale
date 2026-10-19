@@ -44,6 +44,7 @@ class ClubResource extends JsonResource
                 : null),
             'president_partner_id' => $this->president_partner_id ?? null,
             'president_name' => $this->president_name ?? null,
+            'current_positions' => $this->current_positions ?? [],
             'latest_resolution' => $this->latestResolution
                 ? new ReconocimientoResource($this->latestResolution)
                 : null,

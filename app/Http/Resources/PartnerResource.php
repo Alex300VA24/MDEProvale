@@ -20,10 +20,9 @@ class PartnerResource extends JsonResource
             'education_level' => $this->education_level,
             'occupation' => $this->occupation,
             'children_count' => $this->children_count,
+            'socioeconomic_condition' => $this->socioeconomic_condition,
             'is_pregnant' => (bool) $this->is_pregnant,
             'is_lactating' => (bool) $this->is_lactating,
-            'spouse_occupation' => $this->spouse_occupation,
-            'spouse_education_level' => $this->spouse_education_level,
             'family_income' => $this->family_income,
             'name' => $this->name,
             'person' => $this->whenLoaded('people', function () {
@@ -35,9 +34,7 @@ class PartnerResource extends JsonResource
                     'dni' => $this->people->dni,
                     'birthdate' => $this->people->birthdate,
                     'gender' => $this->people->gender,
-                    'phone_number' => $this->people->phone_number,
                     'address' => $this->people->address,
-                    'place_sector_id' => $this->people->place_sector_id,
                 ];
             }),
             'association' => $this->whenLoaded('association', function () {

@@ -13,6 +13,8 @@ export const DOCUMENT_TYPE_LABELS = {
     dni_beneficiario: 'Copia DNI Beneficiario',
     partida_nacimiento: 'Partida de Nacimiento',
     constancia_medica: 'Constancia Médica (Desnutrición/Discapacidad)',
+    expediente_unico: 'Expediente único en PDF',
+    conadis: 'Documento CONADIS',
 };
 
 const inputCls =
@@ -50,6 +52,8 @@ export function PendingDocumentSection({
     allowedTypes = null,
     showTypeSelect = true,
     title = 'Documento adjunto',
+    pdfOnly = false,
+    required = false,
 }) {
     const toast = useToast();
     const fileInputRef = useRef(null);
@@ -69,9 +73,11 @@ export function PendingDocumentSection({
             return;
         }
 
-        const allowedMimes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        const allowedMimes = pdfOnly
+            ? ['application/pdf']
+            : ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
         if (!allowedMimes.includes(selected.type)) {
-            toast.error('Formato no permitido. Use PDF, JPG, PNG o WEBP.');
+            toast.error(pdfOnly ? 'Formato no permitido. Use un archivo PDF.' : 'Formato no permitido. Use PDF, JPG, PNG o WEBP.');
             event.target.value = '';
             return;
         }
@@ -88,7 +94,7 @@ export function PendingDocumentSection({
         <div className="rounded-xl border border-wheat bg-gray-50/80 p-3 space-y-2">
             <div>
                 <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
-                    <i className="fas fa-paperclip text-leaf mr-1.5" /> {title} <Optional />
+                    <i className="fas fa-paperclip text-leaf mr-1.5" /> {title} {required ? <span className="text-clay">*</span> : <Optional />}
                 </span>
                 <p className="mt-1 text-xs text-earth">Se subirá automáticamente al guardar el registro.</p>
             </div>
@@ -109,13 +115,14 @@ export function PendingDocumentSection({
                 )}
                 <div>
                     <label htmlFor={inputId} className={labelCls}>
-                        Archivo (PDF, JPG, PNG, WEBP; máx. 10 MB) <Optional />
+                        Archivo ({pdfOnly ? 'PDF' : 'PDF, JPG, PNG, WEBP'}; máx. 10 MB) {required ? <span className="text-clay">*</span> : <Optional />}
                     </label>
                     <input
                         ref={fileInputRef}
                         id={inputId}
                         type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        accept={pdfOnly ? '.pdf,application/pdf' : '.pdf,.jpg,.jpeg,.png,.webp'}
+                        required={required && !document.file}
                         onChange={handleFileChange}
                         className="block w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-leaf file:text-white hover:file:opacity-90"
                     />

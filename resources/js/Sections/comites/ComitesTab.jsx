@@ -18,12 +18,27 @@ const inputCls =
 
 function resolutionLabel(res) {
     if (!res) return '';
-    return res.document ? `${res.document} (${fmtDate(res.date_document)})` : `Resolución #${res.id}`;
+    if (!res.document) return `Resolución #${res.id}`;
+    const start = fmtDate(res.date_start);
+    const end = fmtDate(res.date_end);
+    if (start && end) {
+        return `${res.document} (${start} - ${end})`;
+    }
+    if (start) {
+        return `${res.document} (${start})`;
+    }
+    if (res.date_document) {
+        return `${res.document} (${fmtDate(res.date_document)})`;
+    }
+    return res.document;
 }
 
 function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     const toast = useToast();
-    const [code, setCode] = useState(mode === 'edit' && club ? club.code || '' : '');
+    const [code, setCode] = useState(() => {
+        if (mode === 'edit' && club) return club.code || '';
+        return options.next_code ? String(options.next_code) : '';
+    });
     const [name, setName] = useState(mode === 'edit' && club ? club.name || '' : '');
     const [companyName, setCompanyName] = useState(mode === 'edit' && club ? club.company_name || '' : '');
     const [address, setAddress] = useState(mode === 'edit' && club ? club.address || '' : '');
@@ -34,11 +49,43 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     const [typePremisesId, setTypePremisesId] = useState(mode === 'edit' && club ? club.type_premises_id ?? '' : '');
     const [submitting, setSubmitting] = useState(false);
 
+    useEffect(() => {
+        if (mode !== 'edit' && !code && options.next_code) {
+            setCode(String(options.next_code));
+        }
+    }, [mode, options.next_code]);
+
+    const isCodeTaken = Boolean(
+        code.trim() &&
+        (options.existing_codes || []).some((item) => {
+            const existingCode = typeof item === 'object' ? item.code : item;
+            const existingId = typeof item === 'object' ? item.id : null;
+            if (mode === 'edit' && club && (club.id === existingId || String(club.code || '').trim().toLowerCase() === code.trim().toLowerCase())) {
+                return false;
+            }
+            const cleanVal = code.trim().toLowerCase();
+            const cleanExisting = String(existingCode).trim().toLowerCase();
+            if (cleanVal === cleanExisting) return true;
+            if (/^\d+$/.test(cleanVal) && /^\d+$/.test(cleanExisting)) {
+                return parseInt(cleanVal, 10) === parseInt(cleanExisting, 10);
+            }
+            return false;
+        })
+    );
+
     const placeSectorOptions = (options.place_sectors || []).map((ps) => ({
         id: ps.id,
         label: `${ps.place ? ps.place.title : ''} - ${ps.sector ? ps.sector.title : ''}`,
     }));
+
     const resolutionOptions = (options.resolutions || []).map((r) => ({ id: r.id, label: resolutionLabel(r) }));
+
+    if (mode === 'edit' && club?.resolution && !resolutionOptions.some((ro) => ro.id === club.resolution.id)) {
+        resolutionOptions.unshift({
+            id: club.resolution.id,
+            label: resolutionLabel(club.resolution),
+        });
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -46,15 +93,19 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
             toast.error('Complete los campos obligatorios del comité (incluye Razón Social).');
             return;
         }
+        if (isCodeTaken) {
+            toast.error('El código ingresado ya está registrado.');
+            return;
+        }
         setSubmitting(true);
         try {
             const payload = {
-                code,
-                name,
+                code: code.trim(),
+                name: name.trim(),
                 company_name: companyName,
-                address,
-                phone: phone || null,
-                observation: observation || null,
+                address: address.trim(),
+                phone: phone ? phone.trim() : null,
+                observation: observation ? observation.trim() : null,
                 resolution_id: resolutionId,
                 place_sector_id: placeSectorId,
                 type_premises_id: typePremisesId,
@@ -87,7 +138,19 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label className={labelCls}>Código *</label>
-                        <input type="text" value={code} onChange={(e) => setCode(e.target.value)} className={inputCls} required maxLength={20} />
+                        <input
+                            type="text"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            className={`${inputCls} ${isCodeTaken ? 'border-clay focus:border-clay' : ''}`}
+                            required
+                            maxLength={20}
+                        />
+                        {isCodeTaken && (
+                            <span className="text-clay text-xs font-semibold mt-1 block">
+                                <i className="fas fa-exclamation-circle mr-1" /> Código ya registrado
+                            </span>
+                        )}
                     </div>
                     <div>
                         <label className={labelCls}>Nombre del Comité *</label>
@@ -151,7 +214,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                 </div>
                 <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
-                    <button type="submit" disabled={submitting} className="btn-primary flex-1">
+                    <button type="submit" disabled={submitting || isCodeTaken} className="btn-primary flex-1">
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
                         {mode === 'edit' ? 'Actualizar' : 'Guardar'}
                     </button>
@@ -199,7 +262,7 @@ function ClubViewModal({ club, onClose }) {
                                 {(club.all_resolutions || []).map((r) => (
                                     <tr key={r.id} className="hover:bg-blue-light">
                                         <td className="px-3 py-2 font-semibold text-charcoal">{r.document || '—'}</td>
-                                        <td className="px-3 py-2 text-charcoal">{fmtDateTime(r.date_document)}</td>
+                                        <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_document)}</td>
                                         <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_start)}</td>
                                         <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_end)}</td>
                                     </tr>
@@ -213,13 +276,24 @@ function ClubViewModal({ club, onClose }) {
     );
 }
 
-function AsignarPresidentaModal({ club, onClose, onSaved }) {
+const COMMITTEE_POSITIONS = [
+    'PRESIDENTA',
+    'VICE PRESIDENTA',
+    'SECRETARIA',
+    'TESORERA',
+    'COORDINADORA',
+    'ALMACENERA',
+    'VOCAL',
+];
+
+function AsignarCargoModal({ club, onClose, onSaved }) {
     const toast = useToast();
     const clubId = club?.id;
     const [detail, setDetail] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
-    const [partnerId, setPartnerId] = useState('');
+    const [assignments, setAssignments] = useState({});
+    const [initialAssignments, setInitialAssignments] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
     const loadDetail = useCallback(async () => {
@@ -229,7 +303,16 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
         try {
             const res = await http.get(`${BASE}/clubs/${clubId}`);
             setDetail(res.data.data);
-            setPartnerId(res.data.data.president_partner_id ? String(res.data.data.president_partner_id) : '');
+            const currentAssignments = Object.fromEntries(
+                COMMITTEE_POSITIONS.map((item) => [
+                    item,
+                    res.data.data.current_positions?.[item]
+                        ? String(res.data.data.current_positions[item])
+                        : '',
+                ])
+            );
+            setAssignments(currentAssignments);
+            setInitialAssignments(currentAssignments);
         } catch {
             setLoadError(true);
         } finally {
@@ -244,17 +327,25 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!clubId) return;
-        if (!partnerId) {
-            toast.error('Seleccione una socia para asignar como presidenta.');
+
+        const changedAssignments = COMMITTEE_POSITIONS
+            .filter((item) => assignments[item] && assignments[item] !== initialAssignments[item])
+            .map((item) => ({ position: item, partner_id: Number(assignments[item]) }));
+
+        if (changedAssignments.length === 0) {
+            toast.error('Seleccione o cambie por lo menos una socia.');
             return;
         }
+
         setSubmitting(true);
         try {
-            await http.post(`${BASE}/clubs/${clubId}/asignar-presidenta`, { partner_id: partnerId });
-            toast.success('Presidenta asignada correctamente.');
+            await http.post(`${BASE}/clubs/${clubId}/asignar-cargos`, { assignments: changedAssignments });
+            toast.success(changedAssignments.length === 1
+                ? 'Cargo asignado correctamente.'
+                : `${changedAssignments.length} cargos asignados correctamente.`);
             onSaved();
         } catch (err) {
-            toast.error(errorMessage(err, 'No se pudo asignar la presidenta.'));
+            toast.error(errorMessage(err, 'No se pudieron asignar los cargos.'));
         } finally {
             setSubmitting(false);
         }
@@ -268,15 +359,22 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title="Asignar Presidenta"
+            title="Asignar Cargo"
             icon="fa-user-tie"
             iconClass="text-sun"
-            maxWidth="sm:max-w-lg"
+            maxWidth="sm:max-w-5xl"
         >
             <div className="p-6">
-                <p className="text-sm text-earth mb-4">
-                    Comité: <span className="font-bold text-charcoal">{club.name}</span> ({club.code})
-                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5 rounded-2xl border border-wheat bg-base px-4 py-3">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-earth">Comité</p>
+                        <p className="font-heading font-bold text-charcoal">{club.name} <span className="text-earth">({club.code})</span></p>
+                    </div>
+                    <div className="inline-flex items-center gap-2 text-xs font-bold text-navy">
+                        <i className="fas fa-users-gear" aria-hidden="true" />
+                        7 cargos de directiva
+                    </div>
+                </div>
                 {loading ? (
                     <div className="flex items-center justify-center py-8 text-earth">
                         <i className="fas fa-spinner fa-spin mr-2" /> Cargando socias del comité...
@@ -290,25 +388,46 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
                         </button>
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit}>
-                        <label className={labelCls}>Socia Presidenta *</label>
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         {partners.length === 0 ? (
-                            <p className="text-sm text-clay font-semibold mt-1">
-                                El comité no tiene socias registradas. Registre socias antes de asignar la presidenta.
-                            </p>
+                            <div className="empty-state py-8">
+                                <i className="fas fa-user-slash" />
+                                <p>El comité no tiene socias registradas. Registre socias antes de asignar cargos.</p>
+                            </div>
                         ) : (
-                            <select value={partnerId} onChange={(e) => setPartnerId(e.target.value)} className={inputCls} required>
-                                <option value="">Seleccione una socia</option>
-                                {partners.map((p) => (
-                                    <option key={p.id} value={p.id}>{p.dni ? `${p.name} (${p.dni})` : p.name}</option>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {COMMITTEE_POSITIONS.map((item, index) => (
+                                    <div key={item} className="rounded-2xl border-2 border-wheat bg-white p-4 transition-colors focus-within:border-leaf">
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-light text-xs font-extrabold text-navy">
+                                                {index + 1}
+                                            </span>
+                                            <label htmlFor={`cargo-${index}`} className="font-heading text-sm font-extrabold tracking-wide text-charcoal">
+                                                {item}
+                                            </label>
+                                        </div>
+                                        <select
+                                            id={`cargo-${index}`}
+                                            value={assignments[item] || ''}
+                                            onChange={(e) => setAssignments((current) => ({ ...current, [item]: e.target.value }))}
+                                            className={inputCls}
+                                        >
+                                            <option value="" disabled>Seleccione una socia</option>
+                                            {partners.map((partner) => (
+                                                <option key={partner.id} value={partner.id}>
+                                                    {partner.dni ? `${partner.name} (${partner.dni})` : partner.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 ))}
-                            </select>
+                            </div>
                         )}
-                        <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
+                        <div className="flex gap-3 pt-4 border-t-2 border-wheat">
                             <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
                             <button type="submit" disabled={submitting || partners.length === 0} className="btn-primary flex-1">
                                 <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-check'} mr-2`} />
-                                Asignar
+                                Guardar cargos
                             </button>
                         </div>
                     </form>
@@ -318,7 +437,7 @@ function AsignarPresidentaModal({ club, onClose, onSaved }) {
     );
 }
 
-const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
+const ComitesTab = forwardRef(function ComitesTab({ options, can, reloadOptions }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -366,6 +485,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
 
     useImperativeHandle(ref, () => ({
         openCreate: () => {
+            reloadOptions?.();
             setFormMode('create');
             setEditing(null);
             setFormOpen(true);
@@ -401,6 +521,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
             toast.success('Comité eliminado exitosamente.');
             setDeleting(null);
             load();
+            reloadOptions?.();
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar el comité.'));
             setDeleting(null);
@@ -548,7 +669,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                                                             type="button"
                                                             onClick={() => setAssigning(club)}
                                                             className="btn-action col-start-3 bg-leaf-light text-leaf hover:bg-leaf hover:text-white"
-                                                            title="Asignar Presidenta"
+                                                            title="Asignar Cargo"
                                                         >
                                                             <i className="fas fa-user-tie" />
                                                         </button>
@@ -593,6 +714,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
                     onSaved={() => {
                         setFormOpen(false);
                         load();
+                        reloadOptions?.();
                     }}
                 />
             )}
@@ -603,7 +725,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can }, ref) {
             />
 
             {assigning && (
-                <AsignarPresidentaModal
+                <AsignarCargoModal
                     key={assigning.id}
                     club={assigning}
                     onClose={() => setAssigning(null)}

@@ -21,7 +21,7 @@ class RelationshipSeeder extends Seeder
             'updated_at' => now(),
         ]);
         DB::table('relationships')->insert([
-            'title' => 'Hijos',
+            'title' => 'Hijo',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -31,7 +31,7 @@ class RelationshipSeeder extends Seeder
             'updated_at' => now(),
         ]);
         DB::table('relationships')->insert([
-            'title' => 'Tutelado',
+            'title' => 'Nieto',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

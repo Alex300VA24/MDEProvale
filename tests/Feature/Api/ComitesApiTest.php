@@ -75,7 +75,7 @@ class ComitesApiTest extends TestCase
         DB::table('place_sectors')->insert(['id' => 1, 'place_id' => 1, 'sector_id' => 1, 'created_at' => $now, 'updated_at' => $now]);
         DB::table('type_premises')->insert(['id' => 1, 'title' => 'Local Comunal', 'created_at' => $now, 'updated_at' => $now]);
 
-        DB::table('positions')->insert(['id' => 1, 'title' => 'PRESIDENTA', 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('positions')->where('title', 'PRESIDENTA')->update(['updated_at' => $now]);
 
         DB::table('resolutions')->insert([
             [
@@ -296,7 +296,18 @@ class ComitesApiTest extends TestCase
 
     public function test_clubs_options_endpoint(): void
     {
-        $this->actingAs($this->userWithAccess())
+        DB::table('resolutions')->insert([
+            'id' => 99,
+            'document' => 'RES-EXPIRED',
+            'date_document' => '2020-01-01 10:00:00',
+            'date_start' => '2020-01-01',
+            'date_end' => '2022-01-01',
+            'state_id' => 4,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->userWithAccess())
             ->getJson(self::BASE . '/clubs/options')
             ->assertOk()
             ->assertJsonStructure([
@@ -304,7 +315,12 @@ class ComitesApiTest extends TestCase
                 'place_sectors' => ['*' => ['id', 'place', 'sector']],
                 'type_premises' => ['*' => ['id', 'title']],
                 'resolutions' => ['*' => ['id', 'document']],
+                'next_code',
+                'existing_codes' => ['*' => ['id', 'code']],
             ]);
+
+        $resolutionIds = collect($response->json('resolutions'))->pluck('id');
+        $this->assertFalse($resolutionIds->contains(99), 'Expired resolution must not be in clubs/options');
     }
 
     public function test_club_show_returns_partners_and_resolutions(): void
@@ -362,6 +378,29 @@ class ComitesApiTest extends TestCase
     {
         $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/clubs', $this->clubPayload('CDM'))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('code');
+    }
+
+    public function test_store_club_rejects_numerically_equivalent_duplicate_code(): void
+    {
+        // Existing club has code '005'
+        DB::table('associations')->insert([
+            'id' => 99,
+            'code' => '005',
+            'name' => 'Club 005',
+            'company_name' => 'Club 005 SAC',
+            'address' => 'Av. 005',
+            'resolution_id' => 1,
+            'state_id' => 2,
+            'place_sector_id' => 1,
+            'type_premises_id' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/clubs', $this->clubPayload('5'))
             ->assertStatus(422)
             ->assertJsonValidationErrors('code');
     }
@@ -553,12 +592,15 @@ class ComitesApiTest extends TestCase
         $this->assertDatabaseHas('resolutions', ['id' => 1]);
     }
 
-    // ==================== ASIGNAR PRESIDENTA ====================
+    // ==================== ASIGNAR CARGO ====================
 
     public function test_asignar_presidenta_keeps_resolution_state(): void
     {
         $this->actingAs($this->userWithAccess())
-            ->postJson(self::BASE . '/clubs/2/asignar-presidenta', ['partner_id' => 2])
+            ->postJson(self::BASE . '/clubs/2/asignar-cargo', [
+                'partner_id' => 2,
+                'position' => 'PRESIDENTA',
+            ])
             ->assertOk()
             ->assertJsonPath('data.state_id', 2)
             ->assertJsonPath('data.president_partner_id', 2)
@@ -577,10 +619,77 @@ class ComitesApiTest extends TestCase
     public function test_asignar_presidenta_rejects_partner_of_other_club(): void
     {
         $this->actingAs($this->userWithAccess())
-            ->postJson(self::BASE . '/clubs/1/asignar-presidenta', ['partner_id' => 2])
+            ->postJson(self::BASE . '/clubs/1/asignar-cargo', [
+                'partner_id' => 2,
+                'position' => 'TESORERA',
+            ])
             ->assertStatus(422)
             ->assertJsonPath('message', 'La socia seleccionada no pertenece a este comité');
 
         $this->assertDatabaseMissing('directives', ['partner_id' => 2, 'resolution_id' => 1]);
+    }
+
+    public function test_asignar_cargo_keeps_other_committee_positions_active(): void
+    {
+        $tesoreraId = DB::table('positions')->where('title', 'TESORERA')->value('id');
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/clubs/1/asignar-cargo', [
+                'partner_id' => 1,
+                'position' => 'TESORERA',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('directives', [
+            'partner_id' => 1,
+            'position_id' => $tesoreraId,
+            'state_id' => 2,
+        ]);
+
+        $this->assertDatabaseHas('directives', [
+            'id' => 1,
+            'position_id' => 1,
+            'state_id' => 2,
+        ]);
+    }
+
+    public function test_asignar_cargo_rejects_unknown_position(): void
+    {
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/clubs/1/asignar-cargo', [
+                'partner_id' => 1,
+                'position' => 'FISCAL',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('position');
+    }
+
+    public function test_asignar_varios_cargos_in_one_operation(): void
+    {
+        $secretariaId = DB::table('positions')->where('title', 'SECRETARIA')->value('id');
+        $tesoreraId = DB::table('positions')->where('title', 'TESORERA')->value('id');
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/clubs/1/asignar-cargos', [
+                'assignments' => [
+                    ['position' => 'SECRETARIA', 'partner_id' => 1],
+                    ['position' => 'TESORERA', 'partner_id' => 1],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.current_positions.PRESIDENTA', 1)
+            ->assertJsonPath('data.current_positions.SECRETARIA', 1)
+            ->assertJsonPath('data.current_positions.TESORERA', 1);
+
+        $this->assertDatabaseHas('directives', [
+            'partner_id' => 1,
+            'position_id' => $secretariaId,
+            'state_id' => 2,
+        ]);
+        $this->assertDatabaseHas('directives', [
+            'partner_id' => 1,
+            'position_id' => $tesoreraId,
+            'state_id' => 2,
+        ]);
     }
 }

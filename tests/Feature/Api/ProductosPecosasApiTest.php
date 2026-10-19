@@ -98,7 +98,7 @@ class ProductosPecosasApiTest extends TestCase
         DB::table('place_sectors')->insert(['id' => 1, 'place_id' => 1, 'sector_id' => 1, 'created_at' => $now, 'updated_at' => $now]);
         DB::table('type_premises')->insert(['id' => 1, 'title' => 'Local Comunal', 'created_at' => $now, 'updated_at' => $now]);
 
-        DB::table('positions')->insert(['id' => 1, 'title' => 'PRESIDENTA', 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('positions')->where('title', 'PRESIDENTA')->update(['updated_at' => $now]);
 
         DB::table('resolutions')->insert([
             'id' => 1,
@@ -261,6 +261,55 @@ class ProductosPecosasApiTest extends TestCase
 
         $this->assertDatabaseMissing('products', ['id' => 1]);
         $this->assertDatabaseMissing('detail_products', ['product_id' => 1]);
+    }
+
+    public function test_programacion_entrega_allows_editing_and_persists_beneficiaries_and_products(): void
+    {
+        $today = now();
+        DB::table('detail_products')->where('id', 1)->update([
+            'start_date' => $today->toDateString(),
+            'end_date' => $today->copy()->endOfMonth()->toDateString(),
+        ]);
+        DB::table('raciones')->insert([
+            'year' => $today->year,
+            'month_start' => $today->month,
+            'month_end' => $today->month,
+            'racion_hojuelas_gramos' => 51.5,
+            'racion_leche_militros' => 44,
+            'active' => true,
+            'created_at' => $today,
+            'updated_at' => $today,
+        ]);
+
+        $response = $this->actingAs($this->userWithAccess())
+            ->putJson(self::BASE . '/programacion-entrega', [
+                'year' => $today->year,
+                'month' => $today->month,
+                'rows' => [[
+                    'association_id' => 1,
+                    'total_beneficiarios' => 7,
+                    'leche' => 22.25,
+                    'leche_redondeo' => 22,
+                    'hojuela' => 11.75,
+                    'hojuela_redondeo' => 12,
+                ]],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.0.association_id', 1)
+            ->assertJsonPath('data.0.total_beneficiarios', 7)
+            ->assertJsonPath('data.0.leche', 22.25)
+            ->assertJsonPath('data.0.leche_redondeo', 22)
+            ->assertJsonPath('data.0.hojuela', 11.75)
+            ->assertJsonPath('data.0.hojuela_redondeo', 12);
+
+        $this->assertDatabaseHas('distribution_assignments', [
+            'association_id' => 1,
+            'beneficiary_adjustment' => 7,
+            'scheduled_milk' => 22.25,
+            'scheduled_milk_rounded' => 22,
+            'scheduled_oat' => 11.75,
+            'scheduled_oat_rounded' => 12,
+        ]);
     }
 
     public function test_destroy_product_rejects_when_referenced_by_pecosa(): void

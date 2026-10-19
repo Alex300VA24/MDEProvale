@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Position;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -14,53 +15,11 @@ class PositionSeeder extends Seeder
      */
     public function run()
     {
-
-        DB::table('positions')->insert([
-            'title' => 'PRESIDENTA',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('positions')->insert([
-            'title' => 'VICE PRESIDENTA',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('positions')->insert([
-            'title' => 'Almacenera',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('positions')->insert([
-            'title' => 'Tesorera',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('positions')->insert([
-            'title' => 'Secretaria',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('positions')->insert([
-            'title' => 'Vocal',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('positions')->insert([
-            'title' => 'Coordinadora',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        DB::table('positions')->insert([
-            'title' => 'Fiscal',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        foreach (Position::COMMITTEE_TITLES as $title) {
+            DB::table('positions')->updateOrInsert(
+                ['title' => $title],
+                ['updated_at' => now(), 'created_at' => now()]
+            );
+        }
     }
 }

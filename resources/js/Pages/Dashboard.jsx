@@ -7,9 +7,11 @@ import AsistentePROVALE from '../Components/AsistentePROVALE';
 // Secciones cargadas bajo demanda (React.lazy => chunk separado por sección).
 const Inicio = lazy(() => import('../Sections/Inicio'));
 const SociosBeneficiarios = lazy(() => import('../Sections/SociosBeneficiarios'));
-const ProductosPecosas = lazy(() => import('../Sections/ProductosPecosas'));
+const ProductosProgramacion = lazy(() => import('../Sections/ProductosProgramacion'));
+const PecosasReparticion = lazy(() => import('../Sections/PecosasReparticion'));
 const ClubReconocimientos = lazy(() => import('../Sections/ClubReconocimientos'));
-const Movimientos = lazy(() => import('../Sections/Movimientos'));
+const SupervisionComites = lazy(() => import('../Sections/SupervisionComites'));
+const EvaluacionNutricional = lazy(() => import('../Sections/EvaluacionNutricional'));
 const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
 const ReportesPvl = lazy(() => import('../Sections/ReportesPvl'));
 const BaseConocimiento = lazy(() => import('../Sections/BaseConocimiento'));
@@ -19,9 +21,11 @@ const Ayuda = lazy(() => import('../Sections/Ayuda'));
 const SECTION_COMPONENTS = {
     inicio: Inicio,
     socios: SociosBeneficiarios,
-    productos: ProductosPecosas,
+    productos: ProductosProgramacion,
+    pecosas: PecosasReparticion,
     comites: ClubReconocimientos,
-    movimientos: Movimientos,
+    'supervision-comites': SupervisionComites,
+    'evaluacion-nutricional': EvaluacionNutricional,
     'responsables-raciones': ResponsablesRaciones,
     reportes: ReportesPvl,
     'base-conocimiento': BaseConocimiento,
@@ -32,10 +36,12 @@ const SECTION_COMPONENTS = {
 // Ítems del menú. `modules` = slugs permitidos que habilitan el ítem (vacío = siempre visible).
 const NAV_ITEMS = [
     { key: 'inicio', label: 'Inicio', icon: 'fa-home', modules: [] },
+    { key: 'comites', label: 'Comités y Resoluciones', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
     { key: 'socios', label: 'Socios y Beneficiarios', icon: 'fa-user-friends', modules: ['socios-beneficiarios'] },
-    { key: 'productos', label: 'Productos y Pecosas', icon: 'fa-box', modules: ['productos', 'pecosas'] },
-    { key: 'comites', label: 'Comités y Reconocimientos', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
-    { key: 'movimientos', label: 'Movimientos y Repartición', icon: 'fa-exchange-alt', modules: ['movimientos'] },
+    { key: 'productos', label: 'Productos y Programación de Entrega', icon: 'fa-boxes-stacked', modules: ['productos', 'movimientos'] },
+    { key: 'pecosas', label: 'Pecosas y Repartición', icon: 'fa-file-signature', modules: ['pecosas', 'movimientos'] },
+    { key: 'supervision-comites', label: 'Supervisión de Comités', icon: 'fa-clipboard-check', modules: ['club-madres'] },
+    { key: 'evaluacion-nutricional', label: 'Evaluación Nutricional', icon: 'fa-heart-pulse', modules: ['socios-beneficiarios'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
     { key: 'reportes', label: 'Reportes PVL', icon: 'fa-file-shield', modules: ['reportes'] },
     { key: 'base-conocimiento', label: 'Base de Conocimiento IA', icon: 'fa-database', modules: ['base-conocimiento'] },
@@ -51,11 +57,202 @@ const BUILT_IN_MODULES = new Set([
 const NOTIF_TYPE_LABELS = {
     password_reset: 'Recuperación de contraseña',
     normativa_pvl: 'Normativa PVL',
+    alerta_beneficiarios: 'Límite de edad',
+    alerta_resolucion: 'Resolución por vencer',
 };
+
+// Etiquetas de urgencia (calculadas por el sistema) y prioridad (sugerida por IA, opcional).
+const NOTIF_URGENCY = {
+    urgente: { label: 'Urgente', icon: 'fa-triangle-exclamation', className: 'bg-red-600 text-white border-red-700' },
+    proximo: { label: 'Próximo', icon: 'fa-clock', className: 'bg-amber-400 text-amber-950 border-amber-500' },
+    aviso: { label: 'Aviso', icon: 'fa-circle-info', className: 'bg-sky-600 text-white border-sky-700' },
+};
+const NOTIF_TYPE_STYLES = {
+    password_reset: 'bg-slate-700 text-white border-slate-800',
+    normativa_pvl: 'bg-emerald-600 text-white border-emerald-700',
+    alerta_beneficiarios: 'bg-violet-600 text-white border-violet-700',
+    alerta_resolucion: 'bg-orange-600 text-white border-orange-700',
+};
+const NOTIF_PRIORITY_LABELS = { alta: 'Alta', media: 'Media', baja: 'Baja' };
+const NOTIF_PRIORITY_STYLES = {
+    alta: 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-400',
+    media: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-300',
+    baja: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200',
+};
+
+// Avisos creados antes de guardar `urgencia`: se deduce de los días que traen en metadata.
+function notifUrgencyKey(n) {
+    const meta = n.metadata || {};
+    if (meta.urgencia) return meta.urgencia;
+    let days = null;
+    if (typeof meta.dias_restantes === 'number') days = meta.dias_restantes;
+    else if (Array.isArray(meta.beneficiarios) && meta.beneficiarios.length) {
+        days = Math.min(...meta.beneficiarios.map((b) => Number(b.dias)).filter((d) => !Number.isNaN(d)));
+    }
+    if (days === null || !Number.isFinite(days)) return null;
+    return days <= 7 ? 'urgente' : days <= 30 ? 'proximo' : 'aviso';
+}
+
+function NotifBadges({ n }) {
+    const urgency = NOTIF_URGENCY[notifUrgencyKey(n)];
+    const priority = n.metadata?.ia?.prioridad;
+    const badge = 'px-2.5 py-1 text-xs font-bold rounded-full border inline-flex items-center gap-1.5';
+
+    return (
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+            {urgency && (
+                <span className={`${badge} ${urgency.className}`}>
+                    <i className={`fas ${urgency.icon}`} aria-hidden="true" /> {urgency.label}
+                </span>
+            )}
+            <span className={`${badge} ${NOTIF_TYPE_STYLES[n.type] || 'bg-blue-light text-blue border-blue'}`}>{NOTIF_TYPE_LABELS[n.type] || n.type}</span>
+            {priority && (
+                <span className={`${badge} ${NOTIF_PRIORITY_STYLES[priority] || NOTIF_PRIORITY_STYLES.media}`}>
+                    <i className="fas fa-wand-magic-sparkles" aria-hidden="true" /> Prioridad IA: {NOTIF_PRIORITY_LABELS[priority] || priority}
+                </span>
+            )}
+            {n.status && n.status !== 'pending' && n.status !== 'informativo' && (
+                <span className={`px-2 py-1 text-xs font-bold rounded ${
+                    n.status === 'approved' ? 'bg-teal-light text-teal' : 'bg-coral-light text-coral'
+                }`}>
+                    {n.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                </span>
+            )}
+        </div>
+    );
+}
+
+function formatNotifDate(value) {
+    if (!value) return '';
+    const [y, m, d] = String(value).slice(0, 10).split('-');
+    return y && m && d ? `${d}/${m}/${y}` : value;
+}
+
+// Fecha y hora local hasta segundos: dd/mm/aaaa HH:mm:ss.
+function formatNotifDateTime(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium', hour12: false });
+}
+
+function NotifDetailBody({ n }) {
+    const meta = n.metadata || {};
+    const structured = (n.type === 'alerta_resolucion' && meta.documento) || (n.type === 'alerta_beneficiarios' && Array.isArray(meta.beneficiarios));
+    const Section =({ title, children }) => (
+        <div>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-slate mb-2">{title}</h4>
+            {children}
+        </div>
+    );
+
+    return (
+        <div className="space-y-5">
+            <div>
+                <NotifBadges n={n} />
+                <p className="font-extrabold text-navy text-lg">{n.title}</p>
+                {n.requested_at && (
+                    <p className="text-xs text-slate mt-1">
+                        <i className="far fa-clock mr-1" aria-hidden="true" />Generado el {formatNotifDateTime(n.requested_at)}
+                    </p>
+                )}
+            </div>
+
+            {/* En avisos con datos estructurados el detalle ya está abajo; el texto largo sería repetir. */}
+            {n.description && !structured && <p className="text-sm text-navy whitespace-pre-line">{n.description}</p>}
+
+            {meta.ia && (
+                <Section title="Análisis de IA (complementario)">
+                    <div className="rounded-xl border-2 border-mist bg-base p-3 text-sm space-y-2">
+                        <p className="text-navy">{meta.ia.resumen}</p>
+                        <p className="text-navy"><span className="font-bold">Acción sugerida:</span> {meta.ia.accion_sugerida}</p>
+                    </div>
+                </Section>
+            )}
+
+            {n.type === 'alerta_resolucion' && (
+                <Section title="Resolución">
+                    <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-4">
+                        {[
+                            ['Documento', meta.documento],
+                            ['Fin de vigencia', formatNotifDate(meta.fecha_fin)],
+                            ['Días restantes', meta.dias_restantes < 0 ? `Venció hace ${Math.abs(meta.dias_restantes)}` : meta.dias_restantes],
+                            ['Comités alcanzados', meta.total_comites],
+                        ].map(([label, value]) => (
+                            <div key={label} className="rounded-xl border-2 border-mist bg-base px-3 py-2">
+                                <dt className="text-slate text-xs">{label}</dt>
+                                <dd className="font-bold text-navy mt-0.5">{value}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <p className="text-xs font-bold text-slate mb-2">Comités</p>
+                    <ul className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                        {(meta.comites || []).map((c) => (
+                            <li key={c.id} className="px-3 py-1.5 rounded-lg bg-sky-light text-navy text-sm font-medium">{c.name}</li>
+                        ))}
+                    </ul>
+                    {meta.total_comites > (meta.comites || []).length && (
+                        <p className="text-xs text-slate mt-1">… y {meta.total_comites - meta.comites.length} más.</p>
+                    )}
+                </Section>
+            )}
+
+            {n.type === 'alerta_beneficiarios' && (
+                <Section title={`Beneficiarios (${meta.total ?? (meta.beneficiarios || []).length})`}>
+                    <p className="text-sm text-navy mb-3">
+                        Comité <span className="font-semibold">{meta.comite}</span>
+                        {meta.ya_superaron > 0 && <> · {meta.ya_superaron} ya superaron el límite</>}
+                    </p>
+                    <div className="max-h-64 overflow-y-auto rounded-xl border-2 border-mist">
+                        <table className="w-full text-sm">
+                            <thead className="bg-base text-slate text-xs text-left">
+                                <tr>
+                                    <th className="px-3 py-2">Beneficiario</th>
+                                    <th className="px-3 py-2">Tipo</th>
+                                    <th className="px-3 py-2">Límite</th>
+                                    <th className="px-3 py-2">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(meta.beneficiarios || []).map((b) => (
+                                    <tr key={b.beneficiary_id} className="border-t border-mist">
+                                        <td className="px-3 py-2 text-navy font-medium">{b.nombre}</td>
+                                        <td className="px-3 py-2 text-slate">{b.tipo_beneficio}</td>
+                                        <td className="px-3 py-2 text-slate whitespace-nowrap">{formatNotifDate(b.fecha_limite)}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            {b.dias < 0
+                                                ? <span className="text-coral font-bold">Superó hace {Math.abs(b.dias)} {Math.abs(b.dias) === 1 ? 'día' : 'días'}</span>
+                                                : <span className="text-navy">En {b.dias} {b.dias === 1 ? 'día' : 'días'}</span>}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {meta.total > (meta.beneficiarios || []).length && (
+                        <p className="text-xs text-slate mt-1">… y {meta.total - meta.beneficiarios.length} más.</p>
+                    )}
+                </Section>
+            )}
+
+            {meta.pdf_url && (
+                <a
+                    href={meta.pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue hover:underline"
+                >
+                    <i className="fas fa-file-pdf" aria-hidden="true" /> Ver documento
+                </a>
+            )}
+        </div>
+    );
+}
 
 function getSectionFromUrl() {
     const params = new URLSearchParams(window.location.search);
-    const section = params.get('section');
+    const requested = params.get('section');
+    const section = requested === 'movimientos' ? 'productos' : requested;
     return SECTION_COMPONENTS[section] || section?.startsWith('module:') ? section : 'inicio';
 }
 
@@ -136,6 +333,7 @@ export default function Dashboard() {
     const [notifCount, setNotifCount] = useState(0);
     const [notifLabel, setNotifLabel] = useState('');
     const [notifs, setNotifs] = useState([]);
+    const [detailNotif, setDetailNotif] = useState(null);
     const [notifLoading, setNotifLoading] = useState(false);
     const notifLoaded = useRef(false);
 
@@ -395,7 +593,7 @@ export default function Dashboard() {
                                 <div key={activeSection} className="section-enter">
                                     <ActiveComponent
                                         module={activeDynamicModule}
-                                        onNavigate={activeSection === 'inicio' ? navigate : undefined}
+                                        onNavigate={navigate}
                                         allowedSections={allowedSectionKeys}
                                         initialAction={navigationIntent?.section === activeSection ? navigationIntent.action : null}
                                     />
@@ -416,13 +614,16 @@ export default function Dashboard() {
                     onClick={closeNotifications}
                 >
                     <div
-                        className="relative mx-auto w-full max-w-2xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4"
+                        className="relative mx-auto w-full max-w-5xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="modal-enter bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
                             <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-mist">
                                 <h3 className="font-extrabold text-navy text-base sm:text-lg flex items-center gap-2">
                                     <i className="fas fa-bell text-blue" /> <span className="hidden sm:inline">Bandeja de </span>Notificaciones
+                                    {notifs.length > 0 && (
+                                        <span className="ml-1 px-2.5 py-0.5 rounded-full bg-blue text-white text-xs font-bold">{notifs.length}</span>
+                                    )}
                                 </h3>
                                 <button
                                     type="button"
@@ -449,39 +650,51 @@ export default function Dashboard() {
                                             <div key={n.id} className="p-4 rounded-xl border-2 border-mist bg-base">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="px-2 py-1 bg-blue-light text-blue text-xs font-bold rounded">{NOTIF_TYPE_LABELS[n.type] || n.type}</span>
-                                                            {n.status && n.status !== 'pending' && n.status !== 'informativo' && (
-                                                                <span className={`px-2 py-1 text-xs font-bold rounded ${
-                                                                    n.status === 'approved'
-                                                                        ? 'bg-teal-light text-teal'
-                                                                        : 'bg-coral-light text-coral'
-                                                                }`}>
-                                                                    {n.status === 'approved' ? 'Aprobado' : 'Rechazado'}
-                                                                </span>
-                                                            )}
-                                                        </div>
+                                                        <NotifBadges n={n} />
                                                         <p className="font-bold text-navy">{n.title}</p>
-                                                        <p className="text-sm text-slate mt-1">{n.description}</p>
-                                                        {n.metadata?.pdf_url && (
-                                                            <a
-                                                                href={n.metadata.pdf_url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue mt-2 hover:underline"
+                                                        <p className="text-sm text-slate mt-1 whitespace-pre-line line-clamp-2">{n.description}</p>
+                                                        <div className="flex items-center justify-between gap-3 mt-3">
+                                                            <span className="text-xs text-slate"><i className="far fa-clock mr-1" aria-hidden="true" />{formatNotifDateTime(n.requested_at)}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDetailNotif(n)}
+                                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue hover:underline"
                                                             >
-                                                                <i className="fas fa-file-pdf" aria-hidden="true" /> Ver documento
-                                                            </a>
-                                                        )}
-                                                        {n.requested_at && (
-                                                            <p className="text-xs text-slate mt-2">{n.requested_at}</p>
-                                                        )}
+                                                                Ver detalle <i className="fas fa-arrow-right" aria-hidden="true" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {detailNotif && (
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[60] animate-fade-in"
+                    onClick={() => setDetailNotif(null)}
+                >
+                    <div
+                        className="relative mx-auto w-full max-w-4xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="modal-enter bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
+                            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b-2 border-mist">
+                                <h3 className="font-extrabold text-navy text-base sm:text-lg flex items-center gap-2">
+                                    <i className="fas fa-file-lines text-blue" /> Detalle del aviso
+                                </h3>
+                                <button type="button" onClick={() => setDetailNotif(null)} className="modal-close-btn" aria-label="Cerrar detalle">
+                                    <i className="fas fa-times" />
+                                </button>
+                            </div>
+                            <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+                                <NotifDetailBody n={detailNotif} />
                             </div>
                         </div>
                     </div>

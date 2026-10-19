@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha de Control Interno - Leche Evaporada</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; background: #e9e9e9; margin: 0; padding: 20px; color: #111; }
+  .hoja { background: #fff; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 18mm 18mm; box-shadow: 0 2px 10px rgba(0,0,0,.2); position: relative; }
+  .folio { position: absolute; top: 12mm; right: 16mm; text-align: center; font-size: 14px; }
+  .folio input { width: 110px; text-align: center; }
+  .encabezado { font-style: italic; font-weight: bold; font-size: 14px; margin-bottom: 10px; }
+  .programa { border: 2px solid #000; width: 60%; margin: 0 auto 14px; text-align: center; font-weight: bold; padding: 6px; letter-spacing: .5px; }
+  h1 { text-align: center; font-size: 20px; margin: 0 0 18px; }
+  .producto { font-weight: bold; font-size: 15px; margin-bottom: 14px; }
+  .producto span { text-decoration: underline; }
+  input[type=text] { border: none; border-bottom: 1px solid #000; font: inherit; font-family: "Comic Sans MS", "Segoe Print", cursive; color: #1a3a8a; padding: 1px 4px; background: transparent; }
+  input[type=text]:focus { outline: 1px dashed #1a3a8a; }
+  .fila { display: flex; align-items: center; font-size: 12.5px; text-transform: uppercase; margin: 9px 0; }
+  .fila .label { flex: 1; }
+  .sino { display: flex; gap: 36px; width: 210px; justify-content: flex-end; }
+  .sino label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .sino input[type=checkbox] { width: 16px; height: 16px; accent-color: #1a3a8a; }
+  .linea { border-top: 1.5px solid #000; margin: 14px 0; }
+  .obs { font-size: 12.5px; text-transform: uppercase; display: flex; gap: 8px; align-items: center; }
+  .obs input { flex: 1; }
+  .dato input { width: 220px; text-align: center; }
+  .firma { margin-top: 60px; width: 240px; text-align: center; font-size: 12.5px; font-weight: bold; }
+  .firma .raya { border-top: 1px solid #000; margin-bottom: 6px; }
+  .acciones { text-align: center; margin: 16px auto; }
+  .acciones button { padding: 8px 18px; font-size: 14px; cursor: pointer; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .hoja { box-shadow: none; width: auto; min-height: auto; padding: 0; }
+    .acciones { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="acciones"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>
+
+<div class="hoja">
+  <div class="folio">
+    <input type="text" value="Diciembre"><br>
+    <input type="text" value="291" style="width:60px">
+  </div>
+
+  <div class="encabezado">Municipalidad Distrital de<br>La Esperanza</div>
+  <div class="programa">PROGRAMA VASO DE LECHE</div>
+  <h1>FICHA DE CONTROL INTERNO - INGRESO</h1>
+
+  <div class="producto">PRODUCTO: <span>LECHE EVAPORADA ENTERA POR 410 GR</span></div>
+
+  <div class="fila">
+    <span>FECHA DE INGRESO:&nbsp;</span><input type="text" value="23 Nov" style="width:150px">
+    <span style="margin-left:60px">HORA:&nbsp;</span><input type="text" value="10:30" style="width:130px">
+  </div>
+
+  <div id="checks"></div>
+
+  <div class="obs">OBSERVACIONES: <input type="text" value=""></div>
+  <div class="linea"></div>
+
+  <div class="fila dato"><span class="label">FECHA DE VENCIMIENTO DEL PRODUCTO</span><input type="text" value="19 Jun 2024"></div>
+  <div class="fila dato"><span class="label">CANTIDAD DE PRODUCTO RECEPCIONADO</span><input type="text" value="21095" style="width:150px"><span style="width:70px;text-align:right">TARROS</span></div>
+  <div class="fila dato"><span class="label">NÚMERO DE LOTE(S) RECEPCIONADO(S)</span><input type="text" value="12623, 22623"></div>
+  <div class="fila">
+    <span class="label">PESAJE ALEATORIO DEL PRODUCTO ADECUADO&nbsp; <input type="text" value="1 caja tomada" style="width:150px;text-transform:none"></span>
+    <div class="sino"><label>SI <input type="checkbox" checked></label><label>NO <input type="checkbox"></label></div>
+  </div>
+  <div class="obs">OBSERVACIONES: <input type="text" value=""></div>
+  <div class="linea"></div>
+
+  <div class="fila"><span class="label">ALMACÉN DE LA MDE ENTREGÓ PECOSA</span><div class="sino"><label>SI <input type="checkbox" checked></label><label>NO <input type="checkbox"></label></div></div>
+  <div class="fila"><span class="label">ENTREGA DE GUÍA O FACTURA DEL PRODUCTO</span><div class="sino"><label>SI <input type="checkbox" checked></label><label>NO <input type="checkbox"></label></div></div>
+  <div class="fila"><span class="label">PERSONAL (ESTIBADOR) DEL PROVEEDOR CUMPLIERON LOS PROTOCOLOS ANTI COVID-19</span><div class="sino"><label>SI <input type="checkbox"></label><label>NO <input type="checkbox"></label></div></div>
+
+  <div class="firma"><div class="raya"></div>PROGRAMA VASO DE LECHE</div>
+</div>
+
+<script>
+  const items = [
+    "Verificó el contrato del producto",
+    "Conformidad microbiológica",
+    "Conformidad organoléptica",
+    "Conformidad físico-química",
+    "Conformidad micronutrientes",
+    "Conformidad de esterilidad",
+    "Conformidad de calidad",
+    "Declaración jurada de micronutrientes",
+    "Declaración jurada de insumos nacionales"
+  ];
+  document.getElementById("checks").innerHTML = items.map(t =>
+    `<div class="fila"><span class="label">${t}</span>
+     <div class="sino"><label>SI <input type="checkbox" checked></label><label>NO <input type="checkbox"></label></div></div>`
+  ).join("");
+  // SI / NO excluyentes
+  document.addEventListener("change", e => {
+    if (e.target.type === "checkbox" && e.target.checked) {
+      e.target.closest(".sino").querySelectorAll("input").forEach(c => { if (c !== e.target) c.checked = false; });
+    }
+  });
+</script>
+</body>
+</html>

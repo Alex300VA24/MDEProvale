@@ -426,7 +426,7 @@ class AssistantDataService
         if (! $name) {
             return $title."\n\n"
                 ."- Este comité aún no tiene una presidenta asignada.\n"
-                ."- Para designarla: abre Comités y Reconocimientos, ubica el comité y usa Asignar Presidenta.";
+                ."- Para designarla: abre Comités y Resoluciones, ubica el comité y usa Asignar Cargo.";
         }
 
         return $title."\n\n"

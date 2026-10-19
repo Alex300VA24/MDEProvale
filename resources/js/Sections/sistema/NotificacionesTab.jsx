@@ -14,7 +14,9 @@ const STATUS_LABEL = {
 
 function fmtDateTime(d) {
     if (!d) return '-';
-    return new Date(d).toLocaleDateString('es-PE');
+    const date = new Date(d);
+    if (Number.isNaN(date.getTime())) return String(d);
+    return date.toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'medium', hour12: false });
 }
 
 export default function NotificacionesTab() {

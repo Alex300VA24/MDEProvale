@@ -36,13 +36,21 @@ class SchedulingService
         $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
 
         $racion = $this->reparticionService->getActiveRacion($year, $month);
+        $configuration = $racion
+            ? $this->reparticionService->getConfiguration($racion, $year, $month)
+            : null;
         $racionLabel = $racion
             ? $racion->racion_hojuelas_gramos . 'g / ' . $racion->racion_leche_militros . 'ml'
             : '';
 
         $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries(
-            $estadoActivo ? $estadoActivo->id : null, $sector
+            $estadoActivo ? $estadoActivo->id : null
         );
+        if ($sector !== null && trim($sector) !== '') {
+            $associations = $associations
+                ->filter(fn ($association) => optional(optional($association->placeSector)->sector)->title === $sector)
+                ->values();
+        }
 
         $associationIds = $associations->pluck('id');
 
@@ -55,17 +63,31 @@ class SchedulingService
             ->get()
             ->keyBy('association_id');
 
-        return $associations->map(function ($association) use ($directivesByResolution, $pecosasByAssociation, $startDate, $endDate, $racionLabel) {
+        return $associations->map(function ($association) use ($directivesByResolution, $pecosasByAssociation, $startDate, $endDate, $racionLabel, $configuration) {
             $presidenta = $this->resolvePresidentName($association, $directivesByResolution);
-            [$totalBenef, $primeraPrioridad, $segundaPrioridad] = $this->calculatePriorities($association, $startDate, $endDate);
+            [$baseBeneficiaries, $primeraPrioridad, $segundaPrioridad] = $this->calculatePriorities($association, $startDate, $endDate);
+            $assignment = $configuration ? $configuration['assignments']->get($association->id) : null;
+            $beneficiaryAdjustment = (int) ($assignment?->beneficiary_adjustment ?? 0);
+            $totalBenef = max(0, $baseBeneficiaries + $beneficiaryAdjustment);
             $pecosa = $pecosasByAssociation->get($association->id);
             $bolsas = $pecosa ? $pecosa->detailPecosas->sum('quantity') : 0;
             $lecheQty = $pecosa ? $pecosa->detailPecosas->where('product_abbreviation', 'LEC')->sum('quantity') : 0;
             $hojuelaQty = $pecosa ? $pecosa->detailPecosas->where('product_abbreviation', 'HOJ')->sum('quantity') : 0;
+            [$leche, $lecheRedondeo, $hojuela, $hojuelaRedondeo] = $this->calculateScheduledProducts(
+                $totalBenef,
+                $configuration,
+                (float) $lecheQty,
+                (float) $hojuelaQty
+            );
+            $leche = $assignment?->scheduled_milk !== null ? (float) $assignment->scheduled_milk : $leche;
+            $lecheRedondeo = $assignment?->scheduled_milk_rounded !== null ? (float) $assignment->scheduled_milk_rounded : $lecheRedondeo;
+            $hojuela = $assignment?->scheduled_oat !== null ? (float) $assignment->scheduled_oat : $hojuela;
+            $hojuelaRedondeo = $assignment?->scheduled_oat_rounded !== null ? (float) $assignment->scheduled_oat_rounded : $hojuelaRedondeo;
 
             $directive = $this->findDirective($association, $directivesByResolution);
 
             return [
+                'association_id' => $association->id,
                 'codigo' => $association->code ?? $association->id,
                 'nombre' => mb_strtoupper($association->name, 'UTF-8'),
                 'presidenta' => $presidenta,
@@ -73,11 +95,15 @@ class SchedulingService
                 'sector' => optional(optional($association->placeSector)->sector)->title ?? '',
                 'primera_prioridad' => $primeraPrioridad,
                 'segunda_prioridad' => $segundaPrioridad,
+                'beneficiarios_base' => $baseBeneficiaries,
+                'ajuste_beneficiarios' => $beneficiaryAdjustment,
                 'total_beneficiarios' => $totalBenef,
                 'bolsas' => $bolsas,
                 'kilos' => 0,
-                'leche' => $lecheQty,
-                'hojuela' => $hojuelaQty,
+                'leche' => $leche,
+                'leche_redondeo' => $lecheRedondeo,
+                'hojuela' => $hojuela,
+                'hojuela_redondeo' => $hojuelaRedondeo,
                 'racion' => $racionLabel,
                 'fecha_entrega' => $pecosa ? date('d/m/Y', strtotime($pecosa->delivery_date)) : '',
                 'recibe' => $presidenta,
@@ -125,21 +151,64 @@ class SchedulingService
 
         foreach ($partners as $partner) {
             foreach ($partner->beneficiaries as $beneficiario) {
+                $totalBenef++;
+
+                if ((int) $beneficiario->priority === 1) {
+                    $primeraPrioridad++;
+                    continue;
+                }
+
+                if ((int) $beneficiario->priority === 2) {
+                    $segundaPrioridad++;
+                    continue;
+                }
+
                 $persona = $beneficiario->person;
-                if (!$persona || !$persona->birthdate) continue;
+                if (!$persona || !$persona->birthdate) {
+                    $segundaPrioridad++;
+                    continue;
+                }
 
                 $edadAnos = Carbon::parse($persona->birthdate)->diffInYears($endDate);
-                $totalBenef++;
 
                 if ($edadAnos < 2) {
                     $primeraPrioridad++;
-                } elseif ($edadAnos >= 2 && $edadAnos <= 6) {
+                } else {
                     $segundaPrioridad++;
                 }
             }
         }
 
         return [$totalBenef, $primeraPrioridad, $segundaPrioridad];
+    }
+
+    private function calculateScheduledProducts(
+        int $beneficiaries,
+        ?array $configuration,
+        float $fallbackMilk,
+        float $fallbackOat
+    ): array {
+        if (! $configuration) {
+            return [
+                round($fallbackMilk, 2),
+                (int) round($fallbackMilk, 0, PHP_ROUND_HALF_UP),
+                round($fallbackOat, 2),
+                (int) round($fallbackOat, 0, PHP_ROUND_HALF_UP),
+            ];
+        }
+
+        $days = (int) $configuration['service_days'];
+        $milk = $beneficiaries * (float) $configuration['milk_grams_per_beneficiary'] * $days
+            / (float) $configuration['milk_can_grams'];
+        $oat = $beneficiaries * (float) $configuration['oat_grams_per_beneficiary'] * $days
+            / (float) $configuration['oat_bag_grams'];
+
+        return [
+            round($milk, 2),
+            (int) round($milk, 0, PHP_ROUND_HALF_UP),
+            round($oat, 2),
+            (int) round($oat, 0, PHP_ROUND_HALF_UP),
+        ];
     }
 
     private function findDirective($association, $directivesByResolution)

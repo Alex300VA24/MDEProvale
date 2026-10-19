@@ -364,7 +364,38 @@ class SociosBeneficiariosApiTest extends TestCase
 
     // ==================== SOCIOS: CRUD ====================
 
-    public function test_store_partner_creates_socio(): void
+    public function test_store_partner_creates_socio_with_beneficiary(): void
+    {
+        $associationId = $this->seedAssociation();
+        $personId = $this->seedPerson();
+        $beneficiaryPersonId = $this->seedPerson(['dni' => '73918462']);
+        $relationshipId = \Illuminate\Support\Facades\DB::table('relationships')->insertGetId([
+            'title' => 'HIJO(A)', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $currentStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
+            'title' => 'Vigente',
+            'abbreviation' => \App\Models\State::CURRENT,
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE . '/partners', [
+                'person_id' => $personId,
+                'association_id' => $associationId,
+                'state_id' => $currentStateId,
+                'date_begin' => now()->toDateString(),
+                'beneficiaries' => [[
+                    'person_id' => $beneficiaryPersonId,
+                    'relationship_id' => $relationshipId,
+                ]],
+            ])
+            ->assertStatus(201)
+            ->assertJsonPath('data.person.id', $personId);
+
+        $this->assertDatabaseHas('partners', ['person_id' => $personId, 'association_id' => $associationId]);
+        $this->assertDatabaseHas('beneficiaries', ['person_id' => $beneficiaryPersonId, 'relationship_id' => $relationshipId]);
+    }
+
+    public function test_store_partner_requires_a_beneficiary(): void
     {
         $associationId = $this->seedAssociation();
         $personId = $this->seedPerson();
@@ -380,10 +411,109 @@ class SociosBeneficiariosApiTest extends TestCase
                 'state_id' => $currentStateId,
                 'date_begin' => now()->toDateString(),
             ])
-            ->assertStatus(201)
-            ->assertJsonPath('data.person.id', $personId);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('beneficiaries');
+    }
 
-        $this->assertDatabaseHas('partners', ['person_id' => $personId, 'association_id' => $associationId]);
+    public function test_store_partner_registers_eligible_partner_as_beneficiary_and_calculates_child_end_date(): void
+    {
+        $associationId = $this->seedAssociation();
+        $partnerPersonId = $this->seedPerson(['dni' => '70112233', 'birthdate' => '1950-05-20']);
+        $childPersonId = $this->seedPerson(['dni' => '70445566', 'birthdate' => '2020-06-10']);
+        $relationshipId = \Illuminate\Support\Facades\DB::table('relationships')->where('title', 'Hijo')->value('id');
+        $currentStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
+            'title' => 'Vigente', 'abbreviation' => \App\Models\State::CURRENT,
+        ]);
+        $childBenefitId = \Illuminate\Support\Facades\DB::table('type_benefits')->insertGetId([
+            'title' => 'Niño (0-6 años)', 'abbreviation' => 'NI0', 'min_age' => 0, 'max_age' => 6,
+            'priority' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $adultBenefitId = \Illuminate\Support\Facades\DB::table('type_benefits')->insertGetId([
+            'title' => 'Adulto mayor', 'abbreviation' => 'ADU', 'min_age' => 65, 'max_age' => null,
+            'priority' => 2, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->userWithAccess())->postJson(self::BASE . '/partners', [
+            'person_id' => $partnerPersonId,
+            'association_id' => $associationId,
+            'state_id' => $currentStateId,
+            'date_begin' => now()->toDateString(),
+            'socioeconomic_condition' => 'ADULTO_MAYOR',
+            'beneficiaries' => [[
+                'person_id' => $childPersonId,
+                'relationship_id' => $relationshipId,
+                'priority' => 1,
+                'type_benefit_id' => $childBenefitId,
+                'history_state_id' => $currentStateId,
+                'date_begin' => now()->toDateString(),
+            ]],
+        ])->assertCreated();
+
+        $partnerId = $response->json('data.id');
+        $this->assertDatabaseHas('beneficiaries', ['partner_id' => $partnerId, 'person_id' => $partnerPersonId, 'priority' => 2]);
+        $this->assertDatabaseHas('beneficiary_histories', ['type_benefit_id' => $adultBenefitId]);
+        $this->assertDatabaseHas('beneficiary_histories', ['type_benefit_id' => $childBenefitId, 'date_end' => '2027-06-09']);
+    }
+
+    public function test_adulto_mayor_condition_rejects_partner_under_65(): void
+    {
+        $associationId = $this->seedAssociation();
+        $personId = $this->seedPerson(['dni' => '70998877', 'birthdate' => now()->subYears(40)->toDateString()]);
+        $childPersonId = $this->seedPerson(['dni' => '70665544']);
+        $relationshipId = \Illuminate\Support\Facades\DB::table('relationships')->where('title', 'Hijo')->value('id');
+
+        $this->actingAs($this->userWithAccess())->postJson(self::BASE . '/partners', [
+            'person_id' => $personId,
+            'association_id' => $associationId,
+            'state_id' => 1,
+            'date_begin' => now()->toDateString(),
+            'socioeconomic_condition' => 'ADULTO_MAYOR',
+            'beneficiaries' => [[
+                'person_id' => $childPersonId,
+                'relationship_id' => $relationshipId,
+                'priority' => 1,
+            ]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('socioeconomic_condition');
+    }
+
+    public function test_disabled_partner_requires_and_stores_conadis_pdf(): void
+    {
+        $associationId = $this->seedAssociation();
+        $personId = $this->seedPerson(['dni' => '70887766']);
+        $beneficiaryPersonId = $this->seedPerson(['dni' => '70554433']);
+        $relationshipId = \Illuminate\Support\Facades\DB::table('relationships')->where('title', 'Hijo')->value('id');
+        $currentStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
+            'title' => 'Vigente', 'abbreviation' => \App\Models\State::CURRENT,
+        ]);
+        \Illuminate\Support\Facades\DB::table('type_benefits')->insert([
+            'title' => 'Persona con Discapacidad', 'abbreviation' => 'DIS', 'min_age' => 0, 'max_age' => null,
+            'priority' => 2, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $payload = [
+            'person_id' => $personId,
+            'association_id' => $associationId,
+            'state_id' => $currentStateId,
+            'date_begin' => now()->toDateString(),
+            'socioeconomic_condition' => 'DISCAPACITADO',
+            'beneficiaries' => [[
+                'person_id' => $beneficiaryPersonId,
+                'relationship_id' => $relationshipId,
+                'priority' => 1,
+            ]],
+        ];
+
+        $this->actingAs($this->userWithAccess())->withHeader('Accept', 'application/json')->post(self::BASE . '/partners', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('conadis_document');
+
+        $payload['conadis_document'] = \Illuminate\Http\UploadedFile::fake()->create('conadis.pdf', 20, 'application/pdf');
+        $response = $this->actingAs($this->userWithAccess())->withHeader('Accept', 'application/json')->post(self::BASE . '/partners', $payload)->assertCreated();
+
+        $this->assertDatabaseHas('document_attachments', [
+            'attachable_id' => $response->json('data.id'),
+            'document_type' => 'conadis',
+            'mime_type' => 'application/pdf',
+        ]);
     }
 
     public function test_update_partner_updates_observations(): void

@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\AsignarPresidentaRequest;
+use App\Http\Requests\AsignarCargoRequest;
+use App\Http\Requests\AsignarCargosRequest;
 use App\Http\Requests\StoreClubRequest;
 use App\Http\Requests\StoreReconocimientoRequest;
 use App\Http\Requests\UpdateClubRequest;
@@ -79,15 +80,52 @@ class ComitesController extends Controller
         return ClubResource::collection($associations);
     }
 
-    public function clubsOptions()
+    public function clubsOptions(Request $request)
     {
+        app(ResolutionStateService::class)->syncAll();
+
+        $vigenteStateId = State::idFor(State::CURRENT);
+        $today = now()->toDateString();
+
+        $resolutions = Resolution::select(['id', 'document', 'date_document', 'date_start', 'date_end', 'state_id'])
+            ->where(function ($q) use ($vigenteStateId, $today, $request) {
+                $q->where(function ($sub) use ($vigenteStateId, $today) {
+                    if ($vigenteStateId) {
+                        $sub->where('state_id', $vigenteStateId);
+                    }
+                    $sub->where('date_end', '>=', $today);
+                });
+
+                if ($request->filled('include_resolution_id')) {
+                    $q->orWhere('id', (int) $request->input('include_resolution_id'));
+                }
+            })
+            ->orderByDesc('date_start')
+            ->orderByDesc('id')
+            ->get();
+
+        $codes = Association::pluck('code');
+        $maxNumeric = 0;
+        foreach ($codes as $code) {
+            $trimmed = trim((string) $code);
+            if (is_numeric($trimmed)) {
+                $val = (int) $trimmed;
+                if ($val > $maxNumeric) {
+                    $maxNumeric = $val;
+                }
+            }
+        }
+        $nextCode = (string) ($maxNumeric + 1);
+
+        $existingCodes = Association::select(['id', 'code'])->get();
+
         return response()->json([
             'states' => State::forAssociations()->get(['id', 'title', 'abbreviation']),
             'place_sectors' => PlaceSector::with(['place:id,title', 'sector:id,title'])->get(),
             'type_premises' => TypePremises::select(['id', 'title'])->get(),
-            'resolutions' => Resolution::select(['id', 'document', 'date_document', 'date_start', 'date_end', 'state_id'])
-                ->orderByDesc('date_document')
-                ->get(),
+            'resolutions' => $resolutions,
+            'next_code' => $nextCode,
+            'existing_codes' => $existingCodes,
         ]);
     }
 
@@ -98,6 +136,7 @@ class ComitesController extends Controller
         $association->load(['partners.people:id,names,father_lastname,mother_lastname,dni']);
 
         $this->setPresidentForSingle($association);
+        $this->setCurrentPositionsForSingle($association);
         $this->hydrateResolutions(collect([$association]));
 
         return new ClubResource($association);
@@ -152,12 +191,13 @@ class ComitesController extends Controller
     }
 
     /**
-     * Asigna la presidenta al comité. Solo se acepta una socia que pertenezca
-     * al comité. La vigencia depende únicamente de su resolución.
+     * Asigna un cargo de la directiva a una socia del comité.
      */
-    public function asignarPresidenta(AsignarPresidentaRequest $request, Association $association)
+    public function asignarCargo(AsignarCargoRequest $request, Association $association)
     {
-        $partnerId = (int) $request->partner_id;
+        $validated = $request->validated();
+        $partnerId = (int) $validated['partner_id'];
+        $positionTitle = $validated['position'];
 
         $belongsToClub = $association->partners()
             ->whereKey($partnerId)
@@ -170,8 +210,8 @@ class ComitesController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($association, $partnerId) {
-                $posicionPresidenta = Position::firstOrCreate(['title' => 'PRESIDENTA']);
+            DB::transaction(function () use ($association, $partnerId, $positionTitle) {
+                $position = Position::firstOrCreate(['title' => $positionTitle]);
 
                 $estadoVigente = State::where('abbreviation', State::CURRENT)->firstOrFail();
                 $estadoVencido = State::where('abbreviation', State::EXPIRED)->firstOrFail();
@@ -190,8 +230,12 @@ class ComitesController extends Controller
 
                 Directive::whereIn('partner_id', $partnerIds)
                     ->whereIn('resolution_id', $resolutionIds)
-                    ->where('position_id', $posicionPresidenta->id)
-                    ->update(['state_id' => $estadoVencido->id]);
+                    ->where('position_id', $position->id)
+                    ->where('state_id', $estadoVigente->id)
+                    ->update([
+                        'state_id' => $estadoVencido->id,
+                        'date_end' => now()->subDay()->toDateString(),
+                    ]);
 
                 $resolutionId = $association->resolution_id ?? $resolutionIds->first() ?? null;
 
@@ -202,32 +246,116 @@ class ComitesController extends Controller
 Directive::create([
                     'resolution_id' => $resolutionId,
                     'partner_id'    => $partnerId,
-                    'position_id'   => $posicionPresidenta->id,
+                    'position_id'   => $position->id,
                     'state_id'      => $estadoVigente->id,
                     'date_start'    => now()->toDateString(),
                 ]);
 
                 $partner = Partner::with('people')->find($partnerId);
-                if ($partner) {
+                if ($positionTitle === 'PRESIDENTA' && $partner) {
                     app(PresidentAccountService::class)->sync($partner);
                 }
 
-                Association::clearPresidentaCache($association->id);
+                if ($positionTitle === 'PRESIDENTA') {
+                    Association::clearPresidentaCache($association->id);
+                }
             });
         } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Error al asignar presidenta: ' . $e->getMessage()], 422);
+            return response()->json(['message' => 'Error al asignar el cargo: ' . $e->getMessage()], 422);
         }
 
         $association->load(self::CLUB_WITH);
-        $association->president_partner_id = $partnerId;
+        $this->setPresidentForSingle($association);
+        $this->setCurrentPositionsForSingle($association);
 
-        $partner = Partner::with('people:id,names,father_lastname')->find($partnerId);
-        $association->president_name = $partner && $partner->people
-            ? trim($partner->people->names . ' ' . $partner->people->father_lastname)
-            : null;
+        $this->hydrateResolutions(collect([$association]));
 
+        return new ClubResource($association);
+    }
+
+    /**
+     * Guarda varios cargos de la directiva en una sola operación.
+     */
+    public function asignarCargos(AsignarCargosRequest $request, Association $association)
+    {
+        $assignments = collect($request->validated('assignments'));
+        $partnerIds = $assignments->pluck('partner_id')->map(fn ($id) => (int) $id)->unique();
+        $validPartnerIds = $association->partners()->whereKey($partnerIds)->pluck('id');
+
+        if ($validPartnerIds->count() !== $partnerIds->count()) {
+            return response()->json([
+                'message' => 'Una de las socias seleccionadas no pertenece a este comité',
+            ], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($association, $assignments) {
+                $estadoVigente = State::where('abbreviation', State::CURRENT)->firstOrFail();
+                $estadoVencido = State::where('abbreviation', State::EXPIRED)->firstOrFail();
+
+                $resolutionIds = DB::table('resolution_associations')
+                    ->where('association_id', $association->id)
+                    ->pluck('resolution_id');
+
+                if ($association->resolution_id) {
+                    $resolutionIds->push($association->resolution_id);
+                }
+
+                $resolutionIds = $resolutionIds->unique();
+                $resolutionId = $association->resolution_id ?? $resolutionIds->first() ?? null;
+
+                if (!$resolutionId) {
+                    throw new \DomainException('No hay resolución asociada al comité');
+                }
+
+                $committeePartnerIds = $association->partners()->pluck('id');
+                $positions = Position::whereIn('title', $assignments->pluck('position'))
+                    ->get()
+                    ->keyBy('title');
+
+                foreach ($assignments as $assignment) {
+                    $positionTitle = $assignment['position'];
+                    $partnerId = (int) $assignment['partner_id'];
+                    $position = $positions->get($positionTitle);
+
+                    Directive::whereIn('partner_id', $committeePartnerIds)
+                        ->whereIn('resolution_id', $resolutionIds)
+                        ->where('position_id', $position->id)
+                        ->where('state_id', $estadoVigente->id)
+                        ->update([
+                            'state_id' => $estadoVencido->id,
+                            'date_end' => now()->subDay()->toDateString(),
+                        ]);
+
+                    Directive::create([
+                        'resolution_id' => $resolutionId,
+                        'partner_id' => $partnerId,
+                        'position_id' => $position->id,
+                        'state_id' => $estadoVigente->id,
+                        'date_start' => now()->toDateString(),
+                    ]);
+
+                    if ($positionTitle === 'PRESIDENTA') {
+                        $partner = Partner::with('people')->find($partnerId);
+                        if ($partner) {
+                            app(PresidentAccountService::class)->sync($partner);
+                        }
+                        Association::clearPresidentaCache($association->id);
+                    }
+                }
+            });
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al asignar los cargos: ' . $e->getMessage()], 422);
+        }
+
+        $association->load(self::CLUB_WITH);
+        $association->load(['partners.people:id,names,father_lastname,mother_lastname,dni']);
+        $this->setPresidentForSingle($association);
+        $this->setCurrentPositionsForSingle($association);
         $this->hydrateResolutions(collect([$association]));
 
         return new ClubResource($association);
@@ -428,6 +556,32 @@ Directive::create([
         $association->president_name = $presidenta && $presidenta->people
             ? trim($presidenta->people->names . ' ' . $presidenta->people->father_lastname)
             : null;
+    }
+
+    private function setCurrentPositionsForSingle(Association $association): void
+    {
+        $partnerIds = $association->partners()->pluck('id');
+        $currentStateId = State::idFor(State::CURRENT);
+
+        if ($partnerIds->isEmpty() || !$currentStateId) {
+            $association->current_positions = [];
+            return;
+        }
+
+        $association->current_positions = Directive::query()
+            ->with('position:id,title')
+            ->whereIn('partner_id', $partnerIds)
+            ->where('state_id', $currentStateId)
+            ->whereHas('position', fn ($query) => $query->whereIn('title', Position::COMMITTEE_TITLES))
+            ->orderByDesc('date_start')
+            ->orderByDesc('id')
+            ->get()
+            ->filter(fn ($directive) => $directive->position)
+            ->unique('position_id')
+            ->mapWithKeys(fn ($directive) => [
+                $directive->position->title => $directive->partner_id,
+            ])
+            ->all();
     }
 
     private function hydrateResolutions($associations): void

@@ -30,6 +30,10 @@
     $nombreMes = strtoupper($meses_es[(int) $month] ?? '');
     $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int) $month, (int) $year);
     $issued = $issuedAt ?? now();
+    $mode = $productMode ?? 'complete';
+    $showMilk = $mode !== 'oat';
+    $showOat = $mode !== 'milk';
+    $subtitle = $showMilk && $showOat ? 'LECHE EVAPORADA ENTERA Y HOJUELA DE QUINUA AVENA CON AZÚCAR FORTIFICADA CON VITAMINAS Y MINERALES' : ($showMilk ? 'LECHE EVAPORADA ENTERA' : 'HOJUELA DE QUINUA AVENA CON AZÚCAR FORTIFICADA CON VITAMINAS Y MINERALES');
 @endphp
 <footer><strong>PÁG <span class="pagenum"></span></strong></footer>
 
@@ -49,7 +53,7 @@
                     PROGRAMACIÓN DE ENTREGA DE LOS PRODUCTOS DEL PROGRAMA VASO DE LECHE (PERIODO DEL 01 AL {{ sprintf('%02d', $daysInMonth) }} {{ $nombreMes }} {{ $year }})
                 </div>
                 <div style="font-size: 8pt; font-weight: bold; margin-top: 2px; text-transform: uppercase;">
-                    LECHE EVAPORADA ENTERA Y HOJUELA DE QUINUA AVENA CON AZÚCAR FORTIFICADA CON VITAMINAS Y MINERALES
+                    {{ $subtitle }}
                 </div>
             </td>
             <td style="width: 130px; text-align: right; vertical-align: top; font-size: 6.5pt; line-height: 1.4; padding: 0;">
@@ -60,7 +64,7 @@
     </table>
 
     <table class="main-table">
-        <colgroup><col style="width:3%"><col style="width:4.5%"><col style="width:17%"><col style="width:15%"><col style="width:18%"><col style="width:10%"><col style="width:5%"><col style="width:6.5%"><col style="width:6.5%"><col style="width:14.5%"></colgroup>
+        <colgroup><col style="width:3%"><col style="width:4.5%"><col style="width:17%"><col style="width:15%"><col style="width:18%"><col style="width:10%"><col style="width:5%">@if($showMilk)<col style="width:6.5%">@endif @if($showOat)<col style="width:6.5%">@endif<col style="width:14.5%"></colgroup>
         <thead>
             <tr>
                 <th style="width:3%">N.°</th>
@@ -70,8 +74,8 @@
                 <th style="width:18%">DIRECCIÓN</th>
                 <th style="width:10%">SECTOR</th>
                 <th style="width:5%">BENEF.</th>
-                <th style="width:6.5%">TOTAL LECHE (TARROS)</th>
-                <th style="width:6.5%">TOTAL HOJUELA (KG)</th>
+                @if($showMilk)<th style="width:6.5%">TOTAL LECHE (TARROS)</th>@endif
+                @if($showOat)<th style="width:6.5%">TOTAL HOJUELA (KG)</th>@endif
                 <th style="width:14.5%">FIRMA</th>
             </tr>
         </thead>
@@ -85,8 +89,8 @@
                 <td class="left">{{ $club['direccion'] }}</td>
                 <td class="left">{{ $club['sector'] }}</td>
                 <td class="numeric" style="font-weight: bold;">{{ $club['beneficiarios'] }}</td>
-                <td class="numeric">{{ $club['leche_total'] }}</td>
-                <td class="numeric">{{ $club['hojuelas_kg'] }}</td>
+                @if($showMilk)<td class="numeric">{{ $club['leche_total'] }}</td>@endif
+                @if($showOat)<td class="numeric">{{ $club['hojuelas_kg'] }}</td>@endif
                 <td></td>
             </tr>
         @endforeach

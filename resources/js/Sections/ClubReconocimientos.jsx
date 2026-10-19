@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePage } from '@inertiajs/react';
 import http from '../http';
 import ComitesTab from './comites/ComitesTab';
@@ -10,7 +10,7 @@ const BASE = '/api/dashboard/club-madres';
 
 const HEADERS = {
     comites: { icon: 'fa-people-roof', title: 'Gestión de Clubes de Madres', description: 'Administra los clubes de madres y comités registrados.' },
-    reconocimientos: { icon: 'fa-scroll', title: 'Gestión de Reconocimientos', description: 'Administra los reconocimientos otorgados a los clubes.' },
+    reconocimientos: { icon: 'fa-scroll', title: 'Gestión de Resoluciones', description: 'Administra las resoluciones vinculadas a los comités.' },
 };
 
 export default function ClubReconocimientos({ initialAction }) {
@@ -41,32 +41,32 @@ export default function ClubReconocimientos({ initialAction }) {
     const comitesRef = useRef(null);
     const reconocimientosRef = useRef(null);
 
-    useEffect(() => {
-        let active = true;
-        (async () => {
-            try {
-                const reqs = [];
-                if (can.comites.view) reqs.push(http.get(`${BASE}/clubs/options`));
-                if (can.reconocimientos.view) reqs.push(http.get(`${BASE}/reconocimientos/options`));
-                const results = await Promise.all(reqs);
-                if (!active) return;
-                const comitesOpts = can.comites.view ? results.shift() : null;
-                const reconOpts = can.reconocimientos.view ? results.shift() : null;
-                setOptions({
-                    states: comitesOpts?.data?.states ?? reconOpts?.data?.states ?? [],
-                    place_sectors: comitesOpts?.data?.place_sectors ?? [],
-                    type_premises: comitesOpts?.data?.type_premises ?? [],
-                    resolutions: comitesOpts?.data?.resolutions ?? [],
-                    years: reconOpts?.data?.years ?? [],
-                });
-            } catch {
-                if (active) setOptionsError(true);
-            }
-        })();
-        return () => {
-            active = false;
-        };
+    const reloadOptions = useCallback(async () => {
+        try {
+            const reqs = [];
+            if (can.comites.view) reqs.push(http.get(`${BASE}/clubs/options`));
+            if (can.reconocimientos.view) reqs.push(http.get(`${BASE}/reconocimientos/options`));
+            const results = await Promise.all(reqs);
+            const comitesOpts = can.comites.view ? results.shift() : null;
+            const reconOpts = can.reconocimientos.view ? results.shift() : null;
+            setOptions({
+                states: comitesOpts?.data?.states ?? reconOpts?.data?.states ?? [],
+                place_sectors: comitesOpts?.data?.place_sectors ?? [],
+                type_premises: comitesOpts?.data?.type_premises ?? [],
+                resolutions: comitesOpts?.data?.resolutions ?? [],
+                next_code: comitesOpts?.data?.next_code ?? '',
+                existing_codes: comitesOpts?.data?.existing_codes ?? [],
+                years: reconOpts?.data?.years ?? [],
+            });
+            setOptionsError(false);
+        } catch {
+            setOptionsError(true);
+        }
     }, [can.comites.view, can.reconocimientos.view]);
+
+    useEffect(() => {
+        reloadOptions();
+    }, [reloadOptions]);
 
     useEffect(() => {
         if (initialAction !== 'comites-padron' || !can.comites.view) return;
@@ -89,6 +89,17 @@ export default function ClubReconocimientos({ initialAction }) {
                 {(can.comites.view || can.reconocimientos.view) && (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
                         <div className="flex items-center gap-1 overflow-x-auto">
+                            {can.reconocimientos.view && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTab('reconocimientos')}
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                                        tab === 'reconocimientos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
+                                    }`}
+                                >
+                                    <i className="fas fa-scroll" /> Resoluciones
+                                </button>
+                            )}
                             {can.comites.view && (
                                 <button
                                     type="button"
@@ -98,17 +109,6 @@ export default function ClubReconocimientos({ initialAction }) {
                                     }`}
                                 >
                                     <i className="fas fa-people-roof" /> Comités
-                                </button>
-                            )}
-                            {can.reconocimientos.view && (
-                                <button
-                                    type="button"
-                                    onClick={() => setTab('reconocimientos')}
-                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
-                                        tab === 'reconocimientos' ? 'text-leaf border-leaf' : 'text-earth border-transparent hover:text-charcoal'
-                                    }`}
-                                >
-                                    <i className="fas fa-scroll" /> Reconocimientos
                                 </button>
                             )}
                         </div>
@@ -146,7 +146,10 @@ export default function ClubReconocimientos({ initialAction }) {
                             {can.comites.view && tab === 'comites' && can.comites.create && (
                                 <button
                                     type="button"
-                                    onClick={() => comitesRef.current?.openCreate()}
+                                    onClick={() => {
+                                        reloadOptions();
+                                        comitesRef.current?.openCreate();
+                                    }}
                                     className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                                 >
                                     <i className="fas fa-plus" /> Registrar Comité
@@ -158,7 +161,7 @@ export default function ClubReconocimientos({ initialAction }) {
                                     onClick={() => reconocimientosRef.current?.openCreate()}
                                     className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
                                 >
-                                    <i className="fas fa-plus" /> Registrar Reconocimiento
+                                    <i className="fas fa-plus" /> Registrar Resolución
                                 </button>
                             )}
                         </div>
@@ -173,12 +176,12 @@ export default function ClubReconocimientos({ initialAction }) {
                     )}
                     {can.comites.view && (
                         <div className={tab === 'comites' ? '' : 'hidden'}>
-                            <ComitesTab ref={comitesRef} options={options ?? {}} can={can.comites} />
+                            <ComitesTab ref={comitesRef} options={options ?? {}} can={can.comites} reloadOptions={reloadOptions} />
                         </div>
                     )}
                     {can.reconocimientos.view && (
                         <div className={tab === 'reconocimientos' ? '' : 'hidden'}>
-                            <ReconocimientosTab ref={reconocimientosRef} options={options ?? {}} can={can.reconocimientos} />
+                            <ReconocimientosTab ref={reconocimientosRef} options={options ?? {}} can={can.reconocimientos} onResolutionsChanged={reloadOptions} />
                         </div>
                     )}
                 </div>

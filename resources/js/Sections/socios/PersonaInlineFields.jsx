@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
-import Combobox from '../../Components/Combobox';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
@@ -29,8 +28,6 @@ export async function submitInlinePersona(personState) {
         birthdate: personData.birthdate || null,
         gender: personData.gender || null,
         address: personData.address || null,
-        phone_number: personData.phone_number || null,
-        place_sector_id: personData.place_sector_id || null,
     };
 
     if (reniecPhotoToken) {
@@ -59,16 +56,9 @@ export default function PersonaInlineFields({
         birthdate: '',
         gender: '',
         address: '',
-        phone_number: '',
-        place_sector_id: '',
     };
     const [consultingReniec, setConsultingReniec] = useState(false);
     const [reniecStatus, setReniecStatus] = useState(null);
-
-    const placeSectorOptions = (options.place_sectors ?? []).map((ps) => ({
-        id: ps.id,
-        label: [ps.place?.title, ps.sector?.title].filter(Boolean).join(' - '),
-    }));
 
     const updateField = (field, val) => {
         const updated = { ...personData, [field]: val };
@@ -232,7 +222,7 @@ export default function PersonaInlineFields({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label className={labelCls}>Fecha Nacimiento <Optional /></label>
                             <input
@@ -253,28 +243,6 @@ export default function PersonaInlineFields({
                                 <option value="F">Femenino</option>
                                 <option value="M">Masculino</option>
                             </select>
-                        </div>
-                        <div>
-                            <label className={labelCls}>Celular <Optional /></label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                maxLength={9}
-                                value={personData.phone_number}
-                                onChange={(e) => updateField('phone_number', e.target.value.replace(/\D/g, ''))}
-                                placeholder="9 dígitos"
-                                className={inputCls}
-                            />
-                        </div>
-                        <div>
-                            <label className={labelCls}>Barrio / Sector <Optional /></label>
-                            <Combobox
-                                value={personData.place_sector_id}
-                                onChange={(id) => updateField('place_sector_id', id)}
-                                options={placeSectorOptions}
-                                placeholder="Seleccionar..."
-                                allowClear
-                            />
                         </div>
                     </div>
 

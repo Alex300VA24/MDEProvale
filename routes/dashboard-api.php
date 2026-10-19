@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\InicioController;
 use App\Http\Controllers\Api\KnowledgeBaseController;
 use App\Http\Controllers\Api\ResponsablesRacionesController;
 use App\Http\Controllers\Api\MovimientosController;
+use App\Http\Controllers\ControlInternoController;
 use App\Http\Controllers\Api\ProductosPecosasController;
 use App\Http\Controllers\Api\SistemaController;
 use App\Http\Controllers\Api\SociosBeneficiariosController;
@@ -100,7 +101,8 @@ Route::prefix('dashboard/club-madres')->middleware('module:club-madres')->name('
     Route::post('clubs', [ComitesController::class, 'storeClub'])->name('clubs.store');
     Route::put('clubs/{association}', [ComitesController::class, 'updateClub'])->name('clubs.update');
     Route::delete('clubs/{association}', [ComitesController::class, 'destroyClub'])->name('clubs.destroy');
-    Route::post('clubs/{association}/asignar-presidenta', [ComitesController::class, 'asignarPresidenta'])->name('clubs.asignar-presidenta');
+    Route::post('clubs/{association}/asignar-cargo', [ComitesController::class, 'asignarCargo'])->name('clubs.asignar-cargo');
+    Route::post('clubs/{association}/asignar-cargos', [ComitesController::class, 'asignarCargos'])->name('clubs.asignar-cargos');
 
     // Reconocimientos (Resoluciones)
     Route::get('reconocimientos', [ComitesController::class, 'reconocimientos'])->name('reconocimientos');
@@ -122,6 +124,10 @@ Route::prefix('dashboard/productos-pecosas')->name('api.productos-pecosas.')->gr
         Route::get('products', [ProductosPecosasController::class, 'products'])->name('products');
         Route::get('products/options', [ProductosPecosasController::class, 'productsOptions'])->name('products.options');
         Route::get('products/detail-products', [ProductosPecosasController::class, 'detailProducts'])->name('products.detail-products');
+        Route::get('programacion-entrega', [ProductosPecosasController::class, 'programacionEntrega'])->name('programacion-entrega');
+        Route::put('programacion-entrega', [ProductosPecosasController::class, 'updateProgramacionEntrega'])
+            ->middleware('module:productos,edit')
+            ->name('programacion-entrega.update');
         Route::post('products', [ProductosPecosasController::class, 'storeProduct'])->name('products.store');
         Route::put('products/{product}', [ProductosPecosasController::class, 'updateProduct'])->name('products.update');
         Route::delete('products/{product}', [ProductosPecosasController::class, 'destroyProduct'])->name('products.destroy');
@@ -145,6 +151,7 @@ Route::prefix('dashboard/movimientos')->middleware('module:movimientos')->name('
     Route::post('transactions', [MovimientosController::class, 'store'])->name('transactions.store');
     Route::put('transactions/{transaction}', [MovimientosController::class, 'update'])->name('transactions.update');
     Route::delete('transactions/{transaction}', [MovimientosController::class, 'destroy'])->name('transactions.destroy');
+    Route::get('tarjeta-control', [ControlInternoController::class, 'tarjetaDatos'])->name('tarjeta-control');
 
     // Repartición mensual (reporte de raciones por comité + enlace al PDF)
     Route::get('reparticion', [MovimientosController::class, 'reparticion'])->name('reparticion');

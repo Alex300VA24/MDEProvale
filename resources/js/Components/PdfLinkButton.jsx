@@ -2,6 +2,24 @@ import { useState } from 'react';
 import { useToast } from './Toast';
 import { pdfLoadingHtml } from './pdfLoadingScreen';
 
+// POST con el cuerpo en el request: evita el límite de largo de URL (414) en documentos con muchos datos.
+const postOptions = (data) => {
+    const xsrf = document.cookie.split('; ').find((row) => row.startsWith('XSRF-TOKEN='));
+    const meta = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    return {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'application/json, application/pdf',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf.split('=')[1]) } : {}),
+            ...(meta ? { 'X-CSRF-TOKEN': meta } : {}),
+        },
+        body: new URLSearchParams(data).toString(),
+    };
+};
+
 export default function PdfLinkButton({
     href,
     loadingTitle = 'Generando documento',
@@ -10,6 +28,7 @@ export default function PdfLinkButton({
     className,
     children,
     disabled = false,
+    postData = null,
     ...rest
 }) {
     const toast = useToast();
@@ -32,7 +51,7 @@ export default function PdfLinkButton({
         preview.document.write(pdfLoadingHtml(loadingTitle, loadingMessage));
         preview.document.close();
         try {
-            const res = await fetch(href, { headers: { Accept: 'application/pdf' } });
+            const res = await fetch(href, postData ? postOptions(postData) : { headers: { Accept: 'application/pdf' } });
             if (!res.ok) {
                 let msg = 'No se pudo generar el documento.';
                 try {

@@ -41,6 +41,11 @@ class CheckModuleAccess
 
     private function abilityFor(Request $request): string
     {
+        // Los PDF de control interno usan POST solo por el tamaño del payload; no modifican datos.
+        if (in_array($request->route()?->getName(), ['movimientos.ficha-control', 'movimientos.tarjeta-control'], true)) {
+            return 'view';
+        }
+
         return match ($request->method()) {
             'POST' => str_ends_with((string) $request->route()?->getName(), '.store') ? 'create' : 'edit',
             'PUT', 'PATCH' => 'edit',

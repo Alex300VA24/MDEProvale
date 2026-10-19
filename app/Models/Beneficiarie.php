@@ -17,6 +17,11 @@ class Beneficiarie extends Model
         'person_id',
         'partner_id',
         'relationship_id',
+        'priority',
+    ];
+
+    protected $casts = [
+        'priority' => 'integer',
     ];
 
     public function scopeActiveDuring(Builder $query, string $startDate, string $endDate): Builder

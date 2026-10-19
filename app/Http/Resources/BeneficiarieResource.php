@@ -13,6 +13,7 @@ class BeneficiarieResource extends JsonResource
             'person_id' => $this->person_id,
             'partner_id' => $this->partner_id,
             'relationship_id' => $this->relationship_id,
+            'priority' => $this->priority,
             'name' => $this->name,
             'person' => $this->whenLoaded('person', function () {
                 return [

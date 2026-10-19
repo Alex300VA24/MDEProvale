@@ -20,14 +20,14 @@ const MODULE_DOCS = {
         summary: 'Administra los clubes o comités de madres, sus integrantes y la designación de la presidenta.',
         steps: [
             'Crea el comité registrando su nombre y zona correspondiente.',
-            'Asigna la presidenta del comité desde el botón "Asignar Presidenta".',
+            'Asigna integrantes de la directiva desde el botón "Asignar Cargo".',
             'Consulta el padrón del club para revisar la lista de beneficiarias del comité.',
         ],
     },
     reconocimientos: {
-        title: 'Reconocimientos',
+        title: 'Resoluciones',
         icon: 'fa-award',
-        summary: 'Gestiona las resoluciones de reconocimiento de los comités, incluyendo la consulta y descarga externa.',
+        summary: 'Gestiona las resoluciones de los comités, incluyendo la consulta y descarga externa.',
         steps: [
             'Registra la resolución indicando el comité reconocido y los datos de la resolución.',
             'Usa la búsqueda externa para validar o consultar la resolución en el portal municipal.',

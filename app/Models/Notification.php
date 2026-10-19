@@ -61,7 +61,7 @@ class Notification extends Model
     // Tipos de aviso del sistema (sin dueño individual): visibles para todos los
     // usuarios autenticados, a diferencia de las solicitudes personales
     // (ej. recuperación de contraseña) que solo ve el admin o quien las pidió.
-    public const SYSTEM_WIDE_TYPES = ['normativa_pvl'];
+    public const SYSTEM_WIDE_TYPES = ['normativa_pvl', 'alerta_beneficiarios', 'alerta_resolucion'];
 
     public static function unreadCountForUser(?User $user): int
     {

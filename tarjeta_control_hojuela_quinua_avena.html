@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tarjeta de Control Interno - Hojuelas de Quinua Avena</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; background: #e9e9e9; margin: 0; padding: 20px; color: #111; }
+  .hoja { background: #fff; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 16mm 16mm; box-shadow: 0 2px 10px rgba(0,0,0,.2); position: relative; }
+  .folio { position: absolute; top: 10mm; right: 14mm; }
+  .folio input { width: 60px; text-align: center; }
+  .titulo { text-align: center; font-weight: bold; }
+  .titulo .muni { font-size: 16px; margin-bottom: 10px; }
+  .titulo .prog { font-size: 14px; font-weight: normal; margin-bottom: 14px; }
+  .caja { border: 1.5px solid #000; width: 60%; margin: 0 auto 14px; text-align: center; font-weight: bold; padding: 4px; }
+  .cabecera { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 13px; font-weight: bold; }
+  .cabecera .box { border: 1.5px solid #000; padding: 6px 8px; display: flex; align-items: center; gap: 6px; }
+  input { border: none; font: inherit; font-family: "Comic Sans MS", "Segoe Print", cursive; color: #1a3a8a; background: transparent; width: 100%; text-align: center; padding: 2px; }
+  input:focus { outline: 1px dashed #1a3a8a; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { border: 1.5px solid #000; height: 30px; text-align: center; }
+  th { font-size: 11px; font-weight: bold; padding: 3px; }
+  td.saldo { font-family: "Comic Sans MS", "Segoe Print", cursive; color: #1a3a8a; }
+  td.saldo.neg { color: #c00; font-weight: bold; }
+  .resumen { margin-top: 12px; font-size: 13px; display: flex; gap: 24px; justify-content: flex-end; }
+  .acciones { text-align: center; margin: 16px auto; }
+  .acciones button { padding: 8px 18px; font-size: 14px; cursor: pointer; margin: 0 4px; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .hoja { box-shadow: none; width: auto; min-height: auto; padding: 0; }
+    .acciones { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="acciones">
+  <button onclick="agregarFila()">+ Agregar fila</button>
+  <button onclick="window.print()">Imprimir / Guardar PDF</button>
+</div>
+
+<div class="hoja">
+  <div class="folio"><input value="291"></div>
+  <div class="titulo">
+    <div class="muni">MUNICIPALIDAD DISTRITAL DE LA ESPERANZA</div>
+    <div class="prog">PROGRAMA DEL VASO DE LECHE</div>
+  </div>
+  <div class="caja">TARJETA DE CONTROL INTERNO</div>
+
+  <div class="cabecera">
+    <div class="box">PRODUCTO: HOJUELAS DE QUINUA AVENA</div>
+    <div class="box">MES: <input value="Diciembre" style="width:130px"></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2" style="width:13%">FECHA</th>
+        <th rowspan="2" style="width:12%">HORA</th>
+        <th style="width:15%">INGRESO</th>
+        <th style="width:15%">SALIDA</th>
+        <th style="width:15%">SALDO</th>
+        <th rowspan="2">RESPONSABLE</th>
+      </tr>
+      <tr><th>CANTIDAD</th><th>CANTIDAD</th><th>CANTIDAD</th></tr>
+    </thead>
+    <tbody id="cuerpo"></tbody>
+  </table>
+
+  <div class="resumen">
+    <span>Total ingreso: <b id="tIng">0</b></span>
+    <span>Total salida: <b id="tSal">0</b></span>
+    <span>Saldo final: <b id="tSaldo">0</b></span>
+  </div>
+</div>
+
+<script>
+  const datos = [
+    ["23 Nov", "09:40", 7871, "", "Alessandro"],
+    ["", "", "", 491, "Rosa"],
+    ["", "", "", 616, "Alessandro"],
+    ["", "", "", 544, "Rosa"],
+    ["", "", "", 595, "Alessandro"],
+    ["", "", "", 569, "Rosa"],
+    ["", "", "", 571, "Alessandro"],
+    ["", "", "", 687, "Rosa"],
+    ["", "", "", 507, "Alessandro"],
+    ["", "", "", 612, "Rosa"],
+    ["", "", "", 477, "Alessandro"],
+    ["", "", "", 442, "Rosa"],
+    ["", "", "", 574, "Alessandro"],
+    ["", "", "", 640, "Rosa"],
+    ["", "", "", 546, "Alessandro"]
+  ];
+  const cuerpo = document.getElementById("cuerpo");
+
+  function fila(d = ["", "", "", "", ""]) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input value="${d[0]}"></td>
+      <td><input value="${d[1]}"></td>
+      <td><input class="ing" inputmode="numeric" value="${d[2]}"></td>
+      <td><input class="sal" inputmode="numeric" value="${d[3]}"></td>
+      <td class="saldo"></td>
+      <td><input value="${d[4]}" style="text-align:left;padding-left:8px"></td>`;
+    cuerpo.appendChild(tr);
+  }
+  function agregarFila() { fila(); recalcular(); }
+
+  function num(v) { const n = parseFloat(String(v).replace(/,/g, "")); return isNaN(n) ? 0 : n; }
+
+  function recalcular() {
+    let saldo = 0, tIng = 0, tSal = 0;
+    cuerpo.querySelectorAll("tr").forEach(tr => {
+      const ing = tr.querySelector(".ing").value.trim();
+      const sal = tr.querySelector(".sal").value.trim();
+      const celda = tr.querySelector(".saldo");
+      if (ing === "" && sal === "") { celda.textContent = ""; return; }
+      tIng += num(ing); tSal += num(sal);
+      saldo += num(ing) - num(sal);
+      // Si solo hay ingreso, se deja el saldo vacío como en la tarjeta física
+      celda.textContent = sal === "" ? "" : (saldo === 0 ? "—" : saldo.toLocaleString("es-PE"));
+      celda.classList.toggle("neg", saldo < 0);
+    });
+    document.getElementById("tIng").textContent = tIng.toLocaleString("es-PE");
+    document.getElementById("tSal").textContent = tSal.toLocaleString("es-PE");
+    document.getElementById("tSaldo").textContent = saldo.toLocaleString("es-PE");
+  }
+
+  datos.forEach(fila);
+  // Completar hasta 18 filas como el formato impreso
+  while (cuerpo.children.length < 18) fila();
+  cuerpo.addEventListener("input", recalcular);
+  recalcular();
+</script>
+</body>
+</html>

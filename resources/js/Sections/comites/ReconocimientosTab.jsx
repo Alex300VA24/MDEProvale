@@ -146,7 +146,7 @@ function ReconocimientoViewModal({ resolution, onClose }) {
     );
 }
 
-const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can }, ref) {
+const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can, onResolutionsChanged }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -216,6 +216,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
             toast.success('Resolución eliminada exitosamente.');
             setDeleting(null);
             load();
+            onResolutionsChanged?.();
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar la resolución.'));
             setDeleting(null);
@@ -409,6 +410,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                     onSaved={() => {
                         setFormOpen(false);
                         load();
+                        onResolutionsChanged?.();
                     }}
                 />
             )}

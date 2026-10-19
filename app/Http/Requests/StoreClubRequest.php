@@ -36,4 +36,25 @@ class StoreClubRequest extends FormRequest
             'company_name.required' => 'La razón social es obligatoria.',
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $code = $this->input('code');
+            if ($code !== null && $code !== '') {
+                $trimmed = trim((string) $code);
+                if (is_numeric($trimmed)) {
+                    $num = (int) $trimmed;
+                    $exists = Association::where(function ($q) use ($trimmed, $num) {
+                        $q->where('code', $trimmed)
+                          ->orWhereRaw('CAST(code AS UNSIGNED) = ?', [$num]);
+                    })->exists();
+
+                    if ($exists && !$validator->errors()->has('code')) {
+                        $validator->errors()->add('code', 'El código del comité ya está registrado.');
+                    }
+                }
+            }
+        });
+    }
 }

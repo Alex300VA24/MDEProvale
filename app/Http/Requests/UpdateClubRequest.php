@@ -38,4 +38,29 @@ class UpdateClubRequest extends FormRequest
             'company_name.required' => 'La razón social es obligatoria.',
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $association = $this->route('association');
+        $associationId = $association instanceof Association ? $association->id : $association;
+
+        $validator->after(function ($validator) use ($associationId) {
+            $code = $this->input('code');
+            if ($code !== null && $code !== '') {
+                $trimmed = trim((string) $code);
+                if (is_numeric($trimmed)) {
+                    $num = (int) $trimmed;
+                    $exists = Association::where('id', '!=', $associationId ?? 0)
+                        ->where(function ($q) use ($trimmed, $num) {
+                            $q->where('code', $trimmed)
+                              ->orWhereRaw('CAST(code AS UNSIGNED) = ?', [$num]);
+                        })->exists();
+
+                    if ($exists && !$validator->errors()->has('code')) {
+                        $validator->errors()->add('code', 'El código del comité ya está registrado.');
+                    }
+                }
+            }
+        });
+    }
 }

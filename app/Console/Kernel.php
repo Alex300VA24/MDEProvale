@@ -18,6 +18,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('states:sync-associations')->dailyAt('00:05');
         $schedule->command('pecosas:sync-vigencia')->dailyAt('00:10');
         $schedule->command('normativa:scan-pvl')->dailyAt('06:30');
+        $schedule->command('alertas:vencimientos')->dailyAt('06:45');
     }
 
     /**

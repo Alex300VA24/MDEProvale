@@ -13,6 +13,7 @@ import errorMessage from '../../errorMessage';
 import ReniecPhoto from './ReniecPhoto';
 import PersonaInlineFields, { submitInlinePersona } from './PersonaInlineFields';
 import DocumentosSection, { PendingDocumentSection, uploadDocumentAttachment } from './DocumentosSection';
+import SocioRegistrationModal from './SocioFormModal';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -21,6 +22,114 @@ const selectCls =
 const labelCls = 'block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls = selectCls;
 const Optional = () => <span className="text-earth font-normal normal-case tracking-normal">(opcional)</span>;
+
+function createBeneficiaryDraft(options) {
+    return {
+        personState: {
+            isNew: true,
+            personId: null,
+            personLabel: '',
+            personData: {
+                dni: '', names: '', father_lastname: '', mother_lastname: '', birthdate: '',
+                gender: '', address: '', phone_number: '', place_sector_id: '',
+            },
+            reniecPhotoToken: null,
+        },
+        relationshipId: '',
+        typeBenefitId: (options.type_benefits || [])[0]?.id ?? '',
+        historyStateId: (options.states || []).find((state) => state.abbreviation === 'VIG')?.id ?? '',
+        dateBegin: new Date().toISOString().split('T')[0],
+        dateEnd: '',
+        weight: '',
+        height: '',
+        hmg: '',
+        isMalnourished: false,
+        isDisabled: false,
+        pendingDocument: { documentType: 'dni_beneficiario', file: null },
+    };
+}
+
+function BeneficiaryRegistrationPanel({ beneficiary, onChange, options, relationshipOptions, typeBenefitOptions }) {
+    const update = (field, value) => onChange((current) => ({ ...current, [field]: value }));
+
+    return (
+        <section className="space-y-4 rounded-xl border-2 border-blue/20 bg-blue-light/30 p-3 sm:p-4" aria-labelledby="beneficiary-registration-title">
+            <div className="border-b border-blue/15 pb-2">
+                <h4 id="beneficiary-registration-title" className="font-extrabold text-navy flex items-center gap-2">
+                    <i className="fas fa-hand-holding-heart text-blue" aria-hidden="true" />Datos del Beneficiario
+                </h4>
+                <p className="text-xs text-earth mt-1">Este beneficiario quedará vinculado al nuevo socio.</p>
+            </div>
+
+            <PersonaInlineFields
+                value={beneficiary.personState}
+                onChange={(value) => update('personState', value)}
+                options={options}
+                title="Identificación del Beneficiario"
+            />
+
+            <div className="rounded-xl border border-wheat bg-white p-3 sm:p-4 space-y-3">
+                <span className="text-xs font-bold text-charcoal uppercase tracking-wider block border-b border-wheat/60 pb-1.5">
+                    <i className="fas fa-heart-pulse text-leaf mr-1.5" aria-hidden="true" />Beneficio y parentesco
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label className={labelCls}>Parentesco *</label>
+                        <Combobox value={beneficiary.relationshipId} onChange={(value) => update('relationshipId', value ?? '')} options={relationshipOptions} placeholder="Seleccionar parentesco..." />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Tipo de Beneficio <Optional /></label>
+                        <Combobox value={beneficiary.typeBenefitId} onChange={(value) => update('typeBenefitId', value ?? '')} options={typeBenefitOptions} placeholder="Seleccionar beneficio..." allowClear />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Fecha Inicio Beneficio *</label>
+                        <input type="date" value={beneficiary.dateBegin} onChange={(event) => update('dateBegin', event.target.value)} className={inputCls} required />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Fecha Fin <Optional /></label>
+                        <input type="date" min={beneficiary.dateBegin || undefined} value={beneficiary.dateEnd} onChange={(event) => update('dateEnd', event.target.value)} className={inputCls} />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-wheat/60 pt-3">
+                    <div><label className={labelCls}>Peso (kg) <Optional /></label><input type="number" min="0" step="0.01" value={beneficiary.weight} onChange={(event) => update('weight', event.target.value)} className={inputCls} /></div>
+                    <div><label className={labelCls}>Talla (cm) <Optional /></label><input type="number" min="0" step="0.01" value={beneficiary.height} onChange={(event) => update('height', event.target.value)} className={inputCls} /></div>
+                    <div><label className={labelCls}>HMG <Optional /></label><input type="number" min="0" step="0.01" value={beneficiary.hmg} onChange={(event) => update('hmg', event.target.value)} className={inputCls} /></div>
+                </div>
+
+                <div className="flex flex-wrap gap-5 border-t border-wheat/60 pt-3">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-charcoal">
+                        <input type="checkbox" checked={beneficiary.isMalnourished} onChange={(event) => update('isMalnourished', event.target.checked)} className="rounded border-wheat text-leaf focus:ring-leaf h-4 w-4" />
+                        Desnutrido 7-13 años <Optional />
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-charcoal">
+                        <input type="checkbox" checked={beneficiary.isDisabled} onChange={(event) => update('isDisabled', event.target.checked)} className="rounded border-wheat text-leaf focus:ring-leaf h-4 w-4" />
+                        Discapacitado <Optional />
+                    </label>
+                </div>
+            </div>
+
+            <div className="rounded-xl border border-wheat bg-white p-3 sm:p-4">
+                <div className="mb-3">
+                    <label className={labelCls}>Documento Presentado <Optional /></label>
+                    <select value={beneficiary.pendingDocument.documentType} onChange={(event) => update('pendingDocument', { ...beneficiary.pendingDocument, documentType: event.target.value })} className={inputCls}>
+                        <option value="dni_beneficiario">DNI</option>
+                        <option value="partida_nacimiento">Partida de Nacimiento</option>
+                        <option value="constancia_medica">Constancia Médica</option>
+                    </select>
+                </div>
+                <PendingDocumentSection
+                    attachableType="beneficiarie"
+                    value={beneficiary.pendingDocument}
+                    onChange={(document) => update('pendingDocument', document)}
+                    inputId="new-family-beneficiary-document"
+                    showTypeSelect={false}
+                    title="Archivo del Beneficiario"
+                />
+            </div>
+        </section>
+    );
+}
 
 function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
     const toast = useToast();
@@ -61,10 +170,13 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
     const [spouseEducationLevel, setSpouseEducationLevel] = useState(partner?.spouse_education_level || '');
     const [familyIncome, setFamilyIncome] = useState(partner?.family_income || '');
     const [pendingDocument, setPendingDocument] = useState({ documentType: 'ficha_fisica', file: null });
+    const [beneficiary, setBeneficiary] = useState(() => createBeneficiaryDraft(options));
     const [submitting, setSubmitting] = useState(false);
 
     const associationOptions = (options.associations || []).map((a) => ({ id: a.id, label: a.name }));
     const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: s.title }));
+    const relationshipOptions = (options.relationships || []).map((relationship) => ({ id: relationship.id, label: relationship.title }));
+    const typeBenefitOptions = (options.type_benefits || []).map((type) => ({ id: type.id, label: type.title }));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -72,10 +184,17 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
             toast.error('Complete el club y la fecha de inicio.');
             return;
         }
+        if (mode === 'create' && !beneficiary.relationshipId) {
+            toast.error('Seleccione el parentesco del beneficiario.');
+            return;
+        }
 
         setSubmitting(true);
         try {
             const resolvedPersonId = await submitInlinePersona(personState);
+            const resolvedBeneficiaryPersonId = mode === 'create'
+                ? await submitInlinePersona(beneficiary.personState)
+                : null;
 
             const payload = {
                 person_id: resolvedPersonId,
@@ -93,6 +212,21 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                 spouse_occupation: spouseOccupation || null,
                 spouse_education_level: spouseEducationLevel || null,
                 family_income: familyIncome === '' ? null : familyIncome,
+                ...(mode === 'create' ? {
+                    beneficiaries: [{
+                        person_id: resolvedBeneficiaryPersonId,
+                        relationship_id: beneficiary.relationshipId,
+                        type_benefit_id: beneficiary.typeBenefitId || null,
+                        history_state_id: beneficiary.historyStateId || null,
+                        date_begin: beneficiary.dateBegin || null,
+                        date_end: beneficiary.dateEnd || null,
+                        weight: beneficiary.weight === '' ? null : beneficiary.weight,
+                        height: beneficiary.height === '' ? null : beneficiary.height,
+                        hmg: beneficiary.hmg === '' ? null : beneficiary.hmg,
+                        is_malnourished: Boolean(beneficiary.isMalnourished),
+                        is_disabled: Boolean(beneficiary.isDisabled),
+                    }],
+                } : {}),
             };
 
             let savedPartner;
@@ -104,16 +238,28 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                 const response = await http.post(`${BASE}/partners`, payload);
                 savedPartner = response.data?.data;
 
+                let attachmentFailures = 0;
                 if (pendingDocument.file) {
                     try {
                         await uploadDocumentAttachment('partner', savedPartner?.id, pendingDocument);
-                        toast.success('Socio y documento registrados exitosamente.');
-                    } catch (documentError) {
-                        const detail = errorMessage(documentError, 'No se pudo subir el archivo.');
-                        toast.error(`Socio registrado, pero el archivo no se subió. ${detail} Abra Editar para reintentarlo.`);
+                    } catch {
+                        attachmentFailures += 1;
                     }
+                }
+
+                const savedBeneficiary = savedPartner?.beneficiaries?.[0];
+                if (beneficiary.pendingDocument.file && savedBeneficiary?.id) {
+                    try {
+                        await uploadDocumentAttachment('beneficiarie', savedBeneficiary.id, beneficiary.pendingDocument);
+                    } catch {
+                        attachmentFailures += 1;
+                    }
+                }
+
+                if (attachmentFailures > 0) {
+                    toast.error(`Socio y beneficiario registrados, pero ${attachmentFailures} archivo(s) no se subieron. Puede reintentarlo desde Editar.`);
                 } else {
-                    toast.success('Socio registrado exitosamente.');
+                    toast.success('Socio y beneficiario registrados exitosamente.');
                 }
             }
 
@@ -129,12 +275,14 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
         <Modal
             open
             onClose={onClose}
-            title={mode === 'edit' ? 'Editar Ficha del Socio' : 'Registrar Ficha de Socio'}
+            title={mode === 'edit' ? 'Editar Ficha del Socio' : 'Registrar Socio y Beneficiario'}
             icon={mode === 'edit' ? 'fa-edit' : 'fa-user-plus'}
             iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'}
-            maxWidth="sm:max-w-4xl"
+            maxWidth={mode === 'edit' ? 'sm:max-w-4xl' : 'sm:max-w-7xl'}
         >
-            <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 max-h-[85vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto">
+                <div className={mode === 'create' ? 'grid grid-cols-1 xl:grid-cols-2 gap-5 items-start' : ''}>
+                    <div className="space-y-4">
                 {/* Selector / Creador Inline de Persona */}
                 <PersonaInlineFields
                     value={personState}
@@ -348,7 +496,20 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                     </div>
                 )}
 
-                <div className="flex gap-3 pt-2">
+                    </div>
+
+                    {mode === 'create' && (
+                        <BeneficiaryRegistrationPanel
+                            beneficiary={beneficiary}
+                            onChange={setBeneficiary}
+                            options={options}
+                            relationshipOptions={relationshipOptions}
+                            typeBenefitOptions={typeBenefitOptions}
+                        />
+                    )}
+                </div>
+
+                <div className="flex gap-3 pt-5 mt-5 border-t border-wheat">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1 text-xs sm:text-sm">
                         Cancelar
                     </button>
@@ -358,7 +519,7 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
                         className="btn-primary flex-1 text-xs sm:text-sm disabled:opacity-50"
                     >
                         <i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />
-                        {mode === 'edit' ? 'Actualizar Socio' : 'Guardar Socio'}
+                        {mode === 'edit' ? 'Actualizar Socio' : 'Guardar Socio y Beneficiario'}
                     </button>
                 </div>
             </form>
@@ -416,10 +577,8 @@ function SocioViewModal({ partner, onClose }) {
                     <Field label="Grado de Instrucción" value={partner.education_level} />
                     <Field label="Ocupación" value={partner.occupation} />
                     <Field label="Nº de Hijos" value={partner.children_count} />
-                    <Field label="Condición Actual" value={[partner.is_pregnant ? 'Gestando' : '', partner.is_lactating ? 'Lactando' : ''].filter(Boolean).join(', ') || 'Ninguna'} />
+                    <Field label="Condición Actual" value={{ GESTANTE: 'Gestante', LACTANTE: 'Lactante', ADULTO_MAYOR: 'Adulto Mayor', DISCAPACITADO: 'Discapacitado', OTROS: 'Otros' }[partner.socioeconomic_condition] || 'Ninguna'} />
                     <Field label="Ingreso Familiar" value={partner.family_income ? `S/ ${partner.family_income}` : ''} />
-                    <Field label="Ocupación Cónyuge" value={partner.spouse_occupation} />
-                    <Field label="Grado Instr. Cónyuge" value={partner.spouse_education_level} />
                 </FieldGrid>
             </DetailGroup>
 
@@ -451,10 +610,7 @@ function SocioViewModal({ partner, onClose }) {
                                     </FieldGrid>
                                     <div className="mt-2 border-t border-mist/80 pt-2">
                                         <FieldGrid cols={4}>
-                                            <Field label="Peso" value={h?.weight ? `${h.weight} kg` : ''} />
-                                            <Field label="Talla" value={h?.height ? `${h.height} cm` : ''} />
-                                            <Field label="HMG" value={h?.hmg} />
-                                            <Field label="Condición" value={[h?.is_malnourished ? 'Desnutrido' : '', h?.is_disabled ? 'Discapacitado' : ''].filter(Boolean).join(', ') || 'Normal'} />
+                                            <Field label="Prioridad" value={b.priority === 2 ? 'Segunda' : 'Primera'} />
                                             <Field label="Tipo beneficio" value={h?.type_benefit?.title} />
                                             <Field label="Estado" value={h?.state?.title} />
                                             <Field label="Inicio" value={formatDate(h?.date_begin)} />
@@ -718,7 +874,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
             )}
 
             {formOpen && (
-                <SocioFormModal
+                <SocioRegistrationModal
                     key={editing ? editing.id : 'create'}
                     mode={formMode}
                     partner={editing}

@@ -109,7 +109,7 @@ class AssistantGuidanceService
             return "Para gestionar un comité:\n"
                 . "1. Abre Comités y Reconocimientos > Comités.\n"
                 . "2. Registra nombre, zona y demás datos solicitados.\n"
-                . "3. Usa Asignar Presidenta para designar a la responsable.\n"
+                . "3. Usa Asignar Cargo y selecciona PRESIDENTA para designar a la responsable.\n"
                 . "4. Pulsa Generar Padrón para consultar sus beneficiarios.";
         }
 

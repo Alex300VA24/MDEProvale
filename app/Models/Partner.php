@@ -24,6 +24,7 @@ class Partner extends Model
         'education_level',
         'occupation',
         'children_count',
+        'socioeconomic_condition',
         'is_pregnant',
         'is_lactating',
         'spouse_occupation',

@@ -9,6 +9,16 @@ class Position extends Model
 {
     use HasFactory;
 
+    public const COMMITTEE_TITLES = [
+        'PRESIDENTA',
+        'VICE PRESIDENTA',
+        'SECRETARIA',
+        'TESORERA',
+        'COORDINADORA',
+        'ALMACENERA',
+        'VOCAL',
+    ];
+
     protected $fillable = [
         'title',
     ];

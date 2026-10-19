@@ -7,6 +7,7 @@ import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
 import { fmtDate, dateValue, money, stockInt, typeBadgeClass } from './format';
 import errorMessage from '../../errorMessage';
+import { FichaControlInternoModal } from './ControlInternoModals';
 
 const BASE = '/api/dashboard/movimientos';
 
@@ -207,6 +208,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
     const [filters, setFilters] = useState({ search: '', type_transaction_id: '', year: '', month: '' });
     const [page, setPage] = useState(1);
     const [creating, setCreating] = useState(false);
+    const [controlSheetOpen, setControlSheetOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const [deleting, setDeleting] = useState(null);
 
@@ -239,6 +241,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
 
     useImperativeHandle(ref, () => ({
         openCreate: () => setCreating(true),
+        openControlSheet: () => setControlSheetOpen(true),
     }));
 
     const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
@@ -424,6 +427,8 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                     }}
                 />
             )}
+
+            {controlSheetOpen && <FichaControlInternoModal onClose={() => setControlSheetOpen(false)} />}
 
             {editing && (
                 <EditTransactionModal

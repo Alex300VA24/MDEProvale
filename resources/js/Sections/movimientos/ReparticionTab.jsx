@@ -4,6 +4,7 @@ import { useToast } from '../../Components/Toast';
 import { useDebounced } from '../socios/hooks';
 import errorMessage from '../../errorMessage';
 import PdfLinkButton from '../../Components/PdfLinkButton';
+import { TarjetaControlModal } from './ControlInternoModals';
 
 const BASE = '/api/dashboard/movimientos/reparticion';
 const PAGE_SIZE = 12;
@@ -55,6 +56,7 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
     const [config, setConfig] = useState(null);
     const [assignments, setAssignments] = useState({});
     const [productMode, setProductMode] = useState('complete');
+    const [cardOpen, setCardOpen] = useState(false);
     const [advanced, setAdvanced] = useState(false);
     const [notice, setNotice] = useState(null);
     const [noticeCode, setNoticeCode] = useState(null);
@@ -163,7 +165,8 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
         }
     };
 
-    const actaUrl = report?.exports?.acta_pdf ? `${report.exports.acta_pdf}&product_mode=${productMode}` : '#';
+    const withProduct = (url) => (url ? `${url}${url.includes('?') ? '&' : '?'}product_mode=${productMode}` : url);
+    const cardProduct = productMode === 'milk' ? 'milk' : productMode === 'oat' ? 'oat' : null;
 
     return (
         <div aria-busy={loading || saving}>
@@ -177,7 +180,7 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
                 </div>
             </div>
 
-            {notice && <div className="empty-state" role="alert"><i className="fas fa-circle-exclamation" aria-hidden="true" /><h4 className="font-extrabold text-charcoal">Repartición no disponible</h4><p>{notice}</p><div className="mt-3 flex w-full flex-wrap justify-center gap-2">{noticeCode === 'INGRESO_REQUIRED' && can.create && <button type="button" onClick={onGoToMovimientos} className="btn-primary inline-flex h-11 min-w-48 items-center justify-center px-6 py-0"><i className="fas fa-right-left mr-2 text-sm" aria-hidden="true" />Ir a Movimientos</button>}<button type="button" onClick={load} className="btn-secondary inline-flex h-11 min-w-48 items-center justify-center px-6 py-0">Reintentar</button></div></div>}
+            {notice && <div className="empty-state" role="alert"><i className="fas fa-circle-exclamation" aria-hidden="true" /><h4 className="font-extrabold text-charcoal">Repartición no disponible</h4><p>{notice}</p><div className="mt-3 flex w-full flex-wrap justify-center gap-2">{noticeCode === 'INGRESO_REQUIRED' && can.create && <button type="button" onClick={onGoToMovimientos} className="btn-primary inline-flex h-11 min-w-48 items-center justify-center px-6 py-0"><i className="fas fa-arrow-right-to-bracket mr-2 text-sm" aria-hidden="true" />Ir a Registro de Ingreso</button>}<button type="button" onClick={load} className="btn-secondary inline-flex h-11 min-w-48 items-center justify-center px-6 py-0">Reintentar</button></div></div>}
 
             {report && config && <>
                 <section className="mb-5 rounded-2xl border border-mist bg-cream/50 p-4" aria-labelledby="formula-title">
@@ -195,6 +198,29 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
                         <div><label htmlFor="box-cans" className={labelCls}>Tarros por caja</label><input id="box-cans" type="number" min="1" value={config.milk_cans_per_box} onChange={(event) => changeConfig('milk_cans_per_box', event.target.value)} className={inputCls} /></div>
                         <div><label htmlFor="sack-kg" className={labelCls}>Kg por saco</label><input id="sack-kg" type="number" min="1" value={config.oat_kg_per_sack} onChange={(event) => changeConfig('oat_kg_per_sack', event.target.value)} className={inputCls} /></div>
                     </div>}
+                </section>
+
+                <section className="mb-5 rounded-2xl border-2 border-wheat bg-white p-4" aria-labelledby="documents-title">
+                    <div><h4 id="documents-title" className="font-extrabold text-charcoal">Documentos oficiales</h4><p className="text-sm text-earth mt-1">PDF para firma y Excel para control operativo. Reparto separa cada vuelta por página.</p></div>
+                    {dirty && <div role="status" className="mt-3 rounded-xl bg-sun-light px-3 py-2 text-sm font-semibold text-amber-900"><i className="fas fa-circle-info mr-2" aria-hidden="true" />Guarde cambios para exportar totales actualizados.</div>}
+                    <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <fieldset className="rounded-xl border border-mist bg-cream/40 p-3">
+                            <legend className="px-1 text-sm font-extrabold text-charcoal">Según el producto</legend>
+                            <label htmlFor="product-mode" className={labelCls}>Producto</label>
+                            <select id="product-mode" value={productMode} onChange={(event) => setProductMode(event.target.value)} className={inputCls}><option value="complete">Leche + Hojuela</option><option value="milk">Solo Leche</option><option value="oat">Solo Hojuela</option></select>
+                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="rounded-xl border border-mist bg-white p-3"><strong className="block text-charcoal mb-2">Cargo general</strong><div className="flex gap-2"><ExportPdfButton href={withProduct(report.exports.cargo_pdf)} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Cargo General">PDF</ExportPdfButton><ExportButton href={report.exports.cargo_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
+                                <div className="rounded-xl border border-mist bg-white p-3"><strong className="block text-charcoal mb-2">Tarjeta de control</strong><button type="button" onClick={() => setCardOpen(true)} disabled={!cardProduct} aria-describedby="card-hint" className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 text-xs sm:text-sm disabled:opacity-40 disabled:cursor-not-allowed"><i className="fas fa-table-list" aria-hidden="true" />Abrir tarjeta</button><p id="card-hint" className="mt-2 text-xs text-earth">{cardProduct ? `Kardex de ${cardProduct === 'milk' ? 'leche' : 'hojuela'} del mes.` : 'Elija solo leche o solo hojuela.'}</p></div>
+                            </div>
+                        </fieldset>
+                        <fieldset className="rounded-xl border border-mist p-3">
+                            <legend className="px-1 text-sm font-extrabold text-charcoal">Siempre disponibles</legend>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Reparto por vueltas</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.reparto_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Reparto por Vueltas">PDF</ExportPdfButton><ExportButton href={report.exports.reparto_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
+                                <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Ración por día</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.fiscalizacion_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Ración por día">PDF</ExportPdfButton><ExportButton href={report.exports.fiscalizacion_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
+                            </div>
+                        </fieldset>
+                    </div>
                 </section>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
@@ -232,20 +258,9 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
                     {calculated.length > PAGE_SIZE && <nav aria-label="Paginación de comités" className="mt-4 flex items-center justify-between gap-3"><span className="text-sm text-earth">Página {page} de {totalPages}</span><div className="flex gap-2"><button type="button" aria-label="Página anterior" disabled={page <= 1} onClick={() => setPage((value) => value - 1)} className="btn-secondary min-w-11 min-h-11 disabled:opacity-40"><i className="fas fa-chevron-left" aria-hidden="true" /></button><button type="button" aria-label="Página siguiente" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)} className="btn-secondary min-w-11 min-h-11 disabled:opacity-40"><i className="fas fa-chevron-right" aria-hidden="true" /></button></div></nav>}
                 </section>
 
-                <section className="rounded-2xl border-2 border-wheat bg-white p-4" aria-labelledby="documents-title">
-                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><h4 id="documents-title" className="font-extrabold text-charcoal">Documentos oficiales</h4><p className="text-sm text-earth mt-1">PDF para firma y Excel para control operativo. Reparto separa cada vuelta por página.</p></div></div>
-                    {dirty && <div role="status" className="mt-3 rounded-xl bg-sun-light px-3 py-2 text-sm font-semibold text-amber-900"><i className="fas fa-circle-info mr-2" aria-hidden="true" />Guarde cambios para exportar totales actualizados.</div>}
-                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Reparto por vueltas</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.reparto_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Reparto por Vueltas">PDF</ExportPdfButton><ExportButton href={report.exports.reparto_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
-                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Cargo general</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.cargo_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Cargo General">PDF</ExportPdfButton><ExportButton href={report.exports.cargo_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
-                        <div className="rounded-xl border border-mist p-3"><strong className="block text-charcoal mb-2">Ración por día</strong><div className="flex gap-2"><ExportPdfButton href={report.exports.fiscalizacion_pdf} icon="fa-file-pdf" tone="primary" disabled={dirty} loadingTitle="Generando Ración por día">PDF</ExportPdfButton><ExportButton href={report.exports.fiscalizacion_excel} icon="fa-file-excel" disabled={dirty}>Excel</ExportButton></div></div>
-                    </div>
-                </section>
-
-                <section className="rounded-2xl border-2 border-wheat bg-white p-4" aria-labelledby="acta-title">
-                    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><h4 id="acta-title" className="font-extrabold text-charcoal">Acta condicional</h4><p className="text-sm text-earth mt-1">Acta de entrega con firma. Elija el producto entregado; esta opción solo afecta a esta acta.</p></div><div className="flex flex-col sm:flex-row sm:items-end gap-3"><div className="w-full sm:w-64"><label htmlFor="product-mode" className={labelCls}>Producto del acta</label><select id="product-mode" value={productMode} onChange={(event) => setProductMode(event.target.value)} className={inputCls}><option value="complete">Leche + Hojuela</option><option value="milk">Solo Leche</option><option value="oat">Solo Hojuela</option></select></div><ExportPdfButton href={actaUrl} icon="fa-file-signature" tone="primary" disabled={dirty} loadingTitle="Generando Acta Condicional">Abrir acta PDF</ExportPdfButton></div></div>
-                </section>
             </>}
+
+            {cardOpen && cardProduct && <TarjetaControlModal product={cardProduct} year={Number(year)} month={Number(month)} onClose={() => setCardOpen(false)} />}
         </div>
     );
 }

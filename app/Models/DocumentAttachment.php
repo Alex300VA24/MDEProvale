@@ -16,6 +16,8 @@ class DocumentAttachment extends Model
     public const TYPE_DNI_BENEFICIARIO = 'dni_beneficiario';
     public const TYPE_PARTIDA_NACIMIENTO = 'partida_nacimiento';
     public const TYPE_CONSTANCIA_MEDICA = 'constancia_medica';
+    public const TYPE_EXPEDIENTE_UNICO = 'expediente_unico';
+    public const TYPE_CONADIS = 'conadis';
 
     public const TYPES = [
         self::TYPE_FICHA_FISICA,
@@ -24,6 +26,8 @@ class DocumentAttachment extends Model
         self::TYPE_DNI_BENEFICIARIO,
         self::TYPE_PARTIDA_NACIMIENTO,
         self::TYPE_CONSTANCIA_MEDICA,
+        self::TYPE_EXPEDIENTE_UNICO,
+        self::TYPE_CONADIS,
     ];
 
     protected $fillable = [

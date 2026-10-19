@@ -27,6 +27,10 @@ class Resolution extends Model
     protected static function booted(): void
     {
         static::saving(function (Resolution $resolution) {
+            if (!$resolution->date_document && $resolution->date_start) {
+                $resolution->date_document = $resolution->date_start;
+            }
+
             if (!$resolution->date_end) {
                 return;
             }

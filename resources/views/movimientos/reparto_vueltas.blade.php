@@ -5,7 +5,7 @@
     <title>Reparto por vueltas PVL</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { size: landscape; margin: 1.5mm 3mm; }
+        @page { size: A4 landscape; margin: 1.5mm 3mm; }
         body { margin: 0; padding: 3mm; font-family: Arial, sans-serif; font-size: 7pt; line-height: 1.15; }
         footer { position: fixed; bottom: -4px; left: 0; right: 0; height: 20px; text-align: center; font-size: 8pt; }
         .pagenum:before { content: counter(page); }
@@ -18,8 +18,8 @@
         .main-table { width: 98%; border-collapse: collapse; border: 2px solid #000; margin-left: 1%; margin-bottom: 5px; table-layout: fixed; }
         .header-table { width: 98%; margin-left: 1%; border-collapse: collapse; border-spacing: 0; margin-bottom: 8px; }
         .main-table th { background-color: #d8d8d8; border: 1px solid #000; padding: 4px 2px; font-size: 7.5pt; font-weight: bold; text-align: center; vertical-align: middle; line-height: 1.15; }
-        .main-table th.yellow, .main-table td.yellow { background-color: #ffff00; }
-        .main-table td { border: 1px solid #000; padding: 4px 3px; font-size: 7pt; vertical-align: middle; text-align: center; height: 9mm; overflow-wrap: break-word; }
+        .main-table td.yellow { background-color: #dbe5f1; }
+        .main-table td { border: 1px solid #000; padding: 4px 3px; font-size: 7pt; vertical-align: middle; text-align: center; overflow-wrap: break-word; }
         .col-n { background-color: #f0f0f0; font-weight: bold; }
         .left { text-align: left !important; padding-left: 3px; }
         .numeric { white-space: nowrap; }
@@ -41,10 +41,19 @@
     $issued = $issuedAt ?? now();
     $correlative = 0;
     $totalRoutes = count($vueltas);
+    // Alto útil de la hoja A4 apaisada (210mm - márgenes) para que cada vuelta llene la página.
+    $usableHeight = 180;
 @endphp
 <footer><strong>PÁG <span class="pagenum"></span></strong></footer>
 
 @forelse($vueltas as $routeIndex => $route)
+@php
+    $isLast = $routeIndex === $totalRoutes - 1;
+    $reserved = 22 + 7 + 10 + 7 + ($isLast ? 7 + 24 : 0);
+    $rowCount = max(1, count($route['clubs']));
+    $rowHeight = max(6.5, min(30, ($usableHeight - $reserved) / $rowCount));
+    $cellHeight = round($rowHeight - 2.4, 2);
+@endphp
 <section class="route">
 <div class="page-container">
     <table class="header-table">
@@ -84,10 +93,10 @@
                 <th style="width:18%">DIRECCIÓN</th>
                 <th style="width:10%">SECTOR</th>
                 <th style="width:5%">BENEF.</th>
-                <th class="yellow" style="width:5.5%">LECHE</th>
+                <th style="width:5.5%">LECHE</th>
                 <th style="width:5%">CAJAS</th>
                 <th style="width:5%">TARROS</th>
-                <th class="yellow" style="width:5.5%">HOJUELA</th>
+                <th style="width:5.5%">HOJUELA</th>
                 <th style="width:5%">SACOS</th>
                 <th style="width:5%">KILOS</th>
             </tr>
@@ -95,8 +104,8 @@
         <tbody>
         @foreach($route['clubs'] as $club)
             @php $correlative++; @endphp
-            <tr>
-                <td class="col-n">{{ str_pad($correlative, 2, '0', STR_PAD_LEFT) }}</td>
+            <tr style="height: {{ $cellHeight }}mm;">
+                <td class="col-n" style="height: {{ $cellHeight }}mm;">{{ str_pad($correlative, 2, '0', STR_PAD_LEFT) }}</td>
                 <td>{{ $club['codigo'] }}</td>
                 <td class="left">{{ $club['nombre'] }}</td>
                 <td class="left">{{ $club['presidenta'] }}</td>

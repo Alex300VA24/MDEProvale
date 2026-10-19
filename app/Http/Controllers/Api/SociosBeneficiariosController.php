@@ -84,10 +84,9 @@ class SociosBeneficiariosController extends Controller
                 'partners.education_level',
                 'partners.occupation',
                 'partners.children_count',
+                'partners.socioeconomic_condition',
                 'partners.is_pregnant',
                 'partners.is_lactating',
-                'partners.spouse_occupation',
-                'partners.spouse_education_level',
                 'partners.family_income',
             ])
             ->with(self::PARTNER_WITH)
@@ -127,32 +126,43 @@ class SociosBeneficiariosController extends Controller
                 ->orderBy('names')
                 ->limit(1000)
                 ->get(),
-            'relationships' => Relationship::select(['id', 'title'])->get(),
+            'relationships' => Relationship::select(['id', 'title'])
+                ->whereIn('title', ['Apoderado', 'Hijo', 'Nieto'])
+                ->orderBy('title')
+                ->get(),
             'place_sectors' => PlaceSector::with(['place:id,code,title', 'sector:id,title'])->get(),
-            'type_benefits' => TypeBenefit::select(['id', 'title', 'abbreviation'])->get(),
+            'type_benefits' => TypeBenefit::select(['id', 'title', 'abbreviation'])
+                ->whereIn('abbreviation', ['NI0', 'NI7', 'TBC', 'DIS'])
+                ->orderBy('priority')
+                ->get(),
             'reason_disqualifications' => ReasonDisqualification::select(['id', 'title'])->get(),
         ]);
     }
 
-    public function storePartner(StorePartnerRequest $request)
+    public function storePartner(StorePartnerRequest $request, DocumentAttachmentService $attachmentService)
     {
-        $partner = $this->partnerService->storeWithBeneficiaries(
-            $request->validated(),
-            $request->input('beneficiaries')
-        );
+        $partner = DB::transaction(function () use ($request, $attachmentService) {
+            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries']);
+            $partner = $this->partnerService->storeWithBeneficiaries($partnerData, $request->input('beneficiaries'));
+            $this->storeRegistrationDocuments($request, $partner, $attachmentService);
+
+            return $partner;
+        });
 
         return (new PartnerResource($partner->load(self::PARTNER_WITH)))
             ->response()
             ->setStatusCode(201);
     }
 
-    public function updatePartner(UpdatePartnerRequest $request, Partner $partner)
+    public function updatePartner(UpdatePartnerRequest $request, Partner $partner, DocumentAttachmentService $attachmentService)
     {
-        $partner = $this->partnerService->updateWithBeneficiaries(
-            $partner,
-            $request->validated(),
-            $request->input('beneficiaries')
-        );
+        $partner = DB::transaction(function () use ($request, $partner, $attachmentService) {
+            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries']);
+            $partner = $this->partnerService->updateWithBeneficiaries($partner, $partnerData, $request->input('beneficiaries'));
+            $this->storeRegistrationDocuments($request, $partner, $attachmentService);
+
+            return $partner;
+        });
 
         return new PartnerResource($partner->load(self::PARTNER_WITH));
     }
@@ -388,23 +398,20 @@ class SociosBeneficiariosController extends Controller
                 ->orderBy('id')
                 ->get()
                 ->map(fn ($partner) => ['id' => $partner->id, 'name' => $partner->name]),
-            'relationships' => Relationship::select(['id', 'title'])->get(),
+            'relationships' => Relationship::select(['id', 'title'])
+                ->whereIn('title', ['Apoderado', 'Hijo', 'Nieto'])
+                ->orderBy('title')
+                ->get(),
         ]);
     }
 
     private function beneficiarioHistoryRules(): array
     {
         return [
-            'weight' => 'nullable|numeric|min:0',
-            'height' => 'nullable|numeric|min:0',
-            'hmg' => 'nullable|numeric|min:0',
             'date_begin' => 'nullable|date',
-            'date_end' => 'nullable|date',
             'type_benefit_id' => 'nullable|exists:type_benefits,id',
             'history_state_id' => 'nullable|exists:states,id',
             'reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
-            'is_malnourished' => 'nullable|boolean',
-            'is_disabled' => 'nullable|boolean',
         ];
     }
 
@@ -422,16 +429,16 @@ class SociosBeneficiariosController extends Controller
         }
 
         $payload = [
-            'weight' => $data['weight'] ?? 0,
-            'height' => $data['height'] ?? 0,
-            'hmg' => $data['hmg'] ?? 0,
+            'weight' => 0,
+            'height' => 0,
+            'hmg' => 0,
             'date_begin' => $data['date_begin'],
-            'date_end' => $data['date_end'] ?? null,
+            'date_end' => $this->benefitEndDate($beneficiarie->person_id, $data['type_benefit_id']),
             'type_benefit_id' => $data['type_benefit_id'],
             'state_id' => $data['history_state_id'],
             'reason_disqualification_id' => $data['reason_disqualification_id'] ?? null,
-            'is_malnourished' => (bool) ($data['is_malnourished'] ?? false),
-            'is_disabled' => (bool) ($data['is_disabled'] ?? false),
+            'is_malnourished' => false,
+            'is_disabled' => false,
         ];
 
         $history = $beneficiarie->histories()
@@ -456,6 +463,7 @@ class SociosBeneficiariosController extends Controller
             'person_id' => 'required|exists:people,id',
             'partner_id' => 'required|exists:partners,id',
             'relationship_id' => 'required|exists:relationships,id',
+            'priority' => 'nullable|integer|in:1,2',
         ], $this->beneficiarioHistoryRules()));
 
         $validated['history_state_id'] = State::idFor(State::CURRENT);
@@ -464,6 +472,7 @@ class SociosBeneficiariosController extends Controller
             'person_id' => $validated['person_id'],
             'partner_id' => $validated['partner_id'],
             'relationship_id' => $validated['relationship_id'],
+            'priority' => $validated['priority'] ?? 1,
         ]);
 
         $this->syncBeneficiarioHistory($beneficiarie, $validated);
@@ -479,12 +488,14 @@ class SociosBeneficiariosController extends Controller
             'person_id' => 'required|exists:people,id',
             'partner_id' => 'required|exists:partners,id',
             'relationship_id' => 'required|exists:relationships,id',
+            'priority' => 'nullable|integer|in:1,2',
         ], $this->beneficiarioHistoryRules()));
 
         $beneficiarie->update([
             'person_id' => $validated['person_id'],
             'partner_id' => $validated['partner_id'],
             'relationship_id' => $validated['relationship_id'],
+            'priority' => $validated['priority'] ?? $beneficiarie->priority ?? 1,
         ]);
 
         $this->syncBeneficiarioHistory($beneficiarie, $validated);
@@ -527,7 +538,16 @@ class SociosBeneficiariosController extends Controller
             'attachable_type' => ['required', 'string', Rule::in(['partner', 'beneficiarie'])],
             'attachable_id' => ['required', 'integer'],
             'document_type' => ['required', 'string', Rule::in(DocumentAttachment::TYPES)],
-            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'file' => [
+                'required',
+                'file',
+                Rule::when(
+                    in_array($request->input('document_type'), [DocumentAttachment::TYPE_EXPEDIENTE_UNICO, DocumentAttachment::TYPE_CONADIS], true),
+                    ['mimes:pdf'],
+                    ['mimes:pdf,jpg,jpeg,png,webp']
+                ),
+                'max:10240',
+            ],
         ]);
 
         $model = $validated['attachable_type'] === 'partner'
@@ -576,5 +596,39 @@ class SociosBeneficiariosController extends Controller
         $date = $latest ? Carbon::parse($latest) : now();
 
         return [$date->year, $date->month];
+    }
+
+    private function benefitEndDate(int $personId, int $typeBenefitId): ?string
+    {
+        $birthdate = People::whereKey($personId)->value('birthdate');
+        $abbreviation = TypeBenefit::whereKey($typeBenefitId)->value('abbreviation');
+
+        if (! $birthdate || ! in_array($abbreviation, ['NI0', 'NI7'], true)) {
+            return null;
+        }
+
+        return Carbon::parse($birthdate)
+            ->addYears($abbreviation === 'NI0' ? 7 : 14)
+            ->subDay()
+            ->toDateString();
+    }
+
+    private function storeRegistrationDocuments(Request $request, Partner $partner, DocumentAttachmentService $attachmentService): void
+    {
+        if ($request->hasFile('family_document')) {
+            $attachmentService->store($partner, DocumentAttachment::TYPE_EXPEDIENTE_UNICO, $request->file('family_document'));
+        }
+
+        if ($request->hasFile('conadis_document')) {
+            $attachmentService->store($partner, DocumentAttachment::TYPE_CONADIS, $request->file('conadis_document'));
+        }
+
+        foreach ($request->file('beneficiary_documents', []) as $index => $file) {
+            $personId = $request->input("beneficiaries.{$index}.person_id");
+            $beneficiary = $partner->beneficiaries()->where('person_id', $personId)->first();
+            if ($beneficiary && $file) {
+                $attachmentService->store($beneficiary, DocumentAttachment::TYPE_EXPEDIENTE_UNICO, $file);
+            }
+        }
     }
 }

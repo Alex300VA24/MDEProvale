@@ -2,11 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Association;
+use App\Models\Position;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
-use App\Models\Association;
+use Illuminate\Validation\Rule;
 
-class AsignarPresidentaRequest extends FormRequest
+class AsignarCargoRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,7 +18,8 @@ class AsignarPresidentaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'partner_id' => 'required|exists:partners,id',
+            'partner_id' => ['required', 'integer', 'exists:partners,id'],
+            'position' => ['required', 'string', Rule::in(Position::COMMITTEE_TITLES)],
         ];
     }
 
@@ -25,6 +28,8 @@ class AsignarPresidentaRequest extends FormRequest
         return [
             'partner_id.required' => 'Debe seleccionar una socia.',
             'partner_id.exists' => 'La socia seleccionada no existe.',
+            'position.required' => 'Debe seleccionar un cargo.',
+            'position.in' => 'El cargo seleccionado no es válido.',
         ];
     }
 }

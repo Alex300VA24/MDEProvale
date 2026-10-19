@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ControlInternoController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\ReparticionController;
 use Illuminate\Support\Facades\Route;
@@ -14,4 +15,7 @@ Route::middleware('module:movimientos')->group(function () {
     Route::get('movimientos-reparticion-con-firma', [ReparticionController::class, 'pdfConFirma'])->name('movimientos.reparticion-con-firma');
     Route::get('movimientos-reparticion-tabla', [ReparticionController::class, 'index'])->name('movimientos.reparticion-tabla');
     Route::get('movimientos-distribucion-exportar', [ReparticionController::class, 'export'])->name('movimientos.distribucion.export');
+    // POST: el payload JSON del modal excede el largo máximo de una URL (414).
+    Route::post('movimientos-ficha-control', [ControlInternoController::class, 'fichaPdf'])->name('movimientos.ficha-control');
+    Route::post('movimientos-tarjeta-control', [ControlInternoController::class, 'tarjetaPdf'])->name('movimientos.tarjeta-control');
 });

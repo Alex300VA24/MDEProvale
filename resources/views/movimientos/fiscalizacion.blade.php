@@ -16,7 +16,7 @@
         .main-table { width: 98%; border-collapse: collapse; border: 2px solid #000; margin-left: 1%; margin-bottom: 5px; table-layout: fixed; }
         .header-table { width: 98%; margin-left: 1%; border-collapse: collapse; border-spacing: 0; margin-bottom: 8px; }
         .main-table th { background-color: #d8d8d8; border: 1px solid #000; padding: 4px 2px; font-size: 7.5pt; font-weight: bold; text-align: center; vertical-align: middle; line-height: 1.15; }
-        .main-table th.yellow, .main-table td.yellow { background-color: #ffff00; }
+        .main-table td.yellow { background-color: #dbe5f1; }
         .main-table td { border: 1px solid #000; padding: 4px 3px; font-size: 7pt; vertical-align: middle; text-align: center; height: 9mm; overflow-wrap: break-word; }
         .col-n { background-color: #f0f0f0; font-weight: bold; }
         .left { text-align: left !important; padding-left: 3px; }
@@ -73,8 +73,8 @@
                 <th style="width:5%">BENEF.</th>
                 <th style="width:6.5%">TOTAL LECHE (TARROS)</th>
                 <th style="width:6.5%">TOTAL HOJUELA (KG)</th>
-                <th class="yellow" style="width:6.5%">RACIÓN LECHE POR DÍA</th>
-                <th class="yellow" style="width:6.5%">RACIÓN HOJUELA POR DÍA</th>
+                <th style="width:6.5%">RACIÓN LECHE POR DÍA</th>
+                <th style="width:6.5%">RACIÓN HOJUELA POR DÍA</th>
             </tr>
         </thead>
         <tbody>
