@@ -118,6 +118,24 @@ class FullDatabaseSeederTest extends TestCase
         }
 
         $periods = DB::table('association_roster_periods')->get();
+        $monthlyTotals = $periods
+            ->groupBy(fn ($period) => substr((string) $period->period, 0, 7))
+            ->map(fn ($month) => (int) $month->sum('beneficiary_count'));
+
+        $expectedMonthlyTotals = [
+            '2026-03' => 3872,
+            '2026-04' => 3872,
+            '2026-05' => 3862,
+            '2026-06' => 3871,
+            '2026-07' => 3872,
+            '2026-08' => 3822,
+            '2026-09' => 3870,
+        ];
+        $this->assertCount(count($expectedMonthlyTotals), $monthlyTotals);
+        foreach ($expectedMonthlyTotals as $month => $expected) {
+            $this->assertSame($expected, $monthlyTotals->get($month), "El padron de {$month} no coincide con la fuente.");
+        }
+
         foreach ($periods as $period) {
             $partnerCount = DB::table('partner_roster_periods as roster')
                 ->join('partners', 'partners.id', '=', 'roster.partner_id')

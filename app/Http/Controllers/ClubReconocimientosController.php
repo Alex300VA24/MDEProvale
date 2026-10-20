@@ -650,6 +650,13 @@ $directive = Directive::create([
      * presidentas vigentes precargados, dejando la columna de firma en blanco
      * para el registro manual durante la reunión.
      */
+    public function actaSupervision()
+    {
+        $pdf = PDF::loadView('actas.supervision', [])->setPaper('a4', 'portrait');
+
+        return $pdf->stream('acta-supervision.pdf');
+    }
+
     public function actaReuniones()
     {
         $associations = Association::with(['placeSector.place'])

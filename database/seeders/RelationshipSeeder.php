@@ -15,26 +15,11 @@ class RelationshipSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('relationships')->insert([
-            'title' => 'Socio',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        DB::table('relationships')->insert([
-            'title' => 'Hijo',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        DB::table('relationships')->insert([
-            'title' => 'Apoderado',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        DB::table('relationships')->insert([
-            'title' => 'Nieto',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
+        foreach (['Socio', 'Hijo', 'Hijos', 'Apoderado', 'Nieto', 'Tutelado'] as $title) {
+            DB::table('relationships')->updateOrInsert(
+                ['title' => $title],
+                ['updated_at' => now(), 'created_at' => now()]
+            );
+        }
     }
 }

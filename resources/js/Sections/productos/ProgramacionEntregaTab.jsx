@@ -205,8 +205,8 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
                                 Edite beneficiarios, leche u hojuelas. Al cambiar beneficiarios, cantidades se recalculan automáticamente.
                             </p>
                         )}
-                        <div className="overflow-x-auto">
-                        <table className="data-table w-full min-w-[1420px] text-sm">
+                        <div className="m-3 overflow-auto max-h-[calc(100vh-20rem)] rounded-lg border-2 border-charcoal/30">
+                        <table className="data-table w-full min-w-[1420px] border-collapse text-sm [&_th]:border [&_th]:border-white/20 [&_td]:border [&_td]:border-charcoal/20 [&_th]:sticky [&_th]:top-0 [&_th]:z-10">
                             <thead>
                                 <tr>
                                     <th scope="col" className="px-3 py-3 text-center">N°</th>

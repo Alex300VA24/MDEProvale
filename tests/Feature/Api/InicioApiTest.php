@@ -50,7 +50,10 @@ class InicioApiTest extends TestCase
             ['id' => 2, 'person_id' => 2, 'association_id' => 1, 'state_id' => 2, 'date_begin' => $now->copy()->subYear()->toDateString(), 'date_end' => null, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
-        DB::table('relationships')->insert(['id' => 1, 'title' => 'HIJO(A)', 'created_at' => $now, 'updated_at' => $now]);
+        DB::table('relationships')->updateOrInsert(
+            ['id' => 1],
+            ['title' => 'HIJO(A)', 'created_at' => $now, 'updated_at' => $now]
+        );
         DB::table('beneficiaries')->insert(['id' => 1, 'person_id' => 3, 'partner_id' => 1, 'relationship_id' => 1, 'created_at' => $now, 'updated_at' => $now]);
 
         DB::table('uoms')->insert(['id' => 1, 'title' => 'UNIDAD', 'created_at' => $now, 'updated_at' => $now]);
@@ -86,6 +89,8 @@ class InicioApiTest extends TestCase
             ->assertJsonPath('stats.stock_total', 105)
             ->assertJsonPath('pecosas_por_mes.anio', now()->year)
             ->assertJsonPath('pecosas_por_mes.total_anio', 1)
+            ->assertJsonPath('top_comites.0.codigo', 'CDM1')
+            ->assertJsonPath('top_comites.0.direccion', 'Av. 1')
             ->assertJsonPath('top_comites.0.nombre', 'Comité Activo')
             ->assertJsonPath('top_comites.0.total', 1);
     }
@@ -106,7 +111,7 @@ class InicioApiTest extends TestCase
             ->assertJsonPath('top_comites', []);
     }
 
-public function test_historical_cards_show_unique_people_audit_and_dual_roles(): void
+public function test_historical_cards_show_source_relations_audit_and_dual_roles(): void
     {
         $this->seedPanelData();
         $now = now();
@@ -172,7 +177,7 @@ public function test_historical_cards_show_unique_people_audit_and_dual_roles():
         $this->actingAs($this->adminUser())
             ->getJson(self::BASE . '/panel?periodo_anio=2026&periodo_mes=9')
             ->assertOk()
-            ->assertJsonPath('stats.total_socios', 2)
+            ->assertJsonPath('stats.total_socios', 3)
             ->assertJsonPath('stats.total_beneficiarios', 2)
             ->assertJsonPath('stats.total_comites', 2)
             ->assertJsonPath('stats.dual_role.LAC', 1)

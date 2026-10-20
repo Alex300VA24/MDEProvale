@@ -386,18 +386,27 @@ export default function Dashboard() {
 
     // Contador de notificaciones no leídas (poll cada 30s, como el original).
     useEffect(() => {
+        let stopped = false;
         const loadCount = async () => {
+            if (stopped || document.hidden) return;
             try {
-                const res = await http.get('/api/dashboard/sistema/notifications/unread-count');
+                const res = await http.get('/api/dashboard/sistema/notifications/unread-count', { silentSession: true });
                 setNotifCount(res.data?.count ?? 0);
                 setNotifLabel(res.data?.label ?? '');
-            } catch {
-                /* silencioso */
+            } catch (e) {
+                // Sesión vencida: se deja de consultar; la próxima acción del
+                // usuario muestra la alerta una sola vez.
+                if ([401, 419].includes(e?.response?.status)) stopped = true;
             }
         };
         loadCount();
         const id = setInterval(loadCount, 30000);
-        return () => clearInterval(id);
+        const onVisible = () => { if (!document.hidden) loadCount(); };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', onVisible);
+        };
     }, []);
 
     const loadNotifications = useCallback(async () => {

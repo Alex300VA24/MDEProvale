@@ -9,6 +9,7 @@ import Pagination from '../../Components/Pagination';
 import PdfLinkButton from '../../Components/PdfLinkButton';
 import { useDebounced } from './hooks';
 import { formatDate, personFullName, personLabel, stateClass } from './format';
+import { associationLabel } from '../comites/format';
 import errorMessage from '../../errorMessage';
 import ReniecPhoto from './ReniecPhoto';
 import PersonaInlineFields, { submitInlinePersona } from './PersonaInlineFields';
@@ -173,7 +174,10 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
     const [beneficiary, setBeneficiary] = useState(() => createBeneficiaryDraft(options));
     const [submitting, setSubmitting] = useState(false);
 
-    const associationOptions = (options.associations || []).map((a) => ({ id: a.id, label: a.name }));
+    const associationOptions = (options.associations || []).map((a) => ({
+        id: a.id,
+        label: associationLabel(a),
+    }));
     const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: s.title }));
     const relationshipOptions = (options.relationships || []).map((relationship) => ({ id: relationship.id, label: relationship.title }));
     const typeBenefitOptions = (options.type_benefits || []).map((type) => ({ id: type.id, label: type.title }));
@@ -707,7 +711,10 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
         }
     };
 
-    const associationOptions = (options.associations || []).map((a) => ({ id: a.id, label: a.name }));
+    const associationOptions = (options.associations || []).map((a) => ({
+        id: a.id,
+        label: associationLabel(a),
+    }));
     const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: s.title }));
 
     return (

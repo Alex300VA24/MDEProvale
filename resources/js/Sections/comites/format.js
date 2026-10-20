@@ -21,6 +21,38 @@ export function fmtDateTime(dt) {
     return `${day}/${m}/${y}`;
 }
 
+const ADDRESS_DISAMBIGUATION_CODES = new Set(['059', '265', '270', '280', '300', '325']);
+
+function associationCode(association) {
+    const rawCode = String(association?.code ?? association?.codigo ?? '').trim();
+    return /^\d+$/.test(rawCode) ? rawCode.padStart(3, '0') : rawCode;
+}
+
+export function shouldShowAssociationAddress(association) {
+    return ADDRESS_DISAMBIGUATION_CODES.has(associationCode(association));
+}
+
+export function associationLabel(association, { includeCode = false, includeAddress = true } = {}) {
+    if (!association) return '';
+
+    const code = associationCode(association);
+    const name = association.name ?? association.nombre;
+    const address = association.address ?? association.direccion;
+    const disambiguate = shouldShowAssociationAddress(association);
+    const parts = [];
+
+    if (includeCode || disambiguate) {
+        parts.push(code);
+    }
+    parts.push(name);
+
+    if (includeAddress && disambiguate) {
+        parts.push(address);
+    }
+
+    return parts.filter(Boolean).join(' · ');
+}
+
 const STATE_CLASS_BY_ABBR = {
     ACT: 'badge-active',
     VIG: 'badge-current',

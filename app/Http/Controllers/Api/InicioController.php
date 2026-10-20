@@ -195,7 +195,7 @@ $yearPecosas = $this->clampYear((int) $request->query('anio_pecosas', $currentYe
             ->count('beneficiaries.person_id');
 
         // Top comités con más beneficiarios
-        $topComites = Association::selectRaw('associations.name as club, COUNT(DISTINCT beneficiaries.id) as total')
+        $topComites = Association::selectRaw('associations.code, associations.name as club, associations.address, COUNT(DISTINCT beneficiaries.id) as total')
             ->join('partners', 'partners.association_id', '=', 'associations.id')
             ->join('beneficiaries', 'beneficiaries.partner_id', '=', 'partners.id')
             ->leftJoin('beneficiary_histories', 'beneficiary_histories.beneficiary_id', '=', 'beneficiaries.id')
@@ -206,17 +206,24 @@ $yearPecosas = $this->clampYear((int) $request->query('anio_pecosas', $currentYe
                             ->where(fn ($dates) => $dates->whereNull('beneficiary_histories.date_end')->orWhereDate('beneficiary_histories.date_end', '>=', $cardStart));
                     });
             })
-            ->groupBy('associations.id', 'associations.name')
+            ->groupBy('associations.id', 'associations.code', 'associations.name', 'associations.address')
             ->orderByDesc('total')
             ->limit(10)
             ->get()
-            ->map(fn ($item) => ['nombre' => $item->club, 'total' => (int) $item->total])
+            ->map(fn ($item) => [
+                'codigo' => $item->code,
+                'nombre' => $item->club,
+                'direccion' => $item->address,
+                'total' => (int) $item->total,
+            ])
             ->values();
 
         return response()->json([
             'stats' => [
-                'total_socios' => $totalSocios,
-                'total_beneficiarios' => $totalBeneficiarios,
+                // Los cards muestran el padrón tal como fue registrado. Los
+                // totales depurados permanecen en el detalle de auditoría.
+                'total_socios' => $totalSociosRelaciones,
+                'total_beneficiarios' => $totalBeneficiariosRelaciones,
                 'total_comites' => $totalComites,
                 'total_pecosas' => $totalPecosasPeriodo,
                 'period' => ['year' => $periodYear, 'month' => $periodMonth],

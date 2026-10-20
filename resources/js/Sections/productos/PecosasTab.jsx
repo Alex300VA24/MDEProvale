@@ -10,6 +10,7 @@ import PdfLinkButton from '../../Components/PdfLinkButton';
 import { useDebounced } from '../socios/hooks';
 import { dateValue, detailOptionLabel, fmtDate, stateClass } from './format';
 import errorMessage from '../../errorMessage';
+import { associationLabel } from '../comites/format';
 
 const BASE = '/api/dashboard/productos-pecosas';
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -115,7 +116,10 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         : activeStorekeeper?.name;
 
     const associations = (options.associations || []).filter((a) => a && a.id !== undefined && a.id !== null);
-    const clubOptions = associations.map((a) => ({ id: a.id, label: a.name }));
+    const clubOptions = associations.map((a) => ({
+        id: a.id,
+        label: associationLabel(a),
+    }));
     const detailOptions = (options.detail_products || []).filter((dp) => Number(dp.available_stock || 0) > 0);
     const calculatedState = stateForDeliveryDate(deliveryDate, options.states);
 
@@ -426,7 +430,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
     const filterAssociationOptions = (options.filter_associations || options.associations || [])
         .map((association) => ({
             id: association.id,
-            label: association.name,
+            label: associationLabel(association),
             badge: association.is_current === false ? 'Vencido' : null,
         }));
 

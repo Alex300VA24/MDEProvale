@@ -1,10 +1,10 @@
 <?php
 
 $homonymousClubs = [
-    'Los códigos 265 y 270 comparten el nombre CLEMENTINA PERALTA DE ACUÑA.',
-    'Los códigos 059 y 280 comparten el nombre VIRGEN DE LA PUERTA.',
-    'Los códigos 300 y 325 comparten el nombre ZOILA DE LA TORRE DE HAYA.',
-    'El conteo de clubes se realiza por código, no por nombre.',
+    'Los códigos 265 y 270 comparten el nombre CLEMENTINA PERALTA DE ACUÑA, pero se distinguen por sus direcciones: Mz.I Lt.38 y Mz.K Lt.36 del II Sector de Nuevo Jerusalén.',
+    'Los códigos 059 y 280 comparten el nombre VIRGEN DE LA PUERTA, pero corresponden a direcciones distintas: Mz.25 Lt.5A III Sector de Nuevo Jerusalén y Girardot N° 1543, Santa Verónica.',
+    'Los códigos 300 y 325 comparten el nombre ZOILA DE LA TORRE DE HAYA, pero corresponden a Calle Esmeralda N° 350, Santa Verónica y Calle San Pedro N° 199-A, Jerusalén.',
+    'El conteo identifica cada comité por código y dirección; el nombre compartido no los fusiona.',
 ];
 
 $pendingResolution = 'El club 256 (NIÑOS DEL TRIUNFO) no existía al migrar este padrón y se registró inicialmente con una resolución pendiente de regularización.';
@@ -25,11 +25,11 @@ return [
             ],
             'beneficiarios' => [
                 'excel' => 3872,
-                'migrated' => 3867,
-                'corrected' => 3866,
+                'migrated' => 3872,
+                'corrected' => 3867,
                 'observations' => [
                     'Se detectaron cinco DNI repetidos en el Excel: 91938806, 92526981, 93775401, 93824304 y 94210807.',
-                    'La migración conservó 3,867 relaciones válidas; al consolidar por persona corresponden 3,866 beneficiarios únicos.',
+                    'La BD conserva las 3,872 filas del padrón, incluidos los duplicados; al consolidar por DNI corresponden 3,867 personas únicas.',
                 ],
             ],
             'clubes' => [
@@ -55,11 +55,11 @@ return [
             ],
             'beneficiarios' => [
                 'excel' => 3872,
-                'migrated' => 3871,
+                'migrated' => 3872,
                 'corrected' => 3870,
                 'observations' => [
                     'Se detectaron dos DNI repetidos en el Excel: 92526981 y 93824304.',
-                    'La migración conservó 3,871 relaciones válidas; al consolidar por persona corresponden 3,870 beneficiarios únicos.',
+                    'La BD conserva las 3,872 filas del padrón, incluidos los duplicados; al consolidar por DNI corresponden 3,870 personas únicas.',
                 ],
             ],
             'clubes' => [
@@ -151,7 +151,8 @@ return [
                 'corrected' => 3870,
                 'observations' => [
                     'Dos beneficiarios aparecían repetidos entre clubes: DNI 91879690 (375 y 380) y DNI 92396005 (265 y 270).',
-                    'Un registro no tenía parentesco mapeable; se mantuvo la relación histórica con esa observación.',
+                    'El archivo de agosto contiene 3,822 filas: son 50 menos que el patrón de 3,872 de otros meses. La BD conserva 3,822 y no completa registros con datos de julio.',
+                    'Al depurar los dos DNI repetidos, corresponden 3,820 personas únicas.',
                 ],
             ],
             'clubes' => [
@@ -199,22 +200,22 @@ return [
         'source' => 'BASE DE DATOS PROVALE - SETIEMBRE.xlsx',
         'metrics' => [
             'socios' => [
-                'excel' => 2708,
-                'migrated' => 2708,
-                'corrected' => 2706,
+                'excel' => 2714,
+                'migrated' => 2714,
+                'corrected' => 2712,
                 'observations' => [
-                    'VISCAINO SAUCEDO MARIA JULIA (DNI 18068606) aparecía en los clubes 075 y 078.',
-                    'GONZALES CABANILLAS JUAN VICTORIA CLOTILDE (DNI 47488826) aparecía en los clubes 375 y 380.',
+                    'JANELA ABIGAIL VARGAS RUMAY (DNI 76446533) aparece en los clubes 075 y 078.',
+                    'VANNESA JACKELINE JULCAMORO GALVEZ (DNI 47210495) aparece en los clubes 305 y 360.',
                     'Se conservaron las relaciones históricas y el total corregido cuenta a cada persona una sola vez.',
                 ],
             ],
             'beneficiarios' => [
                 'excel' => 3870,
                 'migrated' => 3870,
-                'corrected' => 3867,
+                'corrected' => 3868,
                 'observations' => [
-                    'Se detectaron tres DNI repetidos: 18068606 (clubes 075 y 078), 91879690 (375 y 380) y 92396005 (265 y 270).',
-                    'Un registro no tenía parentesco mapeable; se mantuvo la relación histórica con esa observación.',
+                    'Se detectaron dos DNI repetidos: 94427855 (clubes 075 y 078) y 92763772 (clubes 305 y 360).',
+                    'La BD conserva las 3,870 relaciones del archivo; el total depurado por DNI es 3,868.',
                 ],
             ],
             'clubes' => [

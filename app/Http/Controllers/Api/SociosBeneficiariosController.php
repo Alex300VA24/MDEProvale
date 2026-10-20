@@ -116,7 +116,7 @@ class SociosBeneficiariosController extends Controller
     public function partnersOptions()
     {
         return response()->json([
-            'associations' => Association::select(['id', 'name', 'code'])->orderBy('name')->get(),
+            'associations' => Association::select(['id', 'name', 'code', 'address'])->orderBy('name')->get(),
             'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
             'people' => People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
                 ->orderBy('id', 'desc')

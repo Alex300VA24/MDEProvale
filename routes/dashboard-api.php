@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\ComitesController;
+use App\Http\Controllers\Api\EvaluacionNutricionalController;
 use App\Http\Controllers\Api\InicioController;
+use App\Http\Controllers\Api\SupervisionComitesController;
 use App\Http\Controllers\Api\KnowledgeBaseController;
 use App\Http\Controllers\Api\ResponsablesRacionesController;
 use App\Http\Controllers\Api\MovimientosController;
@@ -115,6 +117,19 @@ Route::prefix('dashboard/club-madres')->middleware('module:club-madres')->name('
     Route::get('reconocimientos/{resolution}/buscar-externa', [ComitesController::class, 'buscarResolucionExterna'])->name('reconocimientos.externa.buscar');
     Route::get('reconocimientos/{resolution}/preview-externa', [ComitesController::class, 'previewResolucionExterna'])->name('reconocimientos.externa.preview');
     Route::get('reconocimientos/{resolution}/descargar-externa', [ComitesController::class, 'descargarResolucionExterna'])->name('reconocimientos.externa.descargar');
+});
+
+// ==================== SUPERVISIÓN DE COMITÉS (slug de módulo: club-madres) ====================
+Route::prefix('dashboard/supervision-comites')->middleware('module:club-madres')->name('api.supervision-comites.')->group(function () {
+    Route::get('/', [SupervisionComitesController::class, 'index'])->name('index');
+    Route::put('dia-sin-supervision', [SupervisionComitesController::class, 'setOffDay'])->name('dia-sin-supervision');
+    Route::put('{association}/visita', [SupervisionComitesController::class, 'setVisit'])->name('visita');
+});
+
+// ==================== EVALUACIÓN NUTRICIONAL (slug de módulo: socios-beneficiarios) ====================
+Route::prefix('dashboard/evaluacion-nutricional')->middleware('module:socios-beneficiarios')->name('api.evaluacion-nutricional.')->group(function () {
+    Route::get('options', [EvaluacionNutricionalController::class, 'options'])->name('options');
+    Route::get('{association}/beneficiarios', [EvaluacionNutricionalController::class, 'beneficiarios'])->name('beneficiarios');
 });
 
 // ==================== MÓDULO: PRODUCTOS Y PECOSAS ====================

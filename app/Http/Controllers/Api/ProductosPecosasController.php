@@ -362,7 +362,7 @@ class ProductosPecosasController extends Controller
 
         // El formulario solo admite comites vigentes, pero el filtro debe poder
         // consultar todo el historial, incluso el de comites vencidos o pendientes.
-        $filterAssociations = Association::select(['id', 'name', 'code', 'state_id'])
+        $filterAssociations = Association::select(['id', 'name', 'code', 'address', 'state_id'])
             ->orderBy('name')
             ->get();
 

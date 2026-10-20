@@ -15,6 +15,7 @@ Route::prefix('club-reconocimientos')->name('club-reconocimientos.')->middleware
     Route::get('club-padron', [ClubReconocimientosController::class, 'generarPadronClub'])->name('club.padron');
     Route::get('acta-renuncia', [ClubReconocimientosController::class, 'actaRenuncia'])->name('acta-renuncia');
     Route::get('acta-reuniones', [ClubReconocimientosController::class, 'actaReuniones'])->name('acta-reuniones');
+    Route::get('acta-supervision', [ClubReconocimientosController::class, 'actaSupervision'])->name('acta-supervision');
 
     // Reconocimientos
     Route::get('reconocimientos', [ClubReconocimientosController::class, 'indexReconocimientos'])->name('reconocimientos.index');

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -16,6 +17,7 @@ class AssociationRosterPeriodSeeder extends Seeder
         }
 
         $rows = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+
         $associationIds = DB::table('associations')->pluck('id', 'code');
         $personIds = DB::table('people')->pluck('id', 'dni');
         $partnerIds = DB::table('partners')
@@ -47,6 +49,26 @@ class AssociationRosterPeriodSeeder extends Seeder
                 $unmatchedPresidentMonths++;
             }
 
+            // Los conteos del resumen se derivan de las presencias realmente
+            // sembradas, incluyendo las ocurrencias historicas duplicadas.
+            $periodStart = Carbon::parse($period)->startOfMonth()->toDateString();
+            $periodEnd = Carbon::parse($period)->endOfMonth()->toDateString();
+            $partnerCount = DB::table('partner_roster_periods as roster')
+                ->join('partners', 'partners.id', '=', 'roster.partner_id')
+                ->where('partners.association_id', $associationId)
+                ->whereDate('roster.period', $periodStart)
+                ->count();
+            $beneficiaryCount = DB::table('beneficiary_histories as history')
+                ->join('beneficiaries', 'beneficiaries.id', '=', 'history.beneficiary_id')
+                ->join('partners', 'partners.id', '=', 'beneficiaries.partner_id')
+                ->where('partners.association_id', $associationId)
+                ->whereDate('history.date_begin', '<=', $periodEnd)
+                ->where(function ($query) use ($periodStart) {
+                    $query->whereNull('history.date_end')
+                        ->orWhereDate('history.date_end', '>=', $periodStart);
+                })
+                ->count();
+
             $inserts[] = [
                 'association_id' => $associationId,
                 'period' => $period,
@@ -62,6 +84,29 @@ class AssociationRosterPeriodSeeder extends Seeder
         DB::table('association_roster_periods')->delete();
         foreach (array_chunk($inserts, 500) as $chunk) {
             DB::table('association_roster_periods')->insert($chunk);
+        }
+
+        $expectedTotals = [
+            '2026-03' => 3872,
+            '2026-04' => 3872,
+            '2026-05' => 3862,
+            '2026-06' => 3871,
+            '2026-07' => 3872,
+            '2026-08' => 3822,
+            '2026-09' => 3870,
+        ];
+        $totals = DB::table('association_roster_periods')
+            ->selectRaw('period, SUM(beneficiary_count) AS total')
+            ->groupBy('period')
+            ->get();
+        foreach ($totals as $total) {
+            $month = substr((string) $total->period, 0, 7);
+            $expected = $expectedTotals[$month] ?? null;
+            if ($expected === null || (int) $total->total !== $expected) {
+                throw new RuntimeException(
+                    "El resumen de {$total->period} contiene {$total->total} beneficiarios; se esperaban {$expected}."
+                );
+            }
         }
 
         $this->command->info('Períodos mensuales de comités insertados: ' . count($inserts));

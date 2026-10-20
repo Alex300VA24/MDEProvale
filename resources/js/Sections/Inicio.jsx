@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
 import http from '../http';
 import DetailModal, { DetailGroup } from '../Components/DetailModal';
+import { associationLabel, shouldShowAssociationAddress } from './comites/format';
 
 const BASE = '/api/dashboard/inicio';
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -111,11 +112,17 @@ function StatCard({
 }) {
     const hasObservations = Boolean(detail?.observations?.length);
     const isVerified = detail?.verified;
+    const duplicateCount = detail ? Math.max(0, Number(detail.database || 0) - Number(detail.corrected || 0)) : 0;
 
     // Badge inteligente: si no se especifica badge manual, mostrar estado de auditoría
     const badgeContent = badge || (
         detail ? (
-            isVerified ? (
+            duplicateCount > 0 ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-sun-light text-sun border border-amber/30">
+                    <i className="fas fa-copy text-[9px]" aria-hidden="true" />
+                    {duplicateCount} {duplicateCount === 1 ? 'duplicado' : 'duplicados'}
+                </span>
+            ) : isVerified ? (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-leaf-light text-leaf border border-leaf/25">
                     <i className="fas fa-check text-[9px]" aria-hidden="true" />
                     Auditado
@@ -186,7 +193,7 @@ function StatCard({
                     >
                         <span className="inline-flex items-center gap-1.5 truncate">
                             <i className={`text-xs ${isVerified ? 'fas fa-shield-halved text-teal' : 'fas fa-triangle-exclamation text-amber'}`} aria-hidden="true" />
-                            <span>{isVerified ? 'Auditoría conforme' : 'Ver observaciones'}</span>
+                            <span>{duplicateCount > 0 ? `${duplicateCount} ${duplicateCount === 1 ? 'duplicado' : 'duplicados'}` : (isVerified ? 'Auditoría conforme' : 'Ver observaciones')}</span>
                         </span>
                         <span className="inline-flex items-center gap-1 text-[11px] opacity-75 group-hover/btn:opacity-100 group-hover/btn:translate-x-0.5 transition-all shrink-0">
                             <span>Detalle</span>
@@ -247,7 +254,7 @@ function RosterAuditModal({ audit, metricKey, periodLabel, onClose }) {
                         <div>
                             <p className="font-bold text-sm">{metric.verified ? 'Conteo verificado con la auditoría' : 'El conteo actual requiere revisión'}</p>
                             <p className="mt-0.5 text-xs sm:text-sm leading-relaxed">
-                                El card muestra el total corregido. El número histórico no se elimina: permanece separado como evidencia del padrón original.
+                                El card muestra las relaciones registradas en la BD, tal como fueron importadas. El total depurado se informa por separado y no reemplaza el dato histórico.
                             </p>
                         </div>
                     </div>
@@ -256,7 +263,7 @@ function RosterAuditModal({ audit, metricKey, periodLabel, onClose }) {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-5 divide-y sm:divide-y-0 sm:divide-x divide-mist">
                     <AuditValue label="Excel original" value={metric.excel} />
                     <div className="sm:pl-5"><AuditValue label="Relaciones en BD" value={metric.database} /></div>
-                    <div className="sm:pl-5"><AuditValue label="Total corregido" value={metric.corrected} emphasized /></div>
+                    <div className="sm:pl-5"><AuditValue label="Personas únicas" value={metric.corrected} emphasized /></div>
                 </div>
 
                 {metric.database !== metric.migrated && (
@@ -727,7 +734,7 @@ params: {
         charts.current.topComites = null;
 
         if (topComitesCanvas.current) {
-            const labels = panel.top_comites.map((c) => c.nombre.slice(0, 12));
+            const labels = panel.top_comites.map((c) => associationLabel(c, { includeAddress: false }).slice(0, 24));
             const data = panel.top_comites.map((c) => c.total);
             charts.current.topComites = new Chart(topComitesCanvas.current, {
                 type: 'bar',
@@ -750,7 +757,20 @@ params: {
                     animation: { duration: 500, easing: 'easeOutQuart' },
                     plugins: {
                         legend: { display: false },
-                        tooltip: { displayColors: false, callbacks: { label: (item) => ` ${nfmt(item.raw)} beneficiarios` } },
+                        tooltip: {
+                            displayColors: false,
+                            callbacks: {
+                                title: (items) => {
+                                    const club = panel.top_comites[items[0]?.dataIndex];
+                                    return club ? associationLabel(club, { includeAddress: false }) : '';
+                                },
+                                label: (item) => ` ${nfmt(item.raw)} beneficiarios`,
+                                afterLabel: (item) => {
+                                    const club = panel.top_comites[item.dataIndex];
+                                    return shouldShowAssociationAddress(club) ? club.direccion || '' : '';
+                                },
+                            },
+                        },
                     },
                     scales: {
                         x: { grid: { color: GRID_COLOR() }, border: { display: false }, ticks: { font: CHART_FONT, color: TICK_COLOR(), precision: 0 } },
@@ -855,8 +875,8 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     iconClass="bg-blue-light text-blue"
                     barClass="bg-gradient-to-r from-blue to-sky"
                     value={nfmt(stats.total_socios)}
-                    label="Socias únicas"
-                    subtitle="Padrón nominal depurado"
+                    label="Socias registradas"
+                    subtitle="Relaciones del padrón sin depurar"
                     detail={stats.roster_audit?.metrics?.socios}
                     onDetail={() => setAuditMetric('socios')}
                 />
@@ -865,8 +885,8 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     iconClass="bg-sky-light text-sky"
                     barClass="bg-gradient-to-r from-sky to-[#7ec3e8]"
                     value={nfmt(stats.total_beneficiarios)}
-                    label="Beneficiarios únicos"
-                    subtitle="Población atendida activa"
+                    label="Beneficiarios registrados"
+                    subtitle="Relaciones del padrón sin depurar"
                     detail={stats.roster_audit?.metrics?.beneficiarios}
                     onDetail={() => setAuditMetric('beneficiarios')}
                 />

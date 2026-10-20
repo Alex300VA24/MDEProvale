@@ -50,9 +50,9 @@ export function showSessionExpired(redirect) {
             confirmButton: 'provale-alert-button',
         },
     }).then(() => {
+        // La alerta queda activa hasta que la página navega: así ninguna otra
+        // petición en vuelo (polling, combos) la vuelve a abrir.
         window.location.assign(destination);
-    }).finally(() => {
-        activeSessionAlert = null;
     });
 
     return activeSessionAlert;

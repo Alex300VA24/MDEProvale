@@ -3,6 +3,7 @@ import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import Combobox from '../../Components/Combobox';
 import { pdfLoadingHtml } from '../../Components/pdfLoadingScreen';
+import { associationLabel } from '../comites/format';
 
 const MESES = [
     '',
@@ -76,7 +77,7 @@ export default function PadronModal({ open, onClose, options }) {
 
     const associationOptions = (options.associations || []).map((a) => ({
         id: a.id,
-        label: `${a.code ? a.code + ' - ' : ''}${a.name}`,
+        label: associationLabel(a, { includeCode: true }),
     }));
 
     return (

@@ -31,7 +31,9 @@ http.interceptors.request.use((config) => {
             config.headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfCookie.split('=')[1]);
         }
     }
-    if (!config.headers['X-CSRF-TOKEN']) {
+    // La cookie XSRF-TOKEN siempre es la vigente (se renueva cuando la sesión se
+    // restaura con "mantener sesión activa"); el meta de la página puede estar viejo.
+    if (!config.headers['X-CSRF-TOKEN'] && !config.headers['X-XSRF-TOKEN']) {
         const metaToken = document.querySelector('meta[name="csrf-token"]');
         if (metaToken) {
             config.headers['X-CSRF-TOKEN'] = metaToken.getAttribute('content');
@@ -48,6 +50,8 @@ http.interceptors.response.use(
 
         if (data?.wrong_portal && data?.redirect) {
             window.location.assign(data.redirect);
+        } else if (error.config?.silentSession && [401, 419].includes(status)) {
+            // Petición de fondo (polling): no interrumpe al usuario con alertas.
         } else if (status === 419 && data?.csrf_expired) {
             reloadForCsrfExpired();
         } else if ([401, 419].includes(status)) {

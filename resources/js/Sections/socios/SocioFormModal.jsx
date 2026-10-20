@@ -7,6 +7,7 @@ import errorMessage from '../../errorMessage';
 import PersonaInlineFields, { submitInlinePersona } from './PersonaInlineFields';
 import DocumentosSection, { PendingDocumentSection } from './DocumentosSection';
 import { personLabel } from './format';
+import { associationLabel } from '../comites/format';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 const TODAY = new Date().toISOString().split('T')[0];
@@ -148,7 +149,10 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
     const [activeBeneficiary, setActiveBeneficiary] = useState(0);
     const [submitting, setSubmitting] = useState(false);
 
-    const associationOptions = (options.associations || []).map((value) => ({ id: value.id, label: value.name }));
+    const associationOptions = (options.associations || []).map((value) => ({
+        id: value.id,
+        label: associationLabel(value),
+    }));
     const currentBeneficiary = beneficiaries[activeBeneficiary];
     const hasConadis = partner?.documents?.some((document) => document.document_type === 'conadis');
     const conditionOptions = [

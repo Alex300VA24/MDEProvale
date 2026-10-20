@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <title>Acta de Supervisión - Programa Vaso de Leche</title>
 <style>
-  @page { margin: 18px 24px; }
+  /* Mismo margen que el Acta de Reuniones: el margen superior reserva el
+     espacio del encabezado fijo que se repite en cada hoja. */
+  @page { margin-top: 110px; margin-right: 24px; margin-bottom: 40px; margin-left: 24px; }
+  .page-header { position: fixed; top: -96px; left: 0; right: 0; height: 90px; padding: 0 4px; }
   * { box-sizing: border-box; }
   body {
     font-family: Arial, Helvetica, sans-serif;
@@ -97,6 +100,7 @@
 </head>
 <body>
 
+  <div class="page-header">
   <table class="header">
     <tr>
       <td class="logo-cell"><img src="{{ public_path('img/muni2.png') }}" alt="Municipalidad Distrital de La Esperanza"></td>
@@ -112,6 +116,7 @@
       </td>
     </tr>
   </table>
+  </div>
 
   <div class="main-title">ACTA DE SUPERVISIÓN A LOS CLUBES DE MADRES Y COMITÉS VASO DE LECHE</div>
 
