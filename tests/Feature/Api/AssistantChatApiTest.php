@@ -56,7 +56,7 @@ class AssistantChatApiTest extends TestCase
             return $request->url() === 'https://api.groq.test/openai/v1/chat/completions'
                 && $request->hasHeader('Authorization', 'Bearer test-key')
                 && $request['model'] === 'openai/gpt-oss-120b'
-                && $request['max_completion_tokens'] === 600
+                && $request['max_completion_tokens'] === (int) config('services.ai.chat_max_tokens', 8192)
                 && $messages[0]['role'] === 'system'
                 && str_contains($messages[0]['content'], 'Solo responde consultas')
                 && $messages[1]['role'] === 'user';
@@ -100,7 +100,7 @@ class AssistantChatApiTest extends TestCase
 
             return $request->url() === 'https://generativelanguage.test/v1beta/models/gemini-test:generateContent'
                 && $request->hasHeader('x-goog-api-key', 'test-google-key')
-                && $request['generationConfig']['maxOutputTokens'] === 600
+                && $request['generationConfig']['maxOutputTokens'] === (int) config('services.ai.chat_max_tokens', 8192)
                 && str_contains($request['system_instruction']['parts'][0]['text'], 'Solo responde consultas')
                 && $contents[0]['role'] === 'user'
                 && $contents[1]['role'] === 'model'

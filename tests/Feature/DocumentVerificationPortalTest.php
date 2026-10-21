@@ -235,6 +235,9 @@ class DocumentVerificationPortalTest extends TestCase
     {
         $issuedAt = \Carbon\Carbon::create(2026, 9, 14, 10, 11, 12);
         $common = [
+            'year' => 2026,
+            'month' => 9,
+            'configuration' => ['milk_cans_per_box' => 24, 'oat_kg_per_sack' => 25],
             'start_date' => '2026-09-01',
             'end_date' => '2026-09-30',
             'days_in_month' => 30,
@@ -249,7 +252,17 @@ class DocumentVerificationPortalTest extends TestCase
             'total_hojuelas_sueltos' => 0,
         ];
         $views = [
-            'movimientos.reparto_vueltas' => [...$common, 'vueltas' => collect()],
+            'movimientos.reparto_vueltas' => [...$common, 'vueltas' => collect([[
+                'vuelta' => 1,
+                'clubs' => [],
+                'total_beneficiarios' => 0,
+                'total_leche' => 0,
+                'leche_cajas' => 0,
+                'leche_tarros' => 0,
+                'total_hojuelas' => 0,
+                'hojuelas_sacos' => 0,
+                'hojuelas_kilos' => 0,
+            ]])],
             'movimientos.cargo_general' => $common,
             'movimientos.fiscalizacion' => $common,
             'movimientos.acta_entrega' => [...$common, 'productMode' => 'complete'],
@@ -261,7 +274,8 @@ class DocumentVerificationPortalTest extends TestCase
             $this->assertStringContainsString("public/img/muni2.png", str_replace('\\', '/', $html), $view);
             $this->assertStringContainsString('MUNICIPALIDAD DISTRITAL', $html, $view);
             $this->assertStringContainsString('FECHA: 14/09/2026', $html, $view);
-            $this->assertStringContainsString('HORA: 10:11:12', $html, $view);
+            // reparto_vueltas muestra HH:MM; los demás documentos HH:MM:SS.
+            $this->assertStringContainsString('HORA: 10:11', $html, $view);
         }
     }
 
@@ -299,7 +313,7 @@ class DocumentVerificationPortalTest extends TestCase
             ->assertSee('Documento auténtico y vigente');
     }
 
-    public function test_view_pdf_action_redirects_to_authenticity_page(): void
+    public function test_view_pdf_action_streams_the_pdf_inline(): void
     {
         $document = new VerifiedDocument([
             'token' => str_repeat('d', 64),
@@ -317,7 +331,10 @@ class DocumentVerificationPortalTest extends TestCase
         $response = app(PecosaController::class)
             ->generarComprobante(new Pecosa(['pecosa_number' => 'P-001']));
 
-        $this->assertSame(route('documents.verify', $document->token), $response->getTargetUrl());
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('inline; filename="pecosa.pdf"', $response->headers->get('Content-Disposition'));
+        $this->assertSame('%PDF-1.4 test', $response->getContent());
     }
 
     public function test_president_portal_has_its_own_role_restricted_login(): void

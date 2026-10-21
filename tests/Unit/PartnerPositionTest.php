@@ -44,11 +44,13 @@ class PartnerPositionTest extends TestCase
             'place_sector_id' => 1,
         ]);
 
-        $positionId = DB::table('positions')->insertGetId([
+        // `PRESIDENTA` ya lo siembra una migración.
+        DB::table('positions')->insertOrIgnore([
             'title' => 'PRESIDENTA',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        $positionId = DB::table('positions')->where('title', 'PRESIDENTA')->value('id');
 
         $partnerId = DB::table('partners')->insertGetId([
             'person_id' => 1,

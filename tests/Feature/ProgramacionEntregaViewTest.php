@@ -27,9 +27,9 @@ class ProgramacionEntregaViewTest extends TestCase
             ]],
         ])->render();
 
-        $this->assertStringContainsString('PROGRAMACION DE ENTREGA DE LOS PRODUCTOS DEL PROGRAMA VASO DE LECHE', $html);
-        $this->assertStringContainsString('(PERIODO DEL 01 AL 28 DE FEBRERO)', $html);
-        $this->assertStringContainsString('LECHE EVAPORADA ENTERA Y HOJUELAS DE QUINUA AVENA CON AZUCAR', $html);
+        $this->assertStringContainsString('PROGRAMACIÓN DE ENTREGA DE LOS PRODUCTOS DEL PROGRAMA VASO DE LECHE', $html);
+        $this->assertStringContainsString('(PERIODO DEL 01 AL 28 FEBRERO 2026)', $html);
+        $this->assertStringContainsString('LECHE EVAPORADA ENTERA Y HOJUELA DE QUINUA AVENA CON AZÚCAR FORTIFICADA CON VITAMINAS Y MINERALES', $html);
         $this->assertStringContainsString('BENEF<br>(TOTAL)', $html);
         $this->assertStringContainsString('LECHE AL<br>REDONDEO', $html);
         $this->assertStringContainsString('HOJUELA AL<br>REDONDEO', $html);

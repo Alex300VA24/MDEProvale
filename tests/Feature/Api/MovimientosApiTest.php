@@ -154,7 +154,8 @@ class MovimientosApiTest extends TestCase
             ['id' => 2, 'person_id' => 3, 'type' => 'storekeeper', 'active' => true, 'created_at' => $now, 'updated_at' => $now],
         ]);
 
-        DB::table('relationships')->insert(['id' => 1, 'title' => 'HIJO(A)', 'created_at' => $now, 'updated_at' => $now]);
+        // Las migraciones ya siembran `relationships` (ids 1 y 2); se sobrescribe el id 1.
+        DB::table('relationships')->updateOrInsert(['id' => 1], ['title' => 'HIJO(A)', 'created_at' => $now, 'updated_at' => $now]);
         // NOTA: no se seedea aquí ninguna fila en `pecosas` — cada test que la necesite
         // (p.ej. verificar el bloqueo de eliminación de una salida ligada a una pecosa)
         // debe insertarla explícitamente, porque otros tests de este archivo crean
@@ -506,9 +507,10 @@ class MovimientosApiTest extends TestCase
             ])
             ->assertStatus(201);
 
-        $pecosa = DB::table('pecosas')->where('pecosa_number', 'PEC-001')->first();
+        // El correlativo (yy0001) lo genera el servicio; el número enviado se ignora.
+        $pecosa = DB::table('pecosas')->first();
 
-        $transactionId = DB::table('transactions')->where('document_number', 'PEC-001')->value('id');
+        $transactionId = DB::table('transactions')->where('document_number', $pecosa->pecosa_number)->value('id');
 
         // El stock descontado por la pecosa queda enlazado a su transacción
         $this->assertDatabaseHas('product_stocks', [

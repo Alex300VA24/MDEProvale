@@ -535,20 +535,21 @@ class ProductosPecosasApiTest extends TestCase
 
     public function test_comprobante_uses_pecosa_snapshots_instead_of_template_defaults_or_current_people(): void
     {
-        $this->actingAs($this->userWithAccess())
+        $pecosaId = $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/pecosas', $this->pecosaPayload('PDF-001'))
-            ->assertCreated();
+            ->assertCreated()
+            ->json('data.id');
 
         DB::table('people')->where('id', 2)->update(['names' => 'Jefe Actual']);
         DB::table('people')->where('id', 3)->update(['names' => 'Almacenera Actual']);
 
-        $pecosa = Pecosa::where('pecosa_number', 'PDF-001')->firstOrFail();
+        $pecosa = Pecosa::findOrFail($pecosaId);
         $pecosa->load('detailPecosas');
         $method = new \ReflectionMethod(PecosaService::class, 'buildComprobanteData');
         $method->setAccessible(true);
         $data = $method->invoke(app(PecosaService::class), $pecosa);
 
-        $this->assertSame('PDF-001', $data['numero_orden']);
+        $this->assertSame($pecosa->pecosa_number, $data['numero_orden']);
         $this->assertSame('Z001', $data['zona']);
         $this->assertSame('CDM', $data['comite']);
         $this->assertSame('Comité Demo', $data['domicilio']);
@@ -622,7 +623,7 @@ class ProductosPecosasApiTest extends TestCase
         $response = $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/pecosas', $this->pecosaPayload())
             ->assertStatus(201)
-            ->assertJsonPath('data.pecosa_number', 'PEC-001')
+            ->assertJsonPath('data.pecosa_number', now()->format('y') . '0001')
             ->assertJsonPath('data.president_name', 'María Apellido Materno')
             ->assertJsonPath('data.chief_name', 'Juan Apellido Materno')
             ->assertJsonPath('data.storekeeper_name', 'Ana Apellido Materno')
@@ -631,10 +632,11 @@ class ProductosPecosasApiTest extends TestCase
 
         $pecosaId = $response->json('data.id');
 
-        $this->assertDatabaseHas('pecosas', ['pecosa_number' => 'PEC-001']);
+        $number = now()->format('y') . '0001';
+        $this->assertDatabaseHas('pecosas', ['pecosa_number' => $number]);
         $this->assertDatabaseHas('detail_pecosas', ['pecosa_id' => $pecosaId, 'quantity' => 2]);
         $this->assertDatabaseHas('product_stocks', ['pecosa_id' => $pecosaId, 'quantity' => 2]);
-        $this->assertDatabaseHas('transactions', ['document_number' => 'PEC-001', 'quantity' => 2]);
+        $this->assertDatabaseHas('transactions', ['document_number' => $number, 'quantity' => 2]);
 
         $this->assertSame(2, (int) DB::table('product_stocks')->where('pecosa_id', $pecosaId)->sum('quantity'));
     }
@@ -709,15 +711,16 @@ class ProductosPecosasApiTest extends TestCase
         $payload['state_id'] = 2;
         unset($payload['managing_partner_id']);
 
-        $this->actingAs($this->userWithAccess())
+        $number = $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/pecosas', $payload)
             ->assertCreated()
             ->assertJsonPath('data.managing_partner_id', 2)
             ->assertJsonPath('data.president_name', 'ROSA HISTÓRICA MENSUAL')
-            ->assertJsonPath('data.president_dni', '87654321');
+            ->assertJsonPath('data.president_dni', '87654321')
+            ->json('data.pecosa_number');
 
         $this->assertDatabaseHas('pecosas', [
-            'pecosa_number' => 'PEC-003',
+            'pecosa_number' => $number,
             'president_id' => 2,
             'managing_partner_id' => 2,
             'president_name' => 'ROSA HISTÓRICA MENSUAL',

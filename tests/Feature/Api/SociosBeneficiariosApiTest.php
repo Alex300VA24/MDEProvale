@@ -490,7 +490,8 @@ class SociosBeneficiariosApiTest extends TestCase
             ->where('type_benefit_id', $gesBenefitId)
             ->value('id');
         $this->assertNotNull($historyId);
-        $this->assertDatabaseHas('beneficiary_histories', ['id' => $historyId, 'date_end' => '2026-10-14']);
+        // El término de GES se calcula desde la FUM (2025-04-10 + 9 meses - 1 día), no desde el hijo.
+        $this->assertDatabaseHas('beneficiary_histories', ['id' => $historyId, 'date_end' => '2026-01-09']);
         $this->assertDatabaseHas('obstetric_data', [
             'beneficiary_history_id' => $historyId,
             'date_last_menstrual_period' => '2025-04-10',
@@ -499,7 +500,7 @@ class SociosBeneficiariosApiTest extends TestCase
         $this->actingAs($this->userWithAccess())
             ->putJson(self::BASE.'/partners/'.$response->json('data.id'), ['observations' => 'Control actualizado'])
             ->assertOk();
-        $this->assertDatabaseHas('beneficiary_histories', ['id' => $historyId, 'date_end' => '2026-10-14']);
+        $this->assertDatabaseHas('beneficiary_histories', ['id' => $historyId, 'date_end' => '2026-01-09']);
         $this->assertDatabaseHas('obstetric_data', [
             'beneficiary_history_id' => $historyId,
             'date_last_menstrual_period' => '2025-04-10',
