@@ -123,6 +123,41 @@ class CatalogRepository implements CatalogRepositoryInterface
             ->get();
     }
 
+    public function padronReportCatalogs(): array
+    {
+        return [
+            'parentescos' => Relationship::orderBy('id')->get(['id', 'title'])->toArray(),
+            'tipo_beneficios' => TypeBenefit::orderBy('id')->get(['id', 'title', 'abbreviation'])->toArray(),
+            'bajas' => ReasonDisqualification::orderBy('id')->get(['id', 'title'])->toArray(),
+        ];
+    }
+
+    public function associationsWithAddress(): Collection
+    {
+        return Association::select(['id', 'name', 'code', 'address'])->orderBy('name')->get();
+    }
+
+    public function relationshipsByTitles(array $titles): Collection
+    {
+        return Relationship::select(['id', 'title'])->whereIn('title', $titles)->orderBy('title')->get();
+    }
+
+    public function typeBenefitsByAbbreviations(array $abbreviations): Collection
+    {
+        return TypeBenefit::select(['id', 'title', 'abbreviation'])
+            ->whereIn('abbreviation', $abbreviations)
+            ->orderBy('priority')
+            ->get();
+    }
+
+    public function partnersForSelect(): Collection
+    {
+        return Partner::select(['id', 'person_id'])
+            ->with('people:id,names,father_lastname')
+            ->orderBy('id')
+            ->get();
+    }
+
     public function positionIdByTitle(string $title, bool $like = false): ?int
     {
         return Position::where('title', $like ? 'like' : '=', $like ? "%{$title}%" : $title)->value('id');

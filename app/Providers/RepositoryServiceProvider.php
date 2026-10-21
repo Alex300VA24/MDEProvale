@@ -16,6 +16,8 @@ use App\Repositories\Contracts\PersonRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\StockRepositoryInterface;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
+use App\Repositories\AuditRepository;
+use App\Repositories\Contracts\AuditRepositoryInterface;
 use App\Repositories\PartnerRepository;
 use App\Repositories\PecosaRepository;
 use App\Repositories\PersonRepository;
@@ -32,6 +34,7 @@ class RepositoryServiceProvider extends ServiceProvider
 {
     public array $bindings = [
         AssociationRepositoryInterface::class => AssociationRepository::class,
+        AuditRepositoryInterface::class => AuditRepository::class,
         BeneficiaryRepositoryInterface::class => BeneficiaryRepository::class,
         CatalogRepositoryInterface::class => CatalogRepository::class,
         DistributionRepositoryInterface::class => DistributionRepository::class,

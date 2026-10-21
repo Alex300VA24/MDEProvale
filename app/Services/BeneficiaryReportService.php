@@ -5,30 +5,30 @@ namespace App\Services;
 use App\DTOs\BeneficiaryReportItemDTO;
 use App\Models\Association;
 use App\Models\Pecosa;
-use App\Models\Partner;
-use App\Models\ReasonDisqualification;
-use App\Models\Relationship;
-use App\Models\State;
-use App\Models\TypeBenefit;
-use App\Repositories\PartnerRepository;
+use App\Repositories\Contracts\AssociationRepositoryInterface;
+use App\Repositories\Contracts\CatalogRepositoryInterface;
+use App\Repositories\Contracts\PartnerRepositoryInterface;
+use App\Repositories\Contracts\PecosaRepositoryInterface;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Barryvdh\DomPDF\Facade\PDF;
 use Illuminate\Support\Collection;
 
 class BeneficiaryReportService
 {
-    private PartnerRepository $partnerRepo;
-    private PDFService $pdfService;
-
-    public function __construct(PartnerRepository $partnerRepo, PDFService $pdfService)
-    {
-        $this->partnerRepo = $partnerRepo;
-        $this->pdfService = $pdfService;
+    public function __construct(
+        private PartnerRepositoryInterface $partnerRepo,
+        private AssociationRepositoryInterface $associationRepo,
+        private PecosaRepositoryInterface $pecosaRepo,
+        private CatalogRepositoryInterface $catalogs,
+        private PDFService $pdfService
+    ) {
     }
 
     public function generatePadronReport(int $associationId, int $month, int $year): array
     {
-        $association = Association::with(['placeSector.place', 'placeSector.sector'])->findOrFail($associationId);
+        $association = $this->associationRepo->findWithPlaceSector($associationId)
+            ?? throw (new ModelNotFoundException())->setModel(Association::class, [$associationId]);
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
         $cutoffDate = $endDate;
@@ -47,10 +47,7 @@ class BeneficiaryReportService
             throw new \DomainException('No hay socios vigentes para el comité y periodo seleccionado.');
         }
 
-        $pecosa = Pecosa::with('detailPecosas.detailProduct.product')
-            ->where('association_id', $associationId)
-            ->whereBetween('delivery_date', [$pecosaStart->toDateString(), $pecosaEnd->toDateString()])
-            ->first();
+        $pecosa = $this->pecosaRepo->findByAssociationAndPeriod($associationId, $pecosaStart->toDateString(), $pecosaEnd->toDateString());
 
         [$beneficiarios, $resumen] = $this->buildReportData($partners, $cutoffDate, $startDate, $endDate);
 
@@ -90,10 +87,7 @@ class BeneficiaryReportService
             'fecha' => date('d/m/Y'),
             'hora' => date('H:i:s'),
             'productos_pecosa' => $pecosa ? $pecosa->detailPecosas : collect([]),
-            'parentescos' => Relationship::orderBy('id')->get(['id', 'title'])->toArray(),
-            'tipo_beneficios' => TypeBenefit::orderBy('id')->get(['id', 'title', 'abbreviation'])->toArray(),
-            'bajas' => ReasonDisqualification::orderBy('id')->get(['id', 'title'])->toArray(),
-        ];
+        ] + $this->catalogs->padronReportCatalogs();
     }
 
     private function buildReportData(Collection $partners, Carbon $cutoffDate, Carbon $startDate, Carbon $endDate): array

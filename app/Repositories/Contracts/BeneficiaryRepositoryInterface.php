@@ -8,12 +8,41 @@ use App\Models\Partner;
 use App\Models\People;
 use App\Models\Relationship;
 use App\Models\TypeBenefit;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface BeneficiaryRepositoryInterface
 {
     /** Filtros: search (identidad de la persona), partner_id, relationship_id. */
     public function paginateFiltered(array $filters, int $perPage = 10): LengthAwarePaginator;
+
+    /** Beneficiarios activos en el rango con los historiales que lo cruzan. Filtros: search, partner_id, relationship_id. */
+    public function paginateForPeriod(array $filters, string $startDate, string $endDate, int $perPage = 10): LengthAwarePaginator;
+
+    /** Recorre en bloques los historiales GES/LAC con fin anterior a `$today` que no están inactivos. */
+    public function chunkExpiredBenefitHistories(int $inactiveStateId, string $today, int $size, callable $callback): void;
+
+    /** Historial con bloqueo de escritura; solo dentro de una transacción. */
+    public function lockHistory(int $id): ?BeneficiaryHistory;
+
+    /** Fecha de inicio más reciente entre todos los historiales. */
+    public function latestHistoryBegin(): ?string;
+
+    /** Carga las relaciones que exponen los recursos del API. */
+    public function loadDetail(Beneficiarie $beneficiary): Beneficiarie;
+
+    public function findByPartnerAndPerson(Partner $partner, mixed $personId): ?Beneficiarie;
+
+    /** Socio (`partner`) o beneficiario al que se adjunta un documento. */
+    public function findAttachable(string $type, int $id): Model;
+
+    /** Historiales vigentes en la fecha. */
+    public function activeHistories(Beneficiarie $beneficiary, string $date): Collection;
+
+    public function hasHistories(Beneficiarie $beneficiary): bool;
+
+    public function updateHistory(BeneficiaryHistory $history, array $data): bool;
 
     public function createPerson(array $data): People;
 

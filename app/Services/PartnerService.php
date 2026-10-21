@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\DocumentAttachment;
 use App\Models\Partner;
 use App\Models\State;
 use App\Repositories\Contracts\BeneficiaryRepositoryInterface;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
 use App\Repositories\Contracts\PartnerRepositoryInterface;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -17,8 +19,59 @@ class PartnerService
         private BeneficiaryRepositoryInterface $beneficiaryRepo,
         private CatalogRepositoryInterface $catalogs,
         private PDFService $pdfService,
-        private BenefitPeriodCalculator $benefitPeriods
+        private BenefitPeriodCalculator $benefitPeriods,
+        private DocumentAttachmentService $attachments
     ) {
+    }
+
+    public function paginate(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->partnerRepo->paginateForApi($filters, $perPage);
+    }
+
+    /** Catálogos de los formularios de socios del API. */
+    public function optionsData(): array
+    {
+        return [
+            'associations' => $this->catalogs->associationsWithAddress(),
+            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'people' => $this->catalogs->recentPeople(),
+            'all_people' => $this->catalogs->peopleByName(),
+            'relationships' => $this->catalogs->relationshipsByTitles(['Apoderado', 'Hijo', 'Nieto']),
+            'place_sectors' => $this->catalogs->placeSectors(['*'], ['place:id,code,title', 'sector:id,title']),
+            'type_benefits' => $this->catalogs->typeBenefitsByAbbreviations(['NI0', 'NI7', 'TBC', 'DIS']),
+            'reason_disqualifications' => $this->catalogs->reasonDisqualifications(),
+        ];
+    }
+
+    public function detail(Partner $partner): Partner
+    {
+        return $this->partnerRepo->loadDetail($partner);
+    }
+
+    /**
+     * Registra el socio, sus beneficiarios y los documentos adjuntos en una sola transacción.
+     *
+     * @param array $documents family, conadis y beneficiaries (índice => archivo)
+     */
+    public function register(array $partnerData, ?array $beneficiaries, array $context, array $documents): Partner
+    {
+        return DB::transaction(function () use ($partnerData, $beneficiaries, $context, $documents) {
+            $partner = $this->storeWithBeneficiaries($partnerData, $beneficiaries, $context);
+            $this->storeRegistrationDocuments($partner, $beneficiaries ?? [], $documents);
+
+            return $partner;
+        });
+    }
+
+    public function modify(Partner $partner, array $partnerData, ?array $beneficiaries, array $context, array $documents): Partner
+    {
+        return DB::transaction(function () use ($partner, $partnerData, $beneficiaries, $context, $documents) {
+            $partner = $this->updateWithBeneficiaries($partner, $partnerData, $beneficiaries, $context);
+            $this->storeRegistrationDocuments($partner, $beneficiaries ?? [], $documents);
+
+            return $partner;
+        });
     }
 
     /** Datos del listado de socios con los catálogos de los formularios. */
@@ -81,6 +134,24 @@ class PartnerService
     {
         $this->partnerRepo->deleteBeneficiaries($partner);
         $this->partnerRepo->deletePartner($partner);
+    }
+
+    private function storeRegistrationDocuments(Partner $partner, array $beneficiaries, array $documents): void
+    {
+        if (! empty($documents['family'])) {
+            $this->attachments->store($partner, DocumentAttachment::TYPE_EXPEDIENTE_UNICO, $documents['family']);
+        }
+
+        if (! empty($documents['conadis'])) {
+            $this->attachments->store($partner, DocumentAttachment::TYPE_CONADIS, $documents['conadis']);
+        }
+
+        foreach ($documents['beneficiaries'] ?? [] as $index => $file) {
+            $beneficiary = $this->beneficiaryRepo->findByPartnerAndPerson($partner, $beneficiaries[$index]['person_id'] ?? null);
+            if ($beneficiary && $file) {
+                $this->attachments->store($beneficiary, DocumentAttachment::TYPE_EXPEDIENTE_UNICO, $file);
+            }
+        }
     }
 
     private function syncBeneficiaries(Partner $partner, array $beneficiaries): void

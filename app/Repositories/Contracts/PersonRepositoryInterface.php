@@ -8,7 +8,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 interface PersonRepositoryInterface
 {
     /** Filtros: search, gender, place_sector_id. */
-    public function paginateFiltered(array $filters, int $perPage = 15): LengthAwarePaginator;
+    public function paginateFiltered(array $filters, int $perPage = 15, array $with = []): LengthAwarePaginator;
+
+    public function loadPlaceSector(People $person): People;
 
     public function createPerson(array $data): People;
 

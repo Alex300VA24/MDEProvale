@@ -12,6 +12,19 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class PartnerRepository extends BaseRepository implements PartnerRepositoryInterface
 {
+    private const DETAIL_RELATIONS = [
+        'people',
+        'association:id,name,code',
+        'state:id,title',
+        'beneficiaries.person',
+        'beneficiaries.relationship:id,title',
+        'beneficiaries.histories.typeBenefit:id,title,abbreviation',
+        'beneficiaries.histories.state:id,title',
+        'beneficiaries.histories.reasonDisqualification:id,title',
+        'beneficiaries.histories.obstetricData.childBeneficiary.person',
+        'documents',
+    ];
+
     public function model(): string
     {
         return Partner::class;
@@ -117,6 +130,30 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             ->when($filters['state_id'] ?? null, fn ($q, $v) => $q->where('state_id', $v))
             ->orderBy('id', 'desc')
             ->paginate($perPage);
+    }
+
+    public function paginateForApi(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->model
+            ->select([
+                'partners.id', 'partners.person_id', 'partners.association_id', 'partners.state_id',
+                'partners.date_begin', 'partners.date_end', 'partners.observations', 'partners.marital_status',
+                'partners.education_level', 'partners.occupation', 'partners.children_count',
+                'partners.socioeconomic_condition', 'partners.is_pregnant', 'partners.is_lactating',
+                'partners.family_income',
+            ])
+            ->with(self::DETAIL_RELATIONS)
+            ->withCount('beneficiaries')
+            ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('people', fn ($p) => $p->searchIdentity($search)))
+            ->when($filters['association_id'] ?? null, fn ($q, $v) => $q->where('association_id', $v))
+            ->when($filters['state_id'] ?? null, fn ($q, $v) => $q->where('state_id', $v))
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+    }
+
+    public function loadDetail(Partner $partner): Partner
+    {
+        return $partner->load(self::DETAIL_RELATIONS);
     }
 
     public function createPartner(array $data): Partner

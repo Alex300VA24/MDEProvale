@@ -13,15 +13,21 @@ class PersonRepository extends BaseRepository implements PersonRepositoryInterfa
         return People::class;
     }
 
-    public function paginateFiltered(array $filters, int $perPage = 15): LengthAwarePaginator
+    public function paginateFiltered(array $filters, int $perPage = 15, array $with = []): LengthAwarePaginator
     {
         return $this->model
             ->select('id', 'names', 'father_lastname', 'mother_lastname', 'dni', 'gender', 'telephone_number', 'phone_number', 'birthdate', 'place_sector_id', 'address')
+            ->with($with)
             ->when($filters['search'] ?? null, fn ($q, $v) => $q->searchIdentity($v))
             ->when($filters['gender'] ?? null, fn ($q, $v) => $q->where('gender', $v))
             ->when($filters['place_sector_id'] ?? null, fn ($q, $v) => $q->where('place_sector_id', $v))
             ->orderBy('id')
             ->paginate($perPage);
+    }
+
+    public function loadPlaceSector(People $person): People
+    {
+        return $person->load('placeSector.place:id,title', 'placeSector.sector:id,title');
     }
 
     public function createPerson(array $data): People

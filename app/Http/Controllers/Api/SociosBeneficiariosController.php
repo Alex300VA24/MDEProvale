@@ -11,164 +11,72 @@ use App\Http\Requests\UpdatePersonaRequest;
 use App\Http\Resources\BeneficiarieResource;
 use App\Http\Resources\PartnerResource;
 use App\Http\Resources\PersonaResource;
-use App\Models\Association;
 use App\Models\Beneficiarie;
 use App\Models\DocumentAttachment;
 use App\Models\Partner;
 use App\Models\People;
-use App\Models\PlaceSector;
-use App\Models\ReasonDisqualification;
-use App\Models\Relationship;
-use App\Models\State;
-use App\Models\TypeBenefit;
+use App\Services\BeneficiaryService;
 use App\Services\DocumentAttachmentService;
 use App\Services\PartnerService;
-use App\Services\ReniecService;
+use App\Services\PersonService;
 use App\Services\UploadSettingsService;
-use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class SociosBeneficiariosController extends Controller
 {
-    private const PARTNER_WITH = [
-        'people',
-        'association:id,name,code',
-        'state:id,title',
-        'beneficiaries.person',
-        'beneficiaries.relationship:id,title',
-        'beneficiaries.histories.typeBenefit:id,title,abbreviation',
-        'beneficiaries.histories.state:id,title',
-        'beneficiaries.histories.reasonDisqualification:id,title',
-        'beneficiaries.histories.obstetricData.childBeneficiary.person',
-        'documents',
-    ];
+    private const PARTNER_FIELDS_OUT_OF_MODEL = ['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id'];
 
-    private const BENEFICIARIO_WITH = [
-        'person.placeSector.place:id,title',
-        'person.placeSector.sector:id,title',
-        'partner.people:id,names,father_lastname,dni',
-        'relationship',
-        'histories.typeBenefit:id,title,abbreviation',
-        'histories.state:id,title',
-        'histories.reasonDisqualification:id,title',
-        'documents',
-    ];
-
-    private PartnerService $partnerService;
-
-    public function __construct(PartnerService $partnerService)
-    {
-        $this->partnerService = $partnerService;
+    public function __construct(
+        private PartnerService $partnerService,
+        private PersonService $personService,
+        private BeneficiaryService $beneficiaryService
+    ) {
     }
 
     // ==================== SOCIOS ====================
 
     public function partners(Request $request)
     {
-        $query = Partner::query()
-            ->select([
-                'partners.id',
-                'partners.person_id',
-                'partners.association_id',
-                'partners.state_id',
-                'partners.date_begin',
-                'partners.date_end',
-                'partners.observations',
-                'partners.marital_status',
-                'partners.education_level',
-                'partners.occupation',
-                'partners.children_count',
-                'partners.socioeconomic_condition',
-                'partners.is_pregnant',
-                'partners.is_lactating',
-                'partners.family_income',
-            ])
-            ->with(self::PARTNER_WITH)
-            ->withCount('beneficiaries');
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('people', function ($q) use ($search) {
-                $q->searchIdentity($search);
-            });
-        }
-
-        if ($request->filled('association_id')) {
-            $query->where('association_id', $request->association_id);
-        }
-
-        if ($request->filled('state_id')) {
-            $query->where('state_id', $request->state_id);
-        }
-
-        $partners = $query->orderBy('id', 'desc')
-            ->paginate((int) $request->input('per_page', 10));
+        $partners = $this->partnerService->paginate(
+            $request->only(['search', 'association_id', 'state_id']),
+            (int) $request->input('per_page', 10)
+        );
 
         return PartnerResource::collection($partners);
     }
 
     public function partnersOptions()
     {
-        return response()->json([
-            'associations' => Association::select(['id', 'name', 'code', 'address'])->orderBy('name')->get(),
-            'states' => State::temporal()->get(['id', 'title', 'abbreviation']),
-            'people' => People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
-                ->orderBy('id', 'desc')
-                ->limit(100)
-                ->get(),
-            'all_people' => People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
-                ->orderBy('names')
-                ->limit(1000)
-                ->get(),
-            'relationships' => Relationship::select(['id', 'title'])
-                ->whereIn('title', ['Apoderado', 'Hijo', 'Nieto'])
-                ->orderBy('title')
-                ->get(),
-            'place_sectors' => PlaceSector::with(['place:id,code,title', 'sector:id,title'])->get(),
-            'type_benefits' => TypeBenefit::select(['id', 'title', 'abbreviation'])
-                ->whereIn('abbreviation', ['NI0', 'NI7', 'TBC', 'DIS'])
-                ->orderBy('priority')
-                ->get(),
-            'reason_disqualifications' => ReasonDisqualification::select(['id', 'title'])->get(),
-        ]);
+        return response()->json($this->partnerService->optionsData());
     }
 
-    public function storePartner(StorePartnerRequest $request, DocumentAttachmentService $attachmentService)
+    public function storePartner(StorePartnerRequest $request)
     {
-        $partner = DB::transaction(function () use ($request, $attachmentService) {
-            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id']);
-            $context = $request->only(['fum', 'benefit_child_person_id']);
-            $partner = $this->partnerService->storeWithBeneficiaries($partnerData, $request->input('beneficiaries'), $context);
-            $this->storeRegistrationDocuments($request, $partner, $attachmentService);
+        $partner = $this->partnerService->register(
+            $request->safe()->except(self::PARTNER_FIELDS_OUT_OF_MODEL),
+            $request->input('beneficiaries'),
+            $request->only(['fum', 'benefit_child_person_id']),
+            $this->registrationDocuments($request)
+        );
 
-            return $partner;
-        });
-
-        return (new PartnerResource($partner->load(self::PARTNER_WITH)))
+        return (new PartnerResource($this->partnerService->detail($partner)))
             ->response()
             ->setStatusCode(201);
     }
 
-    public function updatePartner(UpdatePartnerRequest $request, Partner $partner, DocumentAttachmentService $attachmentService)
+    public function updatePartner(UpdatePartnerRequest $request, Partner $partner)
     {
-        $partner = DB::transaction(function () use ($request, $partner, $attachmentService) {
-            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id']);
-            $context = $request->only(['fum', 'benefit_child_person_id']);
-            $partner = $this->partnerService->updateWithBeneficiaries($partner, $partnerData, $request->input('beneficiaries'), $context);
-            $this->storeRegistrationDocuments($request, $partner, $attachmentService);
+        $partner = $this->partnerService->modify(
+            $partner,
+            $request->safe()->except(self::PARTNER_FIELDS_OUT_OF_MODEL),
+            $request->input('beneficiaries'),
+            $request->only(['fum', 'benefit_child_person_id']),
+            $this->registrationDocuments($request)
+        );
 
-            return $partner;
-        });
-
-        return new PartnerResource($partner->load(self::PARTNER_WITH));
+        return new PartnerResource($this->partnerService->detail($partner));
     }
 
     public function destroyPartner(Partner $partner)
@@ -182,35 +90,20 @@ class SociosBeneficiariosController extends Controller
 
     public function personas(Request $request)
     {
-        $query = People::select('id', 'names', 'father_lastname', 'mother_lastname', 'dni', 'gender', 'telephone_number', 'phone_number', 'birthdate', 'place_sector_id', 'address')
-            ->with('placeSector.place:id,title', 'placeSector.sector:id,title');
-
-        if ($request->filled('search')) {
-            $query->searchIdentity($request->search);
-        }
-
-        if ($request->filled('gender')) {
-            $query->where('gender', $request->gender);
-        }
-
-        if ($request->filled('place_sector_id')) {
-            $query->where('place_sector_id', $request->place_sector_id);
-        }
-
-        $people = $query->orderBy('id')
-            ->paginate((int) $request->input('per_page', 15));
+        $people = $this->personService->paginate(
+            $request->only(['search', 'gender', 'place_sector_id']),
+            (int) $request->input('per_page', 15)
+        );
 
         return PersonaResource::collection($people);
     }
 
     public function personasOptions()
     {
-        return response()->json([
-            'place_sectors' => PlaceSector::with(['place:id,title', 'sector:id,title'])->get(),
-        ]);
+        return response()->json(['place_sectors' => $this->personService->placeSectors()]);
     }
 
-    public function consultarReniec(Request $request, ReniecService $reniec)
+    public function consultarReniec(Request $request)
     {
         Gate::authorize('create', People::class);
 
@@ -221,25 +114,9 @@ class SociosBeneficiariosController extends Controller
         ]);
 
         try {
-            $person = $reniec->consultar($validated['dni']);
+            $person = $this->personService->lookupReniec($validated['dni'], (string) $request->user()->getAuthIdentifier());
         } catch (ReniecException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-                'code' => $exception->resultCode(),
-            ], $exception->httpStatus())->header('Cache-Control', 'no-store, private');
-        }
-
-        $photo = $person['photo'] ?? null;
-        unset($person['photo']);
-
-        if ($photo) {
-            $photoToken = (string) Str::uuid();
-            Cache::put("reniec-photo:{$photoToken}", [
-                'user_id' => (string) $request->user()->getAuthIdentifier(),
-                'dni' => $validated['dni'],
-                'encrypted_photo' => Crypt::encryptString($photo),
-            ], now()->addMinutes(15));
-            $person['photo_token'] = $photoToken;
+            return $this->reniecError($exception);
         }
 
         return response()->json(['data' => $person])
@@ -248,84 +125,46 @@ class SociosBeneficiariosController extends Controller
 
     public function storePersona(StorePersonaRequest $request)
     {
-        $validated = $request->validated();
-        $photoToken = $validated['reniec_photo_token'] ?? null;
-        unset($validated['reniec_photo_token']);
+        $person = $this->personService->register($request->validated(), (string) $request->user()->getAuthIdentifier());
 
-        if ($photoToken) {
-            $cachedPhoto = Cache::get("reniec-photo:{$photoToken}");
-            $belongsToRequest = is_array($cachedPhoto)
-                && hash_equals((string) ($cachedPhoto['user_id'] ?? ''), (string) $request->user()->getAuthIdentifier())
-                && hash_equals((string) ($cachedPhoto['dni'] ?? ''), (string) $validated['dni']);
-
-            if (! $belongsToRequest) {
-                throw ValidationException::withMessages([
-                    'reniec_photo_token' => 'La foto de RENIEC expiró. Consulte nuevamente el DNI.',
-                ]);
-            }
-
-            try {
-                $validated['reniec_photo'] = Crypt::decryptString($cachedPhoto['encrypted_photo']);
-            } catch (DecryptException) {
-                throw ValidationException::withMessages([
-                    'reniec_photo_token' => 'No se pudo validar la foto de RENIEC. Consulte nuevamente el DNI.',
-                ]);
-            }
-        }
-
-        $person = People::create($validated);
-
-        if ($photoToken) {
-            Cache::forget("reniec-photo:{$photoToken}");
-        }
-
-        return (new PersonaResource($person->load('placeSector.place:id,title', 'placeSector.sector:id,title')))
+        return (new PersonaResource($this->personService->detail($person)))
             ->response()
             ->setStatusCode(201);
     }
 
     public function showPersona(Request $request, People $person)
     {
-        $person->load('placeSector.place:id,title', 'placeSector.sector:id,title');
-
         return response()->json([
-            'data' => (new PersonaResource($person))->resolve($request),
+            'data' => (new PersonaResource($this->personService->detail($person)))->resolve($request),
         ])->header('Cache-Control', 'no-store, private');
     }
 
-    public function fotoReniec(People $person, ReniecService $reniec)
+    public function fotoReniec(People $person)
     {
         try {
-            $reniecPerson = $reniec->consultar($person->dni);
+            $photo = $this->personService->reniecPhoto($person);
         } catch (ReniecException $exception) {
-            return response()->json([
-                'message' => $exception->getMessage(),
-                'code' => $exception->resultCode(),
-            ], $exception->httpStatus())->header('Cache-Control', 'no-store, private');
+            return $this->reniecError($exception);
         }
 
-        return response()->json([
-            'data' => ['photo' => $reniecPerson['photo'] ?? null],
-        ])
+        return response()->json(['data' => ['photo' => $photo]])
             ->header('Cache-Control', 'no-store, private');
     }
 
     public function updatePersona(UpdatePersonaRequest $request, People $person)
     {
-        $person->update($request->validated());
+        $this->personService->update($person, $request->validated());
 
-        return new PersonaResource($person->load('placeSector.place:id,title', 'placeSector.sector:id,title'));
+        return new PersonaResource($this->personService->detail($person));
     }
 
     public function destroyPersona(People $person)
     {
-        if ($person->partners()->exists() || $person->beneficiaries()->exists()) {
-            return response()->json([
-                'message' => 'No se puede eliminar la persona porque está asociada a un socio o beneficiario',
-            ], 422);
+        try {
+            $this->personService->delete($person);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        $person->delete();
 
         return response()->json(null, 204);
     }
@@ -334,60 +173,12 @@ class SociosBeneficiariosController extends Controller
 
     public function beneficiarios(Request $request)
     {
-        [$year, $month] = $this->beneficiaryPeriod($request);
-        $startDate = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
-        $endDate = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
-
-        $query = Beneficiarie::with([
-            'person',
-            'partner.people:id,names,father_lastname',
-            'relationship',
-            'histories' => fn ($history) => $history
-                ->whereDate('date_begin', '<=', $endDate)
-                ->where(fn ($dates) => $dates->whereNull('date_end')->orWhereDate('date_end', '>=', $startDate))
-                ->orderByDesc('date_begin'),
-            'histories.typeBenefit:id,title,abbreviation',
-            'histories.state:id,title',
-            'histories.reasonDisqualification:id,title',
-            'documents',
-        ])->activeDuring($startDate, $endDate);
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('person', function ($q) use ($search) {
-                $q->searchIdentity($search);
-            });
-        }
-
-        if ($request->filled('partner_id')) {
-            $query->where('partner_id', $request->partner_id);
-        }
-
-        if ($request->filled('relationship_id')) {
-            $query->where('relationship_id', $request->relationship_id);
-        }
-
-        $beneficiaries = $query->orderBy('id', 'desc')
-            ->paginate((int) $request->input('per_page', 10));
-
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('person', function ($q) use ($search) {
-                $q->searchIdentity($search);
-            });
-        }
-
-        if ($request->filled('partner_id')) {
-            $query->where('partner_id', $request->partner_id);
-        }
-
-        if ($request->filled('relationship_id')) {
-            $query->where('relationship_id', $request->relationship_id);
-        }
-
-        $beneficiaries = $query->orderBy('id', 'desc')
-            ->paginate((int) $request->input('per_page', 10));
+        [$beneficiaries, $year, $month] = $this->beneficiaryService->paginateByPeriod(
+            $request->only(['search', 'partner_id', 'relationship_id']),
+            $request->filled('year') ? (int) $request->input('year') : null,
+            $request->filled('month') ? (int) $request->input('month') : null,
+            (int) $request->input('per_page', 10)
+        );
 
         return BeneficiarieResource::collection($beneficiaries)->additional([
             'period' => ['year' => $year, 'month' => $month],
@@ -396,139 +187,36 @@ class SociosBeneficiariosController extends Controller
 
     public function beneficiariosOptions()
     {
-        return response()->json([
-            'partners' => Partner::select(['id', 'person_id'])
-                ->with('people:id,names,father_lastname')
-                ->orderBy('id')
-                ->get()
-                ->map(fn ($partner) => ['id' => $partner->id, 'name' => $partner->name]),
-            'relationships' => Relationship::select(['id', 'title'])
-                ->whereIn('title', ['Apoderado', 'Hijo', 'Nieto'])
-                ->orderBy('title')
-                ->get(),
-        ]);
-    }
-
-    private function beneficiarioHistoryRules(): array
-    {
-        return [
-            'date_begin' => 'nullable|date',
-            'type_benefit_id' => 'nullable|exists:type_benefits,id',
-            'history_state_id' => 'nullable|exists:states,id',
-            'reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
-        ];
-    }
-
-    /**
-     * Crea o actualiza el registro "actual" de historial clínico/beneficio de un
-     * beneficiario. Requiere tipo de beneficio, estado y fechas de inicio/fin
-     * completos para persistir (misma regla que PartnerService::syncBeneficiaries
-     * al guardar beneficiarios anidados en el formulario de Socio).
-     */
-    private function syncBeneficiarioHistory(Beneficiarie $beneficiarie, array $data): void
-    {
-        if (empty($data['type_benefit_id']) || empty($data['history_state_id'])
-            || empty($data['date_begin'])) {
-            return;
-        }
-
-        $payload = [
-            'weight' => 0,
-            'height' => 0,
-            'hmg' => 0,
-            'date_begin' => $data['date_begin'],
-            'date_end' => $this->benefitEndDate($beneficiarie->person_id, $data['type_benefit_id']),
-            'type_benefit_id' => $data['type_benefit_id'],
-            'state_id' => $data['history_state_id'],
-            'reason_disqualification_id' => $data['reason_disqualification_id'] ?? null,
-            'is_malnourished' => false,
-            'is_disabled' => false,
-        ];
-
-        $history = $beneficiarie->histories()
-            ->whereDate('date_begin', $payload['date_begin'])
-            ->first();
-
-        if ($history) {
-            $history->update($payload);
-        } else {
-            $beneficiarie->histories()->create($payload);
-        }
+        return response()->json($this->beneficiaryService->optionsData());
     }
 
     public function showBeneficiario(Beneficiarie $beneficiarie)
     {
-        return new BeneficiarieResource($beneficiarie->load(self::BENEFICIARIO_WITH));
+        return new BeneficiarieResource($this->beneficiaryService->detail($beneficiarie));
     }
 
     public function storeBeneficiario(Request $request)
     {
-        $validated = $request->validate(array_merge([
-            'person_id' => 'required|exists:people,id',
-            'partner_id' => 'required|exists:partners,id',
-            'relationship_id' => 'required|exists:relationships,id',
-            'priority' => 'nullable|integer|in:1,2',
-        ], $this->beneficiarioHistoryRules()));
+        $beneficiarie = $this->beneficiaryService->register($request->validate($this->beneficiarioRules()));
 
-        $validated['history_state_id'] = State::idFor(State::CURRENT);
-
-        $beneficiarie = Beneficiarie::create([
-            'person_id' => $validated['person_id'],
-            'partner_id' => $validated['partner_id'],
-            'relationship_id' => $validated['relationship_id'],
-            'priority' => $validated['priority'] ?? 1,
-        ]);
-
-        $this->syncBeneficiarioHistory($beneficiarie, $validated);
-
-        return (new BeneficiarieResource($beneficiarie->load(self::BENEFICIARIO_WITH)))
+        return (new BeneficiarieResource($beneficiarie))
             ->response()
             ->setStatusCode(201);
     }
 
     public function updateBeneficiario(Request $request, Beneficiarie $beneficiarie)
     {
-        $validated = $request->validate(array_merge([
-            'person_id' => 'required|exists:people,id',
-            'partner_id' => 'required|exists:partners,id',
-            'relationship_id' => 'required|exists:relationships,id',
-            'priority' => 'nullable|integer|in:1,2',
-        ], $this->beneficiarioHistoryRules()));
+        $beneficiarie = $this->beneficiaryService->modify($beneficiarie, $request->validate($this->beneficiarioRules()));
 
-        $beneficiarie->update([
-            'person_id' => $validated['person_id'],
-            'partner_id' => $validated['partner_id'],
-            'relationship_id' => $validated['relationship_id'],
-            'priority' => $validated['priority'] ?? $beneficiarie->priority ?? 1,
-        ]);
-
-        $this->syncBeneficiarioHistory($beneficiarie, $validated);
-
-        return new BeneficiarieResource($beneficiarie->load(self::BENEFICIARIO_WITH));
+        return new BeneficiarieResource($beneficiarie);
     }
 
     public function destroyBeneficiario(Beneficiarie $beneficiarie)
     {
-        $today = now()->toDateString();
-        $activeHistories = $beneficiarie->histories()
-            ->whereDate('date_begin', '<=', $today)
-            ->where(fn ($query) => $query->whereNull('date_end')->orWhereDate('date_end', '>=', $today))
-            ->get();
-
-        if ($activeHistories->isEmpty() && ! $beneficiarie->histories()->exists()) {
-            $beneficiarie->delete();
-        } elseif ($activeHistories->isEmpty()) {
-            return response()->json([
-                'message' => 'No se puede alterar un período histórico. Seleccione el período vigente para dar de baja al beneficiario.',
-            ], 422);
-        } else {
-            $expiredStateId = State::where('abbreviation', State::EXPIRED)->value('id');
-            foreach ($activeHistories as $history) {
-                $history->update(array_filter([
-                    'date_end' => $today,
-                    'state_id' => $expiredStateId,
-                ], fn ($value) => $value !== null));
-            }
+        try {
+            $this->beneficiaryService->deactivate($beneficiarie);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return response()->json(null, 204);
@@ -536,7 +224,7 @@ class SociosBeneficiariosController extends Controller
 
     // ==================== DOCUMENTOS ADJUNTOS ====================
 
-    public function uploadDocument(Request $request, DocumentAttachmentService $attachmentService, UploadSettingsService $uploadSettings)
+    public function uploadDocument(Request $request, UploadSettingsService $uploadSettings)
     {
         $validated = $request->validate([
             'attachable_type' => ['required', 'string', Rule::in(['partner', 'beneficiarie'])],
@@ -554,11 +242,12 @@ class SociosBeneficiariosController extends Controller
             ],
         ]);
 
-        $model = $validated['attachable_type'] === 'partner'
-            ? Partner::findOrFail($validated['attachable_id'])
-            : Beneficiarie::findOrFail($validated['attachable_id']);
-
-        $attachment = $attachmentService->store($model, $validated['document_type'], $request->file('file'));
+        $attachment = $this->beneficiaryService->attachDocument(
+            $validated['attachable_type'],
+            (int) $validated['attachable_id'],
+            $validated['document_type'],
+            $request->file('file')
+        );
 
         return response()->json([
             'id' => $attachment->id,
@@ -573,9 +262,7 @@ class SociosBeneficiariosController extends Controller
 
     public function downloadDocument(DocumentAttachment $documentAttachment, DocumentAttachmentService $attachmentService)
     {
-        $content = $attachmentService->getDecryptedContent($documentAttachment);
-
-        return response($content, 200, [
+        return response($attachmentService->getDecryptedContent($documentAttachment), 200, [
             'Content-Type' => $documentAttachment->mime_type,
             'Content-Disposition' => 'inline; filename="' . $documentAttachment->file_name . '"',
         ]);
@@ -588,51 +275,34 @@ class SociosBeneficiariosController extends Controller
         return response()->json(null, 204);
     }
 
-    private function beneficiaryPeriod(Request $request): array
+    private function beneficiarioRules(): array
     {
-        if ($request->filled('year') && $request->filled('month')) {
-            $year = max(2019, min(now()->year + 1, (int) $request->input('year')));
-            $month = max(1, min(12, (int) $request->input('month')));
-            return [$year, $month];
-        }
-
-        $latest = DB::table('beneficiary_histories')->max('date_begin');
-        $date = $latest ? Carbon::parse($latest) : now();
-
-        return [$date->year, $date->month];
+        return [
+            'person_id' => 'required|exists:people,id',
+            'partner_id' => 'required|exists:partners,id',
+            'relationship_id' => 'required|exists:relationships,id',
+            'priority' => 'nullable|integer|in:1,2',
+            'date_begin' => 'nullable|date',
+            'type_benefit_id' => 'nullable|exists:type_benefits,id',
+            'history_state_id' => 'nullable|exists:states,id',
+            'reason_disqualification_id' => 'nullable|exists:reason_disqualifications,id',
+        ];
     }
 
-    private function benefitEndDate(int $personId, int $typeBenefitId): ?string
+    private function registrationDocuments(Request $request): array
     {
-        $birthdate = People::whereKey($personId)->value('birthdate');
-        $abbreviation = TypeBenefit::whereKey($typeBenefitId)->value('abbreviation');
-
-        if (! $birthdate || ! in_array($abbreviation, ['NI0', 'NI7'], true)) {
-            return null;
-        }
-
-        return Carbon::parse($birthdate)
-            ->addYears($abbreviation === 'NI0' ? 7 : 14)
-            ->subDay()
-            ->toDateString();
+        return [
+            'family' => $request->file('family_document'),
+            'conadis' => $request->file('conadis_document'),
+            'beneficiaries' => $request->file('beneficiary_documents', []),
+        ];
     }
 
-    private function storeRegistrationDocuments(Request $request, Partner $partner, DocumentAttachmentService $attachmentService): void
+    private function reniecError(ReniecException $exception)
     {
-        if ($request->hasFile('family_document')) {
-            $attachmentService->store($partner, DocumentAttachment::TYPE_EXPEDIENTE_UNICO, $request->file('family_document'));
-        }
-
-        if ($request->hasFile('conadis_document')) {
-            $attachmentService->store($partner, DocumentAttachment::TYPE_CONADIS, $request->file('conadis_document'));
-        }
-
-        foreach ($request->file('beneficiary_documents', []) as $index => $file) {
-            $personId = $request->input("beneficiaries.{$index}.person_id");
-            $beneficiary = $partner->beneficiaries()->where('person_id', $personId)->first();
-            if ($beneficiary && $file) {
-                $attachmentService->store($beneficiary, DocumentAttachment::TYPE_EXPEDIENTE_UNICO, $file);
-            }
-        }
+        return response()->json([
+            'message' => $exception->getMessage(),
+            'code' => $exception->resultCode(),
+        ], $exception->httpStatus())->header('Cache-Control', 'no-store, private');
     }
 }

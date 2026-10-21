@@ -44,6 +44,24 @@ interface CatalogRepositoryInterface
     /** Todos los comités (id, name, code, address, state_id) por nombre, para filtros. */
     public function associationsForFilter(): Collection;
 
+    /**
+     * Tablas de referencia del padrón de beneficiarios, por id.
+     *
+     * @return array{parentescos: array, tipo_beneficios: array, bajas: array}
+     */
+    public function padronReportCatalogs(): array;
+
+    /** Comités con dirección, por nombre, para los formularios de socios. */
+    public function associationsWithAddress(): Collection;
+
+    public function relationshipsByTitles(array $titles): Collection;
+
+    /** Tipos de beneficio por abreviatura, por prioridad. */
+    public function typeBenefitsByAbbreviations(array $abbreviations): Collection;
+
+    /** Socios (id y persona) por id, para selectores. */
+    public function partnersForSelect(): Collection;
+
     /** Id del cargo por título exacto, o por coincidencia parcial si `$like`. */
     public function positionIdByTitle(string $title, bool $like = false): ?int;
 

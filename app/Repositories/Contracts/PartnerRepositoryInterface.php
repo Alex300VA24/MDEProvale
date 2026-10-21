@@ -16,6 +16,12 @@ interface PartnerRepositoryInterface
     /** Listado del módulo de socios con beneficiarios e historiales. */
     public function paginateForIndex(array $filters, int $perPage = 10): LengthAwarePaginator;
 
+    /** Listado del API de socios con beneficiarios, historiales y documentos. */
+    public function paginateForApi(array $filters, int $perPage = 10): LengthAwarePaginator;
+
+    /** Carga las relaciones que exponen los recursos del API. */
+    public function loadDetail(Partner $partner): Partner;
+
     public function createPartner(array $data): Partner;
 
     public function updatePartner(Partner $partner, array $data): bool;
