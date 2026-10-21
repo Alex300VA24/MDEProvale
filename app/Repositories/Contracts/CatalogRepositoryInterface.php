@@ -2,7 +2,9 @@
 
 namespace App\Repositories\Contracts;
 
+use App\Models\Partner;
 use App\Models\Responsible;
+use App\Models\State;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
@@ -67,4 +69,15 @@ interface CatalogRepositoryInterface
 
     /** Períodos de directiva mensual de los comités indicados, por fecha. */
     public function rosterPeriodsFor(\Illuminate\Support\Collection $associationIds): \Illuminate\Support\Collection;
+
+    /** Estados que admite un comité. */
+    public function associationStates(): Collection;
+
+    public function typePremises(): Collection;
+
+    public function findStateOrFail(int $id): State;
+
+    public function stateByAbbreviationOrFail(string $abbreviation): State;
+
+    public function partnerWithPeople(int $id): ?Partner;
 }

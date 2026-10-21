@@ -56,6 +56,33 @@ class MunicipalResolutionService
         });
     }
 
+    /**
+     * Descarga el PDF de la resolución desde el portal municipal.
+     *
+     * @return array{body: string, filename: string}|null null si el portal no la publica
+     * @throws \RuntimeException si el portal no responde o no devuelve el PDF
+     */
+    public function fetchPdf(Resolution $resolution): ?array
+    {
+        $match = $this->resolve($resolution);
+
+        if (! $match) {
+            return null;
+        }
+
+        try {
+            $pdf = $this->httpClient(20)->get($match['pdf_url']);
+        } catch (ConnectionException $e) {
+            throw new \RuntimeException('No se pudo conectar con el portal de la Municipalidad.');
+        }
+
+        if (! $pdf->successful()) {
+            throw new \RuntimeException('El portal de la Municipalidad no devolvió el PDF esperado.');
+        }
+
+        return ['body' => $pdf->body(), 'filename' => 'Resolucion-'.$resolution->document.'-MDE.pdf'];
+    }
+
     private function extractMatch(string $html, string $document): ?array
     {
         preg_match_all(

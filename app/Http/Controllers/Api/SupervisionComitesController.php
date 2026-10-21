@@ -4,20 +4,21 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Association;
-use App\Models\SupervisionOffDay;
-use App\Models\SupervisionVisit;
 use App\Models\DocumentAttachment;
+use App\Models\SupervisionVisit;
 use App\Services\DocumentAttachmentService;
+use App\Services\SupervisionService;
 use App\Services\UploadSettingsService;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class SupervisionComitesController extends Controller
 {
+    public function __construct(private SupervisionService $supervision)
+    {
+    }
+
     /**
      * Matriz mensual de supervisión: un comité por fila, un día por columna.
      */
@@ -28,52 +29,13 @@ class SupervisionComitesController extends Controller
             'month' => ['required', 'integer', 'between:1,12'],
         ]);
 
-        $start = Carbon::create($data['year'], $data['month'], 1)->startOfDay();
-        $end = $start->copy()->endOfMonth();
+        $matrix = $this->supervision->monthlyMatrix(
+            (int) $data['year'],
+            (int) $data['month'],
+            fn (DocumentAttachment $document) => $this->documentData($document)
+        );
 
-        $associations = Association::with(['placeSector.place', 'placeSector.sector'])
-            ->whereHas('resolution')
-            ->orderBy('code')
-            ->get();
-
-        $visits = SupervisionVisit::with('documents')
-            ->whereBetween('visit_date', [$start->toDateString(), $end->toDateString()])
-            ->get()
-            ->groupBy('association_id');
-
-        $rows = $associations->map(function (Association $association) use ($visits) {
-            $presidenta = $association->getPresidenta();
-            $person = $presidenta?->people;
-
-            return [
-                'id' => $association->id,
-                'code' => $association->code,
-                'name' => $association->name,
-                'president' => $person
-                    ? trim("{$person->names} {$person->father_lastname} {$person->mother_lastname}")
-                    : '',
-                'address' => $association->address,
-                'sector' => $association->placeSector
-                    ? trim(($association->placeSector->place?->title ?? '') . ' ' . ($association->placeSector->sector?->title ?? ''))
-                    : '',
-                'beneficiaries' => $presidenta ? $this->countBeneficiaries($association) : 0,
-                'visits' => ($visits[$association->id] ?? collect())
-                    ->mapWithKeys(fn ($v) => [$v->visit_date->format('Y-m-d') => $v->result])
-                    ->all(),
-                'visit_details' => ($visits[$association->id] ?? collect())
-                    ->mapWithKeys(fn ($visit) => [$visit->visit_date->format('Y-m-d') => [
-                        'id' => $visit->id,
-                        'documents' => $visit->documents->map(fn ($document) => $this->documentData($document))->values(),
-                    ]])->all(),
-            ];
-        })->values();
-
-        $offDays = SupervisionOffDay::whereBetween('off_date', [$start->toDateString(), $end->toDateString()])
-            ->get()
-            ->mapWithKeys(fn ($d) => [$d->off_date->format('Y-m-d') => $d->reason ?? ''])
-            ->all();
-
-        return response()->json(['rows' => $rows, 'off_days' => (object) $offDays]);
+        return response()->json(['rows' => $matrix['rows'], 'off_days' => (object) $matrix['off_days']]);
     }
 
     /**
@@ -86,22 +48,7 @@ class SupervisionComitesController extends Controller
             'result' => ['nullable', 'in:SI,NO'],
         ]);
 
-        if (empty($data['result'])) {
-            $visit = SupervisionVisit::where('association_id', $association->id)
-                ->whereDate('visit_date', $data['date'])
-                ->first();
-            if ($visit?->documents()->exists()) {
-                throw ValidationException::withMessages(['result' => 'Retire los adjuntos antes de limpiar la visita.']);
-            }
-            $visit?->delete();
-            $visitId = null;
-        } else {
-            $visit = SupervisionVisit::updateOrCreate(
-                ['association_id' => $association->id, 'visit_date' => $data['date']],
-                ['result' => $data['result'], 'user_id' => $request->user()?->id]
-            );
-            $visitId = $visit->id;
-        }
+        $visitId = $this->supervision->setVisit($association, $data['date'], $data['result'] ?? null, $request->user()?->id);
 
         return response()->json(['id' => $visitId, 'date' => $data['date'], 'result' => $data['result'] ?? null]);
     }
@@ -117,24 +64,13 @@ class SupervisionComitesController extends Controller
             'reason' => ['required_if:off,true', 'nullable', 'string', 'max:255'],
         ]);
 
-        if ($data['off']) {
-            SupervisionOffDay::updateOrCreate(
-                ['off_date' => $data['date']],
-                ['reason' => $data['reason'] ?? null, 'user_id' => $request->user()?->id]
-            );
-        } else {
-            SupervisionOffDay::whereDate('off_date', $data['date'])->delete();
-        }
+        $this->supervision->setOffDay($data['date'], (bool) $data['off'], $data['reason'] ?? null, $request->user()?->id);
 
         return response()->json(['date' => $data['date'], 'off' => $data['off']]);
     }
 
-    public function uploadAttachment(
-        Request $request,
-        SupervisionVisit $supervisionVisit,
-        DocumentAttachmentService $attachments,
-        UploadSettingsService $uploadSettings
-    ): JsonResponse {
+    public function uploadAttachment(Request $request, SupervisionVisit $supervisionVisit, UploadSettingsService $uploadSettings): JsonResponse
+    {
         $data = $request->validate([
             'document_type' => ['required', Rule::in([DocumentAttachment::TYPE_SUPERVISION_DOCUMENT, DocumentAttachment::TYPE_SUPERVISION_PHOTO])],
             'file' => [
@@ -144,16 +80,7 @@ class SupervisionComitesController extends Controller
             ],
         ]);
 
-        $attachment = DB::transaction(function () use ($request, $supervisionVisit, $attachments, $data) {
-            $visit = SupervisionVisit::query()->lockForUpdate()->findOrFail($supervisionVisit->id);
-            $count = $visit->documents()->where('document_type', $data['document_type'])->count();
-            $limit = $data['document_type'] === DocumentAttachment::TYPE_SUPERVISION_DOCUMENT ? 1 : 3;
-            if ($count >= $limit) {
-                throw ValidationException::withMessages(['file' => $limit === 1 ? 'Solo se permite un documento escaneado.' : 'Solo se permiten tres fotografías.']);
-            }
-
-            return $attachments->store($visit, $data['document_type'], $request->file('file'));
-        });
+        $attachment = $this->supervision->attach($supervisionVisit->id, $data['document_type'], $request->file('file'));
 
         return response()->json($this->documentData($attachment), 201);
     }
@@ -174,14 +101,6 @@ class SupervisionComitesController extends Controller
         $attachments->delete($documentAttachment);
 
         return response()->json(null, 204);
-    }
-
-    private function countBeneficiaries(Association $association): int
-    {
-        return \App\Models\Beneficiarie::whereIn(
-            'partner_id',
-            $association->partners()->select('id')
-        )->count();
     }
 
     private function documentData(DocumentAttachment $document): array

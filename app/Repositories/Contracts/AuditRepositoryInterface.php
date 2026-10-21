@@ -10,6 +10,8 @@ use App\Models\SystemAuditEvent;
  */
 interface AuditRepositoryInterface
 {
+    public function recordEvent(array $values): SystemAuditEvent;
+
     /** Registra el evento solo si no existe uno con esa `event_key`. */
     public function recordEventOnce(string $eventKey, array $values): SystemAuditEvent;
 

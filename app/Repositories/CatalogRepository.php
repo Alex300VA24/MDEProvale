@@ -14,6 +14,7 @@ use App\Models\Relationship;
 use App\Models\Responsible;
 use App\Models\State;
 use App\Models\TypeBenefit;
+use App\Models\TypePremises;
 use App\Models\TypeTransaction;
 use App\Models\Uom;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
@@ -161,6 +162,31 @@ class CatalogRepository implements CatalogRepositoryInterface
     public function positionIdByTitle(string $title, bool $like = false): ?int
     {
         return Position::where('title', $like ? 'like' : '=', $like ? "%{$title}%" : $title)->value('id');
+    }
+
+    public function associationStates(): Collection
+    {
+        return State::forAssociations()->get(['id', 'title', 'abbreviation']);
+    }
+
+    public function typePremises(): Collection
+    {
+        return TypePremises::select(['id', 'title'])->get();
+    }
+
+    public function findStateOrFail(int $id): State
+    {
+        return State::findOrFail($id);
+    }
+
+    public function stateByAbbreviationOrFail(string $abbreviation): State
+    {
+        return State::where('abbreviation', $abbreviation)->firstOrFail();
+    }
+
+    public function partnerWithPeople(int $id): ?Partner
+    {
+        return Partner::with('people')->find($id);
     }
 
     public function rosterPeriodsFor(SupportCollection $associationIds): SupportCollection
