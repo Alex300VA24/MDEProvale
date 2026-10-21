@@ -19,6 +19,17 @@ interface ProductRepositoryInterface
      */
     public function paginateDetailProducts(array $filters, int $perPage = 15): LengthAwarePaginator;
 
+    /**
+     * Lotes con consumo para el módulo API. Filtros: search, product_id, year, month,
+     * periodo (vigente|vencido).
+     */
+    public function paginateLotsByPeriod(array $filters, int $perPage = 15): LengthAwarePaginator;
+
+    public function loadStateAndUom(Product $product): Product;
+
+    /** Todos los lotes con producto, UOM y cantidad consumida (más recientes primero). */
+    public function lotsWithUsage(): Collection;
+
     public function createProduct(array $data): Product;
 
     public function updateProduct(Product $product, array $data): bool;

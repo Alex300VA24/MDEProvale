@@ -7,6 +7,7 @@ use App\Models\DetailProduct;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -158,6 +159,72 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             ->with(['state', 'uom', 'detailProducts' => fn ($q) => $q->withSum('stocks as used_quantity', 'quantity')])
             ->with($with)
             ->when($topByTransactions, fn ($q) => $q->withCount('transactions')->orderBy('transactions_count', 'desc')->limit(10))
+            ->get();
+    }
+
+    public function paginateLotsByPeriod(array $filters, int $perPage = 15): LengthAwarePaginator
+    {
+        $today = now()->toDateString();
+
+        $query = DetailProduct::query()
+            ->select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
+            ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
+            ->withSum('stocks as used_quantity', 'quantity')
+            ->orderByDesc('start_date')
+            ->orderByDesc('id');
+
+        if ($search = trim((string) ($filters['search'] ?? ''))) {
+            $query->whereHas('product', function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('abbreviation', 'like', "%{$search}%");
+            });
+        }
+
+        if (! empty($filters['product_id'])) {
+            $query->where('product_id', $filters['product_id']);
+        }
+
+        if (! empty($filters['year']) || ! empty($filters['month'])) {
+            $year = (int) ($filters['year'] ?? now()->year);
+
+            if (! empty($filters['month'])) {
+                $start = Carbon::create($year, (int) $filters['month'], 1)->startOfMonth();
+                $end = $start->copy()->endOfMonth();
+            } else {
+                $start = Carbon::create($year, 1, 1)->startOfYear();
+                $end = $start->copy()->endOfYear();
+            }
+
+            $query->where(function ($q) use ($start, $end) {
+                $q->whereNull('start_date')->orWhere('start_date', '<=', $end->toDateString());
+            })->where(function ($q) use ($start, $end) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', $start->toDateString());
+            });
+        }
+
+        $periodo = $filters['periodo'] ?? null;
+        if ($periodo === 'vigente') {
+            $query->where(fn ($q) => $q->whereNull('start_date')->orWhere('start_date', '<=', $today))
+                ->where(fn ($q) => $q->whereNull('end_date')->orWhere('end_date', '>=', $today));
+        } elseif ($periodo === 'vencido') {
+            $query->whereNotNull('end_date')->where('end_date', '<', $today);
+        }
+
+        return $query->paginate($perPage);
+    }
+
+    public function loadStateAndUom(Product $product): Product
+    {
+        return $product->load(['state:id,title', 'uom:id,title']);
+    }
+
+    public function lotsWithUsage(): Collection
+    {
+        return DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
+            ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
+            ->withSum('stocks as used_quantity', 'quantity')
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
             ->get();
     }
 

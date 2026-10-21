@@ -40,4 +40,13 @@ interface CatalogRepositoryInterface
     public function activeResponsibles(bool $selectColumns = false): Collection;
 
     public function findResponsibleWithPerson(int $id): ?Responsible;
+
+    /** Todos los comités (id, name, code, address, state_id) por nombre, para filtros. */
+    public function associationsForFilter(): Collection;
+
+    /** Id del cargo por título exacto, o por coincidencia parcial si `$like`. */
+    public function positionIdByTitle(string $title, bool $like = false): ?int;
+
+    /** Períodos de directiva mensual de los comités indicados, por fecha. */
+    public function rosterPeriodsFor(\Illuminate\Support\Collection $associationIds): \Illuminate\Support\Collection;
 }

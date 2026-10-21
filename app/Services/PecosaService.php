@@ -61,6 +61,88 @@ class PecosaService
         ];
     }
 
+    /** Catálogos del formulario y los filtros de PECOSAs del módulo API. */
+    public function optionsData(): array
+    {
+        $currentStateId = State::idFor(State::CURRENT);
+
+        // El formulario solo admite comites vigentes, pero el filtro debe poder
+        // consultar todo el historial, incluso el de comites vencidos o pendientes.
+        $filterAssociations = $this->catalogs->associationsForFilter();
+
+        $filterAssociations->each(function ($association) use ($currentStateId) {
+            $association->is_current = ! $currentStateId || $association->state_id === $currentStateId;
+        });
+
+        $associations = $currentStateId
+            ? $filterAssociations->where('state_id', $currentStateId)->values()
+            : $filterAssociations;
+
+        $presidentPositionId = $this->catalogs->positionIdByTitle('PRESIDENTA');
+
+        if ($presidentPositionId && $currentStateId && $associations->isNotEmpty()) {
+            $directives = $this->pecosaRepo->getPresidentDirectivesByAssociation(
+                $associations->pluck('id'),
+                $presidentPositionId,
+                $currentStateId
+            );
+
+            foreach ($associations as $association) {
+                $directive = $directives->get($association->id);
+                $association->president_partner_id = $directive ? $directive->partner_id : null;
+                $association->president_name = $directive && $directive->partner && $directive->partner->people
+                    ? $directive->partner->people->names . ' ' . $directive->partner->people->father_lastname
+                    : null;
+            }
+        }
+
+        $responsibles = $this->catalogs->activeResponsibles(true)
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'type' => $r->type,
+                'name' => $r->person
+                    ? trim(collect([$r->person->names, $r->person->father_lastname, $r->person->mother_lastname])->filter()->implode(' '))
+                    : null,
+                'dni' => $r->person->dni ?? null,
+            ]);
+
+        $presidentPeriods = $this->catalogs->rosterPeriodsFor($associations->pluck('id'))
+            ->map(fn ($period) => [
+                'association_id' => $period->association_id,
+                'period' => $period->period?->format('Y-m-d'),
+                'partner_id' => $period->president_partner_id,
+                'name' => $period->president_name,
+                'dni' => $period->presidentPartner?->people?->dni,
+            ]);
+
+        $today = now()->toDateString();
+        $detailProducts = $this->productRepo->lotsWithUsage()
+            ->map(fn ($dp) => [
+                'id' => $dp->id,
+                'product_id' => $dp->product_id,
+                'product_title' => $dp->product->title ?? null,
+                'product_abbreviation' => $dp->product->abbreviation ?? null,
+                'uom_title' => $dp->product->uom->title ?? null,
+                'unit_price' => (float) $dp->unit_price,
+                'quantity' => (float) $dp->quantity,
+                'used_quantity' => (float) ($dp->used_quantity ?? 0),
+                'available_stock' => (float) ($dp->quantity - ($dp->used_quantity ?? 0)),
+                'start_date' => $dp->start_date?->toDateString(),
+                'end_date' => $dp->end_date?->toDateString(),
+                'active' => $dp->end_date !== null && $dp->end_date->toDateString() >= $today,
+            ]);
+
+        return [
+            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'next_pecosa_number' => $this->nextPecosaNumber(),
+            'associations' => $associations,
+            'filter_associations' => $filterAssociations,
+            'president_periods' => $presidentPeriods,
+            'responsibles' => $responsibles,
+            'detail_products' => $detailProducts,
+        ];
+    }
+
     public function createData(): array
     {
         return [

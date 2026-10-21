@@ -3,9 +3,11 @@
 namespace App\Repositories;
 
 use App\Models\Association;
+use App\Models\AssociationRosterPeriod;
 use App\Models\Partner;
 use App\Models\People;
 use App\Models\PlaceSector;
+use App\Models\Position;
 use App\Models\Product;
 use App\Models\ReasonDisqualification;
 use App\Models\Relationship;
@@ -16,6 +18,7 @@ use App\Models\TypeTransaction;
 use App\Models\Uom;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 
 class CatalogRepository implements CatalogRepositoryInterface
 {
@@ -111,5 +114,26 @@ class CatalogRepository implements CatalogRepositoryInterface
     public function findResponsibleWithPerson(int $id): ?Responsible
     {
         return Responsible::with('person')->find($id);
+    }
+
+    public function associationsForFilter(): Collection
+    {
+        return Association::select(['id', 'name', 'code', 'address', 'state_id'])
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function positionIdByTitle(string $title, bool $like = false): ?int
+    {
+        return Position::where('title', $like ? 'like' : '=', $like ? "%{$title}%" : $title)->value('id');
+    }
+
+    public function rosterPeriodsFor(SupportCollection $associationIds): SupportCollection
+    {
+        return AssociationRosterPeriod::query()
+            ->whereIn('association_id', $associationIds)
+            ->with('presidentPartner.people:id,dni')
+            ->orderBy('period')
+            ->get(['association_id', 'period', 'president_name', 'president_partner_id']);
     }
 }

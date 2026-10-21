@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\DetailProduct;
 use App\Models\Product;
+use App\Models\State;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class ProductService
 {
@@ -47,6 +49,54 @@ class ProductService
             'detailProducts' => $this->productRepo->paginateDetailProducts($filters),
             'products' => $this->catalogs->products(),
         ];
+    }
+
+    public function search(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->productRepo->searchWithFilters($filters, $perPage);
+    }
+
+    /** Estados y UOM para los filtros del módulo API. */
+    public function optionsData(): array
+    {
+        return [
+            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'uoms' => $this->catalogs->uoms(['id', 'title']),
+        ];
+    }
+
+    public function lotsByPeriod(array $filters, int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->productRepo->paginateLotsByPeriod($filters, $perPage);
+    }
+
+    /**
+     * Registra un producto vigente; la abreviatura se deriva del título si no viene.
+     *
+     * @throws \DomainException si no existe el estado Vigente
+     */
+    public function register(array $data): Product
+    {
+        $data['state_id'] = State::idFor(State::CURRENT);
+        if (! $data['state_id']) {
+            throw new \DomainException('No se encontró el estado Vigente para crear el producto.');
+        }
+        $data['abbreviation'] = ($data['abbreviation'] ?? null)
+            ?: Str::upper(Str::substr(Str::ascii($data['title']), 0, 5));
+        $data['abbreviation'] = $data['abbreviation'] ?: 'PROD';
+
+        return $this->productRepo->loadStateAndUom($this->productRepo->createProduct($data));
+    }
+
+    public function updateProduct(Product $product, array $data): Product
+    {
+        if (array_key_exists('abbreviation', $data) && ! $data['abbreviation']) {
+            $title = $data['title'] ?? $product->title;
+            $data['abbreviation'] = Str::upper(Str::substr(Str::ascii($title), 0, 5)) ?: 'PROD';
+        }
+        $this->productRepo->updateProduct($product, $data);
+
+        return $this->productRepo->loadStateAndUom($product);
     }
 
     public function create(array $data): Product

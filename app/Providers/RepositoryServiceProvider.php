@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Repositories\AssociationRepository;
 use App\Repositories\BeneficiaryRepository;
 use App\Repositories\CatalogRepository;
+use App\Repositories\DistributionRepository;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use App\Repositories\Contracts\BeneficiaryRepositoryInterface;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
+use App\Repositories\Contracts\DistributionRepositoryInterface;
 use App\Repositories\Contracts\PartnerRepositoryInterface;
 use App\Repositories\Contracts\PecosaRepositoryInterface;
 use App\Repositories\Contracts\PersonRepositoryInterface;
@@ -32,6 +34,7 @@ class RepositoryServiceProvider extends ServiceProvider
         AssociationRepositoryInterface::class => AssociationRepository::class,
         BeneficiaryRepositoryInterface::class => BeneficiaryRepository::class,
         CatalogRepositoryInterface::class => CatalogRepository::class,
+        DistributionRepositoryInterface::class => DistributionRepository::class,
         PartnerRepositoryInterface::class => PartnerRepository::class,
         PecosaRepositoryInterface::class => PecosaRepository::class,
         PersonRepositoryInterface::class => PersonRepository::class,

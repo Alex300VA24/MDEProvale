@@ -70,6 +70,15 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
             ->first();
     }
 
+    public function deliveriesInRange(\Illuminate\Support\Collection $associationIds, string $from, string $to): \Illuminate\Support\Collection
+    {
+        return Pecosa::with('detailPecosas:id,pecosa_id,quantity,product_abbreviation')
+            ->whereIn('association_id', $associationIds)
+            ->whereBetween('delivery_date', [$from, $to])
+            ->get()
+            ->keyBy('association_id');
+    }
+
     public function getPresidentDirectivesByAssociation(\Illuminate\Support\Collection $associationIds, int $presidentPositionId, int $activeStateId): \Illuminate\Support\Collection
     {
         return Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id'])

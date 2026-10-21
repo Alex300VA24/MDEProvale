@@ -12,6 +12,9 @@ interface PecosaRepositoryInterface
 {
     public function searchWithFilters(array $filters, int $perPage = 10): LengthAwarePaginator;
     public function findByAssociationAndPeriod(int $associationId, string $startDate, string $endDate): ?Pecosa;
+    /** PECOSAs entregadas en el rango, con detalle, indexadas por comité. */
+    public function deliveriesInRange(\Illuminate\Support\Collection $associationIds, string $from, string $to): \Illuminate\Support\Collection;
+
     public function getPresidentDirectivesByAssociation(\Illuminate\Support\Collection $associationIds, int $presidentPositionId, int $activeStateId): \Illuminate\Support\Collection;
 
     /** @return \Illuminate\Support\Collection<int,string> números que empiezan con el prefijo */

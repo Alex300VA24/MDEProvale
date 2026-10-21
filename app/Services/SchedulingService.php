@@ -2,28 +2,25 @@
 
 namespace App\Services;
 
-use App\Models\Association;
-use App\Models\Directive;
 use App\Models\Pecosa;
-use App\Models\Position;
 use App\Models\State;
-use App\Repositories\AssociationRepository;
-use App\Services\ReparticionService;
+use App\Repositories\Contracts\AssociationRepositoryInterface;
+use App\Repositories\Contracts\CatalogRepositoryInterface;
+use App\Repositories\Contracts\DistributionRepositoryInterface;
+use App\Repositories\Contracts\PecosaRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 class SchedulingService
 {
-    private AssociationRepository $associationRepo;
-    private PDFService $pdfService;
-    private ReparticionService $reparticionService;
-
-    public function __construct(AssociationRepository $associationRepo, PDFService $pdfService, ReparticionService $reparticionService)
-    {
-        $this->associationRepo = $associationRepo;
-        $this->pdfService = $pdfService;
-        $this->reparticionService = $reparticionService;
+    public function __construct(
+        private AssociationRepositoryInterface $associationRepo,
+        private PecosaRepositoryInterface $pecosaRepo,
+        private CatalogRepositoryInterface $catalogs,
+        private DistributionRepositoryInterface $distributions,
+        private PDFService $pdfService,
+        private ReparticionService $reparticionService
+    ) {
     }
 
     public function generateProgramacionEntrega(int $month, int $year, ?string $sector = null): array
@@ -33,7 +30,7 @@ class SchedulingService
         // PECOSAs emitidas en la última semana del mes anterior corresponden a
         // la repartición de este mes: se filtran por el período efectivo.
         [$pecosaFrom, $pecosaTo] = Pecosa::deliveryPeriodRange($year, $month);
-        $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
+        $activeStateId = State::idFor(State::CURRENT);
 
         $racion = $this->reparticionService->getActiveRacion($year, $month);
         $configuration = $racion
@@ -43,9 +40,7 @@ class SchedulingService
             ? $racion->racion_hojuelas_gramos . 'g / ' . $racion->racion_leche_militros . 'ml'
             : '';
 
-        $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries(
-            $estadoActivo ? $estadoActivo->id : null
-        );
+        $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries($activeStateId);
         if ($sector !== null && trim($sector) !== '') {
             $associations = $associations
                 ->filter(fn ($association) => optional(optional($association->placeSector)->sector)->title === $sector)
@@ -54,14 +49,16 @@ class SchedulingService
 
         $associationIds = $associations->pluck('id');
 
-        $presidentPosition = Position::where('title', 'like', '%PRESIDENTA%')->first();
-        $directivesByResolution = $this->getPresidentDirectivesByAssociation($associationIds, $presidentPosition ? $presidentPosition->id : null, $estadoActivo ? $estadoActivo->id : null);
+        $presidentPositionId = $this->catalogs->positionIdByTitle('PRESIDENTA', true);
+        $directivesByResolution = ($presidentPositionId && $activeStateId)
+            ? $this->pecosaRepo->getPresidentDirectivesByAssociation($associationIds, $presidentPositionId, $activeStateId)
+            : collect();
 
-        $pecosasByAssociation = Pecosa::with('detailPecosas:id,pecosa_id,quantity,product_abbreviation')
-            ->whereIn('association_id', $associationIds)
-            ->whereBetween('delivery_date', [$pecosaFrom->toDateString(), $pecosaTo->toDateString()])
-            ->get()
-            ->keyBy('association_id');
+        $pecosasByAssociation = $this->pecosaRepo->deliveriesInRange(
+            $associationIds,
+            $pecosaFrom->toDateString(),
+            $pecosaTo->toDateString()
+        );
 
         return $associations->map(function ($association) use ($directivesByResolution, $pecosasByAssociation, $startDate, $endDate, $racionLabel, $configuration) {
             $presidenta = $this->resolvePresidentName($association, $directivesByResolution);
@@ -112,18 +109,6 @@ class SchedulingService
         })->values()->toArray();
     }
 
-    private function getPresidentDirectivesByAssociation($associationIds, $presidentPositionId, $activeStateId): Collection
-    {
-        return Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id'])
-            ->where('position_id', $presidentPositionId)
-            ->where('state_id', $activeStateId)
-            ->whereHas('partner', fn($q) => $q->whereIn('association_id', $associationIds))
-            ->with(['partner:id,person_id,association_id', 'partner.people:id,names,father_lastname'])
-            ->get()
-            ->mapToGroups(fn($d) => [$d->partner->association_id => $d])
-            ->map(fn($c) => $c->first());
-    }
-
     private function resolvePresidentName($association, $directivesByResolution)
     {
         $directive = $directivesByResolution->get($association->id);
@@ -135,15 +120,7 @@ class SchedulingService
 
     private function calculatePriorities($association, $startDate, $endDate): array
     {
-        $partners = $association->partners()
-            ->with(['beneficiaries.person'])
-            ->where(function ($q) use ($endDate) {
-                $q->whereNull('date_begin')->orWhere('date_begin', '<=', $endDate);
-            })
-            ->where(function ($q) use ($endDate) {
-                $q->whereNull('date_end')->orWhere('date_end', '>=', $endDate);
-            })
-            ->get();
+        $partners = $this->distributions->partnersWithBeneficiariesAt($association, $endDate);
 
         $primeraPrioridad = 0;
         $segundaPrioridad = 0;

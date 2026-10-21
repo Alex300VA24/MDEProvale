@@ -2,17 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\Association;
-use App\Models\DetailProduct;
-use App\Models\DistributionPeriod;
 use App\Models\Racion;
-use App\Models\Transaction;
+use App\Repositories\Contracts\DistributionRepositoryInterface;
 use Illuminate\Support\Collection;
 
 class ReparticionService
 {
     private const FIRST_RECORDED_YEAR = 2026;
     private const FIRST_RECORDED_MONTH = 3;
+
+    public function __construct(private DistributionRepositoryInterface $distributions)
+    {
+    }
 
     public function isBeforeFirstRecordedPeriod(int $year, int $month): bool
     {
@@ -29,23 +30,7 @@ class ReparticionService
         $startDate = sprintf('%04d-%02d-01', $year, $month);
         $endDate = date('Y-m-t', strtotime($startDate));
 
-        $hasTransaction = Transaction::query()
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->where('quantity', '>', 0)
-            ->whereHas('typeTransaction', fn ($query) => $query
-                ->whereRaw('LOWER(TRIM(title)) = ?', ['ingreso']))
-            ->exists();
-
-        if ($hasTransaction) {
-            return true;
-        }
-
-        // Los ingresos migrados anteriores al módulo de movimientos existen
-        // como lotes de producto, aunque no siempre tengan transacción asociada.
-        return DetailProduct::query()
-            ->whereBetween('start_date', [$startDate, $endDate])
-            ->where('quantity', '>', 0)
-            ->exists();
+        return $this->distributions->hasIngresoBetween($startDate, $endDate);
     }
 
     public function periodRecordNotFoundMessage(int $year, int $month): string
@@ -74,15 +59,12 @@ class ReparticionService
 
     public function getActiveRacion(int $year, int $month): ?Racion
     {
-        return Racion::forMonth($year, $month)->first();
+        return $this->distributions->racionForMonth($year, $month);
     }
 
     public function getConfiguration(Racion $racion, int $year, int $month): array
     {
-        $period = DistributionPeriod::with('assignments')
-            ->where('year', $year)
-            ->where('month', $month)
-            ->first();
+        $period = $this->distributions->periodWithAssignments($year, $month);
         $days = (int) date('t', strtotime(sprintf('%04d-%02d-01', $year, $month)));
 
         return [
@@ -150,21 +132,7 @@ class ReparticionService
         /** @var Collection $assignments */
         $assignments = $configuration['assignments'];
 
-        $associations = Association::with([
-            'placeSector.sector',
-            'partners' => function ($query) use ($endDate) {
-                $query->select(['id', 'association_id', 'date_begin', 'date_end'])
-                    ->where(fn ($q) => $q->whereNull('date_begin')->orWhere('date_begin', '<=', $endDate))
-                    ->where(fn ($q) => $q->whereNull('date_end')->orWhere('date_end', '>=', $endDate));
-            },
-            'partners.beneficiaries' => function ($query) use ($endDate) {
-                $query->select(['id', 'partner_id'])
-                    ->whereHas('histories', function ($history) use ($endDate) {
-                        $history->where(fn ($q) => $q->whereNull('date_begin')->orWhere('date_begin', '<=', $endDate))
-                            ->where(fn ($q) => $q->whereNull('date_end')->orWhere('date_end', '>=', $endDate));
-                    });
-            },
-        ])->orderBy('code')->get()->map(function ($association) use ($configuration, $assignments, $endDate) {
+        $associations = $this->distributions->associationsForReport($endDate)->map(function ($association) use ($configuration, $assignments, $endDate) {
             $baseBeneficiaries = $association->partners->sum(fn ($partner) => $partner->beneficiaries->count());
             $assignment = $assignments->get($association->id);
             $adjustment = (int) ($assignment?->beneficiary_adjustment ?? 0);

@@ -2,11 +2,17 @@
 
 namespace Tests\Unit;
 
+use App\Repositories\Contracts\DistributionRepositoryInterface;
 use App\Services\ReparticionService;
 use PHPUnit\Framework\TestCase;
 
 class ReparticionServiceTest extends TestCase
 {
+    private function service(): ReparticionService
+    {
+        return new ReparticionService($this->createStub(DistributionRepositoryInterface::class));
+    }
+
     private array $configuration = [
         'service_days' => 30,
         'milk_grams_per_beneficiary' => 44.0,
@@ -19,7 +25,7 @@ class ReparticionServiceTest extends TestCase
 
     public function test_official_formulas_use_commercial_rounding_and_six_decimal_daily_values(): void
     {
-        $result = (new ReparticionService())->calculateQuantities(100, $this->configuration);
+        $result = ($this->service())->calculateQuantities(100, $this->configuration);
 
         $this->assertSame(322, $result['milk_total']);
         $this->assertSame(155, $result['oat_total']);
@@ -29,7 +35,7 @@ class ReparticionServiceTest extends TestCase
 
     public function test_package_breakdown_reconstructs_exact_totals(): void
     {
-        $result = (new ReparticionService())->calculateQuantities(100, $this->configuration);
+        $result = ($this->service())->calculateQuantities(100, $this->configuration);
 
         $this->assertSame($result['milk_total'], $result['milk_boxes'] * 48 + $result['milk_loose_cans']);
         $this->assertSame($result['oat_total'], $result['oat_sacks'] * 30 + $result['oat_loose_kg']);
@@ -37,7 +43,7 @@ class ReparticionServiceTest extends TestCase
 
     public function test_days_change_recalculates_every_dependent_quantity(): void
     {
-        $service = new ReparticionService();
+        $service = $this->service();
         $at28Days = $service->calculateQuantities(100, [...$this->configuration, 'service_days' => 28]);
         $at31Days = $service->calculateQuantities(100, [...$this->configuration, 'service_days' => 31]);
 
@@ -49,7 +55,7 @@ class ReparticionServiceTest extends TestCase
 
     public function test_periods_before_march_2026_are_outside_the_available_history(): void
     {
-        $service = new ReparticionService();
+        $service = $this->service();
 
         $this->assertTrue($service->isBeforeFirstRecordedPeriod(2026, 2));
         $this->assertFalse($service->isBeforeFirstRecordedPeriod(2026, 3));
