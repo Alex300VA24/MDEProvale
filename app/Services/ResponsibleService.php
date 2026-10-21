@@ -39,10 +39,6 @@ class ResponsibleService
         ];
     }
 
-    public function people(): Collection
-    {
-        return $this->people->allByName();
-    }
 
     public function history(array $filters, int $perPage): LengthAwarePaginator
     {

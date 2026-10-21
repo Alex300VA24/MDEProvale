@@ -44,24 +44,6 @@ class CommitteeService
         return $associations;
     }
 
-    /** Listado del Club de Madres con los catálogos del formulario. */
-    public function indexData(array $filters, int $perPage = 10): array
-    {
-        $this->states->syncAll();
-        $associations = $this->associations->paginateIndex($filters, $perPage);
-
-        Association::hydratePresidents($associations);
-        $this->hydrateResolutions($associations);
-
-        return [
-            'associations' => $associations,
-            'states' => $this->catalogs->associationStates(),
-            'placeSectors' => $this->catalogs->placeSectors(['*'], ['place', 'sector']),
-            'typePremises' => $this->catalogs->typePremises(),
-            'resolutions' => $this->resolutions->allByDocumentDate(),
-        ];
-    }
-
     public function options(?int $includeResolutionId): array
     {
         $this->resolutionStates->syncAll();

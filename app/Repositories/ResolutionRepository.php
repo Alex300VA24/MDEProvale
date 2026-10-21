@@ -69,32 +69,7 @@ class ResolutionRepository implements ResolutionRepositoryInterface
             ->paginate($perPage);
     }
 
-    public function paginateByDocument(array $filters, int $perPage = 10): LengthAwarePaginator
-    {
-        $query = Resolution::with(['state', 'associations', 'primaryAssociations']);
 
-        if (! empty($filters['search'])) {
-            $query->where('document', 'like', "%{$filters['search']}%");
-        }
-
-        if (! empty($filters['state_id'])) {
-            $query->where('state_id', $filters['state_id']);
-        }
-
-        if (! empty($filters['anio'])) {
-            $query->whereBetween('date_start', [
-                $filters['anio'].'-01-01',
-                $filters['anio'].'-12-31',
-            ]);
-        }
-
-        return $query->orderByDesc('date_document')->paginate($perPage);
-    }
-
-    public function allByDocumentDate(): Collection
-    {
-        return Resolution::orderByDesc('date_document')->get();
-    }
 
     public function availableForCommittees(?int $currentStateId, string $today, ?int $includeId = null): Collection
     {

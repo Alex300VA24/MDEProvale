@@ -100,28 +100,6 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
         return $query->orderByDesc('id')->paginate($perPage);
     }
 
-    public function paginateIndex(array $filters, int $perPage = 10): LengthAwarePaginator
-    {
-        $query = Association::with(['state', 'resolution', 'resolutionsHistory', 'partners.people']);
-
-        if (! empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%");
-            });
-        }
-
-        if (! empty($filters['state_id'])) {
-            $query->where('state_id', $filters['state_id']);
-        }
-
-        if (! empty($filters['resolution_id'])) {
-            $query->where('resolution_id', $filters['resolution_id']);
-        }
-
-        return $query->orderByDesc('id')->paginate($perPage);
-    }
 
     public function rosterPeriodsForMonth(string $firstDay): SupportCollection
     {

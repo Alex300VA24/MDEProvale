@@ -28,7 +28,6 @@ interface AssociationRepositoryInterface
     public function paginateClubs(array $filters, int $perPage = 10): LengthAwarePaginator;
 
     /** Filtros: search (nombre o código), state_id, resolution_id. Incluye socias con su persona. */
-    public function paginateIndex(array $filters, int $perPage = 10): LengthAwarePaginator;
 
     /** Padrones mensuales del primer día del mes, indexados por comité. */
     public function rosterPeriodsForMonth(string $firstDay): SupportCollection;

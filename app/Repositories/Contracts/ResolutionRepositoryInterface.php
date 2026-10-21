@@ -16,10 +16,8 @@ interface ResolutionRepositoryInterface
     public function paginateFiltered(array $filters, int $perPage = 10): LengthAwarePaginator;
 
     /** Filtros: search (documento), state_id, anio. Ordena por fecha del documento. */
-    public function paginateByDocument(array $filters, int $perPage = 10): LengthAwarePaginator;
 
     /** Todas las resoluciones, la de documento más reciente primero. */
-    public function allByDocumentDate(): Collection;
 
     /** Resoluciones vigentes sin comité asignado; con `$includeId` también esa resolución. */
     public function availableForCommittees(?int $currentStateId, string $today, ?int $includeId = null): Collection;

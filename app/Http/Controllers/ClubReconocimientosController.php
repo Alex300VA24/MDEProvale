@@ -2,160 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Association;
 use App\Models\Resolution;
 use App\Services\ClubReportService;
-use App\Services\CommitteeService;
 use App\Services\MunicipalResolutionService;
-use App\Services\ResolutionService;
 use Barryvdh\DomPDF\Facade\PDF;
 use Illuminate\Http\Request;
 
 class ClubReconocimientosController extends Controller
 {
-    public function __construct(
-        private CommitteeService $committees,
-        private ResolutionService $resolutions,
-        private ClubReportService $reports
-    ) {
-    }
-
-    // ==================== ÍNDICE PRINCIPAL ====================
-
-    public function index(Request $request)
+    public function __construct(private ClubReportService $reports)
     {
-        return view(
-            'club-reconocimientos.index',
-            $this->committees->indexData($request->only(['search', 'state_id', 'resolution_id']))
-        );
-    }
-
-    // ==================== CLUB DE MADRES ====================
-
-    public function storeClub(Request $request)
-    {
-        $data = $request->validate([
-            'resolution_id' => 'required|exists:resolutions,id',
-            'name' => 'required|string|max:100',
-            'code' => 'required|string|max:20',
-            'company_name' => 'required|string|max:150',
-            'address' => 'required|string|max:150',
-            'phone' => 'nullable|string|max:20',
-            'place_sector_id' => 'required|exists:place_sectors,id',
-            'type_premises_id' => 'required|exists:type_premises,id',
-            'observation' => 'nullable|string',
-        ]);
-
-        try {
-            $this->committees->create(collect($data)->except('phone')->all());
-
-            return redirect()->route('club-reconocimientos.index')->with('success', 'Comité registrado exitosamente.');
-        } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
-        }
-    }
-
-    public function updateClub(Request $request, Association $association)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:100',
-            'address' => 'nullable|string|max:150',
-            'phone' => 'nullable|string|max:20',
-            'company_name' => 'required|string|max:150',
-            'code' => 'required|string|max:20',
-            'resolution_id' => 'nullable|exists:resolutions,id',
-            'place_sector_id' => 'nullable|exists:place_sectors,id',
-            'type_premises_id' => 'nullable|exists:type_premises,id',
-            'observation' => 'nullable|string',
-        ]);
-
-        $this->committees->update($association, $validated);
-
-        return redirect()->route('club-reconocimientos.index')->with('success', 'Club de Madres actualizado exitosamente');
-    }
-
-    public function destroyClub(Association $association)
-    {
-        try {
-            $this->committees->delete($association);
-        } catch (\DomainException $e) {
-            return redirect()->route('club-reconocimientos.index')
-                ->with('error', 'No se puede eliminar el comité porque tiene socios, pecosas o historial de resoluciones asociado.');
-        }
-
-        return redirect()->route('club-reconocimientos.index')->with('success', 'Club de Madres eliminado exitosamente');
-    }
-
-    // ==================== RESOLUCIONES ====================
-
-    public function indexReconocimientos(Request $request)
-    {
-        return view(
-            'club-reconocimientos.reconocimientos.index',
-            $this->resolutions->indexData($request->only(['search', 'state_id', 'anio']))
-        );
-    }
-
-    public function storeReconocimiento(Request $request)
-    {
-        $validated = $request->validate([
-            'document' => 'required|string|max:255',
-            'date_document' => 'required|date',
-            'date_start' => 'required|date',
-            'date_end' => 'required|date|after_or_equal:date_start',
-        ]);
-
-        $this->resolutions->create($validated);
-
-        return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución creada exitosamente');
-    }
-
-    public function updateReconocimiento(Request $request, Resolution $resolution)
-    {
-        $validated = $request->validate([
-            'document' => 'required|string|max:255',
-            'date_document' => 'required|date',
-            'date_start' => 'required|date',
-            'date_end' => 'required|date|after_or_equal:date_start',
-        ]);
-
-        $this->resolutions->update($resolution, $validated);
-
-        return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución actualizada exitosamente');
-    }
-
-    public function destroyReconocimiento(Resolution $resolution)
-    {
-        try {
-            $this->resolutions->delete($resolution);
-        } catch (\DomainException $e) {
-            return redirect()->route('club-reconocimientos.reconocimientos.index')
-                ->with('error', 'No se puede eliminar la resolución porque tiene comités o directivas asociadas.');
-        }
-
-        return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución eliminada exitosamente');
-    }
-
-    /**
-     * Asignar presidenta a un comité.
-     * La vigencia de la asociación depende únicamente de su resolución.
-     */
-    public function asignarPresidenta(Request $request, Association $association)
-    {
-        $request->validate([
-            'partner_id' => 'required|exists:partners,id',
-        ]);
-
-        try {
-            $this->committees->assignPresident($association, (int) $request->partner_id);
-        } catch (\DomainException $e) {
-            return back()->withInput()->with('error', rtrim($e->getMessage(), '.') . '.');
-        } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Error al asignar presidenta: ' . $e->getMessage());
-        }
-
-        return redirect()->route('club-reconocimientos.index')
-            ->with('success', 'Presidenta asignada exitosamente.');
     }
 
     // ==================== RESOLUCIÓN EXTERNA (Portal Municipal) ====================
@@ -220,11 +76,6 @@ class ClubReconocimientosController extends Controller
     {
         $mes  = (int) $request->get('month', date('n'));
         $anio = (int) $request->get('year', date('Y'));
-
-        // Si no se envió mes/año, mostrar formulario de filtros
-        if (!$request->filled('year')) {
-            return view('club-reconocimientos.padron-filtros', compact('mes', 'anio'));
-        }
 
         $pdf = PDF::loadView('padron_club', $this->reports->padron($mes, $anio))->setPaper('a4', 'landscape');
 
