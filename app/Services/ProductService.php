@@ -2,45 +2,103 @@
 
 namespace App\Services;
 
+use App\Models\DetailProduct;
 use App\Models\Product;
-use App\Repositories\ProductRepository;
+use App\Repositories\Contracts\CatalogRepositoryInterface;
+use App\Repositories\Contracts\ProductRepositoryInterface;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ProductService
 {
-    private ProductRepository $productRepo;
+    public function __construct(
+        private ProductRepositoryInterface $productRepo,
+        private CatalogRepositoryInterface $catalogs
+    ) {
+    }
 
-    public function __construct(ProductRepository $productRepo)
+    /** Datos del listado de productos y sus lotes. */
+    public function indexData(array $productFilters, array $lotFilters): array
     {
-        $this->productRepo = $productRepo;
+        // El listado de lotes de este módulo no distingue lotes futuros.
+        if (($lotFilters['periodo'] ?? null) === 'futuro') {
+            unset($lotFilters['periodo']);
+        }
+
+        return [
+            'products' => $this->productRepo->searchWithFilters($productFilters),
+            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'uoms' => $this->catalogs->uoms(['id', 'title']),
+            'detailProducts' => $this->productRepo->paginateDetailProducts($lotFilters),
+        ];
+    }
+
+    /** Estados y UOM para los formularios de producto. */
+    public function formCatalogs(): array
+    {
+        return [
+            'states' => $this->catalogs->temporalStates(),
+            'uoms' => $this->catalogs->uoms(),
+        ];
+    }
+
+    public function kardexData(array $filters): array
+    {
+        return [
+            'detailProducts' => $this->productRepo->paginateDetailProducts($filters),
+            'products' => $this->catalogs->products(),
+        ];
+    }
+
+    public function create(array $data): Product
+    {
+        return $this->productRepo->createProduct($data);
+    }
+
+    public function update(Product $product, array $data): bool
+    {
+        return $this->productRepo->updateProduct($product, $data);
+    }
+
+    public function show(Product $product): Product
+    {
+        return $this->productRepo->loadLots($product);
+    }
+
+    /**
+     * @throws \DomainException si el producto tiene lotes en PECOSAs o stock consumido
+     */
+    public function delete(Product $product): void
+    {
+        if ($this->productRepo->isReferenced($product)) {
+            throw new \DomainException('No se puede eliminar: el producto tiene detalles/stock asociado');
+        }
+
+        $this->productRepo->deleteWithLots($product);
     }
 
     public function generateReport(string $tipo, array $filters = []): array
     {
-        $query = Product::with(['state', 'uom', 'detailProducts' => function ($q) {
-            $q->withSum('stocks as used_quantity', 'quantity');
-        }]);
-
         if ($tipo === 'general') {
-            return ['products' => $query->get(), 'titulo' => 'Inventario General de Productos'];
+            return ['products' => $this->productRepo->inventoryForReport(), 'titulo' => 'Inventario General de Productos'];
         } elseif ($tipo === 'stock-bajo') {
             return [
-                'products' => $query->get()->filter(fn($p) => $p->stock <= ($filters['stock_minimo'] ?? 10)),
+                'products' => $this->productRepo->inventoryForReport()->filter(fn($p) => $p->stock <= ($filters['stock_minimo'] ?? 10)),
                 'titulo' => 'Productos con Stock Bajo',
             ];
         } elseif ($tipo === 'valorizacion') {
-            return ['products' => $query->get(), 'titulo' => 'Valorización de Inventario'];
+            return ['products' => $this->productRepo->inventoryForReport(), 'titulo' => 'Valorización de Inventario'];
         } elseif ($tipo === 'movimientos') {
             return [
-                'products' => $query->with('transactions')->get(),
+                'products' => $this->productRepo->inventoryForReport(['transactions']),
                 'titulo' => 'Productos con Movimientos',
             ];
         } elseif ($tipo === 'top') {
             return [
-                'products' => $query->withCount('transactions')->orderBy('transactions_count', 'desc')->limit(10)->get(),
+                'products' => $this->productRepo->inventoryForReport([], true),
                 'titulo' => 'Top 10 Productos Más Utilizados',
             ];
         } else {
-            return ['products' => $query->get(), 'titulo' => 'Reporte de Productos'];
+            return ['products' => $this->productRepo->inventoryForReport(), 'titulo' => 'Reporte de Productos'];
         }
     }
 }

@@ -4,11 +4,16 @@ namespace App\Services;
 
 use App\Models\Association;
 use App\Models\State;
+use App\Repositories\Contracts\AssociationRepositoryInterface;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
 class AssociationStateService
 {
+    public function __construct(private ?AssociationRepositoryInterface $associations = null)
+    {
+    }
+
     public function abbreviationFor(Association $association, ?CarbonInterface $today = null): string
     {
         $today = ($today ?? now())->copy()->startOfDay();
@@ -50,8 +55,9 @@ class AssociationStateService
     public function syncAll(?CarbonInterface $today = null): int
     {
         $updated = 0;
+        $repository = $this->associations ?? app(AssociationRepositoryInterface::class);
 
-        Association::with(['resolution', 'resolutionsHistory'])->chunkById(200, function ($associations) use (&$updated, $today) {
+        $repository->chunkWithResolutions(200, function ($associations) use (&$updated, $today) {
             foreach ($associations as $association) {
                 $updated += (int) $this->sync($association, $today);
             }

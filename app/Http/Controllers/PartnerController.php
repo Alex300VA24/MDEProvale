@@ -5,13 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePartnerRequest;
 use App\Http\Requests\UpdatePartnerRequest;
 use App\Models\Partner;
-use App\Models\Association;
-use App\Models\People;
-use App\Models\Relationship;
-use App\Models\TypeBenefit;
-use App\Models\ReasonDisqualification;
-use App\Models\PlaceSector;
-use App\Models\State;
 use App\Models\VerifiedDocument;
 use App\Services\PartnerService;
 use App\Services\BeneficiaryReportService;
@@ -37,52 +30,9 @@ class PartnerController extends Controller
 
     public function index(Request $request)
     {
-        $query = Partner::query()
-            ->select(['partners.id', 'partners.person_id', 'partners.association_id', 'partners.state_id', 'partners.date_begin', 'partners.date_end', 'partners.observations'])
-            ->with([
-                'people:id,names,father_lastname,mother_lastname,dni,address',
-                'association:id,name,code',
-                'state:id,title',
-                'beneficiaries.person',
-                'beneficiaries.relationship',
-                'beneficiaries.histories.typeBenefit',
-                'beneficiaries.histories.state',
-                'beneficiaries.histories.reasonDisqualification',
-            ])
-            ->withCount('beneficiaries');
+        $data = $this->partnerService->indexData($request->only(['search', 'association_id', 'state_id']));
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('people', function ($q) use ($search) {
-                $q->searchIdentity($search);
-            });
-        }
-
-        if ($request->filled('association_id')) {
-            $query->where('association_id', $request->association_id);
-        }
-
-        if ($request->filled('state_id')) {
-            $query->where('state_id', $request->state_id);
-        }
-
-        $partners = $query->orderBy('id', 'desc')->paginate(10);
-        $associations = Association::select(['id', 'name'])->get();
-        $states = State::temporal()->get(['id', 'title']);
-        $people = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
-            ->orderBy('id', 'desc')
-            ->limit(100)
-            ->get();
-        $allPeople = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni'])
-            ->orderBy('names')
-            ->limit(1000)
-            ->get();
-        $relationships = Relationship::select(['id', 'title'])->get();
-        $placeSectors = PlaceSector::with(['place:id,code,title', 'sector:id,title'])->get();
-        $typeBenefits = TypeBenefit::select(['id', 'title', 'abbreviation'])->get();
-        $reasonDisqualifications = ReasonDisqualification::select(['id', 'title'])->get();
-
-        return view('socios-beneficiarios.index', compact('partners', 'associations', 'states', 'people', 'allPeople', 'relationships', 'placeSectors', 'typeBenefits', 'reasonDisqualifications'));
+        return view('socios-beneficiarios.index', $data);
     }
 
     public function store(StorePartnerRequest $request)
@@ -124,7 +74,7 @@ class PartnerController extends Controller
 
     public function reportePadronBeneficiarios(Request $request)
     {
-        $associations = Association::all();
+        $associations = $this->partnerService->allAssociations();
         $associationId = $request->get('association_id');
         $mes = $request->get('month', date('n'));
         $anio = $request->get('year', date('Y'));
@@ -176,16 +126,7 @@ class PartnerController extends Controller
 
     public function imprimirFicha(Partner $partner)
     {
-        $partner->load([
-            'people.placeSector.place',
-            'people.placeSector.sector',
-            'association',
-            'beneficiaries.person',
-            'beneficiaries.relationship',
-            'beneficiaries.histories' => fn ($q) => $q->orderByDesc('date_begin'),
-            'beneficiaries.histories.typeBenefit',
-            'beneficiaries.histories.state',
-        ]);
+        $partner = $this->partnerService->partnerForFicha($partner);
 
         $logoPath = public_path('img/muni2.png');
         $pdf = PDF::loadView('ficha_beneficiario', compact('partner', 'logoPath'));

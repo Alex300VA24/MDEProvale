@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Partner;
 use App\Models\DetailProduct;
+use App\Models\People;
 use App\Repositories\Contracts\PartnerRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -94,5 +95,66 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             ->withSum('stocks as used_quantity', 'quantity')
             ->get()
             ->keyBy('id');
+    }
+
+    public function paginateForIndex(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        return $this->model
+            ->select(['partners.id', 'partners.person_id', 'partners.association_id', 'partners.state_id', 'partners.date_begin', 'partners.date_end', 'partners.observations'])
+            ->with([
+                'people:id,names,father_lastname,mother_lastname,dni,address',
+                'association:id,name,code',
+                'state:id,title',
+                'beneficiaries.person',
+                'beneficiaries.relationship',
+                'beneficiaries.histories.typeBenefit',
+                'beneficiaries.histories.state',
+                'beneficiaries.histories.reasonDisqualification',
+            ])
+            ->withCount('beneficiaries')
+            ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('people', fn ($p) => $p->searchIdentity($search)))
+            ->when($filters['association_id'] ?? null, fn ($q, $v) => $q->where('association_id', $v))
+            ->when($filters['state_id'] ?? null, fn ($q, $v) => $q->where('state_id', $v))
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+    }
+
+    public function createPartner(array $data): Partner
+    {
+        return $this->model->create($data);
+    }
+
+    public function updatePartner(Partner $partner, array $data): bool
+    {
+        return $partner->update($data);
+    }
+
+    public function createPerson(array $data): People
+    {
+        return People::create($data);
+    }
+
+    public function deleteBeneficiaries(Partner $partner): void
+    {
+        $partner->beneficiaries()->delete();
+    }
+
+    public function deletePartner(Partner $partner): void
+    {
+        $partner->delete();
+    }
+
+    public function loadForFicha(Partner $partner): Partner
+    {
+        return $partner->load([
+            'people.placeSector.place',
+            'people.placeSector.sector',
+            'association',
+            'beneficiaries.person',
+            'beneficiaries.relationship',
+            'beneficiaries.histories' => fn ($q) => $q->orderByDesc('date_begin'),
+            'beneficiaries.histories.typeBenefit',
+            'beneficiaries.histories.state',
+        ]);
     }
 }

@@ -3,37 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Beneficiarie;
-use App\Models\Partner;
-use App\Models\Relationship;
+use App\Services\BeneficiaryService;
 use Barryvdh\DomPDF\Facade\PDF;
 use Illuminate\Http\Request;
 
 class BeneficiarieController extends Controller
 {
+    public function __construct(private BeneficiaryService $beneficiaryService)
+    {
+    }
+
     public function index(Request $request)
     {
-        $query = Beneficiarie::with(['person', 'partner', 'relationship']);
+        $data = $this->beneficiaryService->indexData($request->only(['search', 'partner_id', 'relationship_id']));
 
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->whereHas('person', function ($q) use ($search) {
-                $q->searchIdentity($search);
-            });
-        }
-
-        if ($request->has('partner_id') && $request->partner_id != '') {
-            $query->where('partner_id', $request->partner_id);
-        }
-
-        if ($request->has('relationship_id') && $request->relationship_id != '') {
-            $query->where('relationship_id', $request->relationship_id);
-        }
-
-        $beneficiaries = $query->orderBy('id', 'desc')->paginate(10);
-        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
-        $relationships = Relationship::all();
-
-        return view('socios-beneficiarios.beneficiarios.index', compact('beneficiaries', 'partners', 'relationships'));
+        return view('socios-beneficiarios.beneficiarios.index', $data);
     }
 
     public function imprimirFicha()
@@ -41,39 +25,37 @@ class BeneficiarieController extends Controller
         $logoPath = public_path('img/muni2.png');
         $pdf = PDF::loadView('ficha_beneficiario', compact('logoPath'));
         $pdf->setPaper('a4', 'portrait');
+
         return $pdf->stream('ficha-beneficiario-' . date('Y-m-d-His') . '.pdf');
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'person_id' => 'required|exists:people,id',
-            'partner_id' => 'required|exists:partners,id',
-            'relationship_id' => 'required|exists:relationships,id',
-        ]);
-
-        Beneficiarie::create($validated);
+        $this->beneficiaryService->create($this->validated($request));
 
         return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario registrado exitosamente');
     }
 
     public function update(Request $request, Beneficiarie $beneficiarie)
     {
-        $validated = $request->validate([
-            'person_id' => 'required|exists:people,id',
-            'partner_id' => 'required|exists:partners,id',
-            'relationship_id' => 'required|exists:relationships,id',
-        ]);
-
-        $beneficiarie->update($validated);
+        $this->beneficiaryService->update($beneficiarie, $this->validated($request));
 
         return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario actualizado exitosamente');
     }
 
     public function destroy(Beneficiarie $beneficiarie)
     {
-        $beneficiarie->delete();
+        $this->beneficiaryService->delete($beneficiarie);
 
         return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario eliminado exitosamente');
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'person_id' => 'required|exists:people,id',
+            'partner_id' => 'required|exists:partners,id',
+            'relationship_id' => 'required|exists:relationships,id',
+        ]);
     }
 }

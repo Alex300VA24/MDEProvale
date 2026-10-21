@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Association;
+use App\Models\AssociationRosterPeriod;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -27,5 +28,28 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
             ->when($activeStateId, fn($q) => $q->where('state_id', $activeStateId))
             ->when($sectorId, fn($q) => $q->whereHas('placeSector', fn($q) => $q->where('sector_id', $sectorId)))
             ->get();
+    }
+
+    public function findOrFailAssociation(int $id): Association
+    {
+        return $this->model->findOrFail($id);
+    }
+
+    public function findWithPlaceSector(int $id): ?Association
+    {
+        return $this->model->with(['placeSector.place', 'placeSector.sector'])->find($id);
+    }
+
+    public function rosterForPeriod(int $associationId, string $period): ?AssociationRosterPeriod
+    {
+        return AssociationRosterPeriod::with('presidentPartner.people')
+            ->where('association_id', $associationId)
+            ->whereDate('period', $period)
+            ->first();
+    }
+
+    public function chunkWithResolutions(int $size, callable $callback): void
+    {
+        $this->model->with(['resolution', 'resolutionsHistory'])->chunkById($size, $callback);
     }
 }

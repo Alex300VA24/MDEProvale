@@ -3,7 +3,10 @@
 namespace App\Repositories;
 
 use App\Models\Directive;
+use App\Models\DetailPecosa;
 use App\Models\Pecosa;
+use App\Models\Position;
+use App\Models\State;
 use App\Repositories\Contracts\PecosaRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -77,5 +80,102 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
             ->get()
             ->mapToGroups(fn($d) => [$d->partner->association_id => $d])
             ->map(fn($c) => $c->first());
+    }
+
+    public function numbersWithPrefix(string $prefix, bool $lock = false): \Illuminate\Support\Collection
+    {
+        $query = $this->model->newQuery()
+            ->where('pecosa_number', 'like', $prefix . '%')
+            ->select('pecosa_number');
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->get()->pluck('pecosa_number');
+    }
+
+    public function findOrFailPecosa(int $id): Pecosa
+    {
+        return $this->model->findOrFail($id);
+    }
+
+    public function createPecosa(array $data): Pecosa
+    {
+        return $this->model->create($data);
+    }
+
+    public function updatePecosa(Pecosa $pecosa, array $data): bool
+    {
+        return $pecosa->update($data);
+    }
+
+    public function createDetail(array $data): DetailPecosa
+    {
+        return DetailPecosa::create($data);
+    }
+
+    public function deleteDetails(int $pecosaId): void
+    {
+        DetailPecosa::where('pecosa_id', $pecosaId)->delete();
+    }
+
+    public function numberExists(string $number): bool
+    {
+        return $this->model->where('pecosa_number', $number)->exists();
+    }
+
+    public function lotIsInAnyPecosa(int $detailProductId): bool
+    {
+        return DetailPecosa::where('detail_product_id', $detailProductId)->exists();
+    }
+
+    public function loadForReceipt(Pecosa $pecosa): Pecosa
+    {
+        return $pecosa->load([
+            'detailPecosas.detailProduct.product.uom',
+            'association.placeSector.place',
+        ]);
+    }
+
+    public function loadForShow(Pecosa $pecosa): Pecosa
+    {
+        return $pecosa->load(['detailPecosas.detailProduct.product', 'association', 'managingPartner.people']);
+    }
+
+    public function forDeliveryPeriodWithReceiptData(int $year, int $month): Collection
+    {
+        return $this->model->forDeliveryPeriod($year, $month)
+            ->with([
+                'detailPecosas.detailProduct.product.uom',
+                'association.placeSector.place',
+            ])
+            ->orderBy('pecosa_number')
+            ->get();
+    }
+
+    public function findLatestCurrentInRange(int $associationId, ?int $currentStateId, string $start, string $end): ?Pecosa
+    {
+        return $this->model->newQuery()
+            ->where('association_id', $associationId)
+            ->when($currentStateId, fn ($q) => $q->where('state_id', $currentStateId))
+            ->whereBetween('delivery_date', [$start, $end])
+            ->orderByDesc('delivery_date')
+            ->first(['id', 'pecosa_number', 'delivery_date']);
+    }
+
+    public function presidentDirectivesFor(\Illuminate\Support\Collection $associationIds): \Illuminate\Support\Collection
+    {
+        $currentId = State::idFor(State::CURRENT);
+        $positionId = Position::where('title', 'PRESIDENTA')->value('id');
+
+        return Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id'])
+            ->when($positionId, fn ($q) => $q->where('position_id', $positionId))
+            ->when($currentId, fn ($q) => $q->where('state_id', $currentId))
+            ->whereHas('partner', fn ($q) => $q->whereIn('association_id', $associationIds))
+            ->with(['partner:id,person_id,association_id', 'partner.people:id,names,father_lastname'])
+            ->get()
+            ->mapToGroups(fn ($d) => [$d->partner->association_id => $d])
+            ->map(fn ($c) => $c->first());
     }
 }

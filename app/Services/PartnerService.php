@@ -2,39 +2,60 @@
 
 namespace App\Services;
 
-use App\Models\Beneficiarie;
-use App\Models\BeneficiaryHistory;
 use App\Models\Partner;
-use App\Models\People;
-use App\Models\Relationship;
 use App\Models\State;
-use App\Models\TypeBenefit;
-use App\Repositories\PartnerRepository;
-use Barryvdh\DomPDF\Facade\PDF;
+use App\Repositories\Contracts\BeneficiaryRepositoryInterface;
+use App\Repositories\Contracts\CatalogRepositoryInterface;
+use App\Repositories\Contracts\PartnerRepositoryInterface;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class PartnerService
 {
-    private PartnerRepository $partnerRepo;
-    private PDFService $pdfService;
-    private BenefitPeriodCalculator $benefitPeriods;
+    public function __construct(
+        private PartnerRepositoryInterface $partnerRepo,
+        private BeneficiaryRepositoryInterface $beneficiaryRepo,
+        private CatalogRepositoryInterface $catalogs,
+        private PDFService $pdfService,
+        private BenefitPeriodCalculator $benefitPeriods
+    ) {
+    }
 
-    public function __construct(PartnerRepository $partnerRepo, PDFService $pdfService, BenefitPeriodCalculator $benefitPeriods)
+    /** Datos del listado de socios con los catálogos de los formularios. */
+    public function indexData(array $filters): array
     {
-        $this->partnerRepo = $partnerRepo;
-        $this->pdfService = $pdfService;
-        $this->benefitPeriods = $benefitPeriods;
+        return [
+            'partners' => $this->partnerRepo->paginateForIndex($filters),
+            'associations' => $this->catalogs->associations(['id', 'name']),
+            'states' => $this->catalogs->temporalStates(['id', 'title']),
+            'people' => $this->catalogs->recentPeople(),
+            'allPeople' => $this->catalogs->peopleByName(),
+            'relationships' => $this->catalogs->relationships(['id', 'title']),
+            'placeSectors' => $this->catalogs->placeSectors(['*'], ['place:id,code,title', 'sector:id,title']),
+            'typeBenefits' => $this->catalogs->typeBenefits(),
+            'reasonDisqualifications' => $this->catalogs->reasonDisqualifications(),
+        ];
+    }
+
+    public function allAssociations()
+    {
+        return $this->catalogs->associations(['*']);
+    }
+
+    public function partnerForFicha(Partner $partner): Partner
+    {
+        return $this->partnerRepo->loadForFicha($partner);
     }
 
     public function storeWithBeneficiaries(array $partnerData, ?array $beneficiaries = null, array $benefitContext = []): Partner
     {
         return DB::transaction(function () use ($partnerData, $beneficiaries, $benefitContext) {
             if (isset($partnerData['create_person']) && $partnerData['create_person']) {
-                $person = People::create($partnerData);
+                $person = $this->partnerRepo->createPerson($partnerData);
                 $partnerData['person_id'] = $person->id;
             }
 
-            $partner = Partner::create($partnerData);
+            $partner = $this->partnerRepo->createPartner($partnerData);
             $this->syncBeneficiaries($partner, $beneficiaries ?? []);
             $this->syncPartnerAsBeneficiary($partner, $benefitContext);
 
@@ -44,10 +65,10 @@ class PartnerService
 
     public function updateWithBeneficiaries(Partner $partner, array $partnerData, ?array $beneficiaries = null, array $benefitContext = []): Partner
     {
-        $partner->update($partnerData);
+        $this->partnerRepo->updatePartner($partner, $partnerData);
 
         if ($beneficiaries !== null) {
-            $partner->beneficiaries()->delete();
+            $this->partnerRepo->deleteBeneficiaries($partner);
             $this->syncBeneficiaries($partner, $beneficiaries);
         }
 
@@ -58,8 +79,8 @@ class PartnerService
 
     public function deleteWithRelations(Partner $partner): void
     {
-        $partner->beneficiaries()->delete();
-        $partner->delete();
+        $this->partnerRepo->deleteBeneficiaries($partner);
+        $this->partnerRepo->deletePartner($partner);
     }
 
     private function syncBeneficiaries(Partner $partner, array $beneficiaries): void
@@ -67,7 +88,7 @@ class PartnerService
         foreach ($beneficiaries as $b) {
             if (empty($b['person_id']) || empty($b['relationship_id'])) continue;
 
-            $ben = Beneficiarie::create([
+            $ben = $this->beneficiaryRepo->createBeneficiary([
                 'person_id' => $b['person_id'],
                 'partner_id' => $partner->id,
                 'relationship_id' => $b['relationship_id'],
@@ -76,7 +97,7 @@ class PartnerService
 
             if (!empty($b['type_benefit_id']) && !empty($b['history_state_id'])
                 && !empty($b['date_begin'])) {
-                BeneficiaryHistory::create([
+                $this->beneficiaryRepo->createHistory([
                     'weight' => 0,
                     'height' => 0,
                     'hmg' => 0,
@@ -109,43 +130,31 @@ class PartnerService
             return;
         }
 
-        $relationship = Relationship::firstOrCreate(['title' => 'Socio']);
-        $typeBenefit = TypeBenefit::where('abbreviation', $abbreviation)->first();
+        $relationship = $this->beneficiaryRepo->firstOrCreateRelationship('Socio');
+        $typeBenefit = $this->beneficiaryRepo->findTypeBenefitByAbbreviation($abbreviation);
         if (! $typeBenefit) {
             return;
         }
 
-        $beneficiary = Beneficiarie::firstOrCreate([
-            'person_id' => $partner->person_id,
-            'partner_id' => $partner->id,
-        ], [
+        $isMother = in_array($abbreviation, ['GES', 'LAC'], true);
+        $priority = $isMother ? 1 : 2;
+
+        $beneficiary = $this->beneficiaryRepo->firstOrCreatePartnerBeneficiary($partner, [
             'relationship_id' => $relationship->id,
-            'priority' => in_array($abbreviation, ['GES', 'LAC'], true) ? 1 : 2,
+            'priority' => $priority,
         ]);
 
-        $beneficiary->update([
-            'relationship_id' => $relationship->id,
-            'priority' => in_array($abbreviation, ['GES', 'LAC'], true) ? 1 : 2,
-        ]);
-
-        $existingHistory = $beneficiary->histories()
-            ->where('type_benefit_id', $typeBenefit->id)
-            ->latest('date_begin')
-            ->with(['obstetricData', 'state'])
-            ->first();
+        $existingHistory = $this->beneficiaryRepo->latestHistory($beneficiary, $typeBenefit->id);
         $existingObstetric = $existingHistory?->obstetricData;
 
         $child = null;
-        if (in_array($abbreviation, ['GES', 'LAC'], true)) {
-            $childQuery = $partner->beneficiaries()->where('id', '!=', $beneficiary->id)->with('person');
-            if (! empty($context['benefit_child_person_id'])) {
-                $childQuery->where('person_id', $context['benefit_child_person_id']);
-            } elseif ($existingObstetric?->child_beneficiary_id) {
-                $childQuery->whereKey($existingObstetric->child_beneficiary_id);
-            }
-            $child = ! empty($context['benefit_child_person_id']) || $existingObstetric?->child_beneficiary_id
-                ? $childQuery->first()
-                : null;
+        if ($isMother) {
+            $child = $this->beneficiaryRepo->findChild(
+                $partner,
+                $beneficiary,
+                ! empty($context['benefit_child_person_id']) ? (int) $context['benefit_child_person_id'] : null,
+                $existingObstetric?->child_beneficiary_id
+            );
         }
 
         $dateBegin = $partner->date_begin ?? now()->toDateString();
@@ -153,13 +162,11 @@ class PartnerService
             ? (array_key_exists('fum', $context) ? $context['fum'] : $existingObstetric?->date_last_menstrual_period)
             : null;
 
-        $history = $beneficiary->histories()->updateOrCreate([
-            'date_begin' => $dateBegin,
-        ], [
+        $history = $this->beneficiaryRepo->upsertHistory($beneficiary, $dateBegin, [
             'weight' => 0,
             'height' => 0,
             'hmg' => 0,
-            'date_end' => in_array($abbreviation, ['GES', 'LAC'], true)
+            'date_end' => $isMother
                 ? $this->benefitPeriods->fromBirthdate($abbreviation === 'GES' ? ($fum ?: $dateBegin) : $dateBegin, $abbreviation)
                 : $this->benefitEndDate($partner->person_id, $typeBenefit->id),
             'type_benefit_id' => $typeBenefit->id,
@@ -171,15 +178,15 @@ class PartnerService
             'is_disabled' => false,
         ]);
 
-        if (in_array($abbreviation, ['GES', 'LAC'], true)) {
-            $history->obstetricData()->updateOrCreate([], [
+        if ($isMother) {
+            $this->beneficiaryRepo->upsertObstetricData($history, [
                 'date_last_menstrual_period' => $fum,
                 'date_estimated_parturition' => ! empty($fum)
-                    ? \Illuminate\Support\Carbon::parse($fum)->addDays(280)->toDateString()
+                    ? Carbon::parse($fum)->addDays(280)->toDateString()
                     : null,
                 'date_parturition' => $child?->person?->birthdate,
                 'date_end_breastfeeding' => $abbreviation === 'LAC'
-                    ? \Illuminate\Support\Carbon::parse($dateBegin)->addYearsNoOverflow(2)->subDay()->toDateString()
+                    ? Carbon::parse($dateBegin)->addYearsNoOverflow(2)->subDay()->toDateString()
                     : null,
                 'child_beneficiary_id' => $child?->id,
             ]);
@@ -188,8 +195,8 @@ class PartnerService
 
     private function benefitEndDate(int $personId, int $typeBenefitId): ?string
     {
-        $birthdate = People::whereKey($personId)->value('birthdate');
-        $abbreviation = TypeBenefit::whereKey($typeBenefitId)->value('abbreviation');
+        $birthdate = $this->beneficiaryRepo->personBirthdate($personId);
+        $abbreviation = $this->beneficiaryRepo->typeBenefitAbbreviation($typeBenefitId);
 
         return $this->benefitPeriods->fromBirthdate($birthdate, $abbreviation);
     }

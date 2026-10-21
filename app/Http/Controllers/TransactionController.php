@@ -3,45 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTransactionRequest;
-use App\Models\Product;
 use App\Models\Transaction;
-use App\Models\TypeTransaction;
 use App\Services\TransactionService;
-use App\Services\PDFService;
-use App\Repositories\TransactionRepository;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    private TransactionService $transactionService;
-    private TransactionRepository $transactionRepo;
-    private PDFService $pdfService;
-
-    public function __construct(TransactionService $transactionService, TransactionRepository $transactionRepo, PDFService $pdfService)
+    public function __construct(private TransactionService $transactionService)
     {
-        $this->transactionService = $transactionService;
-        $this->transactionRepo = $transactionRepo;
-        $this->pdfService = $pdfService;
     }
 
     public function index(Request $request)
     {
         $filters = $request->only(['search', 'type_transaction_id', 'fecha_inicio', 'fecha_fin']);
-        $transactions = $this->transactionRepo->searchTransactions($filters);
-        $types = TypeTransaction::all();
-        $products = Product::select(['id', 'title', 'abbreviation'])->get();
 
-        return view('movimientos.index', compact('transactions', 'types', 'products'));
+        return view('movimientos.index', $this->transactionService->indexData($filters));
     }
 
     public function store(StoreTransactionRequest $request)
     {
         try {
-            $type = $request->input('type_transaction_id');
-            $typeModel = TypeTransaction::find($type);
-            $isIngreso = $typeModel && $typeModel->isIngreso();
+            $isIngreso = $this->transactionService->isIngresoType((int) $request->input('type_transaction_id'));
 
-            $transaction = $isIngreso
+            $isIngreso
                 ? $this->transactionService->registerIngreso($request->validated())
                 : $this->transactionService->registerSalida($request->validated());
 

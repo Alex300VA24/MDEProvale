@@ -5,76 +5,57 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePersonaRequest;
 use App\Http\Requests\UpdatePersonaRequest;
 use App\Models\People;
-use App\Models\PlaceSector;
+use App\Services\PersonService;
 use Illuminate\Http\Request;
 
 class PersonaController extends Controller
 {
+    public function __construct(private PersonService $personService)
+    {
+    }
+
     public function index(Request $request)
     {
-        $query = People::select('id', 'names', 'father_lastname', 
-                                'mother_lastname', 'dni', 'gender', 
-                                'telephone_number', 'phone_number', 'birthdate', 'place_sector_id',
-                                'address');
+        $data = $this->personService->indexData($request->only(['search', 'gender', 'place_sector_id']));
 
-        if ($request->has('search') && $request->search != '') {
-            $query->searchIdentity($request->search);
-        }
-
-        if ($request->has('gender') && $request->gender != '') {
-            $query->where('gender', $request->gender);
-        }
-
-        if ($request->has('place_sector_id') && $request->place_sector_id != '') {
-            $query->where('place_sector_id', $request->place_sector_id);
-        }
-
-        $people = $query->orderBy('id')->paginate(15);
-
-        $placeSectors = PlaceSector::select('id', 'place_id', 'sector_id')
-            ->with([
-                    'place:id,title',
-                    'sector:id,title'
-                    ])
-            ->get();
-
-        return view('socios-beneficiarios.personas.index', compact('people', 'placeSectors'));
+        return view('socios-beneficiarios.personas.index', $data);
     }
 
     public function create()
     {
-        $placeSectors = PlaceSector::with(['place:id,title', 'sector:id,title'])->get();
-        return view('socios-beneficiarios.personas.create', compact('placeSectors'));
+        return view('socios-beneficiarios.personas.create', ['placeSectors' => $this->personService->placeSectors()]);
     }
 
     public function store(StorePersonaRequest $request)
     {
-        People::create($request->validated());
+        $this->personService->create($request->validated());
+
         return redirect()->route('personas.index')->with('success', 'Persona registrada exitosamente');
     }
 
     public function edit(People $person)
     {
-        $placeSectors = PlaceSector::with(['place:id,title', 'sector:id,title'])->get();
-        return view('socios-beneficiarios.personas.edit', compact('person', 'placeSectors'));
+        return view('socios-beneficiarios.personas.edit', [
+            'person' => $person,
+            'placeSectors' => $this->personService->placeSectors(),
+        ]);
     }
 
     public function update(UpdatePersonaRequest $request, People $person)
     {
-        $person->update($request->validated());
+        $this->personService->update($person, $request->validated());
+
         return redirect()->route('personas.index')->with('success', 'Persona actualizada exitosamente');
     }
 
     public function destroy(People $person)
     {
-        $hasPartners = $person->partners()->exists();
-        $hasBeneficiaries = $person->beneficiaries()->exists();
-
-        if ($hasPartners || $hasBeneficiaries) {
-            return redirect()->route('personas.index')->with('error', 'No se puede eliminar la persona porque está asociada a un socio o beneficiario');
+        try {
+            $this->personService->delete($person);
+        } catch (\DomainException $e) {
+            return redirect()->route('personas.index')->with('error', $e->getMessage());
         }
 
-        $person->delete();
         return redirect()->route('personas.index')->with('success', 'Persona eliminada exitosamente');
     }
 }

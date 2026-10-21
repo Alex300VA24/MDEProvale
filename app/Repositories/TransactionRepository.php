@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Transaction;
+use App\Models\TypeTransaction;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -27,5 +28,38 @@ class TransactionRepository extends BaseRepository implements TransactionReposit
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->paginate($perPage);
+    }
+
+    public function create(array $data): Transaction
+    {
+        return $this->model->create($data);
+    }
+
+    public function freshWithType(Transaction $transaction): Transaction
+    {
+        $fresh = $transaction->fresh();
+        $fresh->load('typeTransaction');
+
+        return $fresh;
+    }
+
+    public function findTypeByTitle(string $title): ?TypeTransaction
+    {
+        return TypeTransaction::whereRaw('LOWER(title) = ?', [mb_strtolower($title)])->first();
+    }
+
+    public function findTypeByTitleOrFail(string $title): TypeTransaction
+    {
+        return TypeTransaction::whereRaw('LOWER(title) = ?', [mb_strtolower($title)])->firstOrFail();
+    }
+
+    public function findTypeById(int $id): ?TypeTransaction
+    {
+        return TypeTransaction::find($id);
+    }
+
+    public function deleteByDocumentNumber(string $documentNumber): void
+    {
+        $this->model->where('document_number', $documentNumber)->delete();
     }
 }

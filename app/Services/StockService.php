@@ -2,25 +2,24 @@
 
 namespace App\Services;
 
-use App\Models\DetailProduct;
 use App\Models\ProductStock;
-use Illuminate\Support\Collection;
+use App\Repositories\Contracts\StockRepositoryInterface;
 
 class StockService
 {
+    public function __construct(private StockRepositoryInterface $stockRepo)
+    {
+    }
+
     public function getAvailableStockByProduct(int $productId): int
     {
-        return DetailProduct::where('product_id', $productId)
-            ->where('start_date', '<=', now()->toDateString())
-            ->where('end_date', '>=', now()->toDateString())
-            ->withSum('stocks as used_quantity', 'quantity')
-            ->get()
+        return $this->stockRepo->currentLotsWithUsage($productId)
             ->sum(fn($dp) => $dp->quantity - ($dp->used_quantity ?? 0));
     }
 
     public function getAvailableStockByDetailProduct(int $detailProductId): int
     {
-        $dp = DetailProduct::withSum('stocks as used_quantity', 'quantity')->findOrFail($detailProductId);
+        $dp = $this->stockRepo->findLotWithUsageOrFail($detailProductId);
         return $dp->quantity - ($dp->used_quantity ?? 0);
     }
 
@@ -31,7 +30,7 @@ class StockService
             throw new \RuntimeException("Stock insuficiente. Disponible: {$available}, Solicitado: {$quantity}");
         }
 
-        return ProductStock::create([
+        return $this->stockRepo->createStock([
             'detail_product_id' => $detailProductId,
             'pecosa_id' => $pecosaId,
             'transaction_id' => $transactionId,
@@ -42,13 +41,7 @@ class StockService
 
     public function deductByProduct(int $productId, float $quantity, ?int $pecosaId = null, ?int $transactionId = null): void
     {
-        $detailProducts = DetailProduct::where('product_id', $productId)
-            ->where('start_date', '<=', now()->toDateString())
-            ->where('end_date', '>=', now()->toDateString())
-            ->withSum('stocks as used_quantity', 'quantity')
-            ->orderBy('start_date', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
+        $detailProducts = $this->stockRepo->currentLotsWithUsage($productId, true);
 
         $remaining = $quantity;
         foreach ($detailProducts as $dp) {
@@ -73,16 +66,16 @@ class StockService
 
     public function revertStockByPecosa(int $pecosaId): void
     {
-        ProductStock::where('pecosa_id', $pecosaId)->delete();
+        $this->stockRepo->deleteByPecosa($pecosaId);
     }
 
     public function revertStockByDetailProduct(int $detailProductId): void
     {
-        ProductStock::where('detail_product_id', $detailProductId)->delete();
+        $this->stockRepo->deleteByDetailProduct($detailProductId);
     }
 
     public function revertStockByTransaction(int $transactionId): void
     {
-        ProductStock::where('transaction_id', $transactionId)->delete();
+        $this->stockRepo->deleteByTransaction($transactionId);
     }
 }

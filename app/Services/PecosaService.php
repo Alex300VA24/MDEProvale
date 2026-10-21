@@ -3,40 +3,33 @@
 namespace App\Services;
 
 use App\DTOs\PecosaSnapshotDTO;
-use App\Models\Association;
-use App\Models\AssociationRosterPeriod;
 use App\Models\DetailPecosa;
 use App\Models\Pecosa;
+use App\Models\State;
 use App\Models\VerifiedDocument;
-use App\Models\Responsible;
-use App\Models\Transaction;
-use App\Models\TypeTransaction;
-use App\Repositories\PartnerRepository;
-use App\Repositories\PecosaRepository;
-use App\Repositories\ProductRepository;
-use Barryvdh\DomPDF\Facade\PDF;
+use App\Repositories\Contracts\AssociationRepositoryInterface;
+use App\Repositories\Contracts\CatalogRepositoryInterface;
+use App\Repositories\Contracts\PartnerRepositoryInterface;
+use App\Repositories\Contracts\PecosaRepositoryInterface;
+use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Contracts\TransactionRepositoryInterface;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PecosaService
 {
-    private PecosaRepository $pecosaRepo;
-    private ProductRepository $productRepo;
-    private PartnerRepository $partnerRepo;
-    private StockService $stockService;
-    private PDFService $pdfService;
-    private VerifiedDocumentService $verifiedDocumentService;
-
-    public function __construct(PecosaRepository $pecosaRepo, ProductRepository $productRepo, PartnerRepository $partnerRepo, StockService $stockService, PDFService $pdfService, VerifiedDocumentService $verifiedDocumentService)
-    {
-        $this->pecosaRepo = $pecosaRepo;
-        $this->productRepo = $productRepo;
-        $this->partnerRepo = $partnerRepo;
-        $this->stockService = $stockService;
-        $this->pdfService = $pdfService;
-        $this->verifiedDocumentService = $verifiedDocumentService;
+    public function __construct(
+        private PecosaRepositoryInterface $pecosaRepo,
+        private ProductRepositoryInterface $productRepo,
+        private PartnerRepositoryInterface $partnerRepo,
+        private AssociationRepositoryInterface $associationRepo,
+        private TransactionRepositoryInterface $transactionRepo,
+        private CatalogRepositoryInterface $catalogs,
+        private StockService $stockService,
+        private PDFService $pdfService,
+        private VerifiedDocumentService $verifiedDocumentService
+    ) {
     }
 
     public function searchWithFilters(array $filters, int $perPage = 10)
@@ -44,19 +37,94 @@ class PecosaService
         return $this->pecosaRepo->searchWithFilters($filters, $perPage);
     }
 
+    /** Datos del listado de PECOSAs con los catálogos del modal de registro. */
+    public function indexData(array $filters): array
+    {
+        $associationsForModal = $this->catalogs->currentAssociations(['id', 'name', 'code', 'state_id']);
+        $directivesByAssociation = $this->pecosaRepo->presidentDirectivesFor($associationsForModal->pluck('id'));
+
+        foreach ($associationsForModal as $association) {
+            $directive = $directivesByAssociation->get($association->id);
+            $association->president_partner_id = $directive ? $directive->partner_id : null;
+            $association->president_name = $directive && $directive->partner && $directive->partner->people
+                ? $directive->partner->people->names . ' ' . $directive->partner->people->father_lastname
+                : null;
+        }
+
+        return [
+            'pecosas' => $this->pecosaRepo->searchWithFilters($filters),
+            'associations' => $this->catalogs->associations(['id', 'name', 'code']),
+            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'associationsForModal' => $associationsForModal,
+            'responsibles' => $this->catalogs->activeResponsibles(true),
+            'detailProductsList' => $this->productRepo->lotsForPecosaIndex(),
+        ];
+    }
+
+    public function createData(): array
+    {
+        return [
+            'associations' => $this->catalogs->currentAssociations(),
+            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'partners' => $this->catalogs->partnersWithPeople(),
+            'responsibles' => $this->catalogs->activeResponsibles(),
+            'detailProductsList' => $this->productRepo->lotsForPecosaCreate(),
+        ];
+    }
+
+    public function editData(): array
+    {
+        return [
+            'associations' => $this->catalogs->associations(['id', 'name', 'code']),
+            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'partners' => $this->catalogs->partnersWithPeople(),
+        ];
+    }
+
+    public function showPecosa(Pecosa $pecosa): Pecosa
+    {
+        return $this->pecosaRepo->loadForShow($pecosa);
+    }
+
+    public function deletePecosa(Pecosa $pecosa): void
+    {
+        DB::transaction(function () use ($pecosa) {
+            $this->stockService->revertStockByPecosa($pecosa->id);
+            $this->pecosaRepo->deleteDetails($pecosa->id);
+            $this->transactionRepo->deleteByDocumentNumber($pecosa->pecosa_number);
+            $this->pecosaRepo->delete($pecosa);
+        });
+    }
+
+    /**
+     * Informa si al registrar una PECOSA para el comité y la fecha indicados
+     * quedará una PECOSA del período anterior que pasará a estado VENCIDA.
+     */
+    public function supersessionNotice(int $associationId, string $deliveryDate): array
+    {
+        $previous = Pecosa::effectiveDeliveryDate($deliveryDate)->subMonthNoOverflow();
+        [$start, $end] = Pecosa::deliveryPeriodRange($previous->year, $previous->month);
+
+        $anterior = $this->pecosaRepo->findLatestCurrentInRange(
+            $associationId,
+            State::idFor(State::CURRENT),
+            $start->toDateString(),
+            $end->toDateString()
+        );
+
+        return [
+            'supersede' => (bool) $anterior,
+            'pecosa_number' => $anterior?->pecosa_number,
+            'delivery_date' => optional($anterior?->delivery_date)->format('d/m/Y'),
+            'periodo' => ucfirst($previous->locale('es')->monthName) . ' ' . $previous->year,
+        ];
+    }
+
     public function nextPecosaNumber(bool $lock = false): string
     {
         $prefix = now()->format('y');
-        $query = Pecosa::query()
-            ->where('pecosa_number', 'like', $prefix . '%')
-            ->select('pecosa_number');
 
-        if ($lock) {
-            $query->lockForUpdate();
-        }
-
-        $lastSequence = $query->get()
-            ->pluck('pecosa_number')
+        $lastSequence = $this->pecosaRepo->numbersWithPrefix($prefix, $lock)
             ->filter(fn ($number) => preg_match('/^' . $prefix . '\\d{4}$/', (string) $number))
             ->map(fn ($number) => (int) substr((string) $number, 2, 4))
             ->max() ?? 0;
@@ -70,7 +138,7 @@ class PecosaService
 
     public function createPecosa(array $data): Pecosa
     {
-        $association = Association::findOrFail($data['association_id']);
+        $association = $this->associationRepo->findOrFailAssociation($data['association_id']);
         $president = $this->resolvePresidentForDeliveryPeriod($data);
         if (!$association->isHabilitado()
             && empty($data['managing_partner_id'])
@@ -99,46 +167,9 @@ class PecosaService
             $data['president_id'] = $president['partner_id'];
             $data['managing_partner_id'] = $president['partner_id'];
             $snapshot = $this->buildPecosaSnapshotDTO($data, $president);
-            $pecosa = Pecosa::create(array_merge($data, $snapshot->toArray()));
+            $pecosa = $this->pecosaRepo->createPecosa(array_merge($data, $snapshot->toArray()));
 
-            $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
-
-            foreach ($data['details'] as $index => $detail) {
-                $dp = $detailProductsById->get($detail['detail_product_id']);
-                $unitPrice = $dp->unit_price;
-                $subtotal = $detail['quantity'] * $unitPrice;
-
-                DetailPecosa::create([
-                    'pecosa_id' => $pecosa->id,
-                    'detail_product_id' => $detail['detail_product_id'],
-                    'quantity' => $detail['quantity'],
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $subtotal,
-                    'priority' => $index + 1,
-                    'product_name' => $dp->product->title,
-                    'product_abbreviation' => $dp->product->abbreviation,
-                    'uom_title' => $dp->product->uom->title ?? null,
-                ]);
-
-                $transaction = Transaction::create([
-                    'detail_product_id' => $detail['detail_product_id'],
-                    'type_transaction_id' => $typeSalida->id,
-                    'quantity' => $detail['quantity'],
-                    'unit_price' => $unitPrice,
-                    'total_price' => $subtotal,
-                    'document_number' => $data['pecosa_number'],
-                    'transaction_date' => $data['delivery_date'],
-                    'product_name' => $dp->product->title,
-                    'uom_title' => $dp->product->uom->title ?? null,
-                ]);
-
-                $this->stockService->deductByDetailProduct(
-                    $detail['detail_product_id'],
-                    $detail['quantity'],
-                    $pecosa->id,
-                    $transaction->id
-                );
-            }
+            $this->persistDetails($pecosa, $data, $detailProductsById);
 
             return $pecosa;
         });
@@ -146,69 +177,75 @@ class PecosaService
 
     public function updatePecosa(int $id, array $data): Pecosa
     {
-        $pecosa = Pecosa::findOrFail($id);
+        $pecosa = $this->pecosaRepo->findOrFailPecosa($id);
 
         return DB::transaction(function () use ($pecosa, $data) {
             $this->stockService->revertStockByPecosa($pecosa->id);
-            DetailPecosa::where('pecosa_id', $pecosa->id)->delete();
-            Transaction::where('document_number', $pecosa->pecosa_number)->delete();
+            $this->pecosaRepo->deleteDetails($pecosa->id);
+            $this->transactionRepo->deleteByDocumentNumber($pecosa->pecosa_number);
 
             $president = $this->resolvePresidentForDeliveryPeriod($data);
             $data['president_id'] = $president['partner_id'];
             $data['managing_partner_id'] = $president['partner_id'];
             $snapshot = $this->buildPecosaSnapshotDTO($data, $president);
-            $pecosa->update(array_merge($data, $snapshot->toArray()));
+            $this->pecosaRepo->updatePecosa($pecosa, array_merge($data, $snapshot->toArray()));
 
             $detailProductsById = $this->productRepo->getDetailProductsByIds(collect($data['details'])->pluck('detail_product_id'));
-            $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->first();
 
-            foreach ($data['details'] as $index => $detail) {
-                $dp = $detailProductsById->get($detail['detail_product_id']);
-                $unitPrice = $dp->unit_price;
-                $subtotal = $detail['quantity'] * $unitPrice;
-
-                DetailPecosa::create([
-                    'pecosa_id' => $pecosa->id,
-                    'detail_product_id' => $detail['detail_product_id'],
-                    'quantity' => $detail['quantity'],
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $subtotal,
-                    'priority' => $index + 1,
-                    'product_name' => $dp->product->title,
-                    'product_abbreviation' => $dp->product->abbreviation,
-                    'uom_title' => $dp->product->uom->title ?? null,
-                ]);
-
-                $transaction = Transaction::create([
-                    'detail_product_id' => $detail['detail_product_id'],
-                    'type_transaction_id' => $typeSalida->id,
-                    'quantity' => $detail['quantity'],
-                    'unit_price' => $unitPrice,
-                    'total_price' => $subtotal,
-                    'document_number' => $data['pecosa_number'],
-                    'transaction_date' => $data['delivery_date'],
-                    'product_name' => $dp->product->title,
-                    'uom_title' => $dp->product->uom->title ?? null,
-                ]);
-
-                $this->stockService->deductByDetailProduct(
-                    $detail['detail_product_id'],
-                    $detail['quantity'],
-                    $pecosa->id,
-                    $transaction->id
-                );
-            }
+            $this->persistDetails($pecosa, $data, $detailProductsById);
 
             return $pecosa->fresh();
         });
     }
 
+    /**
+     * Registra el detalle de la PECOSA, su movimiento de salida y el descuento de stock por lote.
+     */
+    private function persistDetails(Pecosa $pecosa, array $data, $detailProductsById): void
+    {
+        $typeSalida = $this->transactionRepo->findTypeByTitle('salida');
+
+        foreach ($data['details'] as $index => $detail) {
+            $dp = $detailProductsById->get($detail['detail_product_id']);
+            $unitPrice = $dp->unit_price;
+            $subtotal = $detail['quantity'] * $unitPrice;
+
+            $this->pecosaRepo->createDetail([
+                'pecosa_id' => $pecosa->id,
+                'detail_product_id' => $detail['detail_product_id'],
+                'quantity' => $detail['quantity'],
+                'unit_price' => $unitPrice,
+                'subtotal' => $subtotal,
+                'priority' => $index + 1,
+                'product_name' => $dp->product->title,
+                'product_abbreviation' => $dp->product->abbreviation,
+                'uom_title' => $dp->product->uom->title ?? null,
+            ]);
+
+            $transaction = $this->transactionRepo->create([
+                'detail_product_id' => $detail['detail_product_id'],
+                'type_transaction_id' => $typeSalida->id,
+                'quantity' => $detail['quantity'],
+                'unit_price' => $unitPrice,
+                'total_price' => $subtotal,
+                'document_number' => $data['pecosa_number'],
+                'transaction_date' => $data['delivery_date'],
+                'product_name' => $dp->product->title,
+                'uom_title' => $dp->product->uom->title ?? null,
+            ]);
+
+            $this->stockService->deductByDetailProduct(
+                $detail['detail_product_id'],
+                $detail['quantity'],
+                $pecosa->id,
+                $transaction->id
+            );
+        }
+    }
+
     public function generateComprobante(Pecosa $pecosa, ?int $createdBy = null): array
     {
-        $pecosa->load([
-            'detailPecosas.detailProduct.product.uom',
-            'association.placeSector.place',
-        ]);
+        $this->pecosaRepo->loadForReceipt($pecosa);
 
         $data = $this->buildComprobanteData($pecosa, false);
         $identifier = 'PEC-' . Str::upper(Str::slug((string) $pecosa->pecosa_number)) . '-' . Str::upper(Str::random(6));
@@ -232,10 +269,7 @@ class PecosaService
 
     public function generatePecosaCompleta(Pecosa $pecosa): array
     {
-        $pecosa->load([
-            'detailPecosas.detailProduct.product.uom',
-            'association.placeSector.place',
-        ]);
+        $this->pecosaRepo->loadForReceipt($pecosa);
 
         $data = $this->buildComprobanteData($pecosa, true);
         $pdf = $this->pdfService->generate('comprobante_salida', $data, 'a4', 'landscape');
@@ -250,22 +284,16 @@ class PecosaService
      */
     public function getMonthlyComprobantesData(int $year, int $month): array
     {
-        $pecosas = Pecosa::forDeliveryPeriod($year, $month)
-            ->with([
-                'detailPecosas.detailProduct.product.uom',
-                'association.placeSector.place',
-            ])
-            ->orderBy('pecosa_number')
-            ->get();
+        $pecosas = $this->pecosaRepo->forDeliveryPeriodWithReceiptData($year, $month);
 
         return $pecosas->map(fn (Pecosa $pecosa) => $this->buildComprobanteData($pecosa, false))->all();
     }
 
     private function buildPecosaSnapshotDTO(array $data, array $president): PecosaSnapshotDTO
     {
-        $chief = isset($data['chief_id']) ? Responsible::with('person')->find($data['chief_id']) : null;
-        $storekeeper = isset($data['storekeeper_id']) ? Responsible::with('person')->find($data['storekeeper_id']) : null;
-        $association = Association::with(['placeSector.place', 'placeSector.sector'])->find($data['association_id']);
+        $chief = isset($data['chief_id']) ? $this->catalogs->findResponsibleWithPerson($data['chief_id']) : null;
+        $storekeeper = isset($data['storekeeper_id']) ? $this->catalogs->findResponsibleWithPerson($data['storekeeper_id']) : null;
+        $association = $this->associationRepo->findWithPlaceSector($data['association_id']);
 
         return new PecosaSnapshotDTO(
             $chief ? ($chief->person ? self::formatName($chief->person) : null) : null,
@@ -295,14 +323,11 @@ class PecosaService
      */
     private function resolvePresidentForDeliveryPeriod(array $data): array
     {
-        $association = Association::findOrFail($data['association_id']);
+        $association = $this->associationRepo->findOrFailAssociation($data['association_id']);
         $effectiveDate = Pecosa::effectiveDeliveryDate($data['delivery_date']);
         $period = $effectiveDate->copy()->startOfMonth()->toDateString();
 
-        $roster = AssociationRosterPeriod::with('presidentPartner.people')
-            ->where('association_id', $association->id)
-            ->whereDate('period', $period)
-            ->first();
+        $roster = $this->associationRepo->rosterForPeriod($association->id, $period);
 
         if ($roster) {
             $partner = $roster->presidentPartner;

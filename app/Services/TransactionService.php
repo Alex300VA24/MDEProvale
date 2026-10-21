@@ -2,24 +2,24 @@
 
 namespace App\Services;
 
-use App\Models\DetailPecosa;
-use App\Models\DetailProduct;
-use App\Models\Pecosa;
-use App\Models\ProductStock;
 use App\Models\Transaction;
-use App\Models\TypeTransaction;
-use App\Repositories\TransactionRepository;
+use App\Repositories\Contracts\CatalogRepositoryInterface;
+use App\Repositories\Contracts\PecosaRepositoryInterface;
+use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Contracts\StockRepositoryInterface;
+use App\Repositories\Contracts\TransactionRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
 class TransactionService
 {
-    private TransactionRepository $transactionRepo;
-    private StockService $stockService;
-
-    public function __construct(TransactionRepository $transactionRepo, StockService $stockService)
-    {
-        $this->transactionRepo = $transactionRepo;
-        $this->stockService = $stockService;
+    public function __construct(
+        private TransactionRepositoryInterface $transactionRepo,
+        private ProductRepositoryInterface $productRepo,
+        private StockRepositoryInterface $stockRepo,
+        private PecosaRepositoryInterface $pecosaRepo,
+        private CatalogRepositoryInterface $catalogs,
+        private StockService $stockService
+    ) {
     }
 
     public function searchTransactions(array $filters, int $perPage = 15)
@@ -27,12 +27,22 @@ class TransactionService
         return $this->transactionRepo->searchTransactions($filters, $perPage);
     }
 
+    /** Datos del listado de movimientos con sus catálogos de filtro. */
+    public function indexData(array $filters): array
+    {
+        return [
+            'transactions' => $this->transactionRepo->searchTransactions($filters),
+            'types' => $this->catalogs->typeTransactions(),
+            'products' => $this->catalogs->products(),
+        ];
+    }
+
     public function registerIngreso(array $data): Transaction
     {
-        $typeIngreso = TypeTransaction::whereRaw('LOWER(title) = ?', ['ingreso'])->firstOrFail();
+        $typeIngreso = $this->transactionRepo->findTypeByTitleOrFail('ingreso');
 
         return DB::transaction(function () use ($data, $typeIngreso) {
-            $detailProduct = DetailProduct::create([
+            $detailProduct = $this->productRepo->createDetailProduct([
                 'product_id' => $data['product_id'],
                 'quantity' => $data['quantity'],
                 'unit_price' => $data['unit_price'],
@@ -42,7 +52,7 @@ class TransactionService
 
             $detailProduct->load('product.uom');
 
-            return Transaction::create([
+            return $this->transactionRepo->create([
                 'detail_product_id' => $detailProduct->id,
                 'type_transaction_id' => $typeIngreso->id,
                 'quantity' => $data['quantity'],
@@ -58,11 +68,11 @@ class TransactionService
 
     public function registerSalida(array $data): Transaction
     {
-        $typeSalida = TypeTransaction::whereRaw('LOWER(title) = ?', ['salida'])->firstOrFail();
-        $detailProduct = DetailProduct::with('product.uom')->findOrFail($data['detail_product_id']);
+        $typeSalida = $this->transactionRepo->findTypeByTitleOrFail('salida');
+        $detailProduct = $this->productRepo->findDetailProductWithProductOrFail($data['detail_product_id']);
 
         return DB::transaction(function () use ($data, $typeSalida, $detailProduct) {
-            $transaction = Transaction::create([
+            $transaction = $this->transactionRepo->create([
                 'detail_product_id' => $detailProduct->id,
                 'type_transaction_id' => $typeSalida->id,
                 'quantity' => $data['quantity'],
@@ -92,8 +102,7 @@ class TransactionService
     public function updateTransaction(Transaction $transaction, array $data): Transaction
     {
         return DB::transaction(function () use ($transaction, $data) {
-            $transaction = $transaction->fresh();
-            $transaction->load('typeTransaction');
+            $transaction = $this->transactionRepo->freshWithType($transaction);
 
             $quantity = (float) ($data['quantity'] ?? $transaction->quantity);
             $unitPrice = (float) ($data['unit_price'] ?? $transaction->unit_price);
@@ -115,17 +124,16 @@ class TransactionService
 
                 // Revierte el descuento anterior y vuelve a descontar con la nueva cantidad.
                 $this->stockService->revertStockByTransaction($transaction->id);
-                $transaction->update($updates);
+                $this->transactionRepo->update($transaction, $updates);
 
-                $detailProduct = DetailProduct::with('product.uom')->findOrFail($transaction->detail_product_id);
+                $detailProduct = $this->productRepo->findDetailProductWithProductOrFail($transaction->detail_product_id);
                 $this->stockService->deductByProduct($detailProduct->product_id, $quantity, null, $transaction->id);
 
                 return $transaction->fresh();
             }
 
             // Ingreso: actualiza el lote (DetailProduct) validando que no quede negativo.
-            $detailProduct = DetailProduct::withSum('stocks as used_quantity', 'quantity')
-                ->findOrFail($transaction->detail_product_id);
+            $detailProduct = $this->stockRepo->findLotWithUsageOrFail($transaction->detail_product_id);
             $used = (float) ($detailProduct->used_quantity ?? 0);
             if ($quantity < $used) {
                 throw new \RuntimeException("No se puede reducir la cantidad: el lote ya tiene {$used} unidades consumidas.");
@@ -140,8 +148,8 @@ class TransactionService
                     $loteUpdates[$field] = $data[$field];
                 }
             }
-            $detailProduct->update($loteUpdates);
-            $transaction->update($updates);
+            $this->productRepo->updateDetailProduct($detailProduct, $loteUpdates);
+            $this->transactionRepo->update($transaction, $updates);
 
             return $transaction->fresh();
         });
@@ -150,8 +158,7 @@ class TransactionService
     public function deleteTransaction(Transaction $transaction): void
     {
         DB::transaction(function () use ($transaction) {
-            $transaction = $transaction->fresh();
-            $transaction->load('typeTransaction');
+            $transaction = $this->transactionRepo->freshWithType($transaction);
 
             if ($transaction->typeTransaction && $transaction->typeTransaction->isSalida()) {
                 if ($this->belongsToPecosa($transaction)) {
@@ -159,26 +166,34 @@ class TransactionService
                 }
 
                 $this->stockService->revertStockByTransaction($transaction->id);
-                $transaction->delete();
+                $this->transactionRepo->delete($transaction);
                 return;
             }
 
             // Ingreso: elimina el lote creado, validando dependencias.
-            $hasStock = ProductStock::where('detail_product_id', $transaction->detail_product_id)->exists();
-            $hasPecosaRef = DetailPecosa::where('detail_product_id', $transaction->detail_product_id)->exists();
+            $hasStock = $this->stockRepo->existsForDetailProduct($transaction->detail_product_id);
+            $hasPecosaRef = $this->pecosaRepo->lotIsInAnyPecosa($transaction->detail_product_id);
             if ($hasStock || $hasPecosaRef) {
                 throw new \RuntimeException('No se puede eliminar: el lote generado por este ingreso ya tiene salidas/pecosas asociadas.');
             }
 
             $detailProductId = $transaction->detail_product_id;
-            $transaction->delete();
-            DetailProduct::where('id', $detailProductId)->delete();
+            $this->transactionRepo->delete($transaction);
+            $this->productRepo->deleteDetailProduct($detailProductId);
         });
+    }
+
+    /** Tipos de transacción para formularios (resuelve ingreso/salida por id). */
+    public function isIngresoType(int $typeTransactionId): bool
+    {
+        $type = $this->transactionRepo->findTypeById($typeTransactionId);
+
+        return $type && $type->isIngreso();
     }
 
     private function belongsToPecosa(Transaction $transaction): bool
     {
         return $transaction->document_number
-            && Pecosa::where('pecosa_number', $transaction->document_number)->exists();
+            && $this->pecosaRepo->numberExists($transaction->document_number);
     }
 }

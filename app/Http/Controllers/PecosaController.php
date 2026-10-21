@@ -4,139 +4,37 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePecosaRequest;
 use App\Http\Requests\UpdatePecosaRequest;
-use App\Models\Association;
-use App\Models\DetailProduct;
-use App\Models\Directive;
-use App\Models\Partner;
 use App\Models\Pecosa;
-use App\Models\Position;
-use App\Models\ProductStock;
-use App\Models\Responsible;
-use App\Models\State;
-use App\Models\DetailPecosa;
-use App\Models\Transaction;
 use App\Services\PecosaService;
 use App\Services\PDFService;
-use App\Services\StockService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PecosaController extends Controller
 {
-    private PecosaService $pecosaService;
-    private PDFService $pdfService;
-    private StockService $stockService;
-
-    public function __construct(PecosaService $pecosaService, PDFService $pdfService, StockService $stockService)
-    {
-        $this->pecosaService = $pecosaService;
-        $this->pdfService = $pdfService;
-        $this->stockService = $stockService;
+    public function __construct(
+        private PecosaService $pecosaService,
+        private PDFService $pdfService
+    ) {
     }
 
     public function index(Request $request)
     {
         $filters = $request->only(['search', 'association_id', 'state_id', 'fecha_inicio', 'fecha_fin']);
-        $pecosas = $this->pecosaService->searchWithFilters($filters);
 
-        $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
-
-        $activeState = State::where('abbreviation', State::CURRENT)->select(['id'])->first();
-        $associationsForModal = $activeState
-            ? Association::select(['id', 'name', 'code', 'state_id'])
-                ->where('state_id', $activeState->id)->get()
-            : Association::select(['id', 'name', 'code', 'state_id'])->get();
-
-        $presidentPosition = Position::where('title', 'PRESIDENTA')->first();
-
-        $directives = Directive::select(['id', 'partner_id', 'resolution_id', 'position_id', 'state_id']);
-
-        if ($presidentPosition) {
-            $directives = $directives->where('position_id', $presidentPosition->id);
-        }
-
-        if ($activeState) {
-            $directives = $directives->where('state_id', $activeState->id);
-        }
-
-        $associationIds = $associationsForModal->pluck('id');
-        $directives = $directives
-            ->whereHas('partner', function ($q) use ($associationIds) {
-                $q->whereIn('association_id', $associationIds);
-            })
-            ->with(['partner:id,person_id,association_id', 'partner.people:id,names,father_lastname'])
-            ->get();
-
-        $directivesByAssociation = $directives->mapToGroups(function ($directive) {
-            return [$directive->partner->association_id => $directive];
-        })->map(function ($collection) {
-            return $collection->first();
-        });
-
-        foreach ($associationsForModal as $association) {
-            $directive = $directivesByAssociation->get($association->id);
-            $association->president_partner_id = $directive ? $directive->partner_id : null;
-            $association->president_name = $directive && $directive->partner && $directive->partner->people
-                ? $directive->partner->people->names . ' ' . $directive->partner->people->father_lastname
-                : null;
-        }
-
-        $responsibles = Responsible::select(['id', 'person_id', 'type', 'active'])
-            ->with(['person:id,names,father_lastname,mother_lastname,dni'])
-            ->where('active', true)
-            ->get();
-
-        $detailProductsList = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
-            ->with(['product:id,title,abbreviation'])
-            ->withSum('stocks as used_quantity', 'quantity')
-            ->orderBy('start_date', 'asc')
-            ->get()
-            ->map(function ($dp) {
-                $dp->available_stock = $dp->quantity - ($dp->used_quantity ?? 0);
-                return $dp;
-            });
-
-        return view('productos-pecosas.pecosas.index', compact(
-            'pecosas', 'associations', 'states', 'associationsForModal', 'responsibles', 'detailProductsList'
-        ));
+        return view('productos-pecosas.pecosas.index', $this->pecosaService->indexData($filters));
     }
 
     public function create()
     {
-        $estadoActivo = State::where('abbreviation', State::CURRENT)->first();
-        $associations = $estadoActivo
-            ? Association::where('state_id', $estadoActivo->id)->get()
-            : Association::all();
-
-        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
-        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
-        $responsibles = Responsible::with('person')->where('active', true)->get();
-
-        $detailProductsList = DetailProduct::with('product')
-            ->where('end_date', '>=', now()->toDateString())
-            ->orderBy('start_date', 'asc')
-            ->get();
-
-        $usedQuantities = \App\Models\ProductStock::selectRaw('detail_product_id, SUM(quantity) as total_used')
-            ->whereIn('detail_product_id', $detailProductsList->pluck('id'))
-            ->groupBy('detail_product_id')
-            ->pluck('total_used', 'detail_product_id');
-
-        $detailProductsList->each(function($dp) use ($usedQuantities) {
-            $dp->available_stock = $dp->quantity - ($usedQuantities[$dp->id] ?? 0);
-        });
-
-        return view('productos-pecosas.pecosas.create', 
-            compact('associations', 'states', 'partners', 'responsibles', 'detailProductsList'));
+        return view('productos-pecosas.pecosas.create', $this->pecosaService->createData());
     }
 
     public function store(StorePecosaRequest $request)
     {
         try {
-            $pecosa = $this->pecosaService->createPecosa($request->validated());
+            $this->pecosaService->createPecosa($request->validated());
             return redirect()->route('pecosas.index')
                 ->with('success', 'Pecosa creada exitosamente');
         } catch (\DomainException $e) {
@@ -148,16 +46,14 @@ class PecosaController extends Controller
 
     public function show(Pecosa $pecosa)
     {
-        $pecosa->load(['detailPecosas.detailProduct.product', 'association', 'managingPartner.people']);
+        $pecosa = $this->pecosaService->showPecosa($pecosa);
+
         return view('productos-pecosas.pecosas.show', compact('pecosa'));
     }
 
     public function edit(Pecosa $pecosa)
     {
-        $associations = Association::select(['id', 'name', 'code'])->get();
-        $states = State::temporal()->get(['id', 'title', 'abbreviation']);
-        $partners = Partner::select(['id', 'person_id'])->with('people:id,names,father_lastname')->get();
-        return view('productos-pecosas.pecosas.edit', compact('pecosa', 'associations', 'states', 'partners'));
+        return view('productos-pecosas.pecosas.edit', ['pecosa' => $pecosa] + $this->pecosaService->editData());
     }
 
     public function update(UpdatePecosaRequest $request, Pecosa $pecosa)
@@ -174,13 +70,7 @@ class PecosaController extends Controller
     public function destroy(Pecosa $pecosa)
     {
         try {
-            DB::transaction(function () use ($pecosa) {
-                $this->stockService->revertStockByPecosa($pecosa->id);
-                DetailPecosa::where('pecosa_id', $pecosa->id)->delete();
-                Transaction::where('document_number', $pecosa->pecosa_number)->delete();
-                $pecosa->delete();
-            });
-
+            $this->pecosaService->deletePecosa($pecosa);
             return redirect()->route('pecosas.index')->with('success', 'Pecosa eliminada exitosamente');
         } catch (\Exception $e) {
             return back()->with('error', 'Error al eliminar PECOSA: ' . $e->getMessage());
@@ -260,22 +150,8 @@ class PecosaController extends Controller
             'delivery_date' => 'required|date',
         ]);
 
-        $vigId = State::idFor(State::CURRENT);
-        $previous = Pecosa::effectiveDeliveryDate($data['delivery_date'])->subMonthNoOverflow();
-        [$start, $end] = Pecosa::deliveryPeriodRange($previous->year, $previous->month);
-
-        $anterior = Pecosa::query()
-            ->where('association_id', $data['association_id'])
-            ->when($vigId, fn ($q) => $q->where('state_id', $vigId))
-            ->whereBetween('delivery_date', [$start->toDateString(), $end->toDateString()])
-            ->orderByDesc('delivery_date')
-            ->first(['id', 'pecosa_number', 'delivery_date']);
-
-        return response()->json([
-            'supersede' => (bool) $anterior,
-            'pecosa_number' => $anterior?->pecosa_number,
-            'delivery_date' => optional($anterior?->delivery_date)->format('d/m/Y'),
-            'periodo' => ucfirst($previous->locale('es')->monthName) . ' ' . $previous->year,
-        ]);
+        return response()->json(
+            $this->pecosaService->supersessionNotice((int) $data['association_id'], $data['delivery_date'])
+        );
     }
 }
