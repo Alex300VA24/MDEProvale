@@ -5,16 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Resources\TransactionResource;
-use App\Models\DetailProduct;
-use App\Models\DistributionAssignment;
-use App\Models\DistributionPeriod;
-use App\Models\Product;
 use App\Models\Transaction;
-use App\Models\TypeTransaction;
 use App\Services\ReparticionService;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class MovimientosController extends Controller
 {
@@ -37,55 +31,13 @@ class MovimientosController extends Controller
 
     public function options()
     {
-        $today = now()->toDateString();
-        $years = Transaction::query()
-            ->whereNotNull('transaction_date')
-            ->orderByDesc('transaction_date')
-            ->pluck('transaction_date')
-            ->map(fn ($date) => (int) \Carbon\Carbon::parse($date)->format('Y'))
-            ->push((int) now()->format('Y'))
-            ->unique()
-            ->sortDesc()
-            ->values();
-
-        $detailProducts = DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
-            ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
-            ->withSum('stocks as used_quantity', 'quantity')
-            ->where('start_date', '<=', $today)
-            ->where('end_date', '>=', $today)
-            ->orderBy('start_date', 'asc')
-            ->get()
-            ->map(fn ($dp) => [
-                'id' => $dp->id,
-                'product_id' => $dp->product_id,
-                'product_title' => $dp->product->title ?? null,
-                'product_abbreviation' => $dp->product->abbreviation ?? null,
-                'uom_title' => $dp->product->uom->title ?? null,
-                'unit_price' => (float) $dp->unit_price,
-                'quantity' => (float) $dp->quantity,
-                'used_quantity' => (float) ($dp->used_quantity ?? 0),
-                'available_stock' => (float) ($dp->quantity - ($dp->used_quantity ?? 0)),
-                'start_date' => $dp->start_date?->toDateString(),
-                'end_date' => $dp->end_date?->toDateString(),
-            ]);
-
-        return response()->json([
-            'types' => TypeTransaction::select(['id', 'title'])->get(),
-            'products' => Product::select(['id', 'title', 'abbreviation'])->get(),
-            'detail_products' => $detailProducts,
-            'years' => $years,
-        ], 200, [], JSON_PRESERVE_ZERO_FRACTION);
+        return response()->json($this->transactionService->options(), 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 
     public function store(StoreTransactionRequest $request)
     {
         try {
-            $typeTransaction = TypeTransaction::find($request->input('type_transaction_id'));
-            $isIngreso = $typeTransaction && $typeTransaction->isIngreso();
-
-            $transaction = $isIngreso
-                ? $this->transactionService->registerIngreso($request->validated())
-                : $this->transactionService->registerSalida($request->validated());
+            $transaction = $this->transactionService->register($request->validated());
 
             $resource = new TransactionResource($transaction->load(['typeTransaction:id,title', 'detailProduct.product:id,title,abbreviation']));
 
@@ -197,7 +149,7 @@ class MovimientosController extends Controller
             ], 404);
         }
 
-        $calendarDays = (int) date('t', strtotime(sprintf('%04d-%02d-01', $validated['year'], $validated['month'])));
+        $calendarDays = $this->reparticionService->calendarDays($validated['year'], $validated['month']);
         if ($validated['service_days'] > $calendarDays) {
             return response()->json([
                 'message' => "El período seleccionado admite como máximo {$calendarDays} días de atención.",
@@ -217,33 +169,7 @@ class MovimientosController extends Controller
             ], 422);
         }
 
-        DB::transaction(function () use ($validated) {
-            $period = DistributionPeriod::updateOrCreate(
-                ['year' => $validated['year'], 'month' => $validated['month']],
-                collect($validated)->except(['year', 'month', 'assignments'])->all()
-            );
-
-            $associationIds = collect($validated['assignments'])->pluck('association_id')->unique()->values();
-            $deleteQuery = $period->assignments();
-            if ($associationIds->isNotEmpty()) {
-                $deleteQuery->whereNotIn('association_id', $associationIds);
-            }
-            $deleteQuery->delete();
-
-            foreach ($validated['assignments'] as $assignment) {
-                DistributionAssignment::updateOrCreate(
-                    [
-                        'distribution_period_id' => $period->id,
-                        'association_id' => $assignment['association_id'],
-                    ],
-                    [
-                        'route_number' => $assignment['route_number'],
-                        'beneficiary_adjustment' => $assignment['beneficiary_adjustment'],
-                        'observation' => $assignment['observation'] ?? null,
-                    ]
-                );
-            }
-        });
+        $this->reparticionService->saveConfiguration($validated);
 
         return $this->reparticion($request);
     }

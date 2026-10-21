@@ -3,12 +3,15 @@
 namespace App\Repositories;
 
 use App\Models\People;
+use App\Repositories\Concerns\FiltersByNameTerms;
 use App\Repositories\Contracts\PersonRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PersonRepository extends BaseRepository implements PersonRepositoryInterface
 {
+    use FiltersByNameTerms;
+
     public function model(): string
     {
         return People::class;
@@ -54,5 +57,15 @@ class PersonRepository extends BaseRepository implements PersonRepositoryInterfa
     public function deletePerson(People $person): void
     {
         $person->delete();
+    }
+
+    /** Personas cuyo nombre o DNI contiene todas las palabras dadas, por nombre. */
+    public function searchByTerms(array $terms, int $limit): Collection
+    {
+        $query = People::select(['id', 'names', 'father_lastname', 'mother_lastname', 'dni']);
+
+        $this->applyNameTerms($query, $terms);
+
+        return $query->orderBy('names')->limit($limit)->get();
     }
 }

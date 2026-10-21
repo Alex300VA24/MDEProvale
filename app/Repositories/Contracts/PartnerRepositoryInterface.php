@@ -33,4 +33,7 @@ interface PartnerRepositoryInterface
     public function deletePartner(Partner $partner): void;
 
     public function loadForFicha(Partner $partner): Partner;
+
+    /** Socios con nombre y DNI de su persona que coinciden con todas las palabras. */
+    public function searchByTerms(array $terms, int $limit): Collection;
 }

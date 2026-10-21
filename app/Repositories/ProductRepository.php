@@ -257,4 +257,16 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
 
         return $lots;
     }
+
+    /** Lotes vigentes a la fecha con la cantidad ya utilizada, del más antiguo al más nuevo. */
+    public function currentLotsWithUsage(string $today): Collection
+    {
+        return DetailProduct::select(['id', 'product_id', 'quantity', 'unit_price', 'start_date', 'end_date'])
+            ->with(['product:id,title,abbreviation,uom_id', 'product.uom:id,title'])
+            ->withSum('stocks as used_quantity', 'quantity')
+            ->where('start_date', '<=', $today)
+            ->where('end_date', '>=', $today)
+            ->orderBy('start_date', 'asc')
+            ->get();
+    }
 }

@@ -25,4 +25,9 @@ interface DistributionRepositoryInterface
 
     /** Socios del comité vigentes a la fecha, con beneficiarios y su persona. */
     public function partnersWithBeneficiariesAt(Association $association, string $endDate): Collection;
+
+    public function saveConfiguration(int $year, int $month, array $values): DistributionPeriod;
+
+    /** Elimina las asignaciones del periodo cuyos comités no estén en la lista (todas si está vacía). */
+    public function deleteAssignmentsExcept(DistributionPeriod $period, \Illuminate\Support\Collection $associationIds): void;
 }

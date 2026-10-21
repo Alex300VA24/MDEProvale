@@ -96,4 +96,20 @@ class DistributionRepository extends BaseRepository implements DistributionRepos
             })
             ->get();
     }
+
+    public function saveConfiguration(int $year, int $month, array $values): DistributionPeriod
+    {
+        return $this->model->updateOrCreate(['year' => $year, 'month' => $month], $values);
+    }
+
+    public function deleteAssignmentsExcept(DistributionPeriod $period, \Illuminate\Support\Collection $associationIds): void
+    {
+        $query = $period->assignments();
+
+        if ($associationIds->isNotEmpty()) {
+            $query->whereNotIn('association_id', $associationIds);
+        }
+
+        $query->delete();
+    }
 }

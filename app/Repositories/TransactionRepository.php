@@ -62,4 +62,12 @@ class TransactionRepository extends BaseRepository implements TransactionReposit
     {
         $this->model->where('document_number', $documentNumber)->delete();
     }
+
+    public function transactionDates(): \Illuminate\Support\Collection
+    {
+        return $this->model
+            ->whereNotNull('transaction_date')
+            ->orderByDesc('transaction_date')
+            ->pluck('transaction_date');
+    }
 }

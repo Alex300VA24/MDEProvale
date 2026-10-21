@@ -62,4 +62,7 @@ interface ProductRepositoryInterface
 
     /** Lotes no vencidos con `available_stock` para registrar PECOSAs. */
     public function lotsForPecosaCreate(): Collection;
+
+    /** Lotes vigentes a la fecha con `used_quantity`, del más antiguo al más nuevo. */
+    public function currentLotsWithUsage(string $today): Collection;
 }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Racion;
 use App\Repositories\Contracts\DistributionRepositoryInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class ReparticionService
 {
@@ -209,5 +210,36 @@ class ReparticionService
             'total_hojuelas_sacos' => intdiv($totalOat, (int) $configuration['oat_kg_per_sack']),
             'total_hojuelas_sueltos' => $totalOat % (int) $configuration['oat_kg_per_sack'],
         ];
+    }
+
+    /** Días de atención máximos que admite el mes calendario. */
+    public function calendarDays(int $year, int $month): int
+    {
+        return (int) date('t', strtotime(sprintf('%04d-%02d-01', $year, $month)));
+    }
+
+    /** Guarda la configuración del periodo y sincroniza sus asignaciones por comité. */
+    public function saveConfiguration(array $validated): void
+    {
+        DB::transaction(function () use ($validated) {
+            $period = $this->distributions->saveConfiguration(
+                $validated['year'],
+                $validated['month'],
+                collect($validated)->except(['year', 'month', 'assignments'])->all()
+            );
+
+            $this->distributions->deleteAssignmentsExcept(
+                $period,
+                collect($validated['assignments'])->pluck('association_id')->unique()->values()
+            );
+
+            foreach ($validated['assignments'] as $assignment) {
+                $this->distributions->upsertAssignment($period->id, $assignment['association_id'], [
+                    'route_number' => $assignment['route_number'],
+                    'beneficiary_adjustment' => $assignment['beneficiary_adjustment'],
+                    'observation' => $assignment['observation'] ?? null,
+                ]);
+            }
+        });
     }
 }

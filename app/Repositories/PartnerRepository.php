@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Partner;
 use App\Models\DetailProduct;
 use App\Models\People;
+use App\Repositories\Concerns\FiltersByNameTerms;
 use App\Repositories\Contracts\PartnerRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -12,6 +13,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class PartnerRepository extends BaseRepository implements PartnerRepositoryInterface
 {
+    use FiltersByNameTerms;
+
     private const DETAIL_RELATIONS = [
         'people',
         'association:id,name,code',
@@ -193,5 +196,20 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             'beneficiaries.histories.typeBenefit',
             'beneficiaries.histories.state',
         ]);
+    }
+
+    /** Socios (con datos de su persona) cuyo nombre o DNI contiene todas las palabras dadas. */
+    public function searchByTerms(array $terms, int $limit): Collection
+    {
+        $query = Partner::select(['partners.id', 'partners.person_id'])
+            ->join('people', 'partners.person_id', '=', 'people.id');
+
+        $this->applyNameTerms($query, $terms, 'people.');
+
+        return $query
+            ->addSelect(['people.names', 'people.father_lastname', 'people.mother_lastname', 'people.dni'])
+            ->orderBy('people.names')
+            ->limit($limit)
+            ->get();
     }
 }

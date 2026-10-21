@@ -52,9 +52,9 @@ class CatalogRepository implements CatalogRepositoryInterface
         return Product::select($columns)->get();
     }
 
-    public function typeTransactions(): Collection
+    public function typeTransactions(array $columns = ['*']): Collection
     {
-        return TypeTransaction::all();
+        return TypeTransaction::all($columns);
     }
 
     public function relationships(array $columns = ['*']): Collection

@@ -27,4 +27,7 @@ interface TransactionRepositoryInterface
     public function findTypeById(int $id): ?TypeTransaction;
 
     public function deleteByDocumentNumber(string $documentNumber): void;
+
+    /** Fechas de todos los movimientos, la más reciente primero. */
+    public function transactionDates(): \Illuminate\Support\Collection;
 }

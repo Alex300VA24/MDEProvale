@@ -23,7 +23,7 @@ interface CatalogRepositoryInterface
 
     public function products(array $columns = ['id', 'title', 'abbreviation']): Collection;
 
-    public function typeTransactions(): Collection;
+    public function typeTransactions(array $columns = ['*']): Collection;
 
     public function relationships(array $columns = ['*']): Collection;
 

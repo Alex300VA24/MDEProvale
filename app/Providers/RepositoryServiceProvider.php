@@ -15,7 +15,9 @@ use App\Repositories\Contracts\PecosaRepositoryInterface;
 use App\Repositories\Contracts\PersonRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Repositories\Contracts\StockRepositoryInterface;
+use App\Repositories\Contracts\DashboardRepositoryInterface;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
+use App\Repositories\DashboardRepository;
 use App\Repositories\AuditRepository;
 use App\Repositories\Contracts\AuditRepositoryInterface;
 use App\Repositories\Contracts\DirectiveRepositoryInterface;
@@ -59,5 +61,6 @@ class RepositoryServiceProvider extends ServiceProvider
         ProductRepositoryInterface::class => ProductRepository::class,
         StockRepositoryInterface::class => StockRepository::class,
         TransactionRepositoryInterface::class => TransactionRepository::class,
+        DashboardRepositoryInterface::class => DashboardRepository::class,
     ];
 }

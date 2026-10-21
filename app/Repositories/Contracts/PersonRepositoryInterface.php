@@ -23,4 +23,7 @@ interface PersonRepositoryInterface
     public function isLinkedToPartnerOrBeneficiary(People $person): bool;
 
     public function deletePerson(People $person): void;
+
+    /** Personas que coinciden con todas las palabras en nombre, apellidos o DNI. */
+    public function searchByTerms(array $terms, int $limit): Collection;
 }

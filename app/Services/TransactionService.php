@@ -196,4 +196,47 @@ class TransactionService
         return $transaction->document_number
             && $this->pecosaRepo->numberExists($transaction->document_number);
     }
+
+    /** Registra un ingreso o una salida según el tipo de movimiento. */
+    public function register(array $data): Transaction
+    {
+        $type = $this->transactionRepo->findTypeById((int) $data['type_transaction_id']);
+
+        return $type && $type->isIngreso()
+            ? $this->registerIngreso($data)
+            : $this->registerSalida($data);
+    }
+
+    /** Catálogos del formulario de movimientos: tipos, productos, lotes vigentes y años. */
+    public function options(): array
+    {
+        $years = $this->transactionRepo->transactionDates()
+            ->map(fn ($date) => (int) \Carbon\Carbon::parse($date)->format('Y'))
+            ->push((int) now()->format('Y'))
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        $detailProducts = $this->productRepo->currentLotsWithUsage(now()->toDateString())
+            ->map(fn ($dp) => [
+                'id' => $dp->id,
+                'product_id' => $dp->product_id,
+                'product_title' => $dp->product->title ?? null,
+                'product_abbreviation' => $dp->product->abbreviation ?? null,
+                'uom_title' => $dp->product->uom->title ?? null,
+                'unit_price' => (float) $dp->unit_price,
+                'quantity' => (float) $dp->quantity,
+                'used_quantity' => (float) ($dp->used_quantity ?? 0),
+                'available_stock' => (float) ($dp->quantity - ($dp->used_quantity ?? 0)),
+                'start_date' => $dp->start_date?->toDateString(),
+                'end_date' => $dp->end_date?->toDateString(),
+            ]);
+
+        return [
+            'types' => $this->catalogs->typeTransactions(['id', 'title']),
+            'products' => $this->catalogs->products(['id', 'title', 'abbreviation']),
+            'detail_products' => $detailProducts,
+            'years' => $years,
+        ];
+    }
 }
