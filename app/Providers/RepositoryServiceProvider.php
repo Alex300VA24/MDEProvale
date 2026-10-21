@@ -19,7 +19,11 @@ use App\Repositories\Contracts\TransactionRepositoryInterface;
 use App\Repositories\AuditRepository;
 use App\Repositories\Contracts\AuditRepositoryInterface;
 use App\Repositories\Contracts\DirectiveRepositoryInterface;
+use App\Repositories\Contracts\RacionRepositoryInterface;
 use App\Repositories\Contracts\ResolutionRepositoryInterface;
+use App\Repositories\Contracts\ResponsibleRepositoryInterface;
+use App\Repositories\RacionRepository;
+use App\Repositories\ResponsibleRepository;
 use App\Repositories\Contracts\SupervisionRepositoryInterface;
 use App\Repositories\DirectiveRepository;
 use App\Repositories\ResolutionRepository;
@@ -45,7 +49,9 @@ class RepositoryServiceProvider extends ServiceProvider
         CatalogRepositoryInterface::class => CatalogRepository::class,
         DirectiveRepositoryInterface::class => DirectiveRepository::class,
         DistributionRepositoryInterface::class => DistributionRepository::class,
+        RacionRepositoryInterface::class => RacionRepository::class,
         ResolutionRepositoryInterface::class => ResolutionRepository::class,
+        ResponsibleRepositoryInterface::class => ResponsibleRepository::class,
         SupervisionRepositoryInterface::class => SupervisionRepository::class,
         PartnerRepositoryInterface::class => PartnerRepository::class,
         PecosaRepositoryInterface::class => PecosaRepository::class,

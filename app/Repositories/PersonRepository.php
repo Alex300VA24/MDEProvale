@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\People;
 use App\Repositories\Contracts\PersonRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PersonRepository extends BaseRepository implements PersonRepositoryInterface
@@ -23,6 +24,11 @@ class PersonRepository extends BaseRepository implements PersonRepositoryInterfa
             ->when($filters['place_sector_id'] ?? null, fn ($q, $v) => $q->where('place_sector_id', $v))
             ->orderBy('id')
             ->paginate($perPage);
+    }
+
+    public function allByName(): Collection
+    {
+        return $this->model->orderBy('names')->get();
     }
 
     public function loadPlaceSector(People $person): People

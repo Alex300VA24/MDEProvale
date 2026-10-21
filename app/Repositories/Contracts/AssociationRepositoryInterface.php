@@ -27,6 +27,21 @@ interface AssociationRepositoryInterface
     /** Filtros: search (nombre o código), state_id, place_id, sector_id, place_sector_id. */
     public function paginateClubs(array $filters, int $perPage = 10): LengthAwarePaginator;
 
+    /** Filtros: search (nombre o código), state_id, resolution_id. Incluye socias con su persona. */
+    public function paginateIndex(array $filters, int $perPage = 10): LengthAwarePaginator;
+
+    /** Padrones mensuales del primer día del mes, indexados por comité. */
+    public function rosterPeriodsForMonth(string $firstDay): SupportCollection;
+
+    /**
+     * Comités del padrón histórico: los del snapshot mensual (`$rosterIds`) o, sin snapshot,
+     * los cuya resolución cubre el rango.
+     */
+    public function forPadron(?SupportCollection $rosterIds, string $start, string $end): Collection;
+
+    /** Beneficiarios con historial vigente en el rango, de las socias del comité vigentes en él. */
+    public function beneficiaryCountInPeriod(int $associationId, string $start, string $end): int;
+
     /** Carga estado, resoluciones, ubicación y local que expone el recurso del comité. */
     public function loadClubRelations(Association $association): Association;
 

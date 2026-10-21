@@ -44,6 +44,24 @@ class CommitteeService
         return $associations;
     }
 
+    /** Listado del Club de Madres con los catálogos del formulario. */
+    public function indexData(array $filters, int $perPage = 10): array
+    {
+        $this->states->syncAll();
+        $associations = $this->associations->paginateIndex($filters, $perPage);
+
+        Association::hydratePresidents($associations);
+        $this->hydrateResolutions($associations);
+
+        return [
+            'associations' => $associations,
+            'states' => $this->catalogs->associationStates(),
+            'placeSectors' => $this->catalogs->placeSectors(['*'], ['place', 'sector']),
+            'typePremises' => $this->catalogs->typePremises(),
+            'resolutions' => $this->resolutions->allByDocumentDate(),
+        ];
+    }
+
     public function options(?int $includeResolutionId): array
     {
         $this->resolutionStates->syncAll();
@@ -90,8 +108,12 @@ class CommitteeService
     {
         $data['state_id'] = State::idFor(State::CURRENT);
 
-        $association = $this->associations->createAssociation($data);
-        $this->states->sync($association);
+        $association = DB::transaction(function () use ($data) {
+            $association = $this->associations->createAssociation($data);
+            $this->states->sync($association);
+
+            return $association;
+        });
 
         return $this->present($association);
     }
@@ -219,6 +241,16 @@ class CommitteeService
         $this->hydrateResolutions(collect([$association]));
 
         return $association;
+    }
+
+    /**
+     * La vigencia del comité depende únicamente de su resolución.
+     *
+     * @throws \DomainException si la socia no pertenece al comité o no hay resolución asociada
+     */
+    public function assignPresident(Association $association, int $partnerId): Association
+    {
+        return $this->assignPosition($association, $partnerId, 'PRESIDENTA');
     }
 
     /**

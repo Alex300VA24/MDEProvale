@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Events\ResponsiblePeriodEnded;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRacionRequest;
 use App\Http\Requests\UpdateRacionRequest;
@@ -11,25 +10,28 @@ use App\Http\Resources\PersonaResource;
 use App\Http\Resources\RacionResource;
 use App\Http\Resources\ResponsibleHistoryResource;
 use App\Http\Resources\ResponsibleResource;
-use App\Models\People;
 use App\Models\Racion;
 use App\Models\Responsible;
+use App\Services\RacionService;
+use App\Services\ResponsibleService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class ResponsablesRacionesController extends Controller
 {
+    public function __construct(
+        private ResponsibleService $responsibles,
+        private RacionService $raciones
+    ) {
+    }
+
     public function responsibles()
     {
-        $responsibles = Responsible::with('person')->where('active', true)->get();
-        $chief = $responsibles->firstWhere('type', 'chief');
-        $storekeeper = $responsibles->firstWhere('type', 'storekeeper');
+        $current = $this->responsibles->current();
 
         return response()->json([
-            'chief' => $chief ? new ResponsibleResource($chief) : null,
-            'storekeeper' => $storekeeper ? new ResponsibleResource($storekeeper) : null,
-            'people' => PersonaResource::collection(People::orderBy('names')->get()),
+            'chief' => $current['chief'] ? new ResponsibleResource($current['chief']) : null,
+            'storekeeper' => $current['storekeeper'] ? new ResponsibleResource($current['storekeeper']) : null,
+            'people' => PersonaResource::collection($current['people']),
         ]);
     }
 
@@ -39,20 +41,10 @@ class ResponsablesRacionesController extends Controller
      */
     public function responsiblesHistory(Request $request)
     {
-        $query = Responsible::with('person:id,names,father_lastname,mother_lastname,dni')
-            ->searchPerson($request->input('search'))
-            ->orderByDesc('active')
-            ->orderByRaw('COALESCE(start_date, created_at) DESC');
-
-        if ($request->filled('type')) {
-            $query->where('type', $request->input('type'));
-        }
-
-        if ($request->filled('vigencia')) {
-            $query->where('active', $request->input('vigencia') === 'vigente');
-        }
-
-        $history = $query->paginate((int) $request->input('per_page', 10));
+        $history = $this->responsibles->history(
+            $request->only(['search', 'type', 'vigencia']),
+            (int) $request->input('per_page', 10)
+        );
 
         return ResponsibleHistoryResource::collection($history);
     }
@@ -61,7 +53,7 @@ class ResponsablesRacionesController extends Controller
     {
         $this->authorize('viewAny', Racion::class);
 
-        $responsible->load('person.placeSector.place:id,title', 'person.placeSector.sector:id,title');
+        $responsible = $this->responsibles->detail($responsible);
 
         $data = (new ResponsibleHistoryResource($responsible))->resolve();
         $data['person'] = $responsible->person ? (new PersonaResource($responsible->person))->resolve() : null;
@@ -71,25 +63,9 @@ class ResponsablesRacionesController extends Controller
 
     public function updateResponsible(UpdateResponsibleRequest $request, string $type)
     {
-        $personId = $request->validated()['person_id'];
+        $responsible = $this->responsibles->replace($type, $request->validated()['person_id']);
 
-        $responsible = DB::transaction(function () use ($type, $personId) {
-            $current = Responsible::with('person')->where('type', $type)->where('active', true)->get();
-
-            foreach ($current as $previous) {
-                $previous->update(['active' => false, 'end_date' => now()]);
-                event(new ResponsiblePeriodEnded($previous, 'replaced'));
-            }
-
-            return Responsible::create([
-                'person_id' => $personId,
-                'type' => $type,
-                'active' => true,
-                'start_date' => now(),
-            ]);
-        });
-
-        return response()->json(['data' => new ResponsibleResource($responsible->load('person'))]);
+        return response()->json(['data' => new ResponsibleResource($responsible)]);
     }
 
     /**
@@ -100,40 +76,24 @@ class ResponsablesRacionesController extends Controller
     {
         $this->authorize('create', Racion::class);
 
-        if (! $responsible->active) {
-            throw ValidationException::withMessages([
-                'responsible' => 'Este responsable ya no está vigente.',
-            ]);
-        }
-
-        $responsible->update(['active' => false, 'end_date' => now()]);
-        event(new ResponsiblePeriodEnded($responsible->load('person'), 'manual'));
-
-        return response()->json(['data' => new ResponsibleHistoryResource($responsible)]);
+        return response()->json(['data' => new ResponsibleHistoryResource($this->responsibles->endPeriod($responsible))]);
     }
 
     public function raciones()
     {
-        $raciones = Racion::orderBy('year', 'desc')
-            ->orderBy('month_start', 'asc')
-            ->get();
-
-        return response()->json(['data' => RacionResource::collection($raciones)], 200, [], JSON_PRESERVE_ZERO_FRACTION);
+        return response()->json(['data' => RacionResource::collection($this->raciones->all())], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 
     public function storeRacion(StoreRacionRequest $request)
     {
-        $racion = Racion::create([
-            ...$request->validated(),
-            'active' => true,
-        ]);
+        $racion = $this->raciones->create($request->validated());
 
         return response()->json(['data' => new RacionResource($racion)], 201, [], JSON_PRESERVE_ZERO_FRACTION);
     }
 
     public function updateRacion(UpdateRacionRequest $request, Racion $racion)
     {
-        $racion->update($request->validated());
+        $racion = $this->raciones->update($racion, $request->validated());
 
         return response()->json(['data' => new RacionResource($racion)], 200, [], JSON_PRESERVE_ZERO_FRACTION);
     }
@@ -142,7 +102,7 @@ class ResponsablesRacionesController extends Controller
     {
         $this->authorize('delete', $racion);
 
-        $racion->delete();
+        $this->raciones->delete($racion);
 
         return response()->json(null, 204);
     }

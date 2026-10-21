@@ -3,12 +3,16 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\People;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface PersonRepositoryInterface
 {
     /** Filtros: search, gender, place_sector_id. */
     public function paginateFiltered(array $filters, int $perPage = 15, array $with = []): LengthAwarePaginator;
+
+    /** Todas las personas por nombre. */
+    public function allByName(): Collection;
 
     public function loadPlaceSector(People $person): People;
 

@@ -53,7 +53,7 @@ class PresidentPortalAuthenticationTest extends TestCase
         ]);
     }
 
-    public function test_login_redirects_to_password_change_when_required(): void
+    public function test_login_goes_to_portal_even_when_password_change_is_pending(): void
     {
         $this->createPresidentUser(mustChangePassword: true);
 
@@ -62,7 +62,7 @@ class PresidentPortalAuthenticationTest extends TestCase
             'password' => self::DNI,
         ]);
 
-        $response->assertRedirect(route('president.password.change'));
+        $response->assertRedirect(route('president-portal.index'));
         $this->assertAuthenticated();
     }
 
@@ -78,13 +78,13 @@ class PresidentPortalAuthenticationTest extends TestCase
         $response->assertRedirect(route('president-portal.index'));
     }
 
-    public function test_portal_index_forces_password_change_when_required(): void
+    public function test_portal_index_does_not_force_password_change(): void
     {
         $user = $this->createPresidentUser(mustChangePassword: true);
 
         $this->actingAs($user)
             ->get(route('president-portal.index'))
-            ->assertRedirect(route('president.password.change'));
+            ->assertOk();
     }
 
     public function test_password_change_screen_can_be_rendered(): void

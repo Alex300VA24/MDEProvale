@@ -7,6 +7,7 @@ use App\Models\AssociationRosterPeriod;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use App\Models\AssociationStatusChange;
 use App\Models\Beneficiarie;
+use App\Models\Partner;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection as SupportCollection;
@@ -97,6 +98,85 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
         }
 
         return $query->orderByDesc('id')->paginate($perPage);
+    }
+
+    public function paginateIndex(array $filters, int $perPage = 10): LengthAwarePaginator
+    {
+        $query = Association::with(['state', 'resolution', 'resolutionsHistory', 'partners.people']);
+
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        if (! empty($filters['state_id'])) {
+            $query->where('state_id', $filters['state_id']);
+        }
+
+        if (! empty($filters['resolution_id'])) {
+            $query->where('resolution_id', $filters['resolution_id']);
+        }
+
+        return $query->orderByDesc('id')->paginate($perPage);
+    }
+
+    public function rosterPeriodsForMonth(string $firstDay): SupportCollection
+    {
+        return AssociationRosterPeriod::query()
+            ->whereDate('period', $firstDay)
+            ->get()
+            ->keyBy('association_id');
+    }
+
+    public function forPadron(?SupportCollection $rosterIds, string $start, string $end): Collection
+    {
+        $query = Association::with([
+            'placeSector.place',
+            'placeSector.sector',
+            'resolution',
+            'resolutionsHistory',
+            'state',
+            'typePremises',
+        ]);
+
+        if ($rosterIds !== null) {
+            return $query->whereIn('id', $rosterIds)->get();
+        }
+
+        return $query->whereHas('resolution', function ($q) use ($start, $end) {
+            $q->where('date_start', '<=', $end)
+                ->where(function ($q2) use ($start) {
+                    $q2->whereNull('date_end')
+                        ->orWhere('date_end', '>=', $start);
+                });
+        })->get();
+    }
+
+    public function beneficiaryCountInPeriod(int $associationId, string $start, string $end): int
+    {
+        return (int) Partner::where('association_id', $associationId)
+            ->where(function ($q) use ($end) {
+                $q->whereNull('date_begin')
+                    ->orWhere('date_begin', '<=', $end);
+            })
+            ->where(function ($q) use ($start) {
+                $q->whereNull('date_end')
+                    ->orWhere('date_end', '>=', $start);
+            })
+            ->withCount(['beneficiaries as benef_count' => function ($q) use ($start, $end) {
+                $q->whereHas('histories', function ($h) use ($start, $end) {
+                    $h->where('date_begin', '<=', $end)
+                        ->where(function ($h2) use ($start) {
+                            $h2->whereNull('date_end')
+                                ->orWhere('date_end', '>=', $start);
+                        });
+                });
+            }])
+            ->get()
+            ->sum('benef_count');
     }
 
     public function loadClubRelations(Association $association): Association

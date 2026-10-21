@@ -4,84 +4,37 @@ namespace App\Http\Controllers;
 
 use App\Models\Association;
 use App\Models\Resolution;
-use App\Models\Directive;
-use App\Models\Partner;
-use App\Models\Position;
-use App\Models\State;
-use App\Models\PlaceSector;
-use App\Models\TypePremises;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\ConnectionException;
-use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade\PDF;
-use App\Services\AssociationStateService;
-use App\Services\PresidentAccountService;
-use App\Services\ResolutionStateService;
+use App\Services\ClubReportService;
+use App\Services\CommitteeService;
 use App\Services\MunicipalResolutionService;
+use App\Services\ResolutionService;
+use Barryvdh\DomPDF\Facade\PDF;
+use Illuminate\Http\Request;
 
 class ClubReconocimientosController extends Controller
 {
+    public function __construct(
+        private CommitteeService $committees,
+        private ResolutionService $resolutions,
+        private ClubReportService $reports
+    ) {
+    }
+
     // ==================== ÍNDICE PRINCIPAL ====================
 
     public function index(Request $request)
     {
-        app(AssociationStateService::class)->syncAll();
-        $query = Association::with(['state', 'resolution', 'resolutionsHistory', 'partners.people']);
-
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where('name', 'like', "%{$search}%")
-                ->orWhere('code', 'like', "%{$search}%");
-        }
-
-        if ($request->has('state_id') && $request->state_id != '') {
-            $query->where('state_id', $request->state_id);
-        }
-
-        if ($request->has('resolution_id') && $request->resolution_id != '') {
-            $query->where('resolution_id', $request->resolution_id);
-        }
-
-        $associations = $query->orderBy('id', 'desc')->paginate(10);
-
-        // ── Batch-load president data (elimina N+1 en getPresidentName()) ──
-        Association::hydratePresidents($associations);
-
-        foreach ($associations as $association) {
-            $resolutionsAll = [];
-            if ($association->resolution) {
-                $resolutionsAll[] = $association->resolution;
-            }
-            foreach ($association->resolutionsHistory as $res) {
-                if ($res->id !== $association->resolution_id) {
-                    $resolutionsAll[] = $res;
-                }
-            }
-            
-            usort($resolutionsAll, function ($a, $b) {
-                return strtotime($b->date_start) - strtotime($a->date_start);
-            });
-
-            $association->allResolutions = $resolutionsAll;
-            $association->latestResolution = isset($resolutionsAll[0]) ? $resolutionsAll[0] : null;
-        }
-
-        $states = State::forAssociations()->get();
-        $placeSectors = PlaceSector::with(['place', 'sector'])->get();
-        $typePremises = TypePremises::all();
-        $resolutions = Resolution::orderBy('date_document', 'desc')->get();
-
-        return view('club-reconocimientos.index', compact('associations', 'states', 'placeSectors', 'typePremises', 'resolutions'));
+        return view(
+            'club-reconocimientos.index',
+            $this->committees->indexData($request->only(['search', 'state_id', 'resolution_id']))
+        );
     }
 
     // ==================== CLUB DE MADRES ====================
 
     public function storeClub(Request $request)
     {
-        // Validación de datos
-        $request->validate([
+        $data = $request->validate([
             'resolution_id' => 'required|exists:resolutions,id',
             'name' => 'required|string|max:100',
             'code' => 'required|string|max:20',
@@ -94,29 +47,10 @@ class ClubReconocimientosController extends Controller
         ]);
 
         try {
-            DB::beginTransaction();
+            $this->committees->create(collect($data)->except('phone')->all());
 
-            $estadoVigente = State::where('abbreviation', State::CURRENT)->firstOrFail();
-
-            // Crear el comité vinculado a la resolución existente
-            $association = Association::create([
-                'name' => $request->name,
-                'code' => $request->code,
-                'company_name' => $request->company_name,
-                'address' => $request->address,
-                'place_sector_id' => $request->place_sector_id,
-                'type_premises_id' => $request->type_premises_id,
-                'resolution_id' => $request->resolution_id,
-                'state_id' => $estadoVigente->id,
-                'observation' => $request->observation,
-            ]);
-
-            app(AssociationStateService::class)->sync($association);
-
-            DB::commit();
             return redirect()->route('club-reconocimientos.index')->with('success', 'Comité registrado exitosamente.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->withInput()->with('error', 'Error al registrar: ' . $e->getMessage());
         }
     }
@@ -135,26 +69,20 @@ class ClubReconocimientosController extends Controller
             'observation' => 'nullable|string',
         ]);
 
-        $association->update($validated);
-        app(AssociationStateService::class)->sync($association->fresh('resolution'));
-        Association::clearPresidentaCache($association->id);
+        $this->committees->update($association, $validated);
+
         return redirect()->route('club-reconocimientos.index')->with('success', 'Club de Madres actualizado exitosamente');
     }
 
     public function destroyClub(Association $association)
     {
-        $hasPartners = $association->partners()->exists();
-        $hasPecosas = $association->pecosas()->exists();
-        $hasHistory = DB::table('resolution_associations')
-            ->where('association_id', $association->id)
-            ->exists();
-
-        if ($hasPartners || $hasPecosas || $hasHistory) {
+        try {
+            $this->committees->delete($association);
+        } catch (\DomainException $e) {
             return redirect()->route('club-reconocimientos.index')
                 ->with('error', 'No se puede eliminar el comité porque tiene socios, pecosas o historial de resoluciones asociado.');
         }
 
-        $association->delete();
         return redirect()->route('club-reconocimientos.index')->with('success', 'Club de Madres eliminado exitosamente');
     }
 
@@ -162,32 +90,10 @@ class ClubReconocimientosController extends Controller
 
     public function indexReconocimientos(Request $request)
     {
-        app(ResolutionStateService::class)->syncAll();
-        $query = Resolution::with(['state', 'associations', 'primaryAssociations']);
-
-        // Filtro de búsqueda por documento
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where('document', 'like', "%{$search}%");
-        }
-
-        // Filtro por estado
-        if ($request->has('state_id') && $request->state_id != '') {
-            $query->where('state_id', $request->state_id);
-        }
-
-        // Filtro por año
-        if ($request->has('anio') && $request->anio != '') {
-            $query->whereBetween('date_start', [
-                $request->anio . '-01-01',
-                $request->anio . '-12-31',
-            ]);
-        }
-
-        $resolutions = $query->orderBy('date_document', 'desc')->paginate(10);
-        $states = State::temporal()->get();
-        
-        return view('club-reconocimientos.reconocimientos.index', compact('resolutions', 'states'));
+        return view(
+            'club-reconocimientos.reconocimientos.index',
+            $this->resolutions->indexData($request->only(['search', 'state_id', 'anio']))
+        );
     }
 
     public function storeReconocimiento(Request $request)
@@ -198,10 +104,9 @@ class ClubReconocimientosController extends Controller
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
         ]);
-        
-        $resolution = Resolution::create($validated);
-        app(ResolutionStateService::class)->sync($resolution);
-        
+
+        $this->resolutions->create($validated);
+
         return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución creada exitosamente');
     }
 
@@ -213,33 +118,21 @@ class ClubReconocimientosController extends Controller
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
         ]);
-        
-        $resolution->update($validated);
-        app(ResolutionStateService::class)->sync($resolution);
-        Association::where('resolution_id', $resolution->id)
-            ->orWhereHas('resolutionsHistory', fn ($query) => $query->whereKey($resolution->id))
-            ->with(['resolution', 'resolutionsHistory'])
-            ->get()
-            ->each(fn ($association) => app(AssociationStateService::class)->sync($association));
-        
+
+        $this->resolutions->update($resolution, $validated);
+
         return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución actualizada exitosamente');
     }
 
     public function destroyReconocimiento(Resolution $resolution)
     {
-        $hasPivot = DB::table('resolution_associations')
-            ->where('resolution_id', $resolution->id)
-            ->exists();
-
-        $hasAssociations = Association::where('resolution_id', $resolution->id)->exists();
-        $hasDirectives = Directive::where('resolution_id', $resolution->id)->exists();
-
-        if ($hasPivot || $hasAssociations || $hasDirectives) {
+        try {
+            $this->resolutions->delete($resolution);
+        } catch (\DomainException $e) {
             return redirect()->route('club-reconocimientos.reconocimientos.index')
                 ->with('error', 'No se puede eliminar la resolución porque tiene comités o directivas asociadas.');
         }
 
-        $resolution->delete();
         return redirect()->route('club-reconocimientos.reconocimientos.index')->with('success', 'Resolución eliminada exitosamente');
     }
 
@@ -253,71 +146,16 @@ class ClubReconocimientosController extends Controller
             'partner_id' => 'required|exists:partners,id',
         ]);
 
-        $perteneceAlComite = $association->partners()
-            ->whereKey($request->partner_id)
-            ->exists();
-
-        if (!$perteneceAlComite) {
-            return back()->withInput()->with('error', 'La socia seleccionada no pertenece a este comité.');
-        }
-
         try {
-            DB::beginTransaction();
-
-            $posicionPresidenta = Position::firstOrCreate(
-                ['title' => 'PRESIDENTA']
-            );
-
-            $estadoVigente = State::where('abbreviation', State::CURRENT)->firstOrFail();
-            $estadoVencido = State::where('abbreviation', State::EXPIRED)->firstOrFail();
-
-            $resolutionIds = DB::table('resolution_associations')
-                ->where('association_id', $association->id)
-                ->pluck('resolution_id');
-            
-            if ($association->resolution_id) {
-                $resolutionIds->push($association->resolution_id);
-            }
-            
-            $resolutionIds = $resolutionIds->unique();
-
-            $partnerIds = $association->partners()->pluck('id');
-
-            Directive::whereIn('partner_id', $partnerIds)
-                ->whereIn('resolution_id', $resolutionIds)
-                ->where('position_id', $posicionPresidenta->id)
-                ->update(['state_id' => $estadoVencido->id]);
-
-            $resolutionId = $association->resolution_id 
-                ?? $resolutionIds->first() 
-                ?? null;
-
-            if (!$resolutionId) {
-                throw new \Exception('No hay resolución asociada al comité');
-            }
-
-$directive = Directive::create([
-                'resolution_id' => $resolutionId,
-                'partner_id'    => $request->partner_id,
-                'position_id'   => $posicionPresidenta->id,
-                'state_id'      => $estadoVigente->id,
-                'date_start'    => now()->toDateString(),
-            ]);
-
-            $partner = Partner::with('people')->find($request->partner_id);
-            if ($partner) {
-                app(PresidentAccountService::class)->sync($partner);
-            }
-
-            Association::clearPresidentaCache($association->id);
-
-            DB::commit();
-            return redirect()->route('club-reconocimientos.index')
-                ->with('success', 'Presidenta asignada exitosamente.');
+            $this->committees->assignPresident($association, (int) $request->partner_id);
+        } catch (\DomainException $e) {
+            return back()->withInput()->with('error', rtrim($e->getMessage(), '.') . '.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->withInput()->with('error', 'Error al asignar presidenta: ' . $e->getMessage());
         }
+
+        return redirect()->route('club-reconocimientos.index')
+            ->with('success', 'Presidenta asignada exitosamente.');
     }
 
     // ==================== RESOLUCIÓN EXTERNA (Portal Municipal) ====================
@@ -326,9 +164,9 @@ $directive = Directive::create([
      * Busca la resolución en el portal de transparencia de la Municipalidad
      * y confirma si el PDF existe, antes de abrir el modal de vista previa.
      */
-    public function buscarResolucionExterna(Resolution $resolution)
+    public function buscarResolucionExterna(Resolution $resolution, MunicipalResolutionService $municipal)
     {
-        $match = app(MunicipalResolutionService::class)->resolve($resolution);
+        $match = $municipal->resolve($resolution);
 
         if (!$match) {
             return response()->json([
@@ -346,47 +184,30 @@ $directive = Directive::create([
         ]);
     }
 
-    public function previewResolucionExterna(Resolution $resolution)
+    public function previewResolucionExterna(Resolution $resolution, MunicipalResolutionService $municipal)
     {
-        return $this->streamResolucionExterna($resolution, 'inline');
+        return $this->streamResolucionExterna($resolution, $municipal, 'inline');
     }
 
-    public function descargarResolucionExterna(Resolution $resolution)
+    public function descargarResolucionExterna(Resolution $resolution, MunicipalResolutionService $municipal)
     {
-        return $this->streamResolucionExterna($resolution, 'attachment');
+        return $this->streamResolucionExterna($resolution, $municipal, 'attachment');
     }
 
-    private function streamResolucionExterna(Resolution $resolution, string $disposition)
+    private function streamResolucionExterna(Resolution $resolution, MunicipalResolutionService $municipal, string $disposition)
     {
-        $match = app(MunicipalResolutionService::class)->resolve($resolution);
-
-        abort_if(!$match, 404, 'No se encontró esta resolución en el portal de la Municipalidad.');
-
         try {
-            $pdf = $this->municipalHttpClient(20)->get($match['pdf_url']);
-        } catch (ConnectionException $e) {
-            abort(502, 'No se pudo conectar con el portal de la Municipalidad.');
+            $pdf = $municipal->fetchPdf($resolution);
+        } catch (\RuntimeException $e) {
+            abort(502, $e->getMessage());
         }
 
-        abort_if(!$pdf->successful(), 502, 'El portal de la Municipalidad no devolvió el PDF esperado.');
+        abort_if(!$pdf, 404, 'No se encontró esta resolución en el portal de la Municipalidad.');
 
-        $filename = 'Resolucion-' . $resolution->document . '-MDE.pdf';
-
-        return response($pdf->body(), 200, [
+        return response($pdf['body'], 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => $disposition . '; filename="' . $filename . '"',
+            'Content-Disposition' => $disposition . '; filename="' . $pdf['filename'] . '"',
         ]);
-    }
-
-    /**
-     * El portal municipal no entrega una cadena de certificados completa.
-     * La excepción SSL queda limitada a este host externo conocido.
-     */
-    private function municipalHttpClient(int $timeout)
-    {
-        return Http::timeout($timeout)
-            ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
-            ->withoutVerifying();
     }
 
     // ==================== REPORTES ====================
@@ -405,232 +226,8 @@ $directive = Directive::create([
             return view('club-reconocimientos.padron-filtros', compact('mes', 'anio'));
         }
 
-        $startDate  = \Carbon\Carbon::createFromDate($anio, $mes, 1)->startOfMonth();
-        $endDate    = \Carbon\Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
-        $cutoffDate = $endDate->toDateString();
+        $pdf = PDF::loadView('padron_club', $this->reports->padron($mes, $anio))->setPaper('a4', 'landscape');
 
-        $rosterPeriods = \App\Models\AssociationRosterPeriod::query()
-            ->whereDate('period', $startDate->toDateString())
-            ->get()
-            ->keyBy('association_id');
-        $hasRosterSnapshot = $rosterPeriods->isNotEmpty();
-
-        $associationsQuery = Association::with([
-            'placeSector.place',
-            'placeSector.sector',
-            'resolution',
-            'resolutionsHistory',
-            'state',
-            'typePremises',
-        ]);
-
-        if ($hasRosterSnapshot) {
-            // Entre marzo y setiembre de 2026 manda la presencia real en los
-            // padrones mensuales, incluso si la resolución está pendiente.
-            $associationsQuery->whereIn('id', $rosterPeriods->keys());
-        } else {
-            $associationsQuery->whereHas('resolution', function ($q) use ($startDate, $endDate) {
-                $q->where('date_start', '<=', $endDate->toDateString())
-                    ->where(function ($q2) use ($startDate) {
-                        $q2->whereNull('date_end')
-                            ->orWhere('date_end', '>=', $startDate->toDateString());
-                    });
-            });
-        }
-
-        $associations = $associationsQuery->get();
-
-        $zonaGroups = [];
-        foreach ($associations as $association) {
-            $zonaNombre = $association->placeSector && $association->placeSector->place
-                ? $association->placeSector->place->title
-                : 'SIN ZONA';
-            $zonaNumero = $association->placeSector && $association->placeSector->place
-                ? $association->placeSector->place->id
-                : 0;
-
-            $sector = $association->placeSector && $association->placeSector->sector
-                ? $association->placeSector->sector->title
-                : 'SIN SECTOR';
-
-            if (!isset($zonaGroups[$zonaNumero])) {
-                $zonaGroups[$zonaNumero] = [
-                    'numero'              => $zonaNumero,
-                    'nombre'              => $zonaNombre,
-                    'sectores'            => [],
-                    'lista_sectores'      => [],
-                    'clubes'              => [],
-                    'total_osb'           => 0,
-                    'total_cvl'           => 0,
-                    'total_cdm'           => 0,
-                    'total_zona'          => 0,
-                    'total_beneficiarios' => 0,
-                    'totales_rs'          => [],
-                ];
-            }
-
-            if (!in_array($sector, $zonaGroups[$zonaNumero]['lista_sectores'])) {
-                $zonaGroups[$zonaNumero]['lista_sectores'][] = $sector;
-            }
-
-            if (!isset($zonaGroups[$zonaNumero]['sectores'][$sector])) {
-                $zonaGroups[$zonaNumero]['sectores'][$sector] = [
-                    'nombre'       => $sector,
-                    'clubes'       => [],
-                    'total_sector' => 0,
-                ];
-            }
-
-            $rosterPeriod = $rosterPeriods->get($association->id);
-
-            // El encabezado del Excel conserva incluso presidentas que no
-            // aparecían como socias y por ello no pudieron ligarse a directivas.
-            $presidenta = $rosterPeriod
-                ? ($rosterPeriod->president_name ?? '')
-                : ($association->getPresidentNameAt($cutoffDate) ?? '');
-
-            $totalBenef = $rosterPeriod
-                ? (int) $rosterPeriod->beneficiary_count
-                : \App\Models\Partner::where('association_id', $association->id)
-                    ->where(function ($q) use ($endDate) {
-                        $q->whereNull('date_begin')
-                            ->orWhere('date_begin', '<=', $endDate->toDateString());
-                    })
-                    ->where(function ($q) use ($startDate) {
-                        $q->whereNull('date_end')
-                            ->orWhere('date_end', '>=', $startDate->toDateString());
-                    })
-                    ->withCount(['beneficiaries as benef_count' => function ($q) use ($startDate, $endDate) {
-                        $q->whereHas('histories', function ($h) use ($startDate, $endDate) {
-                            $h->where('date_begin', '<=', $endDate->toDateString())
-                                ->where(function ($h2) use ($startDate) {
-                                    $h2->whereNull('date_end')
-                                        ->orWhere('date_end', '>=', $startDate->toDateString());
-                                });
-                        });
-                    }])
-                    ->get()
-                    ->sum('benef_count');
-
-            // Resoluciones del comité — todas las que cubrían el periodo
-            $resolutionsAll = [];
-            if ($association->resolution) {
-                $resolutionsAll[] = $association->resolution;
-            }
-            foreach ($association->resolutionsHistory as $res) {
-                if ($res->id !== $association->resolution_id) {
-                    $resolutionsAll[] = $res;
-                }
-            }
-
-            // Filtrar solo las resoluciones vigentes en o antes del periodo
-            $resolutionsAll = array_filter($resolutionsAll, function ($r) use ($endDate) {
-                return $r->date_start && \Carbon\Carbon::parse($r->date_start)->lte($endDate);
-            });
-
-            usort($resolutionsAll, function ($a, $b) {
-                return strtotime($a->date_start) - strtotime($b->date_start);
-            });
-
-            $resolutionsAll = array_values($resolutionsAll);
-            $totalResolutions = count($resolutionsAll);
-
-            if ($totalResolutions == 1) {
-                $ultimasResoluciones = [$resolutionsAll[0]];
-            } elseif ($totalResolutions == 2) {
-                $ultimasResoluciones = [$resolutionsAll[0], $resolutionsAll[1]];
-            } else {
-                $ultimasResoluciones = array_slice($resolutionsAll, -3);
-            }
-
-            $resolucion_1 = isset($ultimasResoluciones[0]) ? $ultimasResoluciones[0]->document : '';
-            $resolucion_2 = isset($ultimasResoluciones[1]) ? $ultimasResoluciones[1]->document : '';
-            $resolucion_3 = isset($ultimasResoluciones[2]) ? $ultimasResoluciones[2]->document : '';
-
-            $fecha_inicio  = '';
-            $fecha_termino = '';
-            if (!empty($ultimasResoluciones)) {
-                $lastRes = $ultimasResoluciones[count($ultimasResoluciones) - 1];
-                $fecha_inicio  = $lastRes->date_start ? $lastRes->date_start->format('d/m/Y') : '';
-                $fecha_termino = $lastRes->date_end   ? $lastRes->date_end->format('d/m/Y')   : '';
-            }
-
-            $local = $association->typePremises ? $association->typePremises->title : '';
-
-            $club = [
-                'numero'       => count($zonaGroups[$zonaNumero]['sectores'][$sector]['clubes']) + 1,
-                'codigo'       => $association->code ?? '',
-                'razon_social' => $association->company_name ?? '',
-                'nombre'       => mb_strtoupper($association->name, 'UTF-8'),
-                'direccion'    => $association->address ?? '',
-                'sector'       => $sector,
-                'beneficiarios'=> $totalBenef,
-                'presidenta'   => $presidenta,
-                'resolucion_1' => $resolucion_1,
-                'resolucion_2' => $resolucion_2,
-                'resolucion_3' => $resolucion_3,
-                'fecha_inicio' => $fecha_inicio,
-                'fecha_termino'=> $fecha_termino,
-                'local'        => $local,
-            ];
-
-            $zonaGroups[$zonaNumero]['sectores'][$sector]['clubes'][] = $club;
-            $zonaGroups[$zonaNumero]['sectores'][$sector]['total_sector']++;
-            $zonaGroups[$zonaNumero]['total_cdm']++;
-            $zonaGroups[$zonaNumero]['total_zona']++;
-            $zonaGroups[$zonaNumero]['total_beneficiarios'] += $totalBenef;
-
-            $rs = mb_strtoupper(trim($association->company_name ?? ''), 'UTF-8');
-            if (!isset($zonaGroups[$zonaNumero]['totales_rs'][$rs])) {
-                $zonaGroups[$zonaNumero]['totales_rs'][$rs] = 0;
-            }
-            $zonaGroups[$zonaNumero]['totales_rs'][$rs]++;
-        }
-
-        $totalesRS = ['OSB' => 0, 'CVL' => 0, 'CDM' => 0];
-        $totalesGenerales = [
-            'total_osb'          => 0,
-            'total_cvl'          => 0,
-            'total_cdm'          => 0,
-            'total_beneficiarios'=> 0,
-            'total_acumulado'    => count($associations),
-        ];
-
-        foreach ($zonaGroups as $zona) {
-            $totalesGenerales['total_cdm'] += $zona['total_cdm'];
-            $totalesGenerales['total_beneficiarios'] += $zona['total_beneficiarios'];
-
-            foreach ($zona['totales_rs'] as $rs => $count) {
-                $rsKey = mb_strtoupper(trim($rs), 'UTF-8');
-                if ($rsKey === 'OSB') {
-                    $totalesGenerales['total_osb'] += $count;
-                    $totalesRS['OSB'] += $count;
-                } elseif ($rsKey === 'CVL') {
-                    $totalesGenerales['total_cvl'] += $count;
-                    $totalesRS['CVL'] += $count;
-                } elseif ($rsKey === 'CDM') {
-                    $totalesRS['CDM'] += $count;
-                }
-            }
-        }
-
-        ksort($zonaGroups);
-
-        $meses = ['', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
-                  'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-
-        $data = [
-            'zonas'             => array_values($zonaGroups),
-            'totales_generales' => $totalesGenerales,
-            'totales_rs'        => $totalesRS,
-            'mes_nombre'        => $meses[$mes] ?? '',
-            'anio'              => $anio,
-            'periodo'           => $meses[$mes] . ' ' . $anio,
-            'fecha'             => date('d/m/Y'),
-            'hora'              => date('H:i:s'),
-        ];
-
-        $pdf = PDF::loadView('padron_club', $data)->setPaper('a4', 'landscape');
         return $pdf->stream('padron-club-madres-' . $anio . '-' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.pdf');
     }
 
@@ -645,11 +242,6 @@ $directive = Directive::create([
         return $pdf->stream('acta-renuncia.pdf');
     }
 
-    /**
-     * Genera el Acta de Reuniones: padrón de asistencia con los comités y sus
-     * presidentas vigentes precargados, dejando la columna de firma en blanco
-     * para el registro manual durante la reunión.
-     */
     public function actaSupervision()
     {
         $pdf = PDF::loadView('actas.supervision', [])->setPaper('a4', 'portrait');
@@ -657,42 +249,14 @@ $directive = Directive::create([
         return $pdf->stream('acta-supervision.pdf');
     }
 
+    /**
+     * Genera el Acta de Reuniones: padrón de asistencia con los comités y sus
+     * presidentas vigentes precargados, dejando la columna de firma en blanco
+     * para el registro manual durante la reunión.
+     */
     public function actaReuniones()
     {
-        $associations = Association::with(['placeSector.place'])
-            ->whereHas('resolution')
-            ->get()
-            ->sortBy(function ($association) {
-                return sprintf(
-                    '%03d-%s',
-                    optional(optional($association->placeSector)->place)->id ?? 999,
-                    $association->code
-                );
-            })
-            ->values();
-
-        $numero = 1;
-        $filas = $associations->map(function ($association) use (&$numero) {
-            $presidenta = $association->getPresidenta();
-            $people = $presidenta ? $presidenta->people : null;
-            $zonaId = optional(optional($association->placeSector)->place)->id;
-
-            return [
-                'zona'       => $zonaId ? str_pad($zonaId, 2, '0', STR_PAD_LEFT) : '',
-                'comite'     => $association->code ?? '',
-                'numero'     => $numero++,
-                'club'       => mb_strtoupper($association->name, 'UTF-8'),
-                'presidenta' => $people
-                    ? mb_strtoupper(trim("{$people->names} {$people->father_lastname} {$people->mother_lastname}"), 'UTF-8')
-                    : '',
-                'dni'        => $people->dni ?? '',
-            ];
-        })->all();
-
-        $pdf = PDF::loadView('actas.reuniones', [
-            'filas'    => $filas,
-            'generado' => now()->format('d/m/Y H:i'),
-        ])->setPaper('a4', 'portrait');
+        $pdf = PDF::loadView('actas.reuniones', $this->reports->actaReuniones())->setPaper('a4', 'portrait');
 
         return $pdf->stream('acta-reuniones.pdf');
     }

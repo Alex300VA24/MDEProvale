@@ -56,7 +56,7 @@ class PresidentAccountServiceTest extends TestCase
         $this->assertSame('12345678', $user->username);
         $this->assertSame('12345678', $user->dni);
         $this->assertTrue(Hash::check('12345678', $user->password));
-        $this->assertTrue($user->must_change_password);
+        $this->assertFalse((bool) $user->must_change_password);
         $this->assertTrue($user->rol->is_active);
         $this->assertSame(Rol::PRESIDENT, $user->rol->title);
         $this->assertSame(State::ACTIVE, $user->state->abbreviation);

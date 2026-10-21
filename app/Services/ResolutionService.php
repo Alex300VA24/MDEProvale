@@ -30,6 +30,17 @@ class ResolutionService
         return $this->resolutions->paginateFiltered($filters, $perPage);
     }
 
+    /** Listado de reconocimientos por documento con los estados temporales para filtrar. */
+    public function indexData(array $filters, int $perPage = 10): array
+    {
+        $this->resolutionStates->syncAll();
+
+        return [
+            'resolutions' => $this->resolutions->paginateByDocument($filters, $perPage),
+            'states' => $this->catalogs->temporalStates(),
+        ];
+    }
+
     public function options(): array
     {
         return [
