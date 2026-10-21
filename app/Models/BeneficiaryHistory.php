@@ -34,6 +34,8 @@ class BeneficiaryHistory extends Model
         'weight' => 'decimal:2',
         'height' => 'decimal:2',
         'hmg' => 'decimal:2',
+        'date_begin' => 'date:Y-m-d',
+        'date_end' => 'date:Y-m-d',
     ];
 
     public function beneficiary(): BelongsTo

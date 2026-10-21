@@ -29,6 +29,9 @@ Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->middleware
     Route::put('beneficiarios/{beneficiarie}', [BeneficiarieController::class, 'update'])->name('beneficiarios.update');
     Route::delete('beneficiarios/{beneficiarie}', [BeneficiarieController::class, 'destroy'])->name('beneficiarios.destroy');
     Route::get('beneficiarios-imprimir', [BeneficiarieController::class, 'imprimirFicha'])->name('beneficiarios.imprimir');
-    Route::get('evaluacion-nutricional/{association}/acta', [EvaluacionNutricionalController::class, 'acta'])->name('evaluacion-nutricional.acta');
     Route::get('beneficiarios-padron', [PartnerController::class, 'reportePadronBeneficiarios'])->name('beneficiarios.padron');
 });
+
+Route::get('socios-beneficiarios/evaluacion-nutricional/{association}/acta', [EvaluacionNutricionalController::class, 'acta'])
+    ->middleware('module:evaluacion-nutricional')
+    ->name('socios-beneficiarios.evaluacion-nutricional.acta');

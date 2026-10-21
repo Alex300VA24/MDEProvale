@@ -425,6 +425,97 @@ class ComitesApiTest extends TestCase
         ]);
     }
 
+    public function test_resignation_requires_pdf_and_records_manual_status_audit(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $inactiveStateId = DB::table('states')->insertGetId([
+            'title' => 'Inactivo',
+            'abbreviation' => \App\Models\State::INACTIVE,
+        ]);
+        $payload = [
+            'state_id' => $inactiveStateId,
+            'reason' => 'RENUNCIA',
+            'notes' => 'Renuncia presentada por la directiva.',
+            'effective_date' => '2026-10-20',
+        ];
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE.'/clubs/1/status-change', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('acta');
+
+        $payload['acta'] = \Illuminate\Http\UploadedFile::fake()->create('acta-renuncia.pdf', 100, 'application/pdf');
+        $this->actingAs($this->userWithAccess())
+            ->withHeader('Accept', 'application/json')
+            ->post(self::BASE.'/clubs/1/status-change', $payload)
+            ->assertOk()
+            ->assertJsonPath('data.state_id', $inactiveStateId)
+            ->assertJsonPath('data.state_source', 'MANUAL');
+
+        $this->assertDatabaseHas('association_status_changes', ['association_id' => 1, 'reason' => 'RENUNCIA']);
+        $this->assertDatabaseHas('document_attachments', ['document_type' => \App\Models\DocumentAttachment::TYPE_ACTA_RENUNCIA]);
+        $this->assertDatabaseHas('system_audit_events', ['event_type' => 'ASSOCIATION_STATUS_CHANGED', 'subject_id' => 1]);
+    }
+
+    public function test_supervision_off_day_requires_a_reason(): void
+    {
+        $this->actingAs($this->userWithAccess())
+            ->putJson('/api/dashboard/supervision-comites/dia-sin-supervision', [
+                'date' => '2026-10-21',
+                'off' => true,
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('reason');
+
+        $this->actingAs($this->userWithAccess())
+            ->putJson('/api/dashboard/supervision-comites/dia-sin-supervision', [
+                'date' => '2026-10-21',
+                'off' => true,
+                'reason' => 'FALTA DE MOVILIDAD',
+            ])
+            ->assertOk();
+
+        $this->assertDatabaseHas('supervision_off_days', ['off_date' => '2026-10-21', 'reason' => 'FALTA DE MOVILIDAD']);
+    }
+
+    public function test_supervision_accepts_one_pdf_and_up_to_three_photos(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('local');
+        $visitId = $this->actingAs($this->userWithAccess())
+            ->putJson('/api/dashboard/supervision-comites/1/visita', [
+                'date' => '2026-10-20',
+                'result' => 'SI',
+            ])
+            ->assertOk()
+            ->json('id');
+
+        $this->actingAs($this->userWithAccess())
+            ->withHeader('Accept', 'application/json')
+            ->post("/api/dashboard/supervision-comites/visits/{$visitId}/attachments", [
+                'document_type' => \App\Models\DocumentAttachment::TYPE_SUPERVISION_DOCUMENT,
+                'file' => \Illuminate\Http\UploadedFile::fake()->create('supervision.pdf', 100, 'application/pdf'),
+            ])->assertCreated();
+
+        foreach (range(1, 3) as $number) {
+            $this->actingAs($this->userWithAccess())
+                ->withHeader('Accept', 'application/json')
+                ->post("/api/dashboard/supervision-comites/visits/{$visitId}/attachments", [
+                    'document_type' => \App\Models\DocumentAttachment::TYPE_SUPERVISION_PHOTO,
+                    'file' => \Illuminate\Http\UploadedFile::fake()->image("foto-{$number}.jpg"),
+                ])->assertCreated();
+        }
+
+        $this->actingAs($this->userWithAccess())
+            ->withHeader('Accept', 'application/json')
+            ->post("/api/dashboard/supervision-comites/visits/{$visitId}/attachments", [
+                'document_type' => \App\Models\DocumentAttachment::TYPE_SUPERVISION_PHOTO,
+                'file' => \Illuminate\Http\UploadedFile::fake()->image('foto-4.jpg'),
+            ])->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
+
+        $this->assertDatabaseCount('document_attachments', 4);
+    }
+
     public function test_destroy_club_without_references_deletes(): void
     {
         $response = $this->actingAs($this->userWithAccess())

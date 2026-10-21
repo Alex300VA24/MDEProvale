@@ -50,7 +50,7 @@
         <table class="main-table">
             <thead>
                 <tr>
-                    <td colspan="14" style="border: none; padding: 0;">
+                    <td colspan="16" style="border: none; padding: 0;">
                         <table class="header-table" style="width: 100%; border-collapse: collapse; border-spacing: 0;">
                             <tr>
                                 <td style="width: 140px; text-align: left; vertical-align: middle;">
@@ -90,7 +90,7 @@
                 <tr>
                     <th style="width: 15px;" rowspan="3">Nº</th>
                     <th colspan="3" style="background-color: #d0d0d0;">DATOS DE LA SOCIA</th>
-                    <th colspan="10" style="background-color: #d0d0d0;">DATOS DEL BENEFICIARIO</th>
+                    <th colspan="12" style="background-color: #d0d0d0;">DATOS DEL BENEFICIARIO</th>
                     <th rowspan="3" style="width: 2px; border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white;">&nbsp;</th>
                 </tr>
                 <tr>
@@ -99,12 +99,14 @@
                     <th style="width: 35px;" rowspan="2">DNI</th>
                     <th style="text-align: left; padding-left: 2px; width: 125px;" rowspan="2">APELLIDOS Y NOMBRES</th>
                     <th style="width: 35px;" rowspan="2">DNI</th>
-                    <th style="width: 15px;" rowspan="2">BAJA</th>
+                    <th style="width: 12px;" rowspan="2">BAJA</th>
                     <th style="width: 15px;" rowspan="2">TIPO</th>
                     <th style="width: 30px;" rowspan="2">FECHA NACIM.</th>
                     <th style="width: 10px;" rowspan="2">SEXO</th>
                     <th colspan="3">EDAD</th>
-                    <th style="width: 30px;" rowspan="2">PARENTESCO</th>
+                    <th style="width: 30px;" rowspan="2">F. INICIO</th>
+                    <th style="width: 30px;" rowspan="2">F. TÉRMINO</th>
+                    <th style="width: 24px;" rowspan="2">PARENTESCO</th>
                 </tr>
 
                 <tr>
@@ -134,6 +136,8 @@
                         <td class="text-center">{{ $b->edadAnos ?? '' }}</td>
                         <td class="text-center">{{ $b->edadMeses ?? '' }}</td>
                         <td class="text-center">{{ $b->edadDias ?? '' }}</td>
+                        <td class="text-center">{{ $b->fechaInicio ?? '' }}</td>
+                        <td class="text-center">{{ $b->fechaTermino ?? '' }}</td>
                         <td class="text-center">{{ $b->parentesco ?? '' }}</td>
                         <td style="width: 2px; border-top: none; border-bottom: none; border-right: none; border-left: 1px solid #000; background-color: white;">&nbsp;</td>
                     </tr>

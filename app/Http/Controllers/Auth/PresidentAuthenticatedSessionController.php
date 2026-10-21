@@ -43,10 +43,6 @@ class PresidentAuthenticatedSessionController extends Controller
             $request->session()->forget('url.intended');
         }
 
-        if ($request->user()->mustChangePassword()) {
-            return redirect()->route('president.password.change');
-        }
-
         return redirect()->intended(route('president-portal.index'));
     }
 

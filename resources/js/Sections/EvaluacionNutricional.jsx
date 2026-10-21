@@ -110,7 +110,7 @@ export default function EvaluacionNutricional() {
                                         <td className={td}>{r.weight ?? '—'}</td>
                                         <td className={td}>{r.height ?? '—'}</td>
                                         <td className={td}>
-                                            {[r.is_malnourished && 'Desnutrido', r.is_disabled && 'Discapacitado'].filter(Boolean).join(', ') || '—'}
+                                            {[r.population_group === 'ADULTO_MAYOR' && 'Adulto Mayor (>65 años)', r.is_malnourished && 'Desnutrido', r.is_disabled && 'Discapacitado'].filter(Boolean).join(', ') || '—'}
                                         </td>
                                     </tr>
                                 ))}

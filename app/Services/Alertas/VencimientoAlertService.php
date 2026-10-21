@@ -6,6 +6,7 @@ use App\Models\Association;
 use App\Models\BeneficiaryHistory;
 use App\Models\Notification;
 use App\Models\Resolution;
+use App\Models\State;
 use App\Services\AssistantAiService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -30,17 +31,23 @@ class VencimientoAlertService
     }
 
     /**
-     * @return array{edad:int, resoluciones:int, con_ia:int}
+     * @return array{edad:int, beneficios:int, resoluciones:int, con_ia:int}
      */
     public function scanAndNotify(?Carbon $today = null): array
     {
         $today = ($today ?? now())->copy()->startOfDay();
 
-        $result = ['edad' => 0, 'resoluciones' => 0, 'con_ia' => 0];
+        $result = ['edad' => 0, 'beneficios' => 0, 'resoluciones' => 0, 'con_ia' => 0];
 
         foreach ($this->detectAgeAlerts($today) as $alert) {
             if ($this->emit($alert, self::TYPE_EDAD, $result)) {
                 $result['edad']++;
+            }
+        }
+
+        foreach ($this->detectBenefitEndAlerts($today) as $alert) {
+            if ($this->emit($alert, self::TYPE_EDAD, $result)) {
+                $result['beneficios']++;
             }
         }
 
@@ -51,6 +58,54 @@ class VencimientoAlertService
         }
 
         return $result;
+    }
+
+    /**
+     * Avisos previos para conceptos GES/LAC con fecha de término calculada.
+     */
+    public function detectBenefitEndAlerts(Carbon $today): Collection
+    {
+        $thresholds = collect(config('alertas.beneficios.umbrales_dias', [60, 30, 7]))
+            ->map(fn ($days) => (int) $days)->filter(fn ($days) => $days > 0)->sort()->values();
+
+        if ($thresholds->isEmpty()) {
+            return collect();
+        }
+
+        return BeneficiaryHistory::query()
+            ->whereNotNull('date_end')
+            ->whereDate('date_end', '>=', $today)
+            ->whereDate('date_end', '<=', $today->copy()->addDays($thresholds->max()))
+            ->whereHas('state', fn ($query) => $query->where('abbreviation', '!=', State::INACTIVE))
+            ->whereHas('typeBenefit', fn ($query) => $query->whereIn('abbreviation', ['GES', 'LAC']))
+            ->with(['typeBenefit', 'beneficiary.person', 'beneficiary.partner.association'])
+            ->get()
+            ->map(function (BeneficiaryHistory $history) use ($today, $thresholds) {
+                $days = (int) $today->diffInDays(Carbon::parse($history->date_end)->startOfDay(), false);
+                $stage = (string) $thresholds->first(fn ($threshold) => $days <= $threshold);
+                $name = $history->beneficiary?->name ?? 'Beneficiario';
+                $benefit = $history->typeBenefit?->abbreviation ?? 'BENEFICIO';
+
+                return [
+                    'dedupe_key' => "benefit-end:{$history->id}:{$history->date_end}:{$stage}",
+                    'title' => "{$benefit}: beneficio por finalizar",
+                    'description' => "El beneficio de {$name} finaliza en {$days} día(s).",
+                    'metadata' => [
+                        'urgencia' => $this->urgency($days),
+                        'beneficiary_history_id' => $history->id,
+                        'beneficiary_id' => $history->beneficiary_id,
+                        'association_id' => $history->beneficiary?->partner?->association_id,
+                        'tipo_beneficio' => $benefit,
+                        'fecha_fin' => (string) $history->date_end,
+                        'dias_restantes' => $days,
+                    ],
+                    'ai_facts' => [
+                        'tipo' => 'beneficio_por_finalizar',
+                        'concepto' => $benefit,
+                        'dias_restantes' => $days,
+                    ],
+                ];
+            });
     }
 
     /**
@@ -214,7 +269,9 @@ class VencimientoAlertService
     private function emit(array $alert, string $type, array &$result): bool
     {
         if (Notification::where('type', $type)
-            ->where('metadata->dedupe_key', $alert['dedupe_key'])
+            ->where(fn ($query) => $query
+                ->where('dedupe_key', $alert['dedupe_key'])
+                ->orWhere('metadata->dedupe_key', $alert['dedupe_key']))
             ->exists()) {
             return false;
         }
@@ -230,6 +287,7 @@ class VencimientoAlertService
 
         Notification::create([
             'type' => $type,
+            'dedupe_key' => $alert['dedupe_key'],
             'title' => $alert['title'],
             'description' => $description,
             'status' => 'informativo',

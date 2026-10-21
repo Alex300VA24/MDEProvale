@@ -33,6 +33,10 @@ class AssociationStateService
 
     public function sync(Association $association, ?CarbonInterface $today = null): bool
     {
+        if ($association->state_source === 'MANUAL') {
+            return false;
+        }
+
         $association->loadMissing(['resolution', 'resolutionsHistory']);
         $stateId = State::idFor($this->abbreviationFor($association, $today));
 

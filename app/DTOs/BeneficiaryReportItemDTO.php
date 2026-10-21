@@ -16,6 +16,10 @@ class BeneficiaryReportItemDTO extends BaseDTO
     public bool $esBaja;
     public bool $observation;
     public string $fechaInicio;
+    public string $fechaTermino;
+    public bool $esSocia;
+    public ?int $mesesGestacion;
+    public ?int $mesesLactancia;
 
     public function __construct(
         string $nombre,
@@ -29,7 +33,11 @@ class BeneficiaryReportItemDTO extends BaseDTO
         int $edadDias,
         bool $esBaja,
         bool $observation,
-        string $fechaInicio
+        string $fechaInicio,
+        string $fechaTermino = '',
+        bool $esSocia = false,
+        ?int $mesesGestacion = null,
+        ?int $mesesLactancia = null
     ) {
         $this->nombre = $nombre;
         $this->dni = $dni;
@@ -43,5 +51,9 @@ class BeneficiaryReportItemDTO extends BaseDTO
         $this->esBaja = $esBaja;
         $this->observation = $observation;
         $this->fechaInicio = $fechaInicio;
+        $this->fechaTermino = $fechaTermino;
+        $this->esSocia = $esSocia;
+        $this->mesesGestacion = $mesesGestacion;
+        $this->mesesLactancia = $mesesLactancia;
     }
 }

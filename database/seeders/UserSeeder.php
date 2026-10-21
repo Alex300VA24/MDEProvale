@@ -80,7 +80,7 @@ class UserSeeder extends Seeder
                 $permissions[] = $this->permissionRow($module->id, $roleIds->get('Usuario Principal'), true, $now);
             }
 
-            if ($module->slug === 'socios-beneficiarios') {
+            if (in_array($module->slug, ['socios-beneficiarios', 'evaluacion-nutricional'], true)) {
                 $permissions[] = $this->permissionRow($module->id, $roleIds->get('Usuario Básico'), false, $now);
             }
         }

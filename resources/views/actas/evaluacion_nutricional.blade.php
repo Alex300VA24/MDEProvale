@@ -120,6 +120,7 @@
             {{ $f['name'] }}
             @if($f['is_malnourished']) <span class="x">(DESNUTRIDO)</span> @endif
             @if($f['is_disabled']) <span class="x">(DISCAPACITADO)</span> @endif
+            @if(($f['population_group'] ?? null) === 'ADULTO_MAYOR') <span class="x">(ADULTO MAYOR &gt;65 AÑOS)</span> @endif
           </td>
           <td>{{ $f['dni'] }}</td>
           <td>{{ $f['gender'] }}</td>

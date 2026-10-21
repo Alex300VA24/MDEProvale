@@ -77,6 +77,7 @@ class EvaluacionNutricionalController extends Controller
                 'gender' => $person->gender ?? '',
                 'birthdate' => $person?->birthdate ? date('d/m/Y', strtotime($person->birthdate)) : '',
                 'age' => $age ? ($age['years'] > 0 ? "{$age['years']} a {$age['months']} m" : "{$age['months']} m") : '',
+                'population_group' => $age && $age['years'] > 65 ? 'ADULTO_MAYOR' : null,
                 'relationship' => $b->relationship?->title ?? '',
                 'weight' => $history && $history->weight > 0 ? (float) $history->weight : null,
                 'height' => $history && $history->height > 0 ? (float) $history->height : null,

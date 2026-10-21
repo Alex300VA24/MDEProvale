@@ -114,7 +114,7 @@ class KnowledgeBaseController extends Controller
         }
     }
 
-    public function store(Request $request, KnowledgeBaseRagService $rag)
+    public function store(Request $request, KnowledgeBaseRagService $rag, \App\Services\UploadSettingsService $uploadSettings)
     {
         $validated = $request->validate([
             'title' => ['nullable', 'string', 'max:255'],
@@ -122,7 +122,7 @@ class KnowledgeBaseController extends Controller
             'file' => [
                 'required',
                 'file',
-                'max:'.(int) config('knowledge_base.max_document_kb', 20480),
+                'max:'.$uploadSettings->maxKilobytes(),
                 'mimes:pdf,jpg,jpeg,png,docx,xls,xlsx',
             ],
         ]);

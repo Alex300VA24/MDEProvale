@@ -19,6 +19,7 @@ class Association extends Model
         'company_name',
         'observation',
         'state_id',
+        'state_source',
         'place_sector_id',
         'type_premises_id',
         'resolution_id',
@@ -59,6 +60,11 @@ class Association extends Model
     public function rosterPeriods()
     {
         return $this->hasMany(AssociationRosterPeriod::class);
+    }
+
+    public function statusChanges()
+    {
+        return $this->hasMany(AssociationStatusChange::class);
     }
 
     public function pecosas()

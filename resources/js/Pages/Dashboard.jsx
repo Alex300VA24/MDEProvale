@@ -41,7 +41,7 @@ const NAV_ITEMS = [
     { key: 'productos', label: 'Productos y Programación de Entrega', icon: 'fa-boxes-stacked', modules: ['productos', 'movimientos'] },
     { key: 'pecosas', label: 'Pecosas y Repartición', icon: 'fa-file-signature', modules: ['pecosas', 'movimientos'] },
     { key: 'supervision-comites', label: 'Supervisión de Comités', icon: 'fa-clipboard-check', modules: ['club-madres'] },
-    { key: 'evaluacion-nutricional', label: 'Evaluación Nutricional', icon: 'fa-heart-pulse', modules: ['socios-beneficiarios'] },
+    { key: 'evaluacion-nutricional', label: 'Evaluación Nutricional', icon: 'fa-heart-pulse', modules: ['evaluacion-nutricional'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
     { key: 'reportes', label: 'Reportes PVL', icon: 'fa-file-shield', modules: ['reportes'] },
     { key: 'base-conocimiento', label: 'Base de Conocimiento IA', icon: 'fa-database', modules: ['base-conocimiento'] },

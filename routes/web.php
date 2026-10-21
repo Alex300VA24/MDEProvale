@@ -73,6 +73,10 @@ Route::middleware('role.president')->group(function () {
         ->name('president-portal.pecosa.pdf');
     Route::get('/portal-presidentas/socios', [PresidentPortalController::class, 'socios'])
         ->name('president-portal.socios');
+    Route::get('/portal-presidentas/documentos', [PresidentPortalController::class, 'documentos'])
+        ->name('president-portal.documentos.index');
+    Route::get('/portal-presidentas/documentos/{slug}', [PresidentPortalController::class, 'documentoDescargable'])
+        ->name('president-portal.documentos');
 });
 
 // Rutas que requieren autenticación

@@ -18,6 +18,7 @@ class ClubResource extends JsonResource
             'observation' => $this->observation,
             'resolution_id' => $this->resolution_id,
             'state_id' => $this->state_id,
+            'state_source' => $this->state_source,
             'place_sector_id' => $this->place_sector_id,
             'type_premises_id' => $this->type_premises_id,
             'state' => $this->whenLoaded('state', fn () => [

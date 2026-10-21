@@ -9,6 +9,7 @@ use App\Models\State;
 use App\Models\People;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use App\Services\UploadSettingsService;
 
 class StorePartnerRequest extends FormRequest
 {
@@ -19,6 +20,8 @@ class StorePartnerRequest extends FormRequest
 
     public function rules(): array
     {
+        $maxFile = app(UploadSettingsService::class)->maxKilobytes();
+
         return [
             'person_id' => 'required|exists:people,id',
             'association_id' => 'required|exists:associations,id',
@@ -34,10 +37,12 @@ class StorePartnerRequest extends FormRequest
             'is_pregnant' => 'nullable|boolean',
             'is_lactating' => 'nullable|boolean',
             'family_income' => 'nullable|numeric|min:0',
-            'family_document' => 'nullable|file|mimes:pdf|max:10240',
-            'conadis_document' => 'required_if:socioeconomic_condition,DISCAPACITADO|file|mimes:pdf|max:10240',
+            'fum' => 'required_if:socioeconomic_condition,GESTANTE|nullable|date|before_or_equal:today',
+            'benefit_child_person_id' => 'nullable|exists:people,id',
+            'family_document' => "nullable|file|mimes:pdf|max:{$maxFile}",
+            'conadis_document' => "required_if:socioeconomic_condition,DISCAPACITADO|file|mimes:pdf|max:{$maxFile}",
             'beneficiary_documents' => 'nullable|array',
-            'beneficiary_documents.*' => 'nullable|file|mimes:pdf|max:10240',
+            'beneficiary_documents.*' => "nullable|file|mimes:pdf|max:{$maxFile}",
             'beneficiaries' => 'required|array|min:1',
             'beneficiaries.*.person_id' => 'required|exists:people,id',
             'beneficiaries.*.relationship_id' => 'required|exists:relationships,id',
@@ -53,6 +58,14 @@ class StorePartnerRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            if ($this->filled('benefit_child_person_id')) {
+                $childPersonId = (int) $this->input('benefit_child_person_id');
+                $beneficiaryPeople = collect($this->input('beneficiaries', []))->pluck('person_id')->map(fn ($id) => (int) $id);
+                if (! $childPersonId || ! $beneficiaryPeople->contains($childPersonId)) {
+                    $validator->errors()->add('benefit_child_person_id', 'Seleccione un beneficiario registrado en esta ficha.');
+                }
+            }
+
             if ($this->input('socioeconomic_condition') !== 'ADULTO_MAYOR') {
                 return;
             }

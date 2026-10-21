@@ -18,7 +18,7 @@ class RolSeeder extends Seeder
         $operationalRoles = [
             'Rol 1' => [
                 'description' => 'Acceso a Inicio, Socios y Beneficiarios, Comités y Resoluciones, Ayuda y chatbot',
-                'modules' => ['socios-beneficiarios', 'club-madres', 'reconocimientos', 'reportes'],
+                'modules' => ['socios-beneficiarios', 'evaluacion-nutricional', 'club-madres', 'reconocimientos', 'reportes'],
             ],
             'Rol 2' => [
                 'description' => 'Acceso a Inicio, Productos y Pecosas, Transacciones y Repartición, Responsables y Raciones, Ayuda y chatbot',
@@ -28,6 +28,7 @@ class RolSeeder extends Seeder
                 'description' => 'Acceso a todos los módulos operativos excepto Sistema, además de Inicio, Ayuda y chatbot',
                 'modules' => [
                     'socios-beneficiarios',
+                    'evaluacion-nutricional',
                     'club-madres',
                     'reconocimientos',
                     'productos',

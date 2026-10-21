@@ -41,7 +41,7 @@ class TypeBenefitSeeder extends Seeder
 
         DB::table('type_benefits')->insert([
             'title' => 'Adulto mayor',
-            'min_age' => 65,
+            'min_age' => 66,
             'max_age' => null,
             'priority' => 2,
             'abbreviation' => 'ADU',

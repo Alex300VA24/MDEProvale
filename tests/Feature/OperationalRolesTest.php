@@ -23,10 +23,11 @@ class OperationalRolesTest extends TestCase
     public function test_operational_roles_have_the_expected_module_access(): void
     {
         $expected = [
-            'Rol 1' => ['club-madres', 'reconocimientos', 'reportes', 'socios-beneficiarios'],
+            'Rol 1' => ['club-madres', 'evaluacion-nutricional', 'reconocimientos', 'reportes', 'socios-beneficiarios'],
             'Rol 2' => ['movimientos', 'pecosas', 'productos', 'reportes', 'responsables-raciones'],
             'Rol 3' => [
                 'club-madres',
+                'evaluacion-nutricional',
                 'movimientos',
                 'pecosas',
                 'productos',

@@ -32,7 +32,7 @@ class State extends Model
 
     public function scopeForAssociations($query)
     {
-        return $query->whereIn('abbreviation', [self::CURRENT, self::PENDING, self::EXPIRED]);
+        return $query->whereIn('abbreviation', [self::CURRENT, self::PENDING, self::EXPIRED, self::INACTIVE]);
     }
 
     public static function idFor(string $abbreviation): ?int

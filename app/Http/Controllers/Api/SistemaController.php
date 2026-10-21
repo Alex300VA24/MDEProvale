@@ -18,9 +18,11 @@ use App\Models\ModuleIcon;
 use App\Models\Notification;
 use App\Models\Rol;
 use App\Models\State;
+use App\Models\SystemAuditEvent;
 use App\Models\User;
 use App\Services\AssistantSettingsService;
 use App\Services\MonthClosureService;
+use App\Services\UploadSettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -412,5 +414,74 @@ class SistemaController extends Controller
             'data' => $config->update((int) $datos['max_consultas'], (int) $datos['ventana_horas']),
             'message' => 'Configuración del asistente actualizada.',
         ]);
+    }
+
+    // ==================== PARÁMETROS GLOBALES ====================
+
+    public function uploadConfig(UploadSettingsService $settings)
+    {
+        return response()->json(['data' => [
+            'max_attachment_mb' => $settings->maxMb(),
+            'min' => UploadSettingsService::MIN_MB,
+            'max' => UploadSettingsService::MAX_MB,
+            'php_upload_max' => ini_get('upload_max_filesize'),
+            'php_post_max' => ini_get('post_max_size'),
+        ]]);
+    }
+
+    public function updateUploadConfig(Request $request, UploadSettingsService $settings)
+    {
+        $data = $request->validate([
+            'max_attachment_mb' => ['required', 'integer', 'min:'.UploadSettingsService::MIN_MB, 'max:'.UploadSettingsService::MAX_MB],
+        ]);
+
+        return response()->json([
+            'data' => ['max_attachment_mb' => $settings->update((int) $data['max_attachment_mb'])],
+            'message' => 'Límite de archivos actualizado.',
+        ]);
+    }
+
+    // ==================== AUDITORÍA DEL SISTEMA ====================
+
+    public function auditEvents(Request $request)
+    {
+        $data = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'source' => ['nullable', 'in:SYSTEM,USER'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $query = SystemAuditEvent::with(['fromState:id,title,abbreviation', 'toState:id,title,abbreviation', 'executedBy:id,names,father_surname,mother_surname'])
+            ->latest('occurred_at');
+
+        if (! empty($data['source'])) {
+            $query->where('source', $data['source']);
+        }
+        if ($search = trim((string) ($data['search'] ?? ''))) {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('event_type', 'like', "%{$search}%")
+                    ->orWhere('reason_code', 'like', "%{$search}%")
+                    ->orWhere('subject_type', 'like', "%{$search}%")
+                    ->orWhere('subject_id', 'like', "%{$search}%");
+            });
+        }
+
+        $events = $query->paginate((int) ($data['per_page'] ?? 20));
+        $events->through(fn (SystemAuditEvent $event) => [
+            'id' => $event->id,
+            'event_type' => $event->event_type,
+            'subject' => class_basename($event->subject_type).' #'.$event->subject_id,
+            'source' => $event->source,
+            'from_state' => $event->fromState?->abbreviation,
+            'to_state' => $event->toState?->abbreviation,
+            'reason_code' => $event->reason_code,
+            'executed_by' => $event->executedBy
+                ? trim("{$event->executedBy->names} {$event->executedBy->father_surname} {$event->executedBy->mother_surname}")
+                : 'Sistema',
+            'occurred_at' => $event->occurred_at?->format('Y-m-d H:i:s'),
+            'metadata' => $event->metadata,
+        ]);
+
+        return response()->json($events);
     }
 }

@@ -139,7 +139,16 @@ class BeneficiaryReportService
                     ? $historialActivo->relationship->title
                     : ($beneficiario->relationship ? $beneficiario->relationship->title : '');
 
-                [$bajaFlag, $observationFlag, $razonBaja] = $this->evaluateBeneficiaryRules($edadAnos, $tipoBeneficio, $fechaInicio, $cutoffDate, $historialActivo, $razonBaja);
+                $fum = $historialActivo->obstetricData?->date_last_menstrual_period;
+                $referenciaGestacion = $fum ?: $fechaInicio;
+                $mesesGestacion = $tipoBeneficio === 'GES'
+                    ? ($referenciaGestacion ? Carbon::parse($referenciaGestacion)->diffInMonths($cutoffDate) : 999)
+                    : null;
+                $mesesLactancia = $tipoBeneficio === 'LAC'
+                    ? ($fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) : 999)
+                    : null;
+
+                [$bajaFlag, $observationFlag, $razonBaja] = $this->evaluateBeneficiaryRules($edadAnos, $tipoBeneficio, (string) $parentesco, $mesesGestacion, $mesesLactancia, $historialActivo, $razonBaja);
 
                 $items[] = new BeneficiaryReportItemDTO(
                     mb_strtoupper("{$persona->father_lastname} {$persona->mother_lastname} {$persona->names}", 'UTF-8'),
@@ -154,6 +163,10 @@ class BeneficiaryReportService
                     !empty($razonBaja) && $razonBaja != 1,
                     $observationFlag,
                     $fechaInicio ? date('d/m/Y', strtotime($fechaInicio)) : '',
+                    $historialActivo->date_end ? date('d/m/Y', strtotime($historialActivo->date_end)) : '',
+                    $persona->id === $socia->id,
+                    $mesesGestacion,
+                    $mesesLactancia,
                 );
 
                 // Resumen counters
@@ -174,31 +187,28 @@ class BeneficiaryReportService
         return [$beneficiarios, $resumen];
     }
 
-    private function evaluateBeneficiaryRules(int $edadAnos, string $tipoBeneficio, ?string $fechaInicio, Carbon $cutoffDate, $historialActivo, $razonBaja): array
+    private const PARENTESCOS_MENOR = ['hijo', 'hijos', 'hija', 'nieto', 'nieta', 'apoderado', 'tutelado'];
+
+    private function evaluateBeneficiaryRules(int $edadAnos, string $tipoBeneficio, string $parentesco, ?int $mesesGestacion, ?int $mesesLactancia, $historialActivo, $razonBaja): array
     {
         $observationFlag = false;
         $bajaFlag = false;
+        $sinBajaPrevia = $historialActivo
+            && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1);
 
-        if ($edadAnos >= 14 && $historialActivo && !$historialActivo->reason_disqualification_id) {
+        // Baja por edad: solo menores dependientes (hijo, nieto, apoderado/tutelado)
+        // que no son gestantes ni lactantes.
+        $esMenorDependiente = in_array(mb_strtolower(trim($parentesco), 'UTF-8'), self::PARENTESCOS_MENOR, true);
+        if ($edadAnos >= 14 && $esMenorDependiente && !in_array($tipoBeneficio, ['GES', 'LAC'], true) && $sinBajaPrevia) {
             $razonBaja = 4; $bajaFlag = true;
         }
 
-        if ($tipoBeneficio === 'GES') {
-            $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) : 999;
-            if (!$fechaInicio || $mesesTotales > 9) {
-                if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
-                    $razonBaja = 4; $bajaFlag = true;
-                }
-            }
+        if ($tipoBeneficio === 'GES' && ($mesesGestacion === null || $mesesGestacion > 9) && $sinBajaPrevia) {
+            $razonBaja = 4; $bajaFlag = true;
         }
 
-        if ($tipoBeneficio === 'LAC') {
-            $mesesTotales = $fechaInicio ? Carbon::parse($fechaInicio)->diffInMonths($cutoffDate) : 999;
-            if (!$fechaInicio || $mesesTotales > 12) {
-                if ($historialActivo && (!$historialActivo->reason_disqualification_id || $historialActivo->reason_disqualification_id == 1)) {
-                    $razonBaja = 4; $bajaFlag = true;
-                }
-            }
+        if ($tipoBeneficio === 'LAC' && ($mesesLactancia === null || $mesesLactancia > 24) && $sinBajaPrevia) {
+            $razonBaja = 4; $bajaFlag = true;
         }
 
         if (in_array($tipoBeneficio, ['GES', 'LAC']) && $edadAnos <= 12) {
@@ -239,17 +249,28 @@ class BeneficiaryReportService
     private function buildObservaciones(array $beneficiarios, Carbon $cutoffDate): array
     {
         $todos = collect($beneficiarios)->flatMap(fn($g) => $g['items']);
+        $parentescosMenor = self::PARENTESCOS_MENOR;
+        $socias = fn($b) => $b->esSocia && $b->sexo === 'F' && $b->edadAnos >= 12;
 
         return [
             [
                 'codigo' => 1,
-                'descripcion' => 'EDAD >= 14 años (BAJA)',
-                'cantidad' => $todos->filter(fn($b) => $b->esBaja)->count(),
+                'descripcion' => 'EDAD >= 14 años (BAJA) - HIJO / NIETO / APODERADO (TUTELADO)',
+                'cantidad' => $todos->filter(fn($b) => $b->esBaja
+                    && $b->edadAnos >= 14
+                    && in_array(mb_strtolower($b->parentesco, 'UTF-8'), $parentescosMenor, true))->count(),
             ],
             [
                 'codigo' => 2,
-                'descripcion' => 'GES / LAC <= DE 12 AÑOS',
-                'cantidad' => $todos->filter(fn($b) => in_array($b ? $b->tipo : '', ['GES', 'LAC']) && $b->edadAnos <= 12)->count(),
+                'descripcion' => 'GES. SOCIA Y BENEFICIARIA >= 12 AÑOS, MAS DE 9 MESES DE SU ULTIMA MENSTRUACION (BAJA)',
+                'cantidad' => $todos->filter(fn($b) => $b->tipo === 'GES' && $socias($b)
+                    && ($b->mesesGestacion === null || $b->mesesGestacion > 9))->count(),
+            ],
+            [
+                'codigo' => 3,
+                'descripcion' => 'LAC. SOCIA Y BENEFICIARIA >= 12 AÑOS, MAS DE 2 AÑOS DE INICIADO SU BENEFICIO (BAJA)',
+                'cantidad' => $todos->filter(fn($b) => $b->tipo === 'LAC' && $socias($b)
+                    && ($b->mesesLactancia === null || $b->mesesLactancia > 24))->count(),
             ],
         ];
     }

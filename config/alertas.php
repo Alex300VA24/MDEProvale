@@ -15,6 +15,12 @@ return [
         'dias_gracia' => (int) env('ALERTAS_EDAD_GRACIA', 30),
     ],
 
+    'beneficios' => [
+        'umbrales_dias' => array_map('intval', array_filter(
+            explode(',', (string) env('ALERTAS_BENEFICIOS_UMBRALES', '60,30,7'))
+        )),
+    ],
+
     // Resoluciones de comités por vencer. Un aviso por cada umbral cruzado.
     'resoluciones' => [
         'umbrales_dias' => array_map('intval', array_filter(

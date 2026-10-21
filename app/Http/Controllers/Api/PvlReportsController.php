@@ -175,7 +175,7 @@ class PvlReportsController extends Controller
         ]);
     }
 
-    public function storeDocument(Request $request, PvlRagService $rag)
+    public function storeDocument(Request $request, PvlRagService $rag, \App\Services\UploadSettingsService $uploadSettings)
     {
         $validated = $request->validate([
             'document_type' => ['required', Rule::in(PvlDocument::TYPES)],
@@ -185,7 +185,7 @@ class PvlReportsController extends Controller
             'file' => [
                 'required',
                 'file',
-                'max:'.(int) config('pvl_reports.max_document_kb', 10240),
+                'max:'.$uploadSettings->maxKilobytes(),
                 'mimes:pdf,txt,csv,json,png,jpg,jpeg',
             ],
         ]);

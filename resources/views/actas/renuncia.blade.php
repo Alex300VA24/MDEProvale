@@ -60,6 +60,9 @@
   .box {
     border: 1px solid #000;
     height: 26px;
+    line-height: 26px;
+    padding-left: 6px;
+    font-weight: bold;
   }
   .box-cell { padding-left: 0; }
 
@@ -199,19 +202,19 @@
     </tr>
     <tr>
       <td class="lbl">LA SEÑORA:</td>
-      <td class="box-cell"><div class="box"></div></td>
+      <td class="box-cell"><div class="box">{{ $partnerName ?? '' }}</div></td>
     </tr>
     <tr>
       <td class="lbl">DEL CLUB DE MADRES:</td>
-      <td class="box-cell"><div class="box"></div></td>
+      <td class="box-cell"><div class="box">{{ $committeeName ?? '' }}</div></td>
     </tr>
     <tr>
       <td class="lbl">IDENTIFICADA CON DNI N°:</td>
-      <td class="box-cell"><div class="box"></div></td>
+      <td class="box-cell"><div class="box">{{ $partnerDni ?? '' }}</div></td>
     </tr>
     <tr>
       <td class="lbl">DOMICILIADA EN:</td>
-      <td class="box-cell"><div class="box"></div></td>
+      <td class="box-cell"><div class="box">{{ $partnerAddress ?? '' }}</div></td>
     </tr>
     <tr>
       <td class="lbl">RENUNCIA A SER:</td>
@@ -236,16 +239,16 @@
     </tr>
     <tr>
       <td>
-        <p class="cm">C.M. "________________________"</p>
+        <p class="cm">C.M. "{{ $committeeName ?? '________________________' }}"</p>
         <div class="sign-space"></div>
         <p class="sign-role">RENUNCIANTE</p>
-        <div class="dni-line">DNI N°: <span class="fill"></span></div>
+        <div class="dni-line">DNI N°: <span class="fill">{{ $partnerDni ?? '' }}</span></div>
       </td>
       <td>
-        <p class="cm">C.M. "________________________"</p>
+        <p class="cm">C.M. "{{ $committeeName ?? '________________________' }}"</p>
         <div class="sign-space"></div>
         <p class="sign-role">PRESIDENTA</p>
-        <div class="dni-line">DNI N°: <span class="fill"></span></div>
+        <div class="dni-line">DNI N°: <span class="fill">{{ $presidentDni ?? '' }}</span></div>
       </td>
     </tr>
   </table>

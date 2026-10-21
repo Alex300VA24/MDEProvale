@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class SupervisionVisit extends Model
 {
@@ -24,5 +25,10 @@ class SupervisionVisit extends Model
     public function association(): BelongsTo
     {
         return $this->belongsTo(Association::class);
+    }
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(DocumentAttachment::class, 'attachable');
     }
 }

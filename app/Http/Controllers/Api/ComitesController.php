@@ -28,6 +28,13 @@ use App\Services\AssociationStateService;
 use App\Services\PresidentAccountService;
 use App\Services\ResolutionStateService;
 use App\Services\MunicipalResolutionService;
+use App\Services\DocumentAttachmentService;
+use App\Services\UploadSettingsService;
+use App\Models\AssociationStatusChange;
+use App\Models\DocumentAttachment;
+use App\Models\SystemAuditEvent;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ComitesController extends Controller
 {
@@ -93,7 +100,9 @@ class ComitesController extends Controller
                     if ($vigenteStateId) {
                         $sub->where('state_id', $vigenteStateId);
                     }
-                    $sub->where('date_end', '>=', $today);
+                    $sub->where('date_end', '>=', $today)
+                        ->whereNotIn('id', Association::whereNotNull('resolution_id')->select('resolution_id'))
+                        ->whereNotIn('id', DB::table('resolution_associations')->select('resolution_id'));
                 });
 
                 if ($request->filled('include_resolution_id')) {
@@ -169,6 +178,76 @@ class ComitesController extends Controller
         $this->hydrateResolutions(collect([$association]));
 
         return new ClubResource($association);
+    }
+
+    public function changeClubStatus(
+        Request $request,
+        Association $association,
+        DocumentAttachmentService $attachments,
+        UploadSettingsService $uploadSettings
+    ) {
+        $data = $request->validate([
+            'state_id' => [
+                'required',
+                Rule::exists('states', 'id')->where(fn ($query) => $query->whereIn('abbreviation', [State::CURRENT, State::PENDING, State::EXPIRED, State::INACTIVE])),
+            ],
+            'reason' => ['required', Rule::in(['RENUNCIA', 'OTRO'])],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'effective_date' => ['required', 'date'],
+            'acta' => ['nullable', 'file', 'mimes:pdf', 'max:'.$uploadSettings->maxKilobytes()],
+        ]);
+
+        $target = State::findOrFail($data['state_id']);
+        if ($data['reason'] === 'RENUNCIA' && $target->abbreviation === State::INACTIVE && ! $request->hasFile('acta')) {
+            throw ValidationException::withMessages(['acta' => 'El acta de renuncia en PDF es obligatoria para inactivar el comité por renuncia.']);
+        }
+
+        DB::transaction(function () use ($request, $association, $attachments, $data) {
+            $fromState = $association->state_id;
+            $change = AssociationStatusChange::create([
+                'association_id' => $association->id,
+                'from_state_id' => $fromState,
+                'to_state_id' => $data['state_id'],
+                'reason' => $data['reason'],
+                'notes' => $data['notes'] ?? null,
+                'effective_date' => $data['effective_date'],
+                'user_id' => $request->user()?->id,
+            ]);
+
+            $association->update(['state_id' => $data['state_id'], 'state_source' => 'MANUAL']);
+
+            if ($request->hasFile('acta')) {
+                $attachments->store($change, DocumentAttachment::TYPE_ACTA_RENUNCIA, $request->file('acta'));
+            }
+
+            SystemAuditEvent::create([
+                'event_key' => 'association-status-change:'.$change->id,
+                'event_type' => 'ASSOCIATION_STATUS_CHANGED',
+                'subject_type' => Association::class,
+                'subject_id' => $association->id,
+                'source' => 'USER',
+                'from_state_id' => $fromState,
+                'to_state_id' => $data['state_id'],
+                'reason_code' => $data['reason'],
+                'executed_by' => $request->user()?->id,
+                'occurred_at' => now(),
+                'metadata' => ['status_change_id' => $change->id, 'effective_date' => $data['effective_date']],
+            ]);
+        });
+
+        $association->load(self::CLUB_WITH);
+        $this->setPresidentForSingle($association);
+        $this->hydrateResolutions(collect([$association]));
+
+        return new ClubResource($association);
+    }
+
+    public function restoreAutomaticClubStatus(Association $association)
+    {
+        $association->update(['state_source' => 'AUTOMATIC']);
+        app(AssociationStateService::class)->sync($association->fresh(['resolution', 'resolutionsHistory']));
+
+        return new ClubResource($association->fresh(self::CLUB_WITH));
     }
 
     public function destroyClub(Association $association)

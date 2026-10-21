@@ -17,16 +17,18 @@ class PartnerService
 {
     private PartnerRepository $partnerRepo;
     private PDFService $pdfService;
+    private BenefitPeriodCalculator $benefitPeriods;
 
-    public function __construct(PartnerRepository $partnerRepo, PDFService $pdfService)
+    public function __construct(PartnerRepository $partnerRepo, PDFService $pdfService, BenefitPeriodCalculator $benefitPeriods)
     {
         $this->partnerRepo = $partnerRepo;
         $this->pdfService = $pdfService;
+        $this->benefitPeriods = $benefitPeriods;
     }
 
-    public function storeWithBeneficiaries(array $partnerData, ?array $beneficiaries = null): Partner
+    public function storeWithBeneficiaries(array $partnerData, ?array $beneficiaries = null, array $benefitContext = []): Partner
     {
-        return DB::transaction(function () use ($partnerData, $beneficiaries) {
+        return DB::transaction(function () use ($partnerData, $beneficiaries, $benefitContext) {
             if (isset($partnerData['create_person']) && $partnerData['create_person']) {
                 $person = People::create($partnerData);
                 $partnerData['person_id'] = $person->id;
@@ -34,13 +36,13 @@ class PartnerService
 
             $partner = Partner::create($partnerData);
             $this->syncBeneficiaries($partner, $beneficiaries ?? []);
-            $this->syncPartnerAsBeneficiary($partner);
+            $this->syncPartnerAsBeneficiary($partner, $benefitContext);
 
             return $partner;
         });
     }
 
-    public function updateWithBeneficiaries(Partner $partner, array $partnerData, ?array $beneficiaries = null): Partner
+    public function updateWithBeneficiaries(Partner $partner, array $partnerData, ?array $beneficiaries = null, array $benefitContext = []): Partner
     {
         $partner->update($partnerData);
 
@@ -49,7 +51,7 @@ class PartnerService
             $this->syncBeneficiaries($partner, $beneficiaries);
         }
 
-        $this->syncPartnerAsBeneficiary($partner);
+        $this->syncPartnerAsBeneficiary($partner, $benefitContext);
 
         return $partner;
     }
@@ -91,7 +93,7 @@ class PartnerService
         }
     }
 
-    private function syncPartnerAsBeneficiary(Partner $partner): void
+    private function syncPartnerAsBeneficiary(Partner $partner, array $context = []): void
     {
         $condition = $partner->socioeconomic_condition;
         $abbreviation = match ($condition) {
@@ -126,19 +128,62 @@ class PartnerService
             'priority' => in_array($abbreviation, ['GES', 'LAC'], true) ? 1 : 2,
         ]);
 
-        $beneficiary->histories()->updateOrCreate([
-            'date_begin' => $partner->date_begin ?? now()->toDateString(),
+        $existingHistory = $beneficiary->histories()
+            ->where('type_benefit_id', $typeBenefit->id)
+            ->latest('date_begin')
+            ->with(['obstetricData', 'state'])
+            ->first();
+        $existingObstetric = $existingHistory?->obstetricData;
+
+        $child = null;
+        if (in_array($abbreviation, ['GES', 'LAC'], true)) {
+            $childQuery = $partner->beneficiaries()->where('id', '!=', $beneficiary->id)->with('person');
+            if (! empty($context['benefit_child_person_id'])) {
+                $childQuery->where('person_id', $context['benefit_child_person_id']);
+            } elseif ($existingObstetric?->child_beneficiary_id) {
+                $childQuery->whereKey($existingObstetric->child_beneficiary_id);
+            }
+            $child = ! empty($context['benefit_child_person_id']) || $existingObstetric?->child_beneficiary_id
+                ? $childQuery->first()
+                : null;
+        }
+
+        $dateBegin = $partner->date_begin ?? now()->toDateString();
+        $fum = $abbreviation === 'GES'
+            ? (array_key_exists('fum', $context) ? $context['fum'] : $existingObstetric?->date_last_menstrual_period)
+            : null;
+
+        $history = $beneficiary->histories()->updateOrCreate([
+            'date_begin' => $dateBegin,
         ], [
             'weight' => 0,
             'height' => 0,
             'hmg' => 0,
-            'date_end' => $this->benefitEndDate($partner->person_id, $typeBenefit->id),
+            'date_end' => in_array($abbreviation, ['GES', 'LAC'], true)
+                ? $this->benefitPeriods->fromBirthdate($abbreviation === 'GES' ? ($fum ?: $dateBegin) : $dateBegin, $abbreviation)
+                : $this->benefitEndDate($partner->person_id, $typeBenefit->id),
             'type_benefit_id' => $typeBenefit->id,
-            'state_id' => $partner->state_id ?: State::idFor(State::CURRENT),
+            'state_id' => $existingHistory?->state?->abbreviation === State::INACTIVE
+                ? $existingHistory->state_id
+                : ($partner->state_id ?: State::idFor(State::CURRENT)),
             'reason_disqualification_id' => null,
             'is_malnourished' => false,
             'is_disabled' => false,
         ]);
+
+        if (in_array($abbreviation, ['GES', 'LAC'], true)) {
+            $history->obstetricData()->updateOrCreate([], [
+                'date_last_menstrual_period' => $fum,
+                'date_estimated_parturition' => ! empty($fum)
+                    ? \Illuminate\Support\Carbon::parse($fum)->addDays(280)->toDateString()
+                    : null,
+                'date_parturition' => $child?->person?->birthdate,
+                'date_end_breastfeeding' => $abbreviation === 'LAC'
+                    ? \Illuminate\Support\Carbon::parse($dateBegin)->addYearsNoOverflow(2)->subDay()->toDateString()
+                    : null,
+                'child_beneficiary_id' => $child?->id,
+            ]);
+        }
     }
 
     private function benefitEndDate(int $personId, int $typeBenefitId): ?string
@@ -146,12 +191,6 @@ class PartnerService
         $birthdate = People::whereKey($personId)->value('birthdate');
         $abbreviation = TypeBenefit::whereKey($typeBenefitId)->value('abbreviation');
 
-        if (! $birthdate || ! in_array($abbreviation, ['NI0', 'NI7'], true)) {
-            return null;
-        }
-
-        $years = $abbreviation === 'NI0' ? 7 : 14;
-
-        return \Illuminate\Support\Carbon::parse($birthdate)->addYears($years)->subDay()->toDateString();
+        return $this->benefitPeriods->fromBirthdate($birthdate, $abbreviation);
     }
 }

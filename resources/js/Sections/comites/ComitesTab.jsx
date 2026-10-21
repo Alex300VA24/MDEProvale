@@ -1,4 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
@@ -15,6 +16,10 @@ const BASE = '/api/dashboard/club-madres';
 const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+const localToday = () => {
+    const date = new Date();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
 
 function resolutionLabel(res) {
     if (!res) return '';
@@ -35,6 +40,7 @@ function resolutionLabel(res) {
 
 function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     const toast = useToast();
+    const maxUploadMb = Number(usePage().props.upload_max_mb || 10);
     const [code, setCode] = useState(() => {
         if (mode === 'edit' && club) return club.code || '';
         return options.next_code ? String(options.next_code) : '';
@@ -47,6 +53,10 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     const [resolutionId, setResolutionId] = useState(mode === 'edit' && club ? club.resolution_id ?? '' : '');
     const [placeSectorId, setPlaceSectorId] = useState(mode === 'edit' && club ? club.place_sector_id ?? '' : '');
     const [typePremisesId, setTypePremisesId] = useState(mode === 'edit' && club ? club.type_premises_id ?? '' : '');
+    const [stateId, setStateId] = useState(mode === 'edit' && club ? club.state_id ?? '' : '');
+    const [statusReason, setStatusReason] = useState('RENUNCIA');
+    const [statusNotes, setStatusNotes] = useState('');
+    const [resignationFile, setResignationFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -87,6 +97,12 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
         });
     }
 
+    const editableStates = (options.states || []).filter(
+        (state) => ['VIG', 'INA'].includes(state.abbreviation) || (mode === 'edit' && String(state.id) === String(club?.state_id))
+    );
+    const statusChanged = mode === 'edit' && String(stateId) !== String(club.state_id);
+    const goingInactive = statusChanged && editableStates.find((state) => String(state.id) === String(stateId))?.abbreviation === 'INA';
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!code || !name || !companyName || !address || !resolutionId || !placeSectorId || !typePremisesId) {
@@ -95,6 +111,14 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
         }
         if (isCodeTaken) {
             toast.error('El código ingresado ya está registrado.');
+            return;
+        }
+        if (statusChanged && goingInactive && !statusNotes.trim()) {
+            toast.error('Ingrese el detalle del cambio de estado.');
+            return;
+        }
+        if (statusChanged && goingInactive && statusReason === 'RENUNCIA' && !resignationFile) {
+            toast.error('Adjunte el acta de renuncia en PDF.');
             return;
         }
         setSubmitting(true);
@@ -112,6 +136,15 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
             };
             if (mode === 'edit') {
                 await http.put(`${BASE}/clubs/${club.id}`, payload);
+                if (statusChanged) {
+                    const statusData = new FormData();
+                    statusData.append('state_id', stateId);
+                    statusData.append('reason', goingInactive ? statusReason : 'OTRO');
+                    statusData.append('notes', goingInactive ? statusNotes.trim() : '');
+                    statusData.append('effective_date', localToday());
+                    if (goingInactive && statusReason === 'RENUNCIA' && resignationFile) statusData.append('acta', resignationFile);
+                    await http.post(`${BASE}/clubs/${club.id}/status-change`, statusData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                }
                 toast.success('Comité actualizado correctamente.');
             } else {
                 await http.post(`${BASE}/clubs`, payload);
@@ -211,6 +244,28 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                             rows={2}
                         />
                     </div>
+                    {mode === 'edit' && (
+                        <div className="sm:col-span-2 rounded-xl border-2 border-wheat bg-base p-4 space-y-3">
+                            <p className="text-xs font-bold uppercase tracking-wider text-charcoal">Cambio de estado del comité</p>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div><label htmlFor="committee-state" className={labelCls}>Estado</label><select id="committee-state" value={stateId} onChange={(event) => setStateId(event.target.value)} className={inputCls}>{editableStates.map((state) => <option key={state.id} value={state.id}>{state.title}</option>)}</select></div>
+                                {goingInactive && <div><label htmlFor="committee-reason" className={labelCls}>Motivo</label><select id="committee-reason" value={statusReason} onChange={(event) => setStatusReason(event.target.value)} className={inputCls}><option value="RENUNCIA">Renuncia</option><option value="OTRO">Otro</option></select></div>}
+                            </div>
+                            {goingInactive && <>
+                                <div><label htmlFor="committee-status-notes" className={labelCls}>Detalle del cambio</label><textarea id="committee-status-notes" rows="2" value={statusNotes} onChange={(event) => setStatusNotes(event.target.value)} className={inputCls} /></div>
+                                {statusReason === 'RENUNCIA' && <div><label htmlFor="resignation-file" className={labelCls}>Acta de renuncia (PDF; máx. {maxUploadMb} MB)</label><input id="resignation-file" type="file" accept=".pdf,application/pdf" onChange={(event) => {
+                                    const file = event.target.files?.[0] || null;
+                                    if (file && file.size > maxUploadMb * 1024 * 1024) {
+                                        toast.error(`El archivo no debe exceder los ${maxUploadMb} MB.`);
+                                        event.target.value = '';
+                                        setResignationFile(null);
+                                        return;
+                                    }
+                                    setResignationFile(file);
+                                }} className="block w-full text-xs text-slate-600 file:mr-2 file:rounded-lg file:border-0 file:bg-leaf file:px-3 file:py-2 file:font-bold file:text-white" /></div>}
+                            </>}
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>

@@ -60,6 +60,10 @@ class BeneficiarieResource extends JsonResource
                     'reason_disqualification' => $h->reasonDisqualification
                         ? ['id' => $h->reasonDisqualification->id, 'title' => $h->reasonDisqualification->title]
                         : null,
+                    'obstetric_data' => $h->relationLoaded('obstetricData') && $h->obstetricData ? [
+                        'fum' => $h->obstetricData->date_last_menstrual_period,
+                        'child_beneficiary_id' => $h->obstetricData->child_beneficiary_id,
+                    ] : null,
                 ]);
             }),
             'documents' => $this->whenLoaded('documents', function () {

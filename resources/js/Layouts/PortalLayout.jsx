@@ -8,6 +8,7 @@ export const portalPath = (path = '') => `${base}${path}`;
 const NAV = [
     { key: 'inicio', label: 'Inicio', icon: 'fa-house', href: '/portal-presidentas', match: (p) => /\/portal-presidentas\/?$/.test(p) },
     { key: 'socios', label: 'Socios y beneficiarios', icon: 'fa-users', href: '/portal-presidentas/socios', match: (p) => p.includes('/portal-presidentas/socios') },
+    { key: 'documentos', label: 'Documentos descargables', icon: 'fa-file-arrow-down', href: '/portal-presidentas/documentos', match: (p) => p.includes('/portal-presidentas/documentos') },
     { key: 'clave', label: 'Cambiar contraseña', icon: 'fa-key', href: '/portal-presidentas/cambiar-contrasena', match: (p) => p.includes('/cambiar-contrasena') },
 ];
 

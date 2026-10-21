@@ -8,6 +8,15 @@ class PartnerResource extends JsonResource
 {
     public function toArray($request)
     {
+        $selfBenefit = $this->relationLoaded('beneficiaries')
+            ? $this->beneficiaries
+                ->first(fn ($beneficiary) => (int) $beneficiary->person_id === (int) $this->person_id)
+                ?->histories
+                ?->sortByDesc('date_begin')
+                ?->first(fn ($history) => in_array($history->typeBenefit?->abbreviation, ['GES', 'LAC'], true))
+            : null;
+        $obstetric = $selfBenefit?->obstetricData;
+
         return [
             'id' => $this->id,
             'person_id' => $this->person_id,
@@ -52,6 +61,15 @@ class PartnerResource extends JsonResource
             }),
             'beneficiaries_count' => $this->whenCounted('beneficiaries'),
             'beneficiaries' => BeneficiarieResource::collection($this->whenLoaded('beneficiaries')),
+            'benefit_context' => $selfBenefit ? [
+                'history_id' => $selfBenefit->id,
+                'abbreviation' => $selfBenefit->typeBenefit?->abbreviation,
+                'date_begin' => $selfBenefit->date_begin,
+                'date_end' => $selfBenefit->date_end,
+                'fum' => $obstetric?->date_last_menstrual_period,
+                'child_beneficiary_id' => $obstetric?->child_beneficiary_id,
+                'child_person_id' => $obstetric?->childBeneficiary?->person_id,
+            ] : null,
             'documents' => $this->whenLoaded('documents', function () {
                 return $this->documents->map(fn ($doc) => [
                     'id' => $doc->id,

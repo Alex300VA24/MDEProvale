@@ -10,7 +10,8 @@ import { personLabel } from './format';
 import { associationLabel } from '../comites/format';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
-const TODAY = new Date().toISOString().split('T')[0];
+const currentDate = new Date();
+const TODAY = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
 const inputCls = 'w-full px-4 py-2 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 const labelCls = 'block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1';
 const Optional = () => <span className="text-earth font-normal normal-case tracking-normal">(opcional)</span>;
@@ -141,6 +142,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
     const [occupation, setOccupation] = useState(partner?.occupation || '');
     const [childrenCount, setChildrenCount] = useState(partner?.children_count ?? '');
     const [condition, setCondition] = useState(partner?.socioeconomic_condition || (partner?.is_pregnant ? 'GESTANTE' : partner?.is_lactating ? 'LACTANTE' : ''));
+    const [fum, setFum] = useState(partner?.benefit_context?.fum || '');
     const [familyIncome, setFamilyIncome] = useState(partner?.family_income || '');
     const [observations, setObservations] = useState(partner?.observations || '');
     const [familyDocument, setFamilyDocument] = useState({ documentType: 'expediente_unico', file: null });
@@ -160,6 +162,18 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         ['DISCAPACITADO', 'Discapacitado'], ['OTROS', 'Otros'],
     ];
     const partnerAge = useMemo(() => ageFrom(personState.personData.birthdate), [personState.personData.birthdate]);
+    const calculatedEnd = condition === 'GESTANTE' && fum
+        ? (() => {
+            const [year, month, day] = fum.split('-').map(Number);
+            const targetMonth = month - 1 + 9;
+            const targetYear = year + Math.floor(targetMonth / 12);
+            const normalizedMonth = targetMonth % 12;
+            const lastDay = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+            const date = new Date(Date.UTC(targetYear, normalizedMonth, Math.min(day, lastDay)));
+            date.setUTCDate(date.getUTCDate() - 1);
+            return date.toISOString().slice(0, 10);
+        })()
+        : '';
 
     const updateBeneficiary = (value) => setBeneficiaries((current) => current.map((item, index) => index === activeBeneficiary ? value : item));
     const addBeneficiary = () => {
@@ -189,6 +203,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         event.preventDefault();
         if (!associationId) return toast.error('Seleccione el club o comité.');
         if (condition === 'ADULTO_MAYOR' && (partnerAge === null || partnerAge <= 65)) return toast.error('Adulto Mayor requiere ser mayor de 65 años.');
+        if (condition === 'GESTANTE' && !fum) return toast.error('Registre la fecha de última menstruación (FUM).');
         if (condition === 'OTROS' && !observations.trim()) return toast.error('Indique en observaciones si corresponde a TBC, desnutrición u otra condición.');
         if (condition === 'DISCAPACITADO' && !hasConadis && !conadisDocument.file) return toast.error('Adjunte el documento CONADIS en PDF.');
         if (mode === 'create' && !familyDocument.file) return toast.error('Adjunte el expediente único de la socia en PDF.');
@@ -222,6 +237,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
                 is_pregnant: condition === 'GESTANTE',
                 is_lactating: condition === 'LACTANTE',
                 family_income: familyIncome === '' ? null : familyIncome,
+                fum: condition === 'GESTANTE' ? fum : null,
                 ...(mode === 'create' ? {
                     beneficiaries: resolvedBeneficiaries.map((item) => ({
                         person_id: item.personId,
@@ -295,6 +311,12 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
                                 <div><label className={labelCls}>Ingreso familiar (S/) <Optional /></label><input type="number" min="0" step="0.01" value={familyIncome} onChange={(event) => setFamilyIncome(event.target.value)} className={inputCls} /></div>
                                 <div><label className={labelCls}>Condición <Optional /></label><select value={condition} onChange={(event) => setCondition(event.target.value)} className={inputCls}><option value="">Ninguna</option>{conditionOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>{condition === 'ADULTO_MAYOR' && <p className={`mt-1 text-xs font-semibold ${partnerAge !== null && partnerAge > 65 ? 'text-leaf' : 'text-clay'}`}>{partnerAge === null ? 'Ingrese fecha de nacimiento.' : `Edad calculada: ${partnerAge} años.`}</p>}</div>
                             </div>
+                            {condition === 'GESTANTE' && (
+                                <div className="grid grid-cols-1 gap-3 rounded-xl border border-blue/20 bg-blue-light/30 p-3 sm:grid-cols-2">
+                                    <div><label htmlFor="fum" className={labelCls}>Fecha de última menstruación (FUM) *</label><input id="fum" type="date" max={TODAY} value={fum} onChange={(event) => setFum(event.target.value)} className={inputCls} required /></div>
+                                    <div><label className={labelCls}>Fecha de término calculada</label><div className="rounded-xl border-2 border-wheat bg-base px-4 py-2 text-xs font-semibold text-earth">{calculatedEnd || 'Ingrese la FUM'}</div></div>
+                                </div>
+                            )}
                             {condition === 'OTROS' && <div><label className={labelCls}>Observaciones / condición específica *</label><textarea rows="3" value={observations} onChange={(event) => setObservations(event.target.value)} placeholder="Ej.: Persona con TBC o desnutrición" className={inputCls} required /></div>}
                         </section>
 

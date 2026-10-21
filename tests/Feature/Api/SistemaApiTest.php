@@ -70,6 +70,46 @@ class SistemaApiTest extends TestCase
         return User::find($userId);
     }
 
+    public function test_upload_limit_is_configurable_with_a_ten_mb_cap(): void
+    {
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE.'/upload-config')
+            ->assertOk()
+            ->assertJsonPath('data.max_attachment_mb', 10)
+            ->assertJsonPath('data.max', 10);
+
+        $this->actingAs($this->adminUser())
+            ->putJson(self::BASE.'/upload-config', ['max_attachment_mb' => 7])
+            ->assertOk()
+            ->assertJsonPath('data.max_attachment_mb', 7);
+
+        $this->assertSame('7', (string) Setting::get('uploads.max_attachment_mb'));
+        $this->actingAs($this->adminUser())
+            ->putJson(self::BASE.'/upload-config', ['max_attachment_mb' => 11])
+            ->assertUnprocessable();
+    }
+
+    public function test_audit_events_are_visible_in_system_module(): void
+    {
+        \App\Models\SystemAuditEvent::create([
+            'event_key' => 'test-event:1',
+            'event_type' => 'BENEFIT_AUTO_DEACTIVATED',
+            'subject_type' => \App\Models\BeneficiaryHistory::class,
+            'subject_id' => 77,
+            'source' => 'SYSTEM',
+            'to_state_id' => 1,
+            'reason_code' => 'BENEFIT_END_DATE_REACHED',
+            'occurred_at' => now(),
+        ]);
+
+        $this->actingAs($this->adminUser())
+            ->getJson(self::BASE.'/audit-events')
+            ->assertOk()
+            ->assertJsonPath('data.0.event_type', 'BENEFIT_AUTO_DEACTIVATED')
+            ->assertJsonPath('data.0.subject', 'BeneficiaryHistory #77')
+            ->assertJsonPath('data.0.executed_by', 'Sistema');
+    }
+
     // ==================== USUARIOS ====================
 
     public function test_usuarios_endpoint_returns_json_collection(): void

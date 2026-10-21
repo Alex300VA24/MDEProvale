@@ -69,7 +69,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         mode === 'edit' && pecosa ? pecosa.association_id ?? pecosa.association?.id ?? '' : ''
     );
     const [deliveryDate, setDeliveryDate] = useState(
-        mode === 'edit' && pecosa ? dateValue(pecosa.delivery_date) : new Date().toISOString().split('T')[0]
+        mode === 'edit' && pecosa ? dateValue(pecosa.delivery_date) : ''
     );
     const [presidentName, setPresidentName] = useState(
         mode === 'edit' && pecosa
@@ -150,6 +150,27 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         setDetails((prev) => prev.map((d, i) => (i === index ? { ...d, [field]: value } : d)));
 
     const removeDetail = (index) => setDetails((prev) => prev.filter((_, i) => i !== index));
+
+    const allProductsSelected =
+        detailOptions.length > 0 &&
+        detailOptions.every((dp) => details.some((d) => String(d.detail_product_id) === String(dp.id)));
+
+    const toggleAllProducts = (checked) => {
+        if (!checked) {
+            setDetails((prev) => prev.filter((d) => !detailOptions.some((dp) => String(dp.id) === String(d.detail_product_id))));
+            return;
+        }
+        setDetails((prev) => {
+            const missing = detailOptions
+                .filter((dp) => !prev.some((d) => String(d.detail_product_id) === String(dp.id)))
+                .map((dp) => ({
+                    ...emptyDetailRow(`all-${dp.id}`),
+                    detail_product_id: dp.id,
+                    unit_price: dp.unit_price,
+                }));
+            return [...prev.filter((d) => d.detail_product_id), ...missing];
+        });
+    };
 
     const handleDetailProductChange = (index, value) => {
         const dp = (options.detail_products || []).find((x) => String(x.id) === String(value));
@@ -288,9 +309,20 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                         <h4 className="font-extrabold text-charcoal text-lg flex items-center gap-2">
                             <i className="fas fa-list text-leaf" /> Detalle de Productos
                         </h4>
-                        <button type="button" onClick={addDetail} className="btn-secondary text-sm">
-                            <i className="fas fa-plus mr-1" /> Agregar Producto
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <label className="flex items-center gap-2 text-sm font-bold text-charcoal cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={allProductsSelected}
+                                    onChange={(e) => toggleAllProducts(e.target.checked)}
+                                    disabled={detailOptions.length === 0}
+                                />
+                                Todos los productos
+                            </label>
+                            <button type="button" onClick={addDetail} className="btn-secondary text-sm">
+                                <i className="fas fa-plus mr-1" /> Agregar Producto
+                            </button>
+                        </div>
                     </div>
 
                     {details.length === 0 && (

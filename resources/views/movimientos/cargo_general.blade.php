@@ -16,7 +16,7 @@
         .main-table { width: 98%; border-collapse: collapse; border: 2px solid #000; margin-left: 1%; margin-bottom: 5px; table-layout: fixed; }
         .header-table { width: 98%; margin-left: 1%; border-collapse: collapse; border-spacing: 0; margin-bottom: 8px; }
         .main-table th { background-color: #d8d8d8; border: 1px solid #000; padding: 4px 2px; font-size: 7.5pt; font-weight: bold; text-align: center; vertical-align: middle; line-height: 1.15; }
-        .main-table td { border: 1px solid #000; padding: 4px 3px; font-size: 7pt; vertical-align: middle; text-align: center; height: 9mm; overflow-wrap: break-word; }
+        .main-table td { border: 1px solid #000; padding: 4px 3px; font-size: 7pt; vertical-align: middle; text-align: center; height: 22mm; overflow-wrap: break-word; }
         .col-n { background-color: #f0f0f0; font-weight: bold; }
         .left { text-align: left !important; padding-left: 3px; }
         .numeric { white-space: nowrap; }
@@ -64,19 +64,19 @@
     </table>
 
     <table class="main-table">
-        <colgroup><col style="width:3%"><col style="width:4.5%"><col style="width:17%"><col style="width:15%"><col style="width:18%"><col style="width:10%"><col style="width:5%">@if($showMilk)<col style="width:6.5%">@endif @if($showOat)<col style="width:6.5%">@endif<col style="width:14.5%"></colgroup>
+        <colgroup><col style="width:3%"><col style="width:4.5%"><col style="width:15%"><col style="width:13%"><col style="width:15%"><col style="width:10%"><col style="width:5%">@if($showMilk)<col style="width:5.5%">@endif @if($showOat)<col style="width:5.5%">@endif<col style="width:23.5%"></colgroup>
         <thead>
             <tr>
                 <th style="width:3%">N.°</th>
                 <th style="width:4.5%">CÓD.</th>
-                <th style="width:17%">CLUB DE MADRES</th>
-                <th style="width:15%">PRESIDENTA</th>
-                <th style="width:18%">DIRECCIÓN</th>
+                <th style="width:15%">CLUB DE MADRES</th>
+                <th style="width:13%">PRESIDENTA</th>
+                <th style="width:15%">DIRECCIÓN</th>
                 <th style="width:10%">SECTOR</th>
                 <th style="width:5%">BENEF.</th>
-                @if($showMilk)<th style="width:6.5%">TOTAL LECHE (TARROS)</th>@endif
-                @if($showOat)<th style="width:6.5%">TOTAL HOJUELA (KG)</th>@endif
-                <th style="width:14.5%">FIRMA</th>
+                @if($showMilk)<th style="width:5.5%">TOTAL LECHE (TARROS)</th>@endif
+                @if($showOat)<th style="width:5.5%">TOTAL HOJUELA (KG)</th>@endif
+                <th style="width:23.5%">FIRMA</th>
             </tr>
         </thead>
         <tbody>

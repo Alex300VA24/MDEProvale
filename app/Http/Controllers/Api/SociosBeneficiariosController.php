@@ -24,6 +24,7 @@ use App\Models\TypeBenefit;
 use App\Services\DocumentAttachmentService;
 use App\Services\PartnerService;
 use App\Services\ReniecService;
+use App\Services\UploadSettingsService;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -46,6 +47,7 @@ class SociosBeneficiariosController extends Controller
         'beneficiaries.histories.typeBenefit:id,title,abbreviation',
         'beneficiaries.histories.state:id,title',
         'beneficiaries.histories.reasonDisqualification:id,title',
+        'beneficiaries.histories.obstetricData.childBeneficiary.person',
         'documents',
     ];
 
@@ -142,8 +144,9 @@ class SociosBeneficiariosController extends Controller
     public function storePartner(StorePartnerRequest $request, DocumentAttachmentService $attachmentService)
     {
         $partner = DB::transaction(function () use ($request, $attachmentService) {
-            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries']);
-            $partner = $this->partnerService->storeWithBeneficiaries($partnerData, $request->input('beneficiaries'));
+            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id']);
+            $context = $request->only(['fum', 'benefit_child_person_id']);
+            $partner = $this->partnerService->storeWithBeneficiaries($partnerData, $request->input('beneficiaries'), $context);
             $this->storeRegistrationDocuments($request, $partner, $attachmentService);
 
             return $partner;
@@ -157,8 +160,9 @@ class SociosBeneficiariosController extends Controller
     public function updatePartner(UpdatePartnerRequest $request, Partner $partner, DocumentAttachmentService $attachmentService)
     {
         $partner = DB::transaction(function () use ($request, $partner, $attachmentService) {
-            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries']);
-            $partner = $this->partnerService->updateWithBeneficiaries($partner, $partnerData, $request->input('beneficiaries'));
+            $partnerData = $request->safe()->except(['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id']);
+            $context = $request->only(['fum', 'benefit_child_person_id']);
+            $partner = $this->partnerService->updateWithBeneficiaries($partner, $partnerData, $request->input('beneficiaries'), $context);
             $this->storeRegistrationDocuments($request, $partner, $attachmentService);
 
             return $partner;
@@ -532,7 +536,7 @@ class SociosBeneficiariosController extends Controller
 
     // ==================== DOCUMENTOS ADJUNTOS ====================
 
-    public function uploadDocument(Request $request, DocumentAttachmentService $attachmentService)
+    public function uploadDocument(Request $request, DocumentAttachmentService $attachmentService, UploadSettingsService $uploadSettings)
     {
         $validated = $request->validate([
             'attachable_type' => ['required', 'string', Rule::in(['partner', 'beneficiarie'])],
@@ -546,7 +550,7 @@ class SociosBeneficiariosController extends Controller
                     ['mimes:pdf'],
                     ['mimes:pdf,jpg,jpeg,png,webp']
                 ),
-                'max:10240',
+                'max:'.$uploadSettings->maxKilobytes(),
             ],
         ]);
 

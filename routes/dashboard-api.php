@@ -102,6 +102,8 @@ Route::prefix('dashboard/club-madres')->middleware('module:club-madres')->name('
     Route::get('clubs/{association}', [ComitesController::class, 'club'])->name('clubs.show');
     Route::post('clubs', [ComitesController::class, 'storeClub'])->name('clubs.store');
     Route::put('clubs/{association}', [ComitesController::class, 'updateClub'])->name('clubs.update');
+    Route::post('clubs/{association}/status-change', [ComitesController::class, 'changeClubStatus'])->middleware('module:club-madres,edit')->name('clubs.status-change');
+    Route::post('clubs/{association}/restore-automatic-status', [ComitesController::class, 'restoreAutomaticClubStatus'])->middleware('module:club-madres,edit')->name('clubs.restore-automatic-status');
     Route::delete('clubs/{association}', [ComitesController::class, 'destroyClub'])->name('clubs.destroy');
     Route::post('clubs/{association}/asignar-cargo', [ComitesController::class, 'asignarCargo'])->name('clubs.asignar-cargo');
     Route::post('clubs/{association}/asignar-cargos', [ComitesController::class, 'asignarCargos'])->name('clubs.asignar-cargos');
@@ -122,12 +124,15 @@ Route::prefix('dashboard/club-madres')->middleware('module:club-madres')->name('
 // ==================== SUPERVISIÓN DE COMITÉS (slug de módulo: club-madres) ====================
 Route::prefix('dashboard/supervision-comites')->middleware('module:club-madres')->name('api.supervision-comites.')->group(function () {
     Route::get('/', [SupervisionComitesController::class, 'index'])->name('index');
-    Route::put('dia-sin-supervision', [SupervisionComitesController::class, 'setOffDay'])->name('dia-sin-supervision');
-    Route::put('{association}/visita', [SupervisionComitesController::class, 'setVisit'])->name('visita');
+    Route::put('dia-sin-supervision', [SupervisionComitesController::class, 'setOffDay'])->middleware('module:club-madres,edit')->name('dia-sin-supervision');
+    Route::post('visits/{supervisionVisit}/attachments', [SupervisionComitesController::class, 'uploadAttachment'])->middleware('module:club-madres,edit')->name('attachments.store');
+    Route::get('attachments/{documentAttachment}', [SupervisionComitesController::class, 'downloadAttachment'])->name('attachments.show');
+    Route::delete('attachments/{documentAttachment}', [SupervisionComitesController::class, 'destroyAttachment'])->middleware('module:club-madres,edit')->name('attachments.destroy');
+    Route::put('{association}/visita', [SupervisionComitesController::class, 'setVisit'])->middleware('module:club-madres,edit')->name('visita');
 });
 
 // ==================== EVALUACIÓN NUTRICIONAL (slug de módulo: socios-beneficiarios) ====================
-Route::prefix('dashboard/evaluacion-nutricional')->middleware('module:socios-beneficiarios')->name('api.evaluacion-nutricional.')->group(function () {
+Route::prefix('dashboard/evaluacion-nutricional')->middleware('module:evaluacion-nutricional')->name('api.evaluacion-nutricional.')->group(function () {
     Route::get('options', [EvaluacionNutricionalController::class, 'options'])->name('options');
     Route::get('{association}/beneficiarios', [EvaluacionNutricionalController::class, 'beneficiarios'])->name('beneficiarios');
 });
@@ -234,5 +239,10 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
         // Parámetros del límite de consultas del asistente IA.
         Route::get('asistente-config', [SistemaController::class, 'asistenteConfig'])->name('asistente-config');
         Route::put('asistente-config', [SistemaController::class, 'updateAsistenteConfig'])->name('asistente-config.update');
+        Route::get('upload-config', [SistemaController::class, 'uploadConfig'])->name('upload-config');
+        Route::put('upload-config', [SistemaController::class, 'updateUploadConfig'])
+            ->middleware('module:sistema,edit')
+            ->name('upload-config.update');
+        Route::get('audit-events', [SistemaController::class, 'auditEvents'])->name('audit-events');
     });
 });

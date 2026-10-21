@@ -400,7 +400,7 @@ class PvlReportContextService
         if ($age <= 13) {
             return 'personas_7_a_13';
         }
-        if ($age >= 65) {
+        if ($age > 65) {
             return 'ancianos';
         }
 

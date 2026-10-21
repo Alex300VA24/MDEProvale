@@ -18,6 +18,9 @@ class DocumentAttachment extends Model
     public const TYPE_CONSTANCIA_MEDICA = 'constancia_medica';
     public const TYPE_EXPEDIENTE_UNICO = 'expediente_unico';
     public const TYPE_CONADIS = 'conadis';
+    public const TYPE_ACTA_RENUNCIA = 'acta_renuncia';
+    public const TYPE_SUPERVISION_DOCUMENT = 'supervision_document';
+    public const TYPE_SUPERVISION_PHOTO = 'supervision_photo';
 
     public const TYPES = [
         self::TYPE_FICHA_FISICA,
@@ -28,6 +31,9 @@ class DocumentAttachment extends Model
         self::TYPE_CONSTANCIA_MEDICA,
         self::TYPE_EXPEDIENTE_UNICO,
         self::TYPE_CONADIS,
+        self::TYPE_ACTA_RENUNCIA,
+        self::TYPE_SUPERVISION_DOCUMENT,
+        self::TYPE_SUPERVISION_PHOTO,
     ];
 
     protected $fillable = [
@@ -37,6 +43,10 @@ class DocumentAttachment extends Model
         'file_name',
         'mime_type',
         'file_size',
+        'storage_disk',
+        'file_path',
+        'checksum',
+        'uploaded_by',
         'file_data',
     ];
 

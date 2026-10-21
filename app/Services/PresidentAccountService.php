@@ -17,7 +17,7 @@ class PresidentAccountService
      *
      * - Usuario = DNI
      * - Contraseña inicial = DNI (solo al crearse la cuenta por primera vez)
-     * - Señaliza que debe cambiar su contraseña en el primer ingreso.
+     * - El cambio de contraseña es opcional; no se fuerza en el primer ingreso.
      */
     public function sync(Partner $partner): ?User
     {
@@ -67,7 +67,7 @@ class PresidentAccountService
 
             return User::create(array_merge($data, [
                 'password'             => Hash::make($dni),
-                'must_change_password' => true,
+                'must_change_password' => false,
             ]));
         }
 

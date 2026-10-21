@@ -269,7 +269,7 @@
                         <td style="border: none; font-size: 7pt; padding: 1px; height: 25px; width: 25%; text-align: center;">SEMESTRE</td>
                     </tr>
                     <tr>
-                        <td style="padding: 6px 2px; text-align: center; font-weight: bold;">{{ $partner?->date_begin ? date('Y', strtotime($partner->date_begin)) : date('Y') }}</td>
+                        <td style="padding: 6px 2px; text-align: center; font-weight: bold;">{{ $partner?->date_begin ? date('Y', strtotime($partner->date_begin)) : ($partner ? date('Y') : '') }}</td>
                         <td style="padding: 6px 2px; text-align: center; font-weight: bold;">{{ $partner?->date_begin ? (date('n', strtotime($partner->date_begin)) <= 6 ? 'I' : 'II') : '' }}</td>
                     </tr>
                 </table>
@@ -651,7 +651,7 @@
     <table style="width: 100%; border: 2px solid #000; margin-top: 5px;">
         <tr>
             <td style="width: 33%; height: 70px; padding: 2px 3px; font-size: 7pt; position: relative; vertical-align: bottom;">
-                <div style="font-size: 6pt; position: absolute; top: 2px; left: 3px;">FECHA: {{ $partner?->date_begin ? date('d/m/Y', strtotime($partner->date_begin)) : date('d/m/Y') }}</div>
+                <div style="font-size: 6pt; position: absolute; top: 2px; left: 3px;">FECHA: {{ $partner?->date_begin ? date('d/m/Y', strtotime($partner->date_begin)) : ($partner ? date('d/m/Y') : '') }}</div>
                 <div style="border-bottom: 1px solid #000; width: 80%; margin: 35px auto 2px auto;"></div>
                 <div style="font-weight: bold; font-size: 6pt; text-align: center;">FIRMA SOCIA</div>
             </td>
@@ -660,7 +660,7 @@
                 <div style="font-weight: bold; font-size: 6pt;">HUELLA</div>
             </td>
             <td style="width: 45%; height: 70px; padding: 2px 3px; font-size: 7pt; text-align: center; vertical-align: bottom; position: relative;">
-                <div style="font-size: 6pt; position: absolute; top: 2px; left: 3px;">FECHA: {{ date('d/m/Y') }}</div>
+                <div style="font-size: 6pt; position: absolute; top: 2px; left: 3px;">FECHA: {{ $partner ? date('d/m/Y') : '' }}</div>
                 <div style="border-bottom: 1px solid #000; width: 80%; margin: 35px auto 2px auto;"></div>
                 <div style="font-weight: bold; font-size: 6pt;">NOMBRE, FIRMA Y SELLO DE LA PRESIDENTA</div>
             </td>

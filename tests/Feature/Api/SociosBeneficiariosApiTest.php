@@ -455,6 +455,65 @@ class SociosBeneficiariosApiTest extends TestCase
         $this->assertDatabaseHas('beneficiary_histories', ['type_benefit_id' => $childBenefitId, 'date_end' => '2027-06-09']);
     }
 
+    public function test_ges_uses_child_birthdate_and_automatic_expiry_is_audited_once(): void
+    {
+        $associationId = $this->seedAssociation();
+        $partnerPersonId = $this->seedPerson(['dni' => '70110001', 'birthdate' => '1995-04-12']);
+        $childPersonId = $this->seedPerson(['dni' => '70110002', 'birthdate' => '2026-01-15']);
+        $relationshipId = \Illuminate\Support\Facades\DB::table('relationships')->where('title', 'Hijo')->value('id');
+        $currentStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
+            'title' => 'Vigente', 'abbreviation' => \App\Models\State::CURRENT,
+        ]);
+        $inactiveStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
+            'title' => 'Inactivo', 'abbreviation' => \App\Models\State::INACTIVE,
+        ]);
+        $gesBenefitId = \Illuminate\Support\Facades\DB::table('type_benefits')->insertGetId([
+            'title' => 'Madre gestante', 'abbreviation' => 'GES', 'min_age' => 12, 'max_age' => null,
+            'priority' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->userWithAccess())->postJson(self::BASE.'/partners', [
+            'person_id' => $partnerPersonId,
+            'association_id' => $associationId,
+            'state_id' => $currentStateId,
+            'date_begin' => '2026-01-01',
+            'socioeconomic_condition' => 'GESTANTE',
+            'fum' => '2025-04-10',
+            'benefit_child_person_id' => $childPersonId,
+            'beneficiaries' => [[
+                'person_id' => $childPersonId,
+                'relationship_id' => $relationshipId,
+            ]],
+        ])->assertCreated();
+
+        $historyId = \Illuminate\Support\Facades\DB::table('beneficiary_histories')
+            ->where('type_benefit_id', $gesBenefitId)
+            ->value('id');
+        $this->assertNotNull($historyId);
+        $this->assertDatabaseHas('beneficiary_histories', ['id' => $historyId, 'date_end' => '2026-10-14']);
+        $this->assertDatabaseHas('obstetric_data', [
+            'beneficiary_history_id' => $historyId,
+            'date_last_menstrual_period' => '2025-04-10',
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->putJson(self::BASE.'/partners/'.$response->json('data.id'), ['observations' => 'Control actualizado'])
+            ->assertOk();
+        $this->assertDatabaseHas('beneficiary_histories', ['id' => $historyId, 'date_end' => '2026-10-14']);
+        $this->assertDatabaseHas('obstetric_data', [
+            'beneficiary_history_id' => $historyId,
+            'date_last_menstrual_period' => '2025-04-10',
+        ]);
+
+        $service = app(\App\Services\BenefitExpiryService::class);
+        $this->assertSame(1, $service->process(\Illuminate\Support\Carbon::parse('2026-10-15')));
+        $this->assertSame(0, $service->process(\Illuminate\Support\Carbon::parse('2026-10-15')));
+
+        $this->assertDatabaseHas('beneficiary_histories', ['id' => $historyId, 'state_id' => $inactiveStateId]);
+        $this->assertDatabaseCount('system_audit_events', 1);
+        $this->assertDatabaseCount('notifications', 1);
+    }
+
     public function test_adulto_mayor_condition_rejects_partner_under_65(): void
     {
         $associationId = $this->seedAssociation();

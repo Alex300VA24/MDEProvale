@@ -9,6 +9,7 @@ use App\Models\State;
 use App\Models\People;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use App\Services\UploadSettingsService;
 
 class UpdatePartnerRequest extends FormRequest
 {
@@ -19,6 +20,8 @@ class UpdatePartnerRequest extends FormRequest
 
     public function rules(): array
     {
+        $maxFile = app(UploadSettingsService::class)->maxKilobytes();
+
         return [
             'person_id' => 'sometimes|required|exists:people,id',
             'association_id' => 'sometimes|required|exists:associations,id',
@@ -34,8 +37,10 @@ class UpdatePartnerRequest extends FormRequest
             'is_pregnant' => 'nullable|boolean',
             'is_lactating' => 'nullable|boolean',
             'family_income' => 'nullable|numeric|min:0',
-            'family_document' => 'nullable|file|mimes:pdf|max:10240',
-            'conadis_document' => 'nullable|file|mimes:pdf|max:10240',
+            'fum' => 'required_if:socioeconomic_condition,GESTANTE|nullable|date|before_or_equal:today',
+            'benefit_child_person_id' => 'nullable|exists:people,id',
+            'family_document' => "nullable|file|mimes:pdf|max:{$maxFile}",
+            'conadis_document' => "nullable|file|mimes:pdf|max:{$maxFile}",
             'beneficiaries' => 'nullable|array',
             'beneficiaries.*.person_id' => 'required|exists:people,id',
             'beneficiaries.*.relationship_id' => 'required|exists:relationships,id',
@@ -51,6 +56,14 @@ class UpdatePartnerRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            if ($this->filled('benefit_child_person_id')) {
+                $childPersonId = (int) $this->input('benefit_child_person_id');
+                $belongs = $this->route('partner')?->beneficiaries()->where('person_id', $childPersonId)->exists();
+                if (! $childPersonId || ! $belongs) {
+                    $validator->errors()->add('benefit_child_person_id', 'Seleccione un beneficiario perteneciente a esta ficha.');
+                }
+            }
+
             if ($this->input('socioeconomic_condition') === 'DISCAPACITADO'
                 && ! $this->hasFile('conadis_document')
                 && ! $this->route('partner')?->documents()->where('document_type', 'conadis')->exists()) {

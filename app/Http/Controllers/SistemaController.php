@@ -399,7 +399,7 @@ class SistemaController extends Controller
     {
         $user->update([
             'password'             => Hash::make($user->dni),
-            'must_change_password' => true,
+            'must_change_password' => false,
         ]);
     }
 }

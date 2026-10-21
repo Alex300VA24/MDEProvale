@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
@@ -56,6 +57,7 @@ export function PendingDocumentSection({
     required = false,
 }) {
     const toast = useToast();
+    const maxUploadMb = Number(usePage().props.upload_max_mb || 10);
     const fileInputRef = useRef(null);
     const availableTypes = allowedTypes || documentTypesFor(attachableType);
     const document = value || { documentType: availableTypes[0], file: null };
@@ -67,8 +69,8 @@ export function PendingDocumentSection({
             return;
         }
 
-        if (selected.size > 10 * 1024 * 1024) {
-            toast.error('El archivo no debe exceder los 10MB.');
+        if (selected.size > maxUploadMb * 1024 * 1024) {
+            toast.error(`El archivo no debe exceder los ${maxUploadMb} MB.`);
             event.target.value = '';
             return;
         }
@@ -115,7 +117,7 @@ export function PendingDocumentSection({
                 )}
                 <div>
                     <label htmlFor={inputId} className={labelCls}>
-                        Archivo ({pdfOnly ? 'PDF' : 'PDF, JPG, PNG, WEBP'}; máx. 10 MB) {required ? <span className="text-clay">*</span> : <Optional />}
+                        Archivo ({pdfOnly ? 'PDF' : 'PDF, JPG, PNG, WEBP'}; máx. {maxUploadMb} MB) {required ? <span className="text-clay">*</span> : <Optional />}
                     </label>
                     <input
                         ref={fileInputRef}
@@ -161,6 +163,7 @@ export default function DocumentosSection({
     highlightType = null,
 }) {
     const toast = useToast();
+    const maxUploadMb = Number(usePage().props.upload_max_mb || 10);
     const [documents, setDocuments] = useState(initialDocuments);
     const [selectedType, setSelectedType] = useState(
         allowedTypes?.[0] || (attachableType === 'partner' ? 'ficha_fisica' : 'dni_beneficiario')
@@ -181,8 +184,8 @@ export default function DocumentosSection({
         const selected = e.target.files?.[0];
         if (!selected) return;
 
-        if (selected.size > 10 * 1024 * 1024) {
-            toast.error('El archivo no debe exceder los 10MB.');
+        if (selected.size > maxUploadMb * 1024 * 1024) {
+            toast.error(`El archivo no debe exceder los ${maxUploadMb} MB.`);
             e.target.value = '';
             return;
         }
@@ -392,7 +395,7 @@ export default function DocumentosSection({
                             </select>
                         </div>
                         <div>
-                            <label className={labelCls}>Archivo (PDF, JPG, PNG, WEBP máx 10MB)</label>
+                            <label className={labelCls}>Archivo (PDF, JPG, PNG, WEBP máx. {maxUploadMb} MB)</label>
                             <input
                                 id={`doc-file-input-${attachableType}-${attachableId}`}
                                 type="file"

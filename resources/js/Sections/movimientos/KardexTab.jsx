@@ -91,7 +91,7 @@ function IngresoFormModal({ options, onClose, onSaved }) {
                         <input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} className={inputCls} placeholder="Guía, factura, etc." />
                     </div>
                     <div>
-                        <label className={labelCls}>Fecha de Movimiento *</label>
+                        <label className={labelCls}>Fecha de Ingreso *</label>
                         <input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className={inputCls} required />
                     </div>
                     <div>
@@ -174,7 +174,7 @@ function EditTransactionModal({ transaction, onClose, onSaved }) {
                         <input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} className={inputCls} />
                     </div>
                     <div>
-                        <label className={labelCls}>Fecha de Movimiento *</label>
+                        <label className={labelCls}>{isIngreso ? 'Fecha de Ingreso' : 'Fecha de Movimiento'} *</label>
                         <input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className={inputCls} required />
                     </div>
                     {isIngreso && (

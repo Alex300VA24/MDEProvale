@@ -8,6 +8,7 @@ use App\Models\VerifiedDocument;
 use App\Services\PresidentCommitteeResolver;
 use App\Services\ReparticionService;
 use App\Services\VerifiedDocumentService;
+use Barryvdh\DomPDF\Facade\PDF;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -25,10 +26,6 @@ class PresidentPortalController extends Controller
 
     public function index(Request $request)
     {
-        if ($request->user()->mustChangePassword()) {
-            return redirect()->route('president.password.change');
-        }
-
         $assignment = $this->committeeResolver->resolveAssignment($request->user());
         $association = $assignment?->partner?->association;
         [$defaultYear, $defaultMonth] = Pecosa::currentDeliveryPeriod();
@@ -106,10 +103,6 @@ class PresidentPortalController extends Controller
 
     public function showPecosa(Request $request, Pecosa $pecosa)
     {
-        if ($request->user()->mustChangePassword()) {
-            return redirect()->route('president.password.change');
-        }
-
         $association = $this->committeeResolver->resolve($request->user());
 
         // Solo se puede consultar una PECOSA del comité asignado a la presidenta.
@@ -166,10 +159,6 @@ class PresidentPortalController extends Controller
      */
     public function pecosaPdf(Request $request, Pecosa $pecosa)
     {
-        if ($request->user()->mustChangePassword()) {
-            return redirect()->route('president.password.change');
-        }
-
         $association = $this->committeeResolver->resolve($request->user());
 
         if (! $association || (int) $pecosa->association_id !== (int) $association->id) {
@@ -260,10 +249,6 @@ class PresidentPortalController extends Controller
 
     public function socios(Request $request)
     {
-        if ($request->user()->mustChangePassword()) {
-            return redirect()->route('president.password.change');
-        }
-
         $association = $this->committeeResolver->resolve($request->user());
         $search = trim((string) $request->input('search', ''));
 
@@ -326,5 +311,48 @@ class PresidentPortalController extends Controller
             'partners' => $partners->all(),
             'filters' => ['search' => $search],
         ]);
+    }
+
+    public function documentos(Request $request)
+    {
+        return Inertia::render('Portal/Documentos', [
+            'association' => $this->committeeResolver->resolve($request->user())?->only(['name']),
+        ]);
+    }
+
+    private const DOWNLOADABLE_DOCUMENTS = [
+        'ficha' => ['view' => 'ficha_beneficiario', 'file' => 'ficha-beneficiarios.pdf'],
+        'declaracion-domicilio' => ['view' => 'actas.declaracion_domicilio', 'file' => 'declaracion-jurada-domicilio.pdf'],
+        'declaracion-parentesco' => ['view' => 'actas.declaracion_parentesco', 'file' => 'declaracion-jurada-parentesco.pdf'],
+        'acta-renuncia' => ['view' => 'actas.renuncia', 'file' => 'acta-renuncia.pdf'],
+    ];
+
+    /**
+     * Formato en blanco para que el comité lo descargue, imprima y llene a mano.
+     */
+    public function documentoDescargable(Request $request, string $slug)
+    {
+        $document = self::DOWNLOADABLE_DOCUMENTS[$slug] ?? null;
+
+        if (! $document || ! $this->committeeResolver->resolve($request->user())) {
+            throw new NotFoundHttpException();
+        }
+
+        $data = [
+            'partner' => null,
+            'logoPath' => public_path('img/muni2.png'),
+            'partnerName' => null,
+            'partnerDni' => null,
+            'partnerAddress' => null,
+            'committeeName' => null,
+            'committeeCode' => null,
+            'presidentDni' => null,
+            'beneficiaries' => [],
+            'dateLong' => null,
+        ];
+
+        return PDF::loadView($document['view'], $data)
+            ->setPaper('a4', 'portrait')
+            ->download($document['file']);
     }
 }

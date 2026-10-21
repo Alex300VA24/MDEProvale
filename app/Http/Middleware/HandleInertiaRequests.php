@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
+use App\Services\UploadSettingsService;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -93,6 +94,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'modules' => $modules,
             'csrf_token' => csrf_token(),
+            'upload_max_mb' => app(UploadSettingsService::class)->maxMb(),
             'flash' => [
                 'success' => session('success'),
                 'error'   => session('error'),
