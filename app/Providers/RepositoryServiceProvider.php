@@ -50,6 +50,14 @@ use App\Repositories\Contracts\VerifiedDocumentRepositoryInterface;
 use App\Repositories\PvlReportRepository;
 use App\Repositories\ReportRepository;
 use App\Repositories\VerifiedDocumentRepository;
+use App\Repositories\AssistantDataRepository;
+use App\Repositories\Contracts\AssistantDataRepositoryInterface;
+use App\Repositories\Contracts\KnowledgeBaseRepositoryInterface;
+use App\Repositories\Contracts\NormativaRepositoryInterface;
+use App\Repositories\Contracts\PvlDocumentRepositoryInterface;
+use App\Repositories\KnowledgeBaseRepository;
+use App\Repositories\NormativaRepository;
+use App\Repositories\PvlDocumentRepository;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -83,5 +91,9 @@ class RepositoryServiceProvider extends ServiceProvider
         PvlReportRepositoryInterface::class => PvlReportRepository::class,
         ReportRepositoryInterface::class => ReportRepository::class,
         VerifiedDocumentRepositoryInterface::class => VerifiedDocumentRepository::class,
+        AssistantDataRepositoryInterface::class => AssistantDataRepository::class,
+        KnowledgeBaseRepositoryInterface::class => KnowledgeBaseRepository::class,
+        NormativaRepositoryInterface::class => NormativaRepository::class,
+        PvlDocumentRepositoryInterface::class => PvlDocumentRepository::class,
     ];
 }

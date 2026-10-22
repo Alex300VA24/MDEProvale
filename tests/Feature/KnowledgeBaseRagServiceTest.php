@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Repositories\Contracts\KnowledgeBaseRepositoryInterface;
 use App\Models\KnowledgeBaseDocument;
 use App\Models\KnowledgeBaseDocumentChunk;
 use App\Services\AssistantAiService;
@@ -41,7 +42,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
             ->with(Mockery::on(fn (string $text) => str_contains($text, 'procedimiento de entrega')), 'RETRIEVAL_DOCUMENT')
             ->andReturn([3, 4]);
 
-        (new KnowledgeBaseRagService($ai))->indexDocument(
+        (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->indexDocument(
             $document,
             $this->docx('Manual del procedimiento de entrega de alimentos.'),
         );
@@ -68,7 +69,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
             ->andReturn(null);
         $ai->shouldReceive('provider')->once()->andReturn('groq');
 
-        (new KnowledgeBaseRagService($ai))->indexDocument($document, $this->xlsx());
+        (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->indexDocument($document, $this->xlsx());
 
         $chunk = $document->fresh()->chunks()->sole();
         $this->assertSame('INDEXADO', $document->fresh()->index_status);
@@ -94,7 +95,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
             ->andReturn(null);
         $ai->shouldReceive('provider')->once()->andReturn('google');
 
-        (new KnowledgeBaseRagService($ai))->indexDocument($document, 'pdf-escaneado');
+        (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->indexDocument($document, 'pdf-escaneado');
 
         $chunk = $document->fresh()->chunks()->sole();
         $this->assertSame('INDEXADO', $document->fresh()->index_status);
@@ -138,7 +139,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
             ->andReturn(null);
         $ai->shouldReceive('provider')->once()->andReturn('google');
 
-        (new KnowledgeBaseRagService($ai))->indexDocument($document, $pdf);
+        (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->indexDocument($document, $pdf);
 
         $chunk = $document->fresh()->chunks()->sole();
         $this->assertSame('INDEXADO', $document->fresh()->index_status);
@@ -160,7 +161,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
         $ai->shouldReceive('embedText')->once()->andReturn(null);
         $ai->shouldReceive('provider')->once()->andReturn('google');
 
-        (new KnowledgeBaseRagService($ai))->indexDocument($document, 'imagen-binaria');
+        (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->indexDocument($document, 'imagen-binaria');
 
         $chunk = $document->fresh()->chunks()->sole();
         $this->assertSame(1, $chunk->page_number);
@@ -181,7 +182,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
         $ai = Mockery::mock(AssistantAiService::class);
 
         try {
-            (new KnowledgeBaseRagService($ai))->indexDocument($document, 'no-es-un-zip');
+            (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->indexDocument($document, 'no-es-un-zip');
             $this->fail('La indexación de un DOCX inválido debía fallar.');
         } catch (RuntimeException $exception) {
             $this->assertStringContainsString('DOCX', $exception->getMessage());
@@ -207,7 +208,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
         $ai = Mockery::mock(AssistantAiService::class);
         $ai->shouldReceive('embedText')->once()->with('entrega láctea', 'RETRIEVAL_QUERY')->andReturn([10, 0]);
 
-        $matches = (new KnowledgeBaseRagService($ai))->search('entrega láctea', 10);
+        $matches = (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->search('entrega láctea', 10);
 
         $this->assertCount(2, $matches);
         $this->assertSame($best->id, $matches[0]['metadata']['document_id']);
@@ -223,7 +224,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
         $ai->shouldReceive('provider')->once()->andReturn('groq');
         $ai->shouldNotReceive('generate');
 
-        $result = (new KnowledgeBaseRagService($ai))->answer('¿Cuál es el presupuesto anual?');
+        $result = (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->answer('¿Cuál es el presupuesto anual?');
 
         $this->assertSame([], $result['sources']);
         $this->assertStringContainsString('No encontré información', $result['answer']);
@@ -253,7 +254,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
             )
             ->andReturn('El plazo es de diez días hábiles [Fuente 1].');
 
-        $result = (new KnowledgeBaseRagService($ai))->answer('¿Cuál es el plazo máximo?');
+        $result = (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class)))->answer('¿Cuál es el plazo máximo?');
 
         $this->assertSame('El plazo es de diez días hábiles [Fuente 1].', $result['answer']);
         $this->assertSame($document->id, $result['sources'][0]['document_id']);
@@ -290,7 +291,7 @@ class KnowledgeBaseRagServiceTest extends TestCase
             ],
         ]]);
 
-        $result = (new KnowledgeBaseRagService($ai, $normativa))->answer('¿Quién integra el comité?');
+        $result = (new KnowledgeBaseRagService($ai, app(KnowledgeBaseRepositoryInterface::class), $normativa))->answer('¿Quién integra el comité?');
 
         $this->assertSame('normativa_municipal', $result['sources'][0]['origen']);
         $this->assertSame('https://www.muniesperanza.gob.pe/norma.pdf', $result['sources'][0]['download_url']);

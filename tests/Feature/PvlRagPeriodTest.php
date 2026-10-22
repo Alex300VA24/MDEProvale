@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Repositories\Contracts\PvlDocumentRepositoryInterface;
 use App\Models\PvlDocument;
 use App\Models\PvlDocumentChunk;
 use App\Services\AssistantAiService;
@@ -19,7 +20,7 @@ class PvlRagPeriodTest extends TestCase
     {
         $ai = Mockery::mock(AssistantAiService::class);
         $ai->shouldReceive('embedText')->once()->andReturn(null);
-        $service = new PvlRagService($ai);
+        $service = new PvlRagService($ai, app(PvlDocumentRepositoryInterface::class));
 
         $june = $this->document('2026-06', 'junio.txt');
         $july = $this->document('2026-07', 'julio.txt');
@@ -50,7 +51,7 @@ class PvlRagPeriodTest extends TestCase
         $ai->shouldReceive('embedText')->once()->andReturn(null);
         $ai->shouldNotReceive('extractDocumentText');
 
-        (new PvlRagService($ai))->indexDocument($document, $binary);
+        (new PvlRagService($ai, app(PvlDocumentRepositoryInterface::class)))->indexDocument($document, $binary);
 
         $this->assertSame('INDEXADO', $document->fresh()->index_status);
         $this->assertStringContainsString(

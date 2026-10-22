@@ -4,6 +4,8 @@ namespace App\Services\Pvl;
 
 use App\Models\PvlDocument;
 use App\Models\PvlDocumentChunk;
+use App\Repositories\Contracts\PvlDocumentRepositoryInterface;
+use App\Services\AssistantAiService;
 use App\Services\Rag\BaseRagService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -12,9 +14,14 @@ use Smalot\PdfParser\Parser;
 
 class PvlRagService extends BaseRagService
 {
+    public function __construct(AssistantAiService $ai, private PvlDocumentRepositoryInterface $documents)
+    {
+        parent::__construct($ai);
+    }
+
     public function indexDocument(PvlDocument $document, string $binary): void
     {
-        $document->forceFill(['index_status' => 'INDEXANDO', 'index_error' => null])->save();
+        $this->documents->updateDocument($document, ['index_status' => 'INDEXANDO', 'index_error' => null]);
 
         try {
             $text = $this->extractText($document->mime_type, $binary);
@@ -33,7 +40,7 @@ class PvlRagService extends BaseRagService
             $embeddingModel = (string) config('rag.embedding_model', '');
 
             DB::transaction(function () use ($document, $chunks, $embeddingModel) {
-                $document->chunks()->delete();
+                $this->documents->deleteChunks($document);
 
                 foreach ($chunks as $index => $chunk) {
                     $metadata = [
@@ -48,7 +55,7 @@ class PvlRagService extends BaseRagService
                         'embedding_model' => $embeddingModel ?: null,
                     ];
 
-                    PvlDocumentChunk::create([
+                    $this->documents->createChunk([
                         'pvl_document_id' => $document->id,
                         'page_number' => $chunk['page'],
                         'chunk_index' => $index + 1,
@@ -61,13 +68,13 @@ class PvlRagService extends BaseRagService
                     ]);
                 }
 
-                $document->forceFill(['index_status' => 'INDEXADO', 'index_error' => null])->save();
+                $this->documents->updateDocument($document, ['index_status' => 'INDEXADO', 'index_error' => null]);
             });
         } catch (\Throwable $exception) {
-            $document->forceFill([
+            $this->documents->updateDocument($document, [
                 'index_status' => 'ERROR',
                 'index_error' => mb_substr($exception->getMessage(), 0, 1000),
-            ])->save();
+            ]);
 
             throw $exception;
         }
@@ -89,39 +96,17 @@ class PvlRagService extends BaseRagService
 
         $candidateLimit = (int) config('rag.candidate_limit', 500);
 
-        $eloquent = PvlDocumentChunk::query()
-            ->select(['id', 'pvl_document_id', 'content', 'embedding', 'page_number', 'chunk_index', 'metadata'])
-            ->with('document:id,document_type,period,product_id,provider_reference,file_name,file_hash,index_status')
-            ->whereHas('document', fn ($documents) => $documents
-                ->where('period', $period)
-                ->where('index_status', 'INDEXADO')
-                ->whereIn('document_type', $types))
-            ->orderBy('id');
-
+        $keywords = $queryEmbedding === null ? $this->keywords($query) : null;
         if ($queryEmbedding === null) {
-            $eloquent->where(function ($where) use ($query) {
-                foreach ($this->keywords($query) as $keyword) {
-                    $where->orWhere('content', 'like', '%'.$keyword.'%');
-                }
-            });
             $candidateLimit = min($candidateLimit, (int) config('rag.lexical_candidate_limit', 200));
         }
 
-        $chunks = $eloquent->limit($candidateLimit)->get();
+        $chunks = $this->documents->searchChunks($period, $types, $keywords, $candidateLimit);
 
         if ($chunks->isEmpty() && $queryEmbedding === null) {
             // Prefiltro demasiado estricto (ej. singular/plural): fallback
             // a los candidatos del periodo sin filtro léxico.
-            $chunks = PvlDocumentChunk::query()
-                ->select(['id', 'pvl_document_id', 'content', 'embedding', 'page_number', 'chunk_index', 'metadata'])
-                ->with('document:id,document_type,period,product_id,provider_reference,file_name,file_hash,index_status')
-                ->whereHas('document', fn ($documents) => $documents
-                    ->where('period', $period)
-                    ->where('index_status', 'INDEXADO')
-                    ->whereIn('document_type', $types))
-                ->orderBy('id')
-                ->limit($candidateLimit)
-                ->get();
+            $chunks = $this->documents->searchChunks($period, $types, null, $candidateLimit);
         }
 
         return $chunks
@@ -158,12 +143,7 @@ class PvlRagService extends BaseRagService
         data_forget($stableContext, 'pvl.fecha_hora_impresion');
         data_forget($stableContext, 'pvl.fecha_reporte');
         data_forget($stableContext, 'racion_a.fecha_reporte');
-        $documents = PvlDocument::query()
-            ->where('period', $period)
-            ->where('index_status', 'INDEXADO')
-            ->whereIn('document_type', $this->typesFor($reportType))
-            ->orderBy('id')
-            ->get(['id', 'file_hash', 'updated_at'])
+        $documents = $this->documents->indexedDocuments($period, $this->typesFor($reportType))
             ->map(fn (PvlDocument $document) => [
                 $document->id,
                 $document->file_hash,

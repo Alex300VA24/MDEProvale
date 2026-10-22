@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Association;
+use App\Repositories\Contracts\AssistantDataRepositoryInterface;
 use App\Models\Beneficiarie;
 use App\Models\Partner;
 use App\Models\People;
@@ -31,6 +32,10 @@ class AssistantDataService
         1 => 'enero', 2 => 'febrero', 3 => 'marzo', 4 => 'abril', 5 => 'mayo', 6 => 'junio',
         7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
     ];
+
+    public function __construct(private AssistantDataRepositoryInterface $data)
+    {
+    }
 
     public function resolve(string $question): ?string
     {
@@ -211,9 +216,9 @@ class AssistantDataService
             return null;
         }
 
-        $total = Association::count();
+        $total = $this->data->committeeCount();
         $vigenteId = State::idFor(State::CURRENT);
-        $activos = $vigenteId ? Association::where('state_id', $vigenteId)->count() : $total;
+        $activos = $vigenteId ? $this->data->committeeCountWithState($vigenteId) : $total;
 
         return "Comités activos:\n\n"
             ."- Comités activos (estado vigente): {$activos}\n"
@@ -238,9 +243,7 @@ class AssistantDataService
         [$anio, $mes, $etiqueta] = $this->resolverPeriodo($q);
         [$inicio, $fin] = Pecosa::deliveryPeriodRange($anio, $mes);
 
-        $total = Pecosa::whereBetween('delivery_date', [
-            $inicio->toDateString(), $fin->toDateString(),
-        ])->count();
+        $total = $this->data->pecosaCountBetween($inicio->toDateString(), $fin->toDateString());
 
         return "Pecosas de {$etiqueta}:\n\n"
             ."- Pecosas generadas: {$total}\n"
@@ -254,13 +257,13 @@ class AssistantDataService
         }
 
         if (str_contains($q, 'beneficiari') && ! $this->mencionaComite($q)) {
-            $total = Beneficiarie::count();
+            $total = $this->data->beneficiaryCount();
 
             return "Beneficiarios registrados:\n\n- Total de beneficiarios en el sistema: {$total}";
         }
 
         if (str_contains($q, 'socio') || str_contains($q, 'socia')) {
-            $total = Partner::count();
+            $total = $this->data->partnerCount();
 
             return "Socios registrados:\n\n- Total de socios en el sistema: {$total}";
         }
@@ -320,7 +323,7 @@ class AssistantDataService
         $norm = fn ($valor) => Str::lower(Str::ascii((string) $valor));
         $objetivo = $norm($termino);
 
-        $comites = Association::query()->get(['id', 'name', 'code', 'state_id']);
+        $comites = $this->data->committees();
 
         $exacta = $comites->first(
             fn ($comite) => $norm($comite->name) === $objetivo || $norm($comite->code) === $objetivo
@@ -436,11 +439,8 @@ class AssistantDataService
 
     protected function beneficiaryAnswer(Association $committee): string
     {
-        $partners = Partner::where('association_id', $committee->id)->count();
-        $beneficiaries = Beneficiarie::whereHas(
-            'partner',
-            fn ($partner) => $partner->where('association_id', $committee->id)
-        )->count();
+        $partners = $this->data->partnerCountOfCommittee($committee->id);
+        $beneficiaries = $this->data->beneficiaryCountOfCommittee($committee->id);
 
         return "Beneficiarios del comité {$committee->name}:\n\n"
             ."- Beneficiarios registrados: {$beneficiaries}\n"
@@ -499,15 +499,7 @@ class AssistantDataService
 
     protected function matchingPartners(string $identity): Collection
     {
-        $partners = Partner::query()
-            ->with([
-                'people:id,names,father_lastname,mother_lastname,dni',
-                'association:id,name,code',
-                'beneficiaries.person:id,names,father_lastname,mother_lastname',
-                'beneficiaries.relationship:id,title',
-            ])
-            ->whereHas('people', fn ($people) => $people->searchIdentity($identity))
-            ->get();
+        $partners = $this->data->partnersMatchingIdentity($identity);
 
         $normalizedIdentity = Str::lower(Str::ascii($identity));
         $exact = $partners->filter(

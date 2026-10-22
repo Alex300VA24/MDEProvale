@@ -4,6 +4,7 @@ namespace App\Services\KnowledgeBase;
 
 use App\Models\KnowledgeBaseDocument;
 use App\Models\KnowledgeBaseDocumentChunk;
+use App\Repositories\Contracts\KnowledgeBaseRepositoryInterface;
 use App\Services\AssistantAiService;
 use App\Services\Normativa\NormativaRagService;
 use App\Services\Rag\BaseRagService;
@@ -20,14 +21,18 @@ class KnowledgeBaseRagService extends BaseRagService
     private const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     private const XLS_MIME = 'application/vnd.ms-excel';
 
-    public function __construct(AssistantAiService $ai, private ?NormativaRagService $normativa = null)
+    public function __construct(
+        AssistantAiService $ai,
+        private KnowledgeBaseRepositoryInterface $documents,
+        private ?NormativaRagService $normativa = null,
+    )
     {
         parent::__construct($ai);
     }
 
     public function indexDocument(KnowledgeBaseDocument $document, string $binary): void
     {
-        $document->forceFill(['index_status' => 'INDEXANDO', 'index_error' => null])->save();
+        $this->documents->updateDocument($document, ['index_status' => 'INDEXANDO', 'index_error' => null]);
 
         try {
             $text = $this->extractText($document->mime_type, $document->file_name, $binary);
@@ -46,7 +51,7 @@ class KnowledgeBaseRagService extends BaseRagService
             $embeddingModel = (string) config('rag.embedding_model', '');
 
             DB::transaction(function () use ($document, $chunks, $embeddingModel) {
-                $document->chunks()->delete();
+                $this->documents->deleteChunks($document);
 
                 foreach ($chunks as $index => $chunk) {
                     $embedding = $this->validatedEmbedding(
@@ -54,7 +59,7 @@ class KnowledgeBaseRagService extends BaseRagService
                         'kb:index:'.$document->id
                     );
 
-                    KnowledgeBaseDocumentChunk::create([
+                    $this->documents->createChunk([
                         'kb_document_id' => $document->id,
                         'page_number' => $chunk['page'],
                         'chunk_index' => $index + 1,
@@ -72,20 +77,20 @@ class KnowledgeBaseRagService extends BaseRagService
                     ]);
                 }
 
-                $document->forceFill(['index_status' => 'INDEXADO', 'index_error' => null])->save();
+                $this->documents->updateDocument($document, ['index_status' => 'INDEXADO', 'index_error' => null]);
             });
 
-            if ($this->chunksWithoutEmbedding($document->id) > 0) {
+            if ($this->documents->chunksWithoutEmbedding($document->id) > 0) {
                 Log::warning('Documento KB indexado sin embeddings; responderá solo con búsqueda léxica.', [
                     'document_id' => $document->id,
                     'provider' => $this->ai->provider(),
                 ]);
             }
         } catch (\Throwable $exception) {
-            $document->forceFill([
+            $this->documents->updateDocument($document, [
                 'index_status' => 'ERROR',
                 'index_error' => mb_substr($exception->getMessage(), 0, 1000),
-            ])->save();
+            ]);
 
             throw $exception;
         }
@@ -107,27 +112,8 @@ class KnowledgeBaseRagService extends BaseRagService
             ? (int) config('rag.candidate_limit', 500)
             : (int) config('rag.lexical_candidate_limit', 200);
 
-        $eloquent = KnowledgeBaseDocumentChunk::query()
-            ->select(['id', 'kb_document_id', 'content', 'embedding', 'page_number', 'chunk_index'])
-            ->with('document:id,title,file_name,index_status')
-            ->whereHas('document', function ($documents) use ($documentIds) {
-                $documents->where('index_status', 'INDEXADO');
-                if ($documentIds !== []) {
-                    $documents->whereIn('id', $documentIds);
-                }
-            })
-            ->orderBy('id');
-
-        if ($queryEmbedding === null) {
-            // Sin vectores: prefiltrado SQL por keywords para no traer 1000 filas.
-            $eloquent->where(function ($where) use ($query) {
-                foreach ($this->keywords($query) as $keyword) {
-                    $where->orWhere('content', 'like', '%'.$keyword.'%');
-                }
-            });
-        }
-
-        $chunks = $eloquent->limit($candidateLimit)->get();
+        $keywords = $queryEmbedding === null ? $this->keywords($query) : null;
+        $chunks = $this->documents->searchChunks($documentIds, $keywords, $candidateLimit);
 
         return $chunks
             ->map(function (KnowledgeBaseDocumentChunk $chunk) use ($queryEmbedding, $query) {
@@ -218,17 +204,6 @@ class KnowledgeBaseRagService extends BaseRagService
                 'download_url' => $match['metadata']['download_url'] ?? null,
             ])->values()->all(),
         ];
-    }
-
-    private function chunksWithoutEmbedding(int $documentId): int
-    {
-        // embedding JSON null o 'null' serializado.
-        return KnowledgeBaseDocumentChunk::query()
-            ->where('kb_document_id', $documentId)
-            ->where(function ($where) {
-                $where->whereNull('embedding')->orWhere('embedding', 'like', '%null%');
-            })
-            ->count();
     }
 
     private function extractText(string $mimeType, string $fileName, string $binary): string

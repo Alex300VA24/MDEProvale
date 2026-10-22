@@ -4,6 +4,8 @@ namespace App\Services\Normativa;
 
 use App\Models\NormativaDocument;
 use App\Models\NormativaDocumentChunk;
+use App\Repositories\Contracts\NormativaRepositoryInterface;
+use App\Services\AssistantAiService;
 use App\Services\Rag\BaseRagService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -12,9 +14,14 @@ use Smalot\PdfParser\Parser;
 
 class NormativaRagService extends BaseRagService
 {
+    public function __construct(AssistantAiService $ai, private NormativaRepositoryInterface $documents)
+    {
+        parent::__construct($ai);
+    }
+
     public function indexDocument(NormativaDocument $document, string $pdfBinary): void
     {
-        $document->forceFill(['index_status' => 'INDEXANDO', 'index_error' => null])->save();
+        $this->documents->update($document, ['index_status' => 'INDEXANDO', 'index_error' => null]);
 
         try {
             $extraction = $this->extractText($pdfBinary, $document);
@@ -34,10 +41,10 @@ class NormativaRagService extends BaseRagService
             $embeddingModel = (string) config('rag.embedding_model', '');
 
             DB::transaction(function () use ($document, $chunks, $embeddingModel, $extraction) {
-                $document->chunks()->delete();
+                $this->documents->deleteChunks($document);
 
                 foreach ($chunks as $index => $chunk) {
-                    NormativaDocumentChunk::create([
+                    $this->documents->createChunk([
                         'normativa_document_id' => $document->id,
                         'page_number' => $chunk['page'],
                         'chunk_index' => $index + 1,
@@ -59,13 +66,13 @@ class NormativaRagService extends BaseRagService
                     ]);
                 }
 
-                $document->forceFill(['index_status' => 'INDEXADO', 'index_error' => null])->save();
+                $this->documents->update($document, ['index_status' => 'INDEXADO', 'index_error' => null]);
             });
         } catch (\Throwable $exception) {
-            $document->forceFill([
+            $this->documents->update($document, [
                 'index_status' => 'ERROR',
                 'index_error' => mb_substr($exception->getMessage(), 0, 1000),
-            ])->save();
+            ]);
 
             throw $exception;
         }
@@ -88,21 +95,8 @@ class NormativaRagService extends BaseRagService
             ? (int) config('rag.candidate_limit', 500)
             : (int) config('rag.lexical_candidate_limit', 200);
 
-        $eloquent = NormativaDocumentChunk::query()
-            ->select(['id', 'normativa_document_id', 'content', 'embedding', 'page_number', 'chunk_index'])
-            ->with('document:id,tipo_documento,numero,periodo,titulo,pdf_url,file_path,index_status')
-            ->whereHas('document', fn ($documents) => $documents->where('index_status', 'INDEXADO'))
-            ->orderBy('id');
-
-        if ($queryEmbedding === null) {
-            $eloquent->where(function ($where) use ($query) {
-                foreach ($this->keywords($query) as $keyword) {
-                    $where->orWhere('content', 'like', '%'.$keyword.'%');
-                }
-            });
-        }
-
-        $chunks = $eloquent->limit($candidateLimit)->get();
+        $keywords = $queryEmbedding === null ? $this->keywords($query) : null;
+        $chunks = $this->documents->searchChunks($keywords, $candidateLimit);
 
         return $chunks
             ->map(function (NormativaDocumentChunk $chunk) use ($queryEmbedding, $query) {

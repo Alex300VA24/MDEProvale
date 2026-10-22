@@ -8,17 +8,11 @@ return [
         'app/Console/Commands/RebuildMonthlyData.php',
         'app/Console/Commands/ReindexRagEmbeddings.php',
         'app/Console/Commands/RellenarDetailPecosas.php',
-        'app/Http/Controllers/Api/KnowledgeBaseController.php',
         'app/Http/Controllers/ControlInternoController.php',
         'app/Http/Controllers/PresidentPortalController.php',
     ],
     'business' => [
         'app/Services/Alertas/VencimientoAlertService.php',
-        'app/Services/AssistantDataService.php',
-        'app/Services/KnowledgeBase/KnowledgeBaseRagService.php',
-        'app/Services/Normativa/NormativaRagService.php',
-        'app/Services/Normativa/NormativaScraperService.php',
-        'app/Services/Pvl/PvlRagService.php',
     ],
     'http_in_lower_layers' => [
     ],

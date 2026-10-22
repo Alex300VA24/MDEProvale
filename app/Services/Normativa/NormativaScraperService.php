@@ -2,8 +2,9 @@
 
 namespace App\Services\Normativa;
 
-use App\Models\Notification;
 use App\Models\NormativaDocument;
+use App\Repositories\Contracts\NormativaRepositoryInterface;
+use App\Repositories\Contracts\NotificationRepositoryInterface;
 use App\Services\AssistantAiService;
 use App\Services\Rag\DocumentBinaryStorage;
 use Carbon\Carbon;
@@ -18,6 +19,8 @@ class NormativaScraperService
     public function __construct(
         private AssistantAiService $ai,
         private NormativaRagService $rag,
+        private NormativaRepositoryInterface $documents,
+        private NotificationRepositoryInterface $notifications,
     ) {
     }
 
@@ -38,11 +41,11 @@ class NormativaScraperService
             $items = $this->fetchListing((int) $tipoId);
 
             foreach ($items as $item) {
-                if (NormativaDocument::where('external_id', $item['external_id'])->exists()) {
+                if ($this->documents->externalIdExists($item['external_id'])) {
                     continue;
                 }
 
-                $document = NormativaDocument::create([
+                $document = $this->documents->create([
                     'external_id' => $item['external_id'],
                     'tipo_id' => $tipoId,
                     'tipo_documento' => $tipoLabel,
@@ -57,12 +60,12 @@ class NormativaScraperService
                 $descubiertos++;
 
                 if (! $this->isWithinBackfillWindow($document->fecha_documento)) {
-                    $document->forceFill(['index_status' => 'DESCARTADO'])->save();
+                    $this->documents->update($document, ['index_status' => 'DESCARTADO']);
                     continue;
                 }
 
                 if (! $this->matchesKeywords($document)) {
-                    $document->forceFill(['index_status' => 'NO_RELEVANTE'])->save();
+                    $this->documents->update($document, ['index_status' => 'NO_RELEVANTE']);
                     continue;
                 }
 
@@ -121,8 +124,7 @@ class NormativaScraperService
                 }
 
                 $stats['encontrados']++;
-                $document = NormativaDocument::query()->firstOrNew(['external_id' => $item['external_id']]);
-                $document->fill([
+                $document = $this->documents->upsertByExternalId($item['external_id'], [
                     'tipo_id' => $tipoId,
                     'tipo_documento' => $tipoLabel,
                     'periodo' => $item['fecha_documento'] ? mb_substr($item['fecha_documento'], 0, 7) : null,
@@ -132,7 +134,7 @@ class NormativaScraperService
                     'concepto' => $item['concepto'],
                     'fecha_documento' => $item['fecha_documento'],
                     'pdf_url' => $item['pdf_url'],
-                ])->save();
+                ]);
 
                 $directKeyword = $this->directKeywordMatch($document);
                 if ($directKeyword !== null) {
@@ -166,7 +168,7 @@ class NormativaScraperService
                 $stats['clasificados']++;
                 if ($this->classifyAndNotify($document)) {
                     $stats['importados']++;
-                } elseif ($document->fresh()->relevancia_pvl === false) {
+                } elseif ($this->documents->freshDocument($document)->relevancia_pvl === false) {
                     $stats['descartados']++;
                 } else {
                     $stats['errores']++;
@@ -193,8 +195,7 @@ class NormativaScraperService
     public function importDocument(string $reference): array
     {
         $item = $this->resolveDocumentReference($reference);
-        $document = NormativaDocument::query()->firstOrNew(['external_id' => $item['external_id']]);
-        $document->fill([
+        $document = $this->documents->upsertByExternalId($item['external_id'], [
             'tipo_id' => $item['tipo_id'],
             'tipo_documento' => $item['tipo_documento'],
             'periodo' => $item['fecha_documento'] ? mb_substr($item['fecha_documento'], 0, 7) : null,
@@ -207,7 +208,7 @@ class NormativaScraperService
             'relevancia_pvl' => true,
             'relevancia_resumen' => $item['asunto'] ?: $item['concepto'],
             'relevancia_motivo' => 'Documento agregado manualmente desde la copia verificable del portal municipal.',
-        ])->save();
+        ]);
 
         if ($document->index_status === 'INDEXADO') {
             $this->ensureStoredPdf($document);
@@ -217,13 +218,13 @@ class NormativaScraperService
 
         if (! $this->indexDocument($document)) {
             throw new \RuntimeException(
-                $document->fresh()->index_error ?: 'No fue posible indexar la copia verificable.'
+                $this->documents->freshDocument($document)->index_error ?: 'No fue posible indexar la copia verificable.'
             );
         }
 
         $this->notify($document);
 
-        return $this->manualImportResult($document->fresh(), true, false);
+        return $this->manualImportResult($this->documents->freshDocument($document), true, false);
     }
 
     /** @return array<int, array{external_id:int, tipo_id:int, tipo_documento:string, numero:?string, titulo:string, asunto:?string, concepto:?string, fecha_documento:?string, pdf_url:string}> */
@@ -590,14 +591,14 @@ class NormativaScraperService
 
     private function markDirectlyRelevant(NormativaDocument $document, string $keyword): void
     {
-        $document->forceFill([
+        $this->documents->update($document, [
             'relevancia_pvl' => true,
             'relevancia_resumen' => $document->relevancia_resumen
                 ?: $document->asunto
                 ?: $document->concepto
                 ?: $document->titulo,
             'relevancia_motivo' => 'Coincidencia directa con el término PROVALE configurado: '.$keyword.'.',
-        ])->save();
+        ]);
     }
 
     private function importDirectMatch(NormativaDocument $document): bool
@@ -638,7 +639,7 @@ class NormativaScraperService
                 'exception' => $exception::class,
                 'message' => $exception->getMessage(),
             ]);
-            $document->forceFill(['index_status' => 'ERROR', 'index_error' => mb_substr($exception->getMessage(), 0, 1000)])->save();
+            $this->documents->update($document, ['index_status' => 'ERROR', 'index_error' => mb_substr($exception->getMessage(), 0, 1000)]);
 
             return false;
         }
@@ -647,14 +648,14 @@ class NormativaScraperService
         $resumen = trim((string) ($result['resumen'] ?? ''));
         $motivo = trim((string) ($result['motivo'] ?? ''));
 
-        $document->forceFill([
+        $this->documents->update($document, [
             'relevancia_pvl' => $relevante,
             'relevancia_resumen' => $resumen ?: null,
             'relevancia_motivo' => $motivo ?: null,
-        ])->save();
+        ]);
 
         if (! $relevante) {
-            $document->forceFill(['index_status' => 'NO_RELEVANTE'])->save();
+            $this->documents->update($document, ['index_status' => 'NO_RELEVANTE']);
 
             return false;
         }
@@ -675,10 +676,10 @@ class NormativaScraperService
 
             return true;
         } catch (\Throwable $exception) {
-            $document->forceFill([
+            $this->documents->update($document, [
                 'index_status' => 'ERROR',
                 'index_error' => mb_substr($exception->getMessage(), 0, 1000),
-            ])->save();
+            ]);
 
             Log::warning('No se pudo indexar el PDF de una norma municipal relevante.', [
                 'document_id' => $document->id,
@@ -694,13 +695,13 @@ class NormativaScraperService
     {
         try {
             $this->ensureStoredPdf($document);
-            $document->forceFill(['index_error' => null])->save();
+            $this->documents->update($document, ['index_error' => null]);
 
             return true;
         } catch (\Throwable $exception) {
-            $document->forceFill([
+            $this->documents->update($document, [
                 'index_error' => mb_substr('PDF local no disponible: '.$exception->getMessage(), 0, 1000),
-            ])->save();
+            ]);
 
             Log::warning('No se pudo guardar localmente una norma municipal ya indexada.', [
                 'document_id' => $document->id,
@@ -725,13 +726,13 @@ class NormativaScraperService
         $path = DocumentBinaryStorage::put('rag/normativa', $hash, $binary);
         $previousPath = $document->file_path;
 
-        $document->forceFill([
+        $this->documents->update($document, [
             'file_name' => $this->pdfFileName($document),
             'mime_type' => 'application/pdf',
             'file_size' => strlen($binary),
             'file_hash' => $hash,
             'file_path' => $path,
-        ])->save();
+        ]);
 
         if ($previousPath && $previousPath !== $path) {
             DocumentBinaryStorage::delete($previousPath);
@@ -825,7 +826,7 @@ class NormativaScraperService
             return;
         }
 
-        Notification::create([
+        $this->notifications->create([
             'type' => 'normativa_pvl',
             'title' => trim($document->tipo_documento.' '.($document->numero ? 'N° '.$document->numero : '')),
             'description' => $document->relevancia_resumen ?: $document->asunto,
@@ -842,7 +843,7 @@ class NormativaScraperService
             ],
         ]);
 
-        $document->forceFill(['notified_at' => now()])->save();
+        $this->documents->update($document, ['notified_at' => now()]);
     }
 
     private function classificationSchema(): array
