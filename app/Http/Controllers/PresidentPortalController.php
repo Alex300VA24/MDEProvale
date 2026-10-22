@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Partner;
 use App\Models\Pecosa;
 use App\Models\VerifiedDocument;
+use App\Repositories\Contracts\PartnerRepositoryInterface;
+use App\Repositories\Contracts\PecosaRepositoryInterface;
 use App\Services\PresidentCommitteeResolver;
 use App\Services\ReparticionService;
 use App\Services\VerifiedDocumentService;
@@ -20,7 +21,9 @@ class PresidentPortalController extends Controller
     public function __construct(
         private PresidentCommitteeResolver $committeeResolver,
         private ReparticionService $reparticionService,
-        private VerifiedDocumentService $verifiedDocumentService
+        private VerifiedDocumentService $verifiedDocumentService,
+        private PecosaRepositoryInterface $pecosas,
+        private PartnerRepositoryInterface $partners
     ) {
     }
 
@@ -41,11 +44,11 @@ class PresidentPortalController extends Controller
         $history = null;
 
         if ($association) {
-            $scheduled = Pecosa::with(['state', 'detailPecosas'])
-                ->where('association_id', $association->id)
-                ->whereBetween('delivery_date', [$deliveryFrom->toDateString(), $deliveryTo->toDateString()])
-                ->orderBy('delivery_date')
-                ->first();
+            $scheduled = $this->pecosas->firstScheduledInRange(
+                $association->id,
+                $deliveryFrom->toDateString(),
+                $deliveryTo->toDateString(),
+            );
 
             if ($scheduled) {
                 $scheduledPecosa = [
@@ -64,10 +67,7 @@ class PresidentPortalController extends Controller
                     ->firstWhere('id', $association->id);
             }
 
-            $history = Pecosa::with(['state', 'detailPecosas'])
-                ->where('association_id', $association->id)
-                ->orderByDesc('delivery_date')
-                ->paginate(8)
+            $history = $this->pecosas->paginateForAssociation($association->id, 8)
                 ->withQueryString()
                 ->through(fn (Pecosa $pecosa) => [
                     'id' => $pecosa->id,
@@ -255,22 +255,7 @@ class PresidentPortalController extends Controller
         $partners = collect();
 
         if ($association) {
-            $partners = Partner::query()
-                ->where('association_id', $association->id)
-                ->with([
-                    'people:id,names,father_lastname,mother_lastname,dni,gender,telephone_number,phone_number,birthdate,address',
-                    'state:id,title',
-                    'beneficiaries.person:id,names,father_lastname,mother_lastname,dni,gender,birthdate',
-                    'beneficiaries.relationship:id,title',
-                ])
-                ->when($search !== '', function ($query) use ($search) {
-                    $query->whereHas('people', function ($q) use ($search) {
-                        $q->searchIdentity($search);
-                    });
-                })
-                ->get()
-                ->sortBy(fn ($partner) => $partner->people?->father_lastname)
-                ->values()
+            $partners = $this->partners->forCommitteePortal($association->id, $search)
                 ->map(function ($partner) {
                     $person = $partner->people;
 

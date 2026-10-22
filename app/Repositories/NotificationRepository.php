@@ -51,6 +51,15 @@ class NotificationRepository implements NotificationRepositoryInterface
         return Notification::create($data);
     }
 
+    public function existsWithDedupeKey(string $type, string $dedupeKey): bool
+    {
+        return Notification::where('type', $type)
+            ->where(fn ($query) => $query
+                ->where('dedupe_key', $dedupeKey)
+                ->orWhere('metadata->dedupe_key', $dedupeKey))
+            ->exists();
+    }
+
     public function unreadRequestedBy(User $user): int
     {
         return Notification::where('requested_by', $user->id)->where('is_seen', false)->count();

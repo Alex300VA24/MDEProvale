@@ -46,6 +46,12 @@ interface PecosaRepositoryInterface
     /** Última PECOSA vigente del comité dentro del rango. */
     public function findLatestCurrentInRange(int $associationId, ?int $currentStateId, string $start, string $end): ?Pecosa;
 
+    /** Primera PECOSA del comité en el rango de entrega, con estado y detalle. */
+    public function firstScheduledInRange(int $associationId, string $from, string $to): ?Pecosa;
+
+    /** Historial de PECOSAs del comité, más recientes primero. */
+    public function paginateForAssociation(int $associationId, int $perPage): LengthAwarePaginator;
+
     /** Directiva PRESIDENTA vigente por comité (association_id => Directive). */
     public function presidentDirectivesFor(\Illuminate\Support\Collection $associationIds): \Illuminate\Support\Collection;
 }

@@ -2,11 +2,10 @@
 
 namespace App\Services\Alertas;
 
-use App\Models\Association;
 use App\Models\BeneficiaryHistory;
-use App\Models\Notification;
 use App\Models\Resolution;
-use App\Models\State;
+use App\Repositories\Contracts\NotificationRepositoryInterface;
+use App\Repositories\Contracts\VencimientoRepositoryInterface;
 use App\Services\AssistantAiService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -26,8 +25,11 @@ class VencimientoAlertService
     public const TYPE_EDAD = 'alerta_beneficiarios';
     public const TYPE_RESOLUCION = 'alerta_resolucion';
 
-    public function __construct(private AssistantAiService $ai)
-    {
+    public function __construct(
+        private AssistantAiService $ai,
+        private VencimientoRepositoryInterface $alerts,
+        private NotificationRepositoryInterface $notifications,
+    ) {
     }
 
     /**
@@ -72,14 +74,7 @@ class VencimientoAlertService
             return collect();
         }
 
-        return BeneficiaryHistory::query()
-            ->whereNotNull('date_end')
-            ->whereDate('date_end', '>=', $today)
-            ->whereDate('date_end', '<=', $today->copy()->addDays($thresholds->max()))
-            ->whereHas('state', fn ($query) => $query->where('abbreviation', '!=', State::INACTIVE))
-            ->whereHas('typeBenefit', fn ($query) => $query->whereIn('abbreviation', ['GES', 'LAC']))
-            ->with(['typeBenefit', 'beneficiary.person', 'beneficiary.partner.association'])
-            ->get()
+        return $this->alerts->benefitsEndingWithin($today, $thresholds->max())
             ->map(function (BeneficiaryHistory $history) use ($today, $thresholds) {
                 $days = (int) $today->diffInDays(Carbon::parse($history->date_end)->startOfDay(), false);
                 $stage = (string) $thresholds->first(fn ($threshold) => $days <= $threshold);
@@ -122,19 +117,14 @@ class VencimientoAlertService
         $histories = collect();
 
         // Salta años: el límite se cruza al cumplir (max_age + 1) años.
-        $maxAges = \App\Models\TypeBenefit::whereNotNull('max_age')->pluck('max_age', 'id');
+        $maxAges = $this->alerts->maxAgeByBenefitType();
 
         foreach ($maxAges as $typeId => $maxAge) {
             $years = (int) $maxAge + 1;
             $bornFrom = $today->copy()->subYears($years)->subDays($grace)->toDateString();
             $bornTo = $today->copy()->subYears($years)->addDays($ahead)->toDateString();
 
-            $found = BeneficiaryHistory::query()
-                ->where('type_benefit_id', $typeId)
-                ->where(fn ($q) => $q->whereNull('date_end')->orWhereDate('date_end', '>=', $today))
-                ->whereHas('beneficiary.person', fn ($q) => $q->whereBetween('birthdate', [$bornFrom, $bornTo]))
-                ->with(['typeBenefit', 'beneficiary.person', 'beneficiary.partner.association'])
-                ->get();
+            $found = $this->alerts->benefitsBornBetween((int) $typeId, $today, $bornFrom, $bornTo);
 
             $histories = $histories->concat($found);
         }
@@ -218,12 +208,8 @@ class VencimientoAlertService
 
         $grace = (int) config('alertas.resoluciones.dias_gracia', 30);
 
-        return Resolution::query()
-            ->whereNotNull('date_end')
-            ->whereDate('date_end', '>=', $today->copy()->subDays($grace))
-            ->whereDate('date_end', '<=', $today->copy()->addDays($thresholds->max()))
-            ->with('primaryAssociations:id,name,resolution_id')
-            ->get()
+        return $this->alerts
+            ->resolutionsEndingBetween($today->copy()->subDays($grace), $today->copy()->addDays($thresholds->max()))
             ->filter(fn (Resolution $r) => $r->primaryAssociations->isNotEmpty())
             ->map(function (Resolution $resolution) use ($today, $thresholds) {
                 $days = (int) $today->diffInDays($resolution->date_end->copy()->startOfDay(), false);
@@ -268,11 +254,7 @@ class VencimientoAlertService
 
     private function emit(array $alert, string $type, array &$result): bool
     {
-        if (Notification::where('type', $type)
-            ->where(fn ($query) => $query
-                ->where('dedupe_key', $alert['dedupe_key'])
-                ->orWhere('metadata->dedupe_key', $alert['dedupe_key']))
-            ->exists()) {
+        if ($this->notifications->existsWithDedupeKey($type, $alert['dedupe_key'])) {
             return false;
         }
 
@@ -285,7 +267,7 @@ class VencimientoAlertService
             $result['con_ia']++;
         }
 
-        Notification::create([
+        $this->notifications->create([
             'type' => $type,
             'dedupe_key' => $alert['dedupe_key'],
             'title' => $alert['title'],

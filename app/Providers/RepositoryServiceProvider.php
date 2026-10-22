@@ -58,6 +58,12 @@ use App\Repositories\Contracts\PvlDocumentRepositoryInterface;
 use App\Repositories\KnowledgeBaseRepository;
 use App\Repositories\NormativaRepository;
 use App\Repositories\PvlDocumentRepository;
+use App\Repositories\Contracts\VencimientoRepositoryInterface;
+use App\Repositories\VencimientoRepository;
+use App\Repositories\Contracts\DataMaintenanceRepositoryInterface;
+use App\Repositories\DataMaintenanceRepository;
+use App\Repositories\Contracts\ControlInternoRepositoryInterface;
+use App\Repositories\ControlInternoRepository;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -95,5 +101,8 @@ class RepositoryServiceProvider extends ServiceProvider
         KnowledgeBaseRepositoryInterface::class => KnowledgeBaseRepository::class,
         NormativaRepositoryInterface::class => NormativaRepository::class,
         PvlDocumentRepositoryInterface::class => PvlDocumentRepository::class,
+        VencimientoRepositoryInterface::class => VencimientoRepository::class,
+        DataMaintenanceRepositoryInterface::class => DataMaintenanceRepository::class,
+        ControlInternoRepositoryInterface::class => ControlInternoRepository::class,
     ];
 }

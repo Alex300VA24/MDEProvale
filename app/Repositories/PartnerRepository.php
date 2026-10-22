@@ -199,6 +199,26 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
     }
 
     /** Socios (con datos de su persona) cuyo nombre o DNI contiene todas las palabras dadas. */
+    public function forCommitteePortal(int $associationId, string $search): Collection
+    {
+        return Partner::query()
+            ->where('association_id', $associationId)
+            ->with([
+                'people:id,names,father_lastname,mother_lastname,dni,gender,telephone_number,phone_number,birthdate,address',
+                'state:id,title',
+                'beneficiaries.person:id,names,father_lastname,mother_lastname,dni,gender,birthdate',
+                'beneficiaries.relationship:id,title',
+            ])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->whereHas('people', function ($q) use ($search) {
+                    $q->searchIdentity($search);
+                });
+            })
+            ->get()
+            ->sortBy(fn ($partner) => $partner->people?->father_lastname)
+            ->values();
+    }
+
     public function searchByTerms(array $terms, int $limit): Collection
     {
         $query = Partner::select(['partners.id', 'partners.person_id'])

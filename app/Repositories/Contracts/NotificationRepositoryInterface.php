@@ -25,6 +25,9 @@ interface NotificationRepositoryInterface
 
     public function create(array $data): Notification;
 
+    /** Indica si ya existe un aviso del tipo con esa clave de deduplicación. */
+    public function existsWithDedupeKey(string $type, string $dedupeKey): bool;
+
     /** Cantidad de avisos sin ver que el usuario solicitó. */
     public function unreadRequestedBy(User $user): int;
 

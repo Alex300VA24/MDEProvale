@@ -70,6 +70,23 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
             ->first();
     }
 
+    public function firstScheduledInRange(int $associationId, string $from, string $to): ?Pecosa
+    {
+        return Pecosa::with(['state', 'detailPecosas'])
+            ->where('association_id', $associationId)
+            ->whereBetween('delivery_date', [$from, $to])
+            ->orderBy('delivery_date')
+            ->first();
+    }
+
+    public function paginateForAssociation(int $associationId, int $perPage): LengthAwarePaginator
+    {
+        return Pecosa::with(['state', 'detailPecosas'])
+            ->where('association_id', $associationId)
+            ->orderByDesc('delivery_date')
+            ->paginate($perPage);
+    }
+
     public function deliveriesInRange(\Illuminate\Support\Collection $associationIds, string $from, string $to): \Illuminate\Support\Collection
     {
         return Pecosa::with('detailPecosas:id,pecosa_id,quantity,product_abbreviation')
