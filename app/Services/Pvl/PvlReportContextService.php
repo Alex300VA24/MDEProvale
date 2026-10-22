@@ -6,15 +6,18 @@ use App\Models\BeneficiaryHistory;
 use App\Models\DetailPecosa;
 use App\Models\DistributionPeriod;
 use App\Models\Pecosa;
-use App\Models\Product;
 use App\Models\PvlDocument;
-use App\Models\Racion;
 use App\Models\Transaction;
+use App\Repositories\Contracts\PvlReportRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 class PvlReportContextService
 {
+    public function __construct(private PvlReportRepositoryInterface $reports)
+    {
+    }
+
     public function build(string $reportType, int $year, int $month): array
     {
         $period = sprintf('%04d-%02d', $year, $month);
@@ -40,10 +43,7 @@ class PvlReportContextService
             'racion_a' => $ration,
             'trazabilidad' => $trace,
             'meta' => $meta,
-            'documentos_respaldo' => PvlDocument::query()
-                ->where('period', $period)
-                ->orderBy('id')
-                ->get(['id', 'document_type', 'file_name', 'index_status'])
+            'documentos_respaldo' => $this->reports->documentsForPeriod($period)
                 ->map(fn (PvlDocument $document) => [
                     'id' => $document->id,
                     'tipo_documento' => $document->document_type,
@@ -57,13 +57,7 @@ class PvlReportContextService
 
     private function pvlData(Carbon $start, Carbon $end, array &$trace): array
     {
-        $transactions = Transaction::query()
-            ->with(['detailProduct.product.uom', 'typeTransaction'])
-            ->whereBetween('transaction_date', [$start->toDateString(), $end->toDateString()])
-            ->whereHas('typeTransaction', fn ($query) => $query->whereRaw('LOWER(TRIM(title)) = ?', ['ingreso']))
-            ->orderBy('transaction_date')
-            ->orderBy('id')
-            ->get();
+        $transactions = $this->reports->incomeTransactions($start, $end);
 
         $lines = $transactions->map(fn (Transaction $transaction) => $this->purchaseLine($transaction))->values();
         [$complementary, $food] = $lines->partition(fn (array $line) => $this->isComplementary($line['producto']));
@@ -113,21 +107,12 @@ class PvlReportContextService
     /** @return array{0:array,1:array} */
     private function rationData(Carbon $start, Carbon $end, array &$trace): array
     {
-        $racion = Racion::forMonth($start->year, $start->month)->first();
-        $distributionPeriod = DistributionPeriod::query()
-            ->where('year', $start->year)
-            ->where('month', $start->month)
-            ->first();
+        $racion = $this->reports->racionForMonth($start->year, $start->month);
+        $distributionPeriod = $this->reports->distributionPeriod($start->year, $start->month);
         $serviceDays = $distributionPeriod?->service_days;
 
         [$pecosaStart, $pecosaEnd] = Pecosa::deliveryPeriodRange($start->year, $start->month);
-        $details = DetailPecosa::query()
-            ->with(['pecosa', 'detailProduct.product.uom'])
-            ->whereHas('pecosa', fn ($query) => $query->whereBetween('delivery_date', [
-                $pecosaStart->toDateString(),
-                $pecosaEnd->toDateString(),
-            ]))
-            ->get();
+        $details = $this->reports->pecosaDetailsBetween($pecosaStart, $pecosaEnd);
 
         $distributions = $details
             ->groupBy(fn (DetailPecosa $detail) => ($detail->pecosa?->delivery_date?->format('Y-m-d') ?? '').'|'.$this->productName($detail))
@@ -158,8 +143,8 @@ class PvlReportContextService
 
         $rations = [];
         if ($racion) {
-            $oat = Product::where('title', 'like', '%HOJUEL%')->value('title');
-            $milk = Product::where('title', 'like', '%LECHE%')->value('title');
+            $oat = $this->reports->productTitleLike('%HOJUEL%');
+            $milk = $this->reports->productTitleLike('%LECHE%');
             $rations[] = [
                 'alimento1' => $oat,
                 'alimento1_gramos' => (float) $racion->racion_hojuelas_gramos,
@@ -306,17 +291,7 @@ class PvlReportContextService
         $counts = ['rural' => $empty, 'urbana' => $empty];
         $unclassified = 0;
 
-        $histories = BeneficiaryHistory::query()
-            ->with([
-                'typeBenefit',
-                'beneficiary.person.placeSector.place',
-                'beneficiary.partner.association.placeSector.place',
-            ])
-            ->whereDate('date_begin', '<=', $end->toDateString())
-            ->where(fn ($dates) => $dates->whereNull('date_end')->orWhereDate('date_end', '>=', $start->toDateString()))
-            ->orderByDesc('date_begin')
-            ->get()
-            ->unique('beneficiary_id');
+        $histories = $this->reports->beneficiaryHistoriesBetween($start, $end);
 
         foreach ($histories as $history) {
             $beneficiary = $history->beneficiary;

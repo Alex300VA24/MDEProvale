@@ -6,6 +6,7 @@ use App\Exceptions\AiProviderException;
 use App\Models\PvlReportRun;
 use App\Services\Pvl\PvlAiReportService;
 use App\Services\Pvl\PvlRagService;
+use App\Repositories\Contracts\PvlReportRepositoryInterface;
 use App\Services\Pvl\PvlReportContextService;
 use App\Services\Pvl\PvlReportDataMapper;
 use App\Services\Pvl\PvlReportDefaultsService;
@@ -185,6 +186,7 @@ class PvlReportGeneratorServiceTest extends TestCase
             $mapper,
             $validator,
             new PvlReportDefaultsService(),
+            app(PvlReportRepositoryInterface::class),
         );
     }
 }

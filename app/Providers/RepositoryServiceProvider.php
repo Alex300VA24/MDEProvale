@@ -44,6 +44,12 @@ use App\Repositories\ModuleRepository;
 use App\Repositories\NotificationRepository;
 use App\Repositories\RolRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\Contracts\PvlReportRepositoryInterface;
+use App\Repositories\Contracts\ReportRepositoryInterface;
+use App\Repositories\Contracts\VerifiedDocumentRepositoryInterface;
+use App\Repositories\PvlReportRepository;
+use App\Repositories\ReportRepository;
+use App\Repositories\VerifiedDocumentRepository;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -74,5 +80,8 @@ class RepositoryServiceProvider extends ServiceProvider
         RolRepositoryInterface::class => RolRepository::class,
         ModuleRepositoryInterface::class => ModuleRepository::class,
         NotificationRepositoryInterface::class => NotificationRepository::class,
+        PvlReportRepositoryInterface::class => PvlReportRepository::class,
+        ReportRepositoryInterface::class => ReportRepository::class,
+        VerifiedDocumentRepositoryInterface::class => VerifiedDocumentRepository::class,
     ];
 }

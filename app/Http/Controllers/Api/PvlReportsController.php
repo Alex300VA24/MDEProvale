@@ -2,41 +2,34 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Exceptions\AiProviderException;
+use App\Exceptions\PvlReportException;
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Http\Presenters\PvlReportPresenter;
 use App\Models\PvlDocument;
 use App\Models\PvlReportRun;
-use App\Services\Pvl\PvlRagService;
-use App\Services\Pvl\PvlReportGeneratorService;
 use App\Services\Pvl\PvlReportDefaultsService;
-use App\Services\Pvl\PvlReportDataMapper;
-use App\Services\Pvl\PvlReportValidationService;
-use App\Services\Pvl\PvlSupportingReportService;
-use App\Services\Rag\DocumentBinaryStorage;
-use App\Services\ReportePvlPdfService;
+use App\Services\Pvl\PvlReportGeneratorService;
+use App\Services\Pvl\PvlReportService;
+use App\Services\UploadSettingsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class PvlReportsController extends Controller
 {
+    public function __construct(
+        private PvlReportService $reports,
+        private PvlReportPresenter $presenter,
+    ) {
+    }
+
     public function index(PvlReportDefaultsService $defaults)
     {
+        $overview = $this->reports->overview();
+
         return response()->json([
-            'runs' => PvlReportRun::query()
-                ->latest('id')
-                ->limit(20)
-                ->get()
-                ->map(fn (PvlReportRun $run) => $this->runResource($run)),
-            'documents' => PvlDocument::query()
-                ->with('product:id,title')
-                ->latest('id')
-                ->limit(30)
-                ->get()
-                ->map(fn (PvlDocument $document) => $this->documentResource($document)),
-            'products' => Product::query()->orderBy('title')->get(['id', 'title']),
+            'runs' => $overview['runs']->map(fn (PvlReportRun $run) => $this->presenter->run($run)),
+            'documents' => $overview['documents']->map(fn (PvlDocument $document) => $this->presenter->document($document)),
+            'products' => $overview['products'],
             'document_types' => PvlDocument::TYPES,
             'defaults' => $defaults->resource(),
         ]);
@@ -88,94 +81,49 @@ class PvlReportsController extends Controller
             return response()->json([
                 'message' => $message,
                 'error_code' => $code,
-                'run' => $this->runResource($run),
+                'run' => $this->presenter->run($run),
             ], $status);
         }
 
         return response()->json([
             'message' => $run->getAttribute('was_cached') ? 'Se reutilizó el análisis vigente.' : 'Análisis completado.',
-            'run' => $this->runResource($run),
+            'run' => $this->presenter->run($run),
         ]);
     }
 
     public function show(PvlReportRun $pvlReportRun)
     {
-        return response()->json(['run' => $this->runResource($pvlReportRun)]);
+        return response()->json(['run' => $this->presenter->run($pvlReportRun)]);
     }
 
     public function destroyRun(PvlReportRun $pvlReportRun)
     {
-        $pvlReportRun->delete();
+        $this->reports->deleteRun($pvlReportRun);
 
         return response()->json(['message' => 'Análisis eliminado del historial.']);
     }
 
-    public function updateMissingData(
-        Request $request,
-        PvlReportRun $pvlReportRun,
-        PvlReportDataMapper $mapper,
-        PvlReportValidationService $validationService,
-    ) {
+    public function updateMissingData(Request $request, PvlReportRun $pvlReportRun)
+    {
         $validated = $request->validate([
             'values' => ['required', 'array', 'min:1'],
             'values.*.path' => ['required', 'string', 'max:220'],
             'values.*.value' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $data = $pvlReportRun->validated_data_json ?? [];
-        $allowed = collect($this->missingFields($pvlReportRun))
-            ->where('fillable', true)
-            ->pluck('path')
-            ->all();
-        $updatedPaths = [];
-
-        foreach ($validated['values'] as $item) {
-            $path = $item['path'];
-            if (! in_array($path, $allowed, true) || ! Arr::has($data, $path)) {
-                return response()->json([
-                    'message' => 'Uno de los campos no puede completarse manualmente en este análisis.',
-                    'errors' => ['values' => ['Campo no permitido: '.$path]],
-                ], 422);
-            }
-
-            $value = trim((string) ($item['value'] ?? ''));
-            data_set($data, $path, $value === '' ? null : $value);
-            $updatedPaths[] = $path;
+        try {
+            $run = $this->reports->updateMissingData($pvlReportRun, $validated['values']);
+        } catch (PvlReportException $exception) {
+            return $this->fail($exception);
         }
-
-        $normalized = $mapper->map(['data' => $data], [], $pvlReportRun->report_type);
-        $context = $pvlReportRun->input_snapshot_json ?? [];
-        $aiOutput = $pvlReportRun->ai_output_json ?? [];
-        $result = $validationService->validate($normalized, $aiOutput, $context);
-        $sources = collect($pvlReportRun->sources_json ?? [])
-            ->reject(fn (array $source) => ($source['origen'] ?? null) === 'ENTRADA_USUARIO'
-                && in_array($source['campo'] ?? null, $updatedPaths, true));
-
-        foreach ($updatedPaths as $path) {
-            $sources->push([
-                'campo' => $path,
-                'valor' => data_get($result['data'], $path),
-                'origen' => 'ENTRADA_USUARIO',
-                'referencia' => 'Corrección posterior al análisis',
-            ]);
-        }
-
-        $pvlReportRun->forceFill([
-            'validated_data_json' => $result['data'],
-            'warnings_json' => $result['findings'],
-            'sources_json' => $sources->values()->all(),
-            'status' => $result['status'],
-            'generated_at' => null,
-            'error_message' => null,
-        ])->save();
 
         return response()->json([
             'message' => 'Datos guardados y validados nuevamente.',
-            'run' => $this->runResource($pvlReportRun->fresh()),
+            'run' => $this->presenter->run($run),
         ]);
     }
 
-    public function storeDocument(Request $request, PvlRagService $rag, \App\Services\UploadSettingsService $uploadSettings)
+    public function storeDocument(Request $request, UploadSettingsService $uploadSettings)
     {
         $validated = $request->validate([
             'document_type' => ['required', Rule::in(PvlDocument::TYPES)],
@@ -191,64 +139,31 @@ class PvlReportsController extends Controller
         ]);
 
         $file = $request->file('file');
-        $binary = file_get_contents($file->getRealPath());
-        $hash = hash('sha256', $binary);
-
-        $duplicate = PvlDocument::query()
-            ->where('period', $validated['period'])
-            ->where('document_type', $validated['document_type'])
-            ->where('file_hash', $hash)
-            ->first();
-
-        if ($duplicate) {
-            return response()->json([
-                'message' => 'Este archivo ya fue indexado para el mismo periodo y tipo documental.',
-                'document' => $this->documentResource($duplicate),
-            ], 422);
-        }
-
-        $document = PvlDocument::create([
-            'document_type' => $validated['document_type'],
-            'period' => $validated['period'],
-            'product_id' => $validated['product_id'] ?? null,
-            'provider_reference' => $validated['provider_reference'] ?? null,
-            'file_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType() ?: $file->getClientMimeType() ?: 'application/octet-stream',
-            'file_size' => $file->getSize(),
-            'file_hash' => $hash,
-            'file_path' => DocumentBinaryStorage::put('rag/pvl', $hash, $binary),
-            'file_data' => null,
-            'created_by' => $request->user()?->id,
-        ]);
 
         try {
-            $rag->indexDocument($document, $binary);
-        } catch (\Throwable $exception) {
-            $detail = $exception instanceof AiProviderException || $exception instanceof \RuntimeException
-                ? $exception->getMessage()
-                : 'Revise que el archivo contenga texto legible y vuelva a intentarlo.';
-            $status = $exception instanceof AiProviderException
-                ? $exception->httpStatus()
-                : ($exception instanceof \RuntimeException ? 422 : 500);
-
-            return response()->json([
-                'message' => 'Archivo guardado, pero no pudo indexarse. '.$detail,
-                'error_code' => $exception instanceof AiProviderException
-                    ? 'ERROR_AI_'.$exception->reason()
-                    : 'ERROR_INDEXACION',
-                'document' => $this->documentResource($document->fresh('product')),
-            ], $status);
+            $document = $this->reports->storeDocument(
+                $validated,
+                [
+                    'name' => $file->getClientOriginalName(),
+                    'mime' => $file->getMimeType() ?: $file->getClientMimeType() ?: 'application/octet-stream',
+                    'size' => $file->getSize(),
+                ],
+                file_get_contents($file->getRealPath()),
+                $request->user()?->id,
+            );
+        } catch (PvlReportException $exception) {
+            return $this->fail($exception);
         }
 
         return response()->json([
             'message' => 'Documento indexado con trazabilidad.',
-            'document' => $this->documentResource($document->fresh('product')),
+            'document' => $this->presenter->document($document),
         ], 201);
     }
 
     public function downloadDocument(PvlDocument $pvlDocument)
     {
-        $binary = DocumentBinaryStorage::get($pvlDocument->file_path, $pvlDocument->file_data);
+        $binary = $this->reports->documentBinary($pvlDocument);
         if ($binary === null) {
             abort(404, 'Archivo no disponible.');
         }
@@ -262,122 +177,42 @@ class PvlReportsController extends Controller
 
     public function destroyDocument(PvlDocument $pvlDocument)
     {
-        DocumentBinaryStorage::delete($pvlDocument->file_path);
-        $pvlDocument->delete();
+        $this->reports->deleteDocument($pvlDocument);
 
         return response()->json(['message' => 'Documento y fragmentos eliminados.']);
     }
 
-    public function markGenerated(
-        PvlReportRun $pvlReportRun,
-        ReportePvlPdfService $pdfService,
-        PvlSupportingReportService $supportingReport,
-    )
+    public function markGenerated(PvlReportRun $pvlReportRun)
     {
-        if (! $pvlReportRun->canGenerate()) {
-            return response()->json([
-                'message' => 'El reporte contiene hallazgos críticos y no puede generar un PDF.',
-            ], 422);
+        try {
+            $run = $this->reports->markGenerated($pvlReportRun);
+        } catch (PvlReportException $exception) {
+            return $this->fail($exception);
         }
-
-        $types = match ($pvlReportRun->report_type) {
-            'PVL' => ['pvl'],
-            'RACION_A' => ['racion-a'],
-            default => ['pvl', 'racion-a', 'informe'],
-        };
-
-        foreach ($types as $type) {
-            $key = $type === 'pvl' ? 'pvl' : 'racion_a';
-            $data = $type === 'informe'
-                ? $supportingReport->build($pvlReportRun)
-                : data_get($pvlReportRun->validated_data_json, $key);
-            if (! is_array($data)) {
-                $pvlReportRun->forceFill(['error_message' => 'ERROR_DATOS'])->save();
-
-                return response()->json([
-                    'message' => 'Faltan datos validados para generar uno de los reportes.',
-                    'error_code' => 'ERROR_DATOS',
-                ], 422);
-            }
-
-            try {
-                $pdfService->forType($type, $data)->output();
-            } catch (\Throwable $exception) {
-                Log::error('Falló la generación del PDF PVL.', [
-                    'run_id' => $pvlReportRun->id,
-                    'report_type' => $type,
-                    'error_code' => 'ERROR_PDF',
-                    'exception' => $exception::class,
-                ]);
-                $pvlReportRun->forceFill(['error_message' => 'ERROR_PDF'])->save();
-
-                return response()->json([
-                    'message' => 'No se pudo generar el PDF. Puede reintentarlo.',
-                    'error_code' => 'ERROR_PDF',
-                ], 500);
-            }
-        }
-
-        $pvlReportRun->forceFill([
-            'status' => PvlReportRun::GENERADO,
-            'generated_at' => now(),
-            'error_message' => null,
-        ])->save();
 
         return response()->json([
-            'message' => count($types) > 1
+            'message' => count($this->reports->reportTypes($run)) > 1
                 ? 'Anexos e informe sustentatorio listos para previsualizar o descargar.'
                 : 'PDF listo para previsualizar o descargar.',
-            'run' => $this->runResource($pvlReportRun->fresh()),
-            'files' => $this->reportFiles($pvlReportRun),
+            'run' => $this->presenter->run($run),
+            'files' => $this->presenter->files($run),
         ]);
     }
 
-    private function runResource(PvlReportRun $run): array
+    private function fail(PvlReportException $exception)
     {
-        return [
-            'id' => $run->id,
-            'report_type' => $run->report_type,
-            'month' => $run->month,
-            'year' => $run->year,
-            'status' => $run->status,
-            'validated_data' => $run->validated_data_json,
-            'findings' => collect($run->warnings_json ?? [])->map(function (array $finding) {
-                unset($finding['_signature']);
+        $payload = ['message' => $exception->getMessage()];
+        if ($exception->errors()) {
+            $payload['errors'] = $exception->errors();
+        }
+        if ($exception->errorCode()) {
+            $payload['error_code'] = $exception->errorCode();
+        }
+        if ($exception->document()) {
+            $payload['document'] = $this->presenter->document($exception->document());
+        }
 
-                return $finding;
-            })->values(),
-            'sources' => $run->sources_json ?? [],
-            'conflicts' => data_get($run->ai_output_json, 'conflictos', []),
-            'missing' => data_get($run->ai_output_json, 'datos_faltantes', []),
-            'missing_fields' => $this->missingFields($run),
-            'observations' => data_get($run->ai_output_json, 'observaciones', []),
-            'model_used' => $run->model_used,
-            'prompt_version' => $run->prompt_version,
-            'report_metadata' => data_get($run->input_snapshot_json, 'report_metadata', []),
-            'error_message' => $run->error_message,
-            'created_at' => optional($run->created_at)->format('d/m/Y H:i'),
-            'generated_at' => optional($run->generated_at)->format('d/m/Y H:i'),
-            'can_generate' => $run->canGenerate(),
-            'files' => $run->status === PvlReportRun::GENERADO
-                ? $this->reportFiles($run)
-                : [],
-        ];
-    }
-
-    private function reportFiles(PvlReportRun $run): array
-    {
-        $types = match ($run->report_type) {
-            'PVL' => ['pvl'],
-            'RACION_A' => ['racion-a'],
-            default => ['pvl', 'racion-a', 'informe'],
-        };
-
-        return collect($types)->map(fn (string $type) => [
-            'type' => $type,
-            'preview_url' => route('reportes.pvl.preview', [$run, $type]),
-            'download_url' => route('reportes.pvl.download', [$run, $type]),
-        ])->values()->all();
+        return response()->json($payload, $exception->status());
     }
 
     private function analysisError(PvlReportRun $run): array
@@ -412,64 +247,5 @@ class PvlReportsController extends Controller
             'ERROR_VALIDACION' => [422, $code, 'Los datos obtenidos no pudieron validarse de forma segura.'],
             default => [500, $code ?: 'ERROR', 'El análisis no pudo completarse. Puede reintentarlo.'],
         };
-    }
-
-    private function missingFields(PvlReportRun $run): array
-    {
-        $codes = [
-            'DATO_FALTANTE', 'DATO_ADMINISTRATIVO_FALTANTE', 'BENEFICIARIOS_INCOMPLETOS',
-            'RACION_FALTANTE', 'DISTRIBUCION_FALTANTE', 'CERTIFICADO_FALTANTE',
-            'COMPOSICION_FALTANTE', 'COMPOSICION_INCOMPLETA',
-        ];
-        $data = $run->validated_data_json ?? [];
-
-        return collect($run->warnings_json ?? [])
-            ->filter(fn (array $finding) => in_array($finding['code'] ?? null, $codes, true))
-            ->unique(fn (array $finding) => ($finding['field'] ?? '').'|'.($finding['code'] ?? ''))
-            ->map(function (array $finding) use ($data) {
-                $path = (string) ($finding['field'] ?? '');
-                $isExactPath = $path !== ''
-                    && ! str_contains($path, '|')
-                    && preg_match('/^(pvl|racion_a)(\.[a-z0-9_]+|\.[0-9]+)+$/', $path) === 1;
-                $value = $isExactPath && Arr::has($data, $path) ? data_get($data, $path) : null;
-                $fillable = $isExactPath && Arr::has($data, $path) && ! is_array($value);
-
-                return [
-                    'path' => $path,
-                    'label' => $this->fieldLabel($path),
-                    'message' => $finding['message'] ?? 'Información no encontrada.',
-                    'severity' => $finding['severity'] ?? 'ADVERTENCIA',
-                    'fillable' => $fillable,
-                    'value' => $fillable ? $value : null,
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    private function fieldLabel(string $path): string
-    {
-        $parts = array_values(array_filter(explode('.', $path), fn (string $part) => ! ctype_digit($part)));
-        $field = end($parts) ?: 'información faltante';
-
-        return ucfirst(str_replace('_', ' ', $field));
-    }
-
-    private function documentResource(PvlDocument $document): array
-    {
-        return [
-            'id' => $document->id,
-            'document_type' => $document->document_type,
-            'period' => $document->period,
-            'product' => $document->product?->title,
-            'provider_reference' => $document->provider_reference,
-            'file_name' => $document->file_name,
-            'mime_type' => $document->mime_type,
-            'file_size' => $document->file_size,
-            'index_status' => $document->index_status,
-            'index_error' => $document->index_error,
-            'created_at' => optional($document->created_at)->format('d/m/Y H:i'),
-            'download_url' => route('api.reportes-pvl.documents.download', $document),
-        ];
     }
 }

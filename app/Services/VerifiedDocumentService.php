@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\VerifiedDocument;
+use App\Repositories\Contracts\VerifiedDocumentRepositoryInterface;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelMedium;
 use Endroid\QrCode\QrCode;
@@ -14,8 +15,10 @@ use Throwable;
 
 class VerifiedDocumentService
 {
-    public function __construct(private PDFService $pdfService)
-    {
+    public function __construct(
+        private PDFService $pdfService,
+        private VerifiedDocumentRepositoryInterface $documents
+    ) {
     }
 
     public function issue(
@@ -29,7 +32,7 @@ class VerifiedDocumentService
         string $paper = 'a4',
         string $orientation = 'landscape'
     ): array {
-        $document = VerifiedDocument::create([
+        $document = $this->documents->create([
             'token' => bin2hex(random_bytes(32)),
             'type' => $type,
             'identifier' => $identifier,
@@ -54,19 +57,24 @@ class VerifiedDocumentService
             if (!Storage::disk('local')->put($path, $contents)) {
                 throw new RuntimeException('No se pudo almacenar el PDF verificable.');
             }
-            $document->update([
+            $stored = $this->documents->update($document, [
                 'storage_path' => $path,
                 'sha256' => hash('sha256', $contents),
             ]);
 
-            return [$document->fresh(), $contents, $safeFilename];
+            return [$stored, $contents, $safeFilename];
         } catch (Throwable $exception) {
             if ($path) {
                 Storage::disk('local')->delete($path);
             }
-            $document->delete();
+            $this->documents->delete($document);
             throw $exception;
         }
+    }
+
+    public function findByToken(string $token): VerifiedDocument
+    {
+        return $this->documents->findByTokenOrFail($token);
     }
 
     public function qrDataUri(string $url): string

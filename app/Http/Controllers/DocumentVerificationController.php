@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\VerifiedDocument;
+use App\Services\VerifiedDocumentService;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DocumentVerificationController extends Controller
 {
+    public function __construct(private VerifiedDocumentService $documents)
+    {
+    }
+
     public function show(string $token)
     {
         $document = $this->findByToken($token);
@@ -38,6 +43,6 @@ class DocumentVerificationController extends Controller
     {
         abort_unless((bool) preg_match('/\A[a-f0-9]{64}\z/', $token), 404);
 
-        return VerifiedDocument::where('token', $token)->firstOrFail();
+        return $this->documents->findByToken($token);
     }
 }

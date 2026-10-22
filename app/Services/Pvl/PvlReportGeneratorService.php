@@ -4,7 +4,7 @@ namespace App\Services\Pvl;
 
 use App\Exceptions\AiProviderException;
 use App\Models\PvlReportRun;
-use Carbon\Carbon;
+use App\Repositories\Contracts\PvlReportRepositoryInterface;
 use Illuminate\Support\Facades\Log;
 
 class PvlReportGeneratorService
@@ -16,6 +16,7 @@ class PvlReportGeneratorService
         private PvlReportDataMapper $mapper,
         private PvlReportValidationService $validationService,
         private PvlReportDefaultsService $defaultsService,
+        private PvlReportRepositoryInterface $runs,
     ) {
     }
 
@@ -25,7 +26,7 @@ class PvlReportGeneratorService
             $this->contextService->build($reportType, $year, $month),
             $reportMetadata
         );
-        $previous = $this->previousRun($year, $month);
+        $previous = $this->runs->previousRun($year, $month);
         $fingerprintContext = $context;
         $fingerprintContext['_validation_dependencies']['previous_run'] = $previous ? [
             'id' => $previous->id,
@@ -34,15 +35,7 @@ class PvlReportGeneratorService
         ] : null;
         $fingerprint = $this->ragService->sourceFingerprint($reportType, $year, $month, $fingerprintContext);
 
-        $cached = PvlReportRun::query()
-            ->where('report_type', $reportType)
-            ->where('year', $year)
-            ->where('month', $month)
-            ->where('created_by', $userId)
-            ->where('source_fingerprint', $fingerprint)
-            ->whereNotIn('status', [PvlReportRun::ERROR, PvlReportRun::ANALIZANDO])
-            ->latest('id')
-            ->first();
+        $cached = $this->runs->cachedRun($reportType, $year, $month, $userId, $fingerprint);
 
         if ($cached) {
             $cached->setAttribute('was_cached', true);
@@ -50,7 +43,7 @@ class PvlReportGeneratorService
             return $cached;
         }
 
-        $run = PvlReportRun::create([
+        $run = $this->runs->createRun([
             'report_type' => $reportType,
             'month' => $month,
             'year' => $year,
@@ -85,33 +78,17 @@ class PvlReportGeneratorService
                 $aiOutput['trazabilidad'] ?? []
             ));
 
-            $run->forceFill([
+            return $this->runs->updateRun($run, [
                 'status' => $validation['status'],
                 'ai_output_json' => $aiOutput,
                 'validated_data_json' => $validation['data'],
                 'warnings_json' => $validation['findings'],
                 'sources_json' => $sources,
                 'error_message' => null,
-            ])->save();
-
-            return $run->fresh();
+            ]);
         } catch (\Throwable $exception) {
             return $this->fail($run, 'ERROR_VALIDACION', $exception);
         }
-    }
-
-    private function previousRun(int $year, int $month): ?PvlReportRun
-    {
-        $previous = Carbon::create($year, $month, 1)->subMonthNoOverflow();
-
-        return PvlReportRun::query()
-            ->whereIn('report_type', ['PVL', 'AMBOS'])
-            ->where('year', $previous->year)
-            ->where('month', $previous->month)
-            ->whereIn('status', [PvlReportRun::LISTO_PARA_GENERAR, PvlReportRun::GENERADO])
-            ->whereNotNull('validated_data_json')
-            ->latest('id')
-            ->first();
     }
 
     private function effectiveContextSources(array $context, array $mapped, array $aiOutput): array
@@ -156,11 +133,9 @@ class PvlReportGeneratorService
             'exception' => $exception::class,
         ]);
 
-        $run->forceFill([
+        return $this->runs->updateRun($run, [
             'status' => PvlReportRun::ERROR,
             'error_message' => $code.': '.mb_substr($exception->getMessage(), 0, 500),
-        ])->save();
-
-        return $run->fresh();
+        ]);
     }
 }
