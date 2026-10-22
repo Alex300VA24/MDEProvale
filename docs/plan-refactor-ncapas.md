@@ -3,6 +3,8 @@
 Stack: Laravel 10 / PHP 8.1, Inertia + React (JSX), Sanctum, DomPDF, PhpSpreadsheet.
 Rama de trabajo: `estructura`.
 
+**Estado: completado (T0–T11).** Allowlist de arquitectura vacía; descripción final del sistema en [manual-arquitectura.md](manual-arquitectura.md).
+
 ## 1. Diagnóstico (estado actual)
 
 Ya existe un esqueleto parcial de capas, pero solo para 5 dominios.

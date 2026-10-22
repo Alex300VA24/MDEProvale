@@ -2,9 +2,9 @@
 
 namespace App\Repositories;
 
+use App\Enums\ResponsibleType;
 use App\Models\DetailPecosa;
 use App\Models\DetailProduct;
-use App\Models\Person;
 use App\Models\People;
 use App\Models\Responsible;
 use App\Models\Transaction;
@@ -66,7 +66,7 @@ class ControlInternoRepository implements ControlInternoRepositoryInterface
     public function activeStorekeeper(): ?People
     {
         return Responsible::query()
-            ->where('type', 'storekeeper')
+            ->where('type', ResponsibleType::Storekeeper->value)
             ->where('active', true)
             ->with('person')
             ->latest('start_date')

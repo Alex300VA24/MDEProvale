@@ -20,6 +20,8 @@ recursos (CSS/JS/fuentes/Vite) y peticiones AJAX se generan de forma relativa al
 request, así que sirven tanto en la raíz (`artisan serve`) como dentro de una
 subcarpeta de `htdocs`.
 
+> Arquitectura (4 capas), guía de extensión y organización del repositorio: [docs/manual-arquitectura.md](docs/manual-arquitectura.md).
+
 ---
 
 ## 1. Requisitos

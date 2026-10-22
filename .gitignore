@@ -126,8 +126,8 @@ resoluciones_comites.xlsx
 !/database/seeders/data/
 
 # Prototipos HTML ya migrados a vistas Blade
-/acta_*.html
-/reparticion*.html
+/docs/prototipos/acta_*.html
+/docs/prototipos/reparticion*.html
 
 # Salidas de herramientas de análisis y validación visual
 /repomix-output.md

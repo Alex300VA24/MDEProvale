@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ResponsibleType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,11 +25,6 @@ class Responsible extends Model
         'end_date' => 'datetime',
     ];
 
-    public const TYPE_LABELS = [
-        'chief' => 'Subgerente de Programas Sociales',
-        'storekeeper' => 'Encargado de PROVALE',
-    ];
-
     public function person()
     {
         return $this->belongsTo(People::class, 'person_id');
@@ -36,7 +32,7 @@ class Responsible extends Model
 
     public function getTypeLabelAttribute(): string
     {
-        return self::TYPE_LABELS[$this->type] ?? $this->type;
+        return ResponsibleType::tryFrom((string) $this->type)?->label() ?? $this->type;
     }
 
     /** Filtra por nombre, apellidos o DNI de la persona asociada. */

@@ -7,7 +7,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
-$source = resolvePath($argv[1] ?? dirname(__DIR__).'/resoluciones_comites.xlsx');
+$source = resolvePath($argv[1] ?? __DIR__.'/resoluciones_comites.xlsx');
 $outputDirectory = resolvePath($argv[2] ?? dirname(__DIR__).'/database/seeders', false);
 
 if (!is_file($source)) {

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ResponsibleType;
 use App\Events\ResponsiblePeriodEnded;
 use App\Models\Responsible;
 use App\Repositories\Contracts\PersonRepositoryInterface;
@@ -33,8 +34,8 @@ class ResponsibleService
         $active = $this->responsibles->activeWithPerson();
 
         return [
-            'chief' => $active->firstWhere('type', 'chief'),
-            'storekeeper' => $active->firstWhere('type', 'storekeeper'),
+            'chief' => $active->firstWhere('type', ResponsibleType::Chief->value),
+            'storekeeper' => $active->firstWhere('type', ResponsibleType::Storekeeper->value),
             'people' => $this->people->allByName(),
         ];
     }
