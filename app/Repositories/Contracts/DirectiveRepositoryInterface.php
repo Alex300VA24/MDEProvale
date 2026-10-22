@@ -33,4 +33,9 @@ interface DirectiveRepositoryInterface
      * @return array<string, int>
      */
     public function currentCommitteePositions(Collection $partnerIds, int $currentStateId): array;
+
+    /**
+     * Cargo vigente de presidenta de la persona con ese DNI, con su comité cargado.
+     */
+    public function currentPresidentAssignment(string $dni, string $today): ?Directive;
 }

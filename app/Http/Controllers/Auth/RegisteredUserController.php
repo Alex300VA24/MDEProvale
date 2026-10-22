@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Providers\RouteServiceProvider;
+use App\Services\UserService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
 class RegisteredUserController extends Controller
@@ -31,7 +30,7 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request)
+    public function store(Request $request, UserService $users)
     {
         $request->validate([
             'names' => ['required', 'string', 'max:150'],
@@ -44,18 +43,9 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'names' => $request->names,
-            'father_surname' => $request->father_surname,
-            'mother_surname' => $request->mother_surname,
-            'username' => $request->username,
-            'email' => $request->email,
-            'dni' => $request->dni,
-            'cui' => $request->cui,
-            'state_id' => 1,
-            'rol_id' => 1,
-            'password' => Hash::make($request->password),
-        ]);
+        $user = $users->register($request->only([
+            'names', 'father_surname', 'mother_surname', 'username', 'email', 'dni', 'cui', 'password',
+        ]));
 
         event(new Registered($user));
 

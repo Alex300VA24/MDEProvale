@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -25,9 +25,9 @@ class PresidentAuthenticatedSessionController extends Controller
         ]);
     }
 
-    public function store(LoginRequest $request)
+    public function store(LoginRequest $request, UserService $users)
     {
-        $candidate = User::with('rol')->where('username', $request->string('username'))->first();
+        $candidate = $users->findByUsername((string) $request->string('username'));
         if ($candidate && !$candidate->isPresidentPortalUser()) {
             throw ValidationException::withMessages([
                 'username' => 'Este acceso es exclusivo para Socias Presidentas.',

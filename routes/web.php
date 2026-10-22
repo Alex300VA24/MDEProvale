@@ -39,7 +39,7 @@ Route::get('/refresh-csrf', function () {
 })->middleware('web');
 
 // Rutas públicas para recuperación de contraseña (SIN autenticación)
-Route::post('password-reset-request', [App\Http\Controllers\SistemaController::class, 'requestPasswordReset'])->name('password-reset-request');
+Route::post('password-reset-request', App\Http\Controllers\Auth\PasswordResetRequestController::class)->name('password-reset-request');
 
 Route::middleware('throttle:30,1')->group(function () {
     Route::get('verificar-documento/{token}', [DocumentVerificationController::class, 'show'])
@@ -91,7 +91,6 @@ Route::middleware(['auth', 'platform.user'])->group(function () {
     require __DIR__ . '/club-reconocimientos.php';
     require __DIR__ . '/productos-pecosas.php';
     require __DIR__ . '/movimientos.php';
-    require __DIR__ . '/sistema.php';
     require __DIR__ . '/reportes.php';
 });
 

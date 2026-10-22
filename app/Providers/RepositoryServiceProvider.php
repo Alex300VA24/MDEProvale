@@ -36,6 +36,14 @@ use App\Repositories\PersonRepository;
 use App\Repositories\ProductRepository;
 use App\Repositories\StockRepository;
 use App\Repositories\TransactionRepository;
+use App\Repositories\Contracts\ModuleRepositoryInterface;
+use App\Repositories\Contracts\NotificationRepositoryInterface;
+use App\Repositories\Contracts\RolRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\ModuleRepository;
+use App\Repositories\NotificationRepository;
+use App\Repositories\RolRepository;
+use App\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -62,5 +70,9 @@ class RepositoryServiceProvider extends ServiceProvider
         StockRepositoryInterface::class => StockRepository::class,
         TransactionRepositoryInterface::class => TransactionRepository::class,
         DashboardRepositoryInterface::class => DashboardRepository::class,
+        UserRepositoryInterface::class => UserRepository::class,
+        RolRepositoryInterface::class => RolRepository::class,
+        ModuleRepositoryInterface::class => ModuleRepository::class,
+        NotificationRepositoryInterface::class => NotificationRepository::class,
     ];
 }

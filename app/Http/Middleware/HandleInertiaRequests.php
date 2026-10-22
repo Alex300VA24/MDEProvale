@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
+use App\Services\ModuleService;
 use App\Services\UploadSettingsService;
 
 class HandleInertiaRequests extends Middleware
@@ -31,48 +31,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        // Módulos permitidos para el rol del usuario (misma lógica que
-        // User::getModulePermissions(): single JOIN sobre module_rol + modules).
-        $modules = [];
-        if ($user) {
-            if ($user->isAdmin()) {
-                $modules = DB::table('modules')
-                    ->where('modules.is_active', true)
-                    ->orderBy('modules.order')
-                    ->select(
-                        'modules.slug',
-                        'modules.name',
-                        'modules.description',
-                        'modules.icon',
-                        'modules.route',
-                        'modules.order',
-                        DB::raw('1 as can_view'),
-                        DB::raw('1 as can_create'),
-                        DB::raw('1 as can_edit'),
-                        DB::raw('1 as can_delete')
-                    )
-                    ->get();
-            } else {
-                $modules = DB::table('module_rol')
-                    ->join('modules', 'modules.id', '=', 'module_rol.module_id')
-                    ->where('module_rol.rol_id', $user->rol_id)
-                    ->where('modules.is_active', true)
-                    ->orderBy('modules.order')
-                    ->select(
-                        'modules.slug',
-                        'modules.name',
-                        'modules.description',
-                        'modules.icon',
-                        'modules.route',
-                        'modules.order',
-                        'module_rol.can_view',
-                        'module_rol.can_create',
-                        'module_rol.can_edit',
-                        'module_rol.can_delete'
-                    )
-                    ->get();
-            }
-        }
+        $modules = $user ? app(ModuleService::class)->permissionsFor($user) : [];
 
         return array_merge(parent::share($request), [
             'auth' => [

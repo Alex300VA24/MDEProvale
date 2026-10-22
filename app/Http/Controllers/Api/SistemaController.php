@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\SistemaException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreModuleRequest;
 use App\Http\Requests\StoreRolRequest;
@@ -14,81 +15,68 @@ use App\Http\Resources\NotificationResource;
 use App\Http\Resources\RolResource;
 use App\Http\Resources\UserResource;
 use App\Models\Module;
-use App\Models\ModuleIcon;
 use App\Models\Notification;
 use App\Models\Rol;
-use App\Models\State;
-use App\Models\SystemAuditEvent;
 use App\Models\User;
 use App\Services\AssistantSettingsService;
+use App\Services\ModuleService;
 use App\Services\MonthClosureService;
+use App\Services\NotificationService;
+use App\Services\RolService;
+use App\Services\SystemAuditService;
 use App\Services\UploadSettingsService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class SistemaController extends Controller
 {
+    public function __construct(
+        private UserService $users,
+        private RolService $roles,
+        private ModuleService $modules,
+        private NotificationService $notifications,
+        private SystemAuditService $audit
+    ) {
+    }
+
+    private function fail(SistemaException $e)
+    {
+        return response()->json(['message' => $e->getMessage()], $e->status());
+    }
+
     // ==================== USUARIOS ====================
 
     public function usuarios(Request $request)
     {
-        $query = User::with(['rol', 'state'])->orderBy('names');
+        $usuarios = $this->users->list(
+            (string) $request->input('search'),
+            $request->filled('rol_id') ? $request->input('rol_id') : null,
+            $request->filled('state_id') ? $request->input('state_id') : null,
+            (int) $request->input('per_page', 10)
+        );
 
-        if ($search = trim((string) $request->input('search'))) {
-            $query->searchIdentity($search);
-        }
-
-        if ($request->filled('rol_id')) {
-            $query->where('rol_id', $request->input('rol_id'));
-        }
-
-        if ($request->filled('state_id')) {
-            $query->where('state_id', $request->input('state_id'));
-        }
-
-        $usuarios = $query->paginate((int) $request->input('per_page', 10));
-
-        return UserResource::collection($usuarios)->additional([
-            'roles' => Rol::where('is_active', true)->orderBy('title')->get(['id', 'title']),
-            'estados' => State::administrative()->orderBy('title')->get(['id', 'title', 'abbreviation']),
-        ]);
+        return UserResource::collection($usuarios)->additional($this->users->formOptions());
     }
 
     public function storeUsuario(StoreUserRequest $request)
     {
-        $validated = $request->validated();
-        $validated['password'] = Hash::make($validated['password']);
-
-        $usuario = User::create($validated);
-
-        return response()->json(['data' => new UserResource($usuario->load(['rol', 'state']))], 201);
+        return response()->json(['data' => new UserResource($this->users->create($request->validated()))], 201);
     }
 
     public function updateUsuario(UpdateUserRequest $request, User $usuario)
     {
-        $validated = $request->validated();
-
-        if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
-        }
-
-        $usuario->update($validated);
-
-        return response()->json(['data' => new UserResource($usuario->fresh(['rol', 'state']))]);
+        return response()->json(['data' => new UserResource($this->users->update($usuario, $request->validated()))]);
     }
 
     public function destroyUsuario(Request $request, User $usuario)
     {
-        if ($request->user()->is($usuario)) {
-            return response()->json(['message' => 'No puedes eliminar tu propio usuario.'], 403);
-        }
-
         $this->authorize('delete', $usuario);
 
-        $usuario->delete();
+        try {
+            $this->users->delete($request->user(), $usuario);
+        } catch (SistemaException $e) {
+            return $this->fail($e);
+        }
 
         return response()->json(null, 204);
     }
@@ -96,8 +84,7 @@ class SistemaController extends Controller
     public function resetUserPassword(User $usuario)
     {
         $this->authorize('update', $usuario);
-
-        $usuario->update(['password' => Hash::make($usuario->dni)]);
+        $this->users->resetPassword($usuario);
 
         return response()->json(['message' => "Contraseña restaurada al DNI para {$usuario->names}."]);
     }
@@ -106,142 +93,74 @@ class SistemaController extends Controller
 
     public function roles(Request $request)
     {
-        $roles = Rol::withCount('users')->with('modules')->orderBy('title')->paginate((int) $request->input('per_page', 10));
-
-        return RolResource::collection($roles);
+        return RolResource::collection($this->roles->list((int) $request->input('per_page', 10)));
     }
 
     public function storeRol(StoreRolRequest $request)
     {
-        $validated = $request->validated();
-        $modules = $validated['modules'] ?? [];
-        unset($validated['modules']);
-        $this->validateModuleIds($modules);
-
-        $rol = Rol::create($validated);
-        $this->syncRolModules($rol, $modules);
-
-        return response()->json(['data' => new RolResource($rol->fresh(['modules'])->loadCount('users'))], 201);
+        return response()->json(['data' => new RolResource($this->roles->create($request->validated()))], 201);
     }
 
     public function updateRol(UpdateRolRequest $request, Rol $rol)
     {
-        $validated = $request->validated();
-
-        if ($rol->id === 1 && array_key_exists('is_active', $validated) && !$validated['is_active']) {
-            return response()->json(['message' => 'No se puede inactivar el rol Administrador.'], 422);
+        try {
+            $updated = $this->roles->update($rol, $request->validated());
+        } catch (SistemaException $e) {
+            return $this->fail($e);
         }
 
-        $modules = $validated['modules'] ?? [];
-        unset($validated['modules']);
-        $this->validateModuleIds($modules);
-
-        $rol->update($validated);
-        $this->syncRolModules($rol, $modules);
-
-        return response()->json(['data' => new RolResource($rol->fresh(['modules'])->loadCount('users'))]);
+        return response()->json(['data' => new RolResource($updated)]);
     }
 
     public function destroyRol(Rol $rol)
     {
         $this->authorize('delete', $rol);
 
-        if ($rol->id === 1) {
-            return response()->json(['message' => 'No se puede eliminar el rol Administrador: es el rol base del sistema.'], 422);
+        try {
+            $this->roles->delete($rol);
+        } catch (SistemaException $e) {
+            return $this->fail($e);
         }
-
-        if ($rol->users()->count() > 0) {
-            return response()->json(['message' => 'No se puede eliminar el rol porque tiene usuarios asociados.'], 422);
-        }
-
-        $rol->modules()->detach();
-        $rol->delete();
 
         return response()->json(null, 204);
-    }
-
-    private function syncRolModules(Rol $rol, array $modules): void
-    {
-        $rol->modules()->detach();
-
-        if (empty($modules)) {
-            return;
-        }
-
-        $modulesData = [];
-        foreach ($modules as $moduleId => $permissions) {
-            $canView = (bool) ($permissions['can_view'] ?? false);
-            $modulesData[$moduleId] = [
-                'can_view' => $canView,
-                'can_create' => $canView && (bool) ($permissions['can_create'] ?? false),
-                'can_edit' => $canView && (bool) ($permissions['can_edit'] ?? false),
-                'can_delete' => $canView && (bool) ($permissions['can_delete'] ?? false),
-            ];
-        }
-        $rol->modules()->attach($modulesData);
-    }
-
-    private function validateModuleIds(array $modules): void
-    {
-        $requestedIds = array_map('intval', array_keys($modules));
-        $validIds = Module::whereKey($requestedIds)->pluck('id')->map(fn ($id) => (int) $id)->all();
-
-        if (count(array_diff($requestedIds, $validIds)) > 0) {
-            throw ValidationException::withMessages(['modules' => 'Uno o más módulos seleccionados no existen.']);
-        }
     }
 
     // ==================== MÓDULOS ====================
 
     public function modulos(Request $request)
     {
-        $modulos = Module::orderBy('order')->paginate((int) $request->input('per_page', 10));
-
-        return ModuleResource::collection($modulos);
+        return ModuleResource::collection($this->modules->list((int) $request->input('per_page', 10)));
     }
 
     public function modulosOptions()
     {
-        return response()->json(['data' => ModuleResource::collection(Module::orderBy('order')->get())]);
+        return response()->json(['data' => ModuleResource::collection($this->modules->options())]);
     }
 
     public function moduleIcons()
     {
-        $icons = ModuleIcon::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get(['id', 'name', 'class_name', 'category']);
-
-        return response()->json(['data' => $icons]);
+        return response()->json(['data' => $this->modules->icons()]);
     }
 
     public function storeModulo(StoreModuleRequest $request)
     {
-        $modulo = Module::create($request->validated());
-
-        return response()->json(['data' => new ModuleResource($modulo)], 201);
+        return response()->json(['data' => new ModuleResource($this->modules->create($request->validated()))], 201);
     }
 
     public function updateModulo(UpdateModuleRequest $request, Module $modulo)
     {
-        $modulo->update($request->validated());
-
-        return response()->json(['data' => new ModuleResource($modulo)]);
+        return response()->json(['data' => new ModuleResource($this->modules->update($modulo, $request->validated()))]);
     }
 
     public function destroyModulo(Module $modulo)
     {
         $this->authorize('delete', $modulo);
 
-        if ($modulo->slug === 'sistema') {
-            return response()->json(['message' => 'No se puede eliminar el módulo Sistema: es requerido para administrar usuarios, roles y módulos.'], 422);
+        try {
+            $this->modules->delete($modulo);
+        } catch (SistemaException $e) {
+            return $this->fail($e);
         }
-
-        if ($modulo->rols()->count() > 0) {
-            return response()->json(['message' => 'No se puede eliminar el módulo porque está asignado a uno o más roles.'], 422);
-        }
-
-        $modulo->delete();
 
         return response()->json(null, 204);
     }
@@ -253,87 +172,47 @@ class SistemaController extends Controller
 
     public function notifications(Request $request)
     {
-        $user = $request->user();
+        $items = $this->notifications->list(
+            $request->user(),
+            $request->query('type') ?: null,
+            (int) $request->query('limit', 100)
+        );
 
-        $query = Notification::with(['requestedByUser', 'processedByUser'])
-            ->orderBy('requested_at', 'desc');
-
-        if (!$user->isAdmin()) {
-            $query->where(fn ($q) => $q
-                ->where('requested_by', $user->id)
-                ->orWhereIn('type', Notification::SYSTEM_WIDE_TYPES));
-        }
-
-        if ($type = $request->query('type')) {
-            $query->where('type', $type);
-        }
-
-        $limit = min(100, max(1, (int) $request->query('limit', 100)));
-
-        return response()->json(['data' => NotificationResource::collection($query->limit($limit)->get())]);
+        return response()->json(['data' => NotificationResource::collection($items)]);
     }
 
     public function unreadNotificationsCount(Request $request)
     {
-        $count = Notification::unreadCountForUser($request->user());
-
-        return response()->json(['count' => $count, 'label' => $count > 9 ? '9+' : (string) $count]);
+        return response()->json($this->notifications->unreadCount($request->user()));
     }
 
     public function markNotificationsSeen(Request $request)
     {
-        $user = $request->user();
-
-        $query = Notification::where('is_seen', false);
-        if (!$user->isAdmin()) {
-            $query->where(fn ($q) => $q
-                ->where('requested_by', $user->id)
-                ->orWhereIn('type', Notification::SYSTEM_WIDE_TYPES));
-        }
-        $query->update(['is_seen' => true, 'seen_at' => now()]);
+        $this->notifications->markSeen($request->user());
 
         return response()->json(['success' => true]);
     }
 
     public function approveNotification(Request $request, Notification $notification)
     {
-        if ($notification->status !== 'pending') {
-            return response()->json(['message' => 'La solicitud ya fue procesada.'], 422);
+        try {
+            $processed = $this->notifications->approve($notification, $request->user());
+        } catch (SistemaException $e) {
+            return $this->fail($e);
         }
 
-        $requestedUser = User::find($notification->requested_by);
-        if (!$requestedUser) {
-            return response()->json(['message' => 'No se encontró el usuario de la solicitud.'], 404);
-        }
-
-        $requestedUser->update(['password' => Hash::make($requestedUser->dni)]);
-
-        $notification->update([
-            'status' => 'approved',
-            'processed_at' => now(),
-            'processed_by' => $request->user()->id,
-            'is_seen' => true,
-            'seen_at' => now(),
-        ]);
-
-        return response()->json(['data' => new NotificationResource($notification->fresh(['requestedByUser', 'processedByUser']))]);
+        return response()->json(['data' => new NotificationResource($processed)]);
     }
 
     public function rejectNotification(Request $request, Notification $notification)
     {
-        if ($notification->status !== 'pending') {
-            return response()->json(['message' => 'La solicitud ya fue procesada.'], 422);
+        try {
+            $processed = $this->notifications->reject($notification, $request->user());
+        } catch (SistemaException $e) {
+            return $this->fail($e);
         }
 
-        $notification->update([
-            'status' => 'rejected',
-            'processed_at' => now(),
-            'processed_by' => $request->user()->id,
-            'is_seen' => true,
-            'seen_at' => now(),
-        ]);
-
-        return response()->json(['data' => new NotificationResource($notification->fresh(['requestedByUser', 'processedByUser']))]);
+        return response()->json(['data' => new NotificationResource($processed)]);
     }
 
     // ==================== CIERRE DE MES ====================
@@ -451,37 +330,10 @@ class SistemaController extends Controller
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
-        $query = SystemAuditEvent::with(['fromState:id,title,abbreviation', 'toState:id,title,abbreviation', 'executedBy:id,names,father_surname,mother_surname'])
-            ->latest('occurred_at');
-
-        if (! empty($data['source'])) {
-            $query->where('source', $data['source']);
-        }
-        if ($search = trim((string) ($data['search'] ?? ''))) {
-            $query->where(function ($builder) use ($search) {
-                $builder->where('event_type', 'like', "%{$search}%")
-                    ->orWhere('reason_code', 'like', "%{$search}%")
-                    ->orWhere('subject_type', 'like', "%{$search}%")
-                    ->orWhere('subject_id', 'like', "%{$search}%");
-            });
-        }
-
-        $events = $query->paginate((int) ($data['per_page'] ?? 20));
-        $events->through(fn (SystemAuditEvent $event) => [
-            'id' => $event->id,
-            'event_type' => $event->event_type,
-            'subject' => class_basename($event->subject_type).' #'.$event->subject_id,
-            'source' => $event->source,
-            'from_state' => $event->fromState?->abbreviation,
-            'to_state' => $event->toState?->abbreviation,
-            'reason_code' => $event->reason_code,
-            'executed_by' => $event->executedBy
-                ? trim("{$event->executedBy->names} {$event->executedBy->father_surname} {$event->executedBy->mother_surname}")
-                : 'Sistema',
-            'occurred_at' => $event->occurred_at?->format('Y-m-d H:i:s'),
-            'metadata' => $event->metadata,
-        ]);
-
-        return response()->json($events);
+        return response()->json($this->audit->events(
+            $data['source'] ?? null,
+            $data['search'] ?? null,
+            (int) ($data['per_page'] ?? 20)
+        ));
     }
 }

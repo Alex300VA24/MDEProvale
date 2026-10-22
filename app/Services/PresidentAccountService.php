@@ -4,13 +4,20 @@ namespace App\Services;
 
 use App\Models\Partner;
 use App\Models\Rol;
-use App\Models\State;
 use App\Models\User;
+use App\Repositories\Contracts\RolRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class PresidentAccountService
 {
+    public function __construct(
+        private UserRepositoryInterface $users,
+        private RolRepositoryInterface $roles
+    ) {
+    }
+
     /**
      * Garantiza que la socia presidenta tenga cuenta de acceso al Portal de
      * Presidentas.
@@ -30,14 +37,12 @@ class PresidentAccountService
 
         $dni = trim($people->dni);
 
-        $presidentRol = Rol::firstOrCreate(
-            ['title' => Rol::PRESIDENT],
+        $presidentRol = $this->roles->firstOrCreateByTitle(
+            Rol::PRESIDENT,
             ['description' => 'Acceso exclusivo al portal de consultas del comité asignado', 'is_active' => true]
         );
 
-        $activeState = State::whereIn('abbreviation', [State::ACTIVE, 'A'])
-            ->orderBy('id')
-            ->first();
+        $activeState = $this->users->activeState();
 
         if (!$activeState) {
             Log::warning('PresidentAccountService: no existe un estado activo (ACT/A) para el usuario.');
@@ -56,16 +61,16 @@ class PresidentAccountService
             'rol_id'         => $presidentRol->id,
         ];
 
-        $user = User::firstWhere('dni', $dni);
+        $user = $this->users->findByDni($dni);
 
         if (!$user) {
             // No crear cuenta si el username (DNI) ya está ocupado por otra cuenta.
-            if (User::where('username', $dni)->exists()) {
+            if ($this->users->usernameTaken($dni)) {
                 Log::warning("PresidentAccountService: existe un usuario con username {$dni} sin coincidencia de DNI.");
                 return null;
             }
 
-            return User::create(array_merge($data, [
+            return $this->users->create(array_merge($data, [
                 'password'             => Hash::make($dni),
                 'must_change_password' => false,
             ]));
@@ -76,8 +81,6 @@ class PresidentAccountService
             return null;
         }
 
-        $user->update($data);
-
-        return $user->fresh(['rol']);
+        return $this->users->update($user, $data)->load('rol');
     }
 }
