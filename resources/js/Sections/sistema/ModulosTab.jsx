@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
-import { router } from '@inertiajs/react';
 import http from '../../http';
+import { useRuntimeState } from '../../RuntimeState';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
@@ -103,6 +103,7 @@ function ModuloFormModal({ mode, modulo, iconOptions, iconsLoading, onClose, onS
 
 const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
     const toast = useToast();
+    const { refreshModules } = useRuntimeState();
     const [data, setData] = useState(null);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -163,7 +164,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
             setDeleting(null);
             load();
             window.dispatchEvent(new CustomEvent('modules:changed'));
-            router.reload({ only: ['modules'], preserveState: true, preserveScroll: true });
+            await refreshModules().catch(() => toast.error('El módulo se eliminó, pero no se pudieron refrescar los permisos.'));
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar el módulo.'));
             setDeleting(null);
@@ -261,7 +262,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                         setFormOpen(false);
                         load();
                         window.dispatchEvent(new CustomEvent('modules:changed'));
-                        router.reload({ only: ['modules'], preserveState: true, preserveScroll: true });
+                        refreshModules().catch(() => toast.error('El módulo se guardó, pero no se pudieron refrescar los permisos.'));
                     }}
                 />
             )}

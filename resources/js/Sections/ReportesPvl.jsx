@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import errorMessage from '../errorMessage';
 import { useToast } from '../Components/Toast';
@@ -369,7 +369,7 @@ function ReviewPanel({ run, onGenerate, onRunUpdated, generating, canGenerate })
 
 export default function ReportesPvl() {
     const toast = useToast();
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const permission = (modules || []).find((item) => item.slug === 'reportes');
     const can = { view: !!permission?.can_view, create: !!permission?.can_create, edit: !!permission?.can_edit, del: !!permission?.can_delete };
     const today = new Date();

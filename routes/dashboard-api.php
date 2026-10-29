@@ -206,6 +206,7 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
     Route::get('notifications', [SistemaController::class, 'notifications'])->name('notifications');
     Route::get('notifications/unread-count', [SistemaController::class, 'unreadNotificationsCount'])->name('notifications.unread-count');
     Route::post('notifications/mark-seen', [SistemaController::class, 'markNotificationsSeen'])->name('notifications.mark-seen');
+    Route::get('current-modules', [SistemaController::class, 'currentModules'])->name('current-modules');
 
     Route::middleware('module:sistema')->group(function () {
         Route::get('usuarios', [SistemaController::class, 'usuarios'])->name('usuarios');

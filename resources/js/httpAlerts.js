@@ -27,7 +27,7 @@ const safeRedirect = (redirect) => {
     }
 };
 
-const CSRF_RELOAD_KEY = 'provale-csrf-reload';
+let csrfRefreshPromise = null;
 
 export function showSessionExpired(redirect) {
     if (activeSessionAlert) {
@@ -58,27 +58,25 @@ export function showSessionExpired(redirect) {
     return activeSessionAlert;
 }
 
-// Un 419 con `csrf_expired` significa que la sesión sigue viva pero el token
-// CSRF quedó desincronizado (p. ej. login/logout en otra pestaña). No hay que
-// sacar al usuario: se recarga la página para refrescar el token y seguir.
-export function reloadForCsrfExpired() {
-    const now = Date.now();
+// Renueva el token sin desmontar la SPA. Las peticiones Axios pueden reintentarse
+// con el nuevo token y conservar formularios, filtros, modales y navegación.
+export function refreshCsrfToken() {
+    if (csrfRefreshPromise) return csrfRefreshPromise;
 
-    try {
-        const lastReload = Number(sessionStorage.getItem(CSRF_RELOAD_KEY) || 0);
-        sessionStorage.setItem(CSRF_RELOAD_KEY, String(now));
+    csrfRefreshPromise = fetch(`${appUrl()}/refresh-csrf`, {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    }).then(async (response) => {
+        if (!response.ok) throw new Error('No se pudo renovar el token CSRF.');
+        const data = await response.json();
+        if (!data.csrf_token) throw new Error('El servidor no devolvió un token CSRF.');
+        document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', data.csrf_token);
+        return data.csrf_token;
+    }).finally(() => {
+        csrfRefreshPromise = null;
+    });
 
-        // Si ya se recargó hace poco y vuelve a fallar, se reporta como fin de sesión.
-        if (now - lastReload < 10000) {
-            showSessionExpired();
-            return;
-        }
-    } catch {
-        showSessionExpired();
-        return;
-    }
-
-    window.location.reload();
+    return csrfRefreshPromise;
 }
 
 const HTTP_ALERTS = {
@@ -108,7 +106,7 @@ const HTTP_ALERTS = {
         confirmButtonText: 'Reintentar',
         showCancelButton: true,
         cancelButtonText: 'Cerrar',
-        action: 'reload',
+        action: 'retry',
     },
     503: {
         icon: 'info',
@@ -117,11 +115,11 @@ const HTTP_ALERTS = {
         confirmButtonText: 'Reintentar',
         showCancelButton: true,
         cancelButtonText: 'Cerrar',
-        action: 'reload',
+        action: 'retry',
     },
 };
 
-function showHttpAlert(status) {
+function showHttpAlert(status, retry) {
     if (activeHttpAlert || !HTTP_ALERTS[status]) {
         return activeHttpAlert;
     }
@@ -142,8 +140,8 @@ function showHttpAlert(status) {
             return;
         }
 
-        if (action === 'reload') {
-            window.location.reload();
+        if (action === 'retry') {
+            retry?.();
         } else if (action === 'back') {
             window.history.back();
         }
@@ -160,7 +158,7 @@ export function registerInertiaErrorAlerts(router) {
 
         if (status === 419 && data?.csrf_expired) {
             event.preventDefault();
-            reloadForCsrfExpired();
+            refreshCsrfToken().catch(() => showSessionExpired());
             return;
         }
 
@@ -172,7 +170,11 @@ export function registerInertiaErrorAlerts(router) {
 
         if (HTTP_ALERTS[status]) {
             event.preventDefault();
-            showHttpAlert(status);
+            showHttpAlert(status, () => router.visit(window.location.href, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            }));
         }
     });
 
@@ -199,7 +201,11 @@ export function registerInertiaErrorAlerts(router) {
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.reload();
+                router.visit(window.location.href, {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                });
             }
         }).finally(() => {
             activeHttpAlert = null;

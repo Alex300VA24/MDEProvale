@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { reloadForCsrfExpired, showSessionExpired } from './httpAlerts';
+import { refreshCsrfToken, showSessionExpired } from './httpAlerts';
 
 /**
  * Cliente axios para las llamadas JSON del dashboard (Sanctum SPA).
@@ -23,7 +23,7 @@ const http = axios.create({
 });
 
 http.interceptors.request.use((config) => {
-    if (!config.headers['X-XSRF-TOKEN']) {
+    if (!config.headers['X-XSRF-TOKEN'] && !config.headers['X-CSRF-TOKEN']) {
         const xsrfCookie = document.cookie
             .split('; ')
             .find((row) => row.startsWith('XSRF-TOKEN='));
@@ -44,7 +44,7 @@ http.interceptors.request.use((config) => {
 
 http.interceptors.response.use(
     (response) => response,
-    (error) => {
+    async (error) => {
         const status = error.response?.status;
         const data = error.response?.data;
 
@@ -52,8 +52,16 @@ http.interceptors.response.use(
             window.location.assign(data.redirect);
         } else if (error.config?.silentSession && [401, 419].includes(status)) {
             // Petición de fondo (polling): no interrumpe al usuario con alertas.
-        } else if (status === 419 && data?.csrf_expired) {
-            reloadForCsrfExpired();
+        } else if (status === 419 && data?.csrf_expired && !error.config?._csrfRetried) {
+            try {
+                const token = await refreshCsrfToken();
+                error.config._csrfRetried = true;
+                error.config.headers['X-CSRF-TOKEN'] = token;
+                delete error.config.headers['X-XSRF-TOKEN'];
+                return http.request(error.config);
+            } catch {
+                showSessionExpired();
+            }
         } else if ([401, 419].includes(status)) {
             showSessionExpired(data?.redirect);
         }

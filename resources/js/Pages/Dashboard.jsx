@@ -1,8 +1,9 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import LoadingScreen from '../Components/LoadingScreen';
 import http from '../http';
 import AsistentePROVALE from '../Components/AsistentePROVALE';
+import { useRuntimeState } from '../RuntimeState';
 
 // Secciones cargadas bajo demanda (React.lazy => chunk separado por sección).
 const Inicio = lazy(() => import('../Sections/Inicio'));
@@ -289,8 +290,7 @@ function PanelContainer({ onReady, children }) {
 }
 
 export default function Dashboard() {
-    const { auth, modules } = usePage().props;
-    const user = auth?.user ?? null;
+    const { modules, currentUser: user } = useRuntimeState();
     const isAdmin = Boolean(user?.is_admin);
 
     const allowedSlugs = new Set(
@@ -384,30 +384,28 @@ export default function Dashboard() {
         }
     }, [activeSection, modules]);
 
-    // Contador de notificaciones no leídas (poll cada 30s, como el original).
+    const loadNotificationCount = useCallback(async () => {
+        if (document.hidden) return;
+        const res = await http.get('/api/dashboard/sistema/notifications/unread-count', { silentSession: true });
+        setNotifCount(res.data?.count ?? 0);
+        setNotifLabel(res.data?.label ?? '');
+    }, []);
+
+    // Poll de respaldo y actualización inmediata cuando otra vista procesa avisos.
     useEffect(() => {
-        let stopped = false;
-        const loadCount = async () => {
-            if (stopped || document.hidden) return;
-            try {
-                const res = await http.get('/api/dashboard/sistema/notifications/unread-count', { silentSession: true });
-                setNotifCount(res.data?.count ?? 0);
-                setNotifLabel(res.data?.label ?? '');
-            } catch (e) {
-                // Sesión vencida: se deja de consultar; la próxima acción del
-                // usuario muestra la alerta una sola vez.
-                if ([401, 419].includes(e?.response?.status)) stopped = true;
-            }
-        };
+        const loadCount = () => loadNotificationCount().catch(() => {});
         loadCount();
         const id = setInterval(loadCount, 30000);
         const onVisible = () => { if (!document.hidden) loadCount(); };
+        const onNotificationsChanged = () => loadCount();
         document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('notifications:changed', onNotificationsChanged);
         return () => {
             clearInterval(id);
             document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('notifications:changed', onNotificationsChanged);
         };
-    }, []);
+    }, [loadNotificationCount]);
 
     const loadNotifications = useCallback(async () => {
         setNotifLoading(true);
@@ -426,6 +424,9 @@ export default function Dashboard() {
         setNotifOpen(true);
         document.body.style.overflow = 'hidden';
         if (!notifLoaded.current) loadNotifications();
+        http.post('/api/dashboard/sistema/notifications/mark-seen')
+            .then(() => window.dispatchEvent(new CustomEvent('notifications:changed')))
+            .catch(() => {});
     };
 
     const closeNotifications = () => {

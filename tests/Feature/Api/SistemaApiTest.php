@@ -452,6 +452,17 @@ class SistemaApiTest extends TestCase
 
     // ==================== AUTORIZACIÓN ====================
 
+    public function test_current_modules_can_refresh_without_reloading_the_dashboard(): void
+    {
+        $basic = $this->createBasicUser(true);
+
+        $this->actingAs($basic)
+            ->getJson(self::BASE . '/current-modules')
+            ->assertOk()
+            ->assertJsonPath('data.0.slug', 'sistema')
+            ->assertJsonPath('data.0.can_view', 1);
+    }
+
     public function test_usuarios_endpoint_requires_sistema_module_access(): void
     {
         $basic = $this->createBasicUser();

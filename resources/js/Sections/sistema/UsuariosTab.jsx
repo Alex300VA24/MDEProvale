@@ -6,6 +6,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import { useDebounced } from '../socios/hooks';
 import Pagination from '../../Components/Pagination';
 import errorMessage from '../../errorMessage';
+import { useRuntimeState } from '../../RuntimeState';
 
 const BASE = '/api/dashboard/sistema';
 
@@ -80,14 +81,17 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
             };
             if (password) payload.password = password;
 
+            let savedUser;
             if (mode === 'edit') {
-                await http.put(`${BASE}/usuarios/${usuario.id}`, payload);
+                const response = await http.put(`${BASE}/usuarios/${usuario.id}`, payload);
+                savedUser = response.data?.data;
                 toast.success('Usuario actualizado correctamente.');
             } else {
-                await http.post(`${BASE}/usuarios`, payload);
+                const response = await http.post(`${BASE}/usuarios`, payload);
+                savedUser = response.data?.data;
                 toast.success('Usuario creado correctamente.');
             }
-            onSaved();
+            onSaved(savedUser);
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo guardar el usuario.'));
         } finally {
@@ -182,6 +186,7 @@ function UserFormModal({ mode, usuario, roles, estados, onClose, onSaved }) {
 
 const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
     const toast = useToast();
+    const { setCurrentUser } = useRuntimeState();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ search: '', rol_id: '', state_id: '' });
@@ -216,6 +221,12 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
 
     useEffect(() => {
         load();
+    }, [load]);
+
+    useEffect(() => {
+        const refresh = () => load();
+        window.addEventListener('roles:changed', refresh);
+        return () => window.removeEventListener('roles:changed', refresh);
     }, [load]);
 
     useImperativeHandle(ref, () => ({
@@ -424,8 +435,18 @@ const UsuariosTab = forwardRef(function UsuariosTab({ can }, ref) {
                     roles={data?.roles}
                     estados={data?.estados}
                     onClose={() => setFormOpen(false)}
-                    onSaved={() => {
+                    onSaved={(savedUser) => {
                         setFormOpen(false);
+                        if (savedUser?.is_self) {
+                            setCurrentUser((current) => ({
+                                ...current,
+                                name: savedUser.username,
+                                fullname: savedUser.full_name,
+                                email: savedUser.email,
+                                dni: savedUser.dni,
+                                cui: savedUser.cui,
+                            }));
+                        }
                         load();
                     }}
                 />

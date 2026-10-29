@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import Modal from '../Components/Modal';
 
 const MODULE_DOCS = {
@@ -109,8 +109,7 @@ const PERM_LABELS = [
 ];
 
 export default function Ayuda() {
-    const { auth, modules } = usePage().props;
-    const user = auth?.user ?? null;
+    const { modules, currentUser: user } = useRuntimeState();
     const roleName = user?.rol ?? 'Usuario';
     const [selectedGuide, setSelectedGuide] = useState(null);
     const closeGuide = useCallback(() => setSelectedGuide(null), []);

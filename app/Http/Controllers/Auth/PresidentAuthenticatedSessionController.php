@@ -8,6 +8,7 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class PresidentAuthenticatedSessionController extends Controller
 {
@@ -52,7 +53,16 @@ class PresidentAuthenticatedSessionController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('president.login');
+        $loginUrl = route('president.login');
+
+        // El login de presidentas es una vista Blade. Una visita Inertia necesita
+        // una redirección externa para reemplazar el documento completo; de otro
+        // modo, Inertia muestra el HTML del login en su modal de respuesta inválida.
+        if ($request->inertia()) {
+            return Inertia::location($loginUrl);
+        }
+
+        return redirect()->to($loginUrl);
     }
 
     private function isPresidentPortalUrl(string $url): bool

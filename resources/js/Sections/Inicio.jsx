@@ -527,6 +527,7 @@ function AvisosNormativa() {
 export default function Inicio({ onNavigate, allowedSections = new Set() }) {
     const [panel, setPanel] = useState(null);
     const [error, setError] = useState(false);
+    const [retryKey, setRetryKey] = useState(0);
     const [auditMetric, setAuditMetric] = useState(null);
 
 // Filtros de las dos gráficas anuales (independientes entre sí). Los
@@ -570,7 +571,7 @@ params: {
         return () => {
             active = false;
         };
-    }, [anioPecosas, anioProductos, periodoAnio, periodoMes]);
+    }, [anioPecosas, anioProductos, periodoAnio, periodoMes, retryKey]);
 
     // Cada gráfica se monta en su propio efecto y depende SOLO de su porción
     // de datos (serializada). Así, cambiar el filtro de una no redibuja las
@@ -790,7 +791,10 @@ params: {
         return (
             <div className="empty-state">
                 <i className="fas fa-exclamation-triangle" />
-                <p>No se pudo cargar el panel de inicio. Recarga la página.</p>
+                <p>No se pudo cargar el panel de inicio.</p>
+                <button type="button" onClick={() => setRetryKey((key) => key + 1)} className="btn-secondary mt-3">
+                    <i className="fas fa-rotate-right mr-2" />Reintentar
+                </button>
             </div>
         );
     }

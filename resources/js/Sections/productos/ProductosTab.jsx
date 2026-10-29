@@ -151,7 +151,7 @@ function ProductViewModal({ product, onClose }) {
     );
 }
 
-const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
+const ProductosTab = forwardRef(function ProductosTab({ options, can, onProductsChanged }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -258,6 +258,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
             toast.success('Producto eliminado exitosamente.');
             setDeleting(null);
             load();
+            onProductsChanged?.();
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar el producto.'));
             setDeleting(null);
@@ -581,6 +582,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can }, ref) {
                     onSaved={() => {
                         setFormOpen(false);
                         load();
+                        onProductsChanged?.();
                     }}
                 />
             )}

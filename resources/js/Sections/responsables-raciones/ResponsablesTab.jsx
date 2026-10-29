@@ -91,6 +91,7 @@ export default function ResponsablesTab({ can }) {
     const [loadError, setLoadError] = useState(false);
 
     const load = useCallback(async () => {
+        setLoadError(false);
         try {
             const res = await http.get(`${BASE}/responsibles`);
             setData(res.data);
@@ -107,7 +108,10 @@ export default function ResponsablesTab({ can }) {
         return (
             <div className="empty-state">
                 <i className="fas fa-exclamation-triangle" />
-                <p>No se pudieron cargar los datos de la sección. Recarga la página.</p>
+                <p>No se pudieron cargar los datos de la sección.</p>
+                <button type="button" onClick={load} className="btn-secondary mt-3">
+                    <i className="fas fa-rotate-right mr-2" />Reintentar
+                </button>
             </div>
         );
     }

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import ResponsablesTab from './responsables-raciones/ResponsablesTab';
 import RacionesTab from './responsables-raciones/RacionesTab';
 
@@ -14,7 +14,7 @@ const HEADERS = {
 };
 
 export default function ResponsablesRaciones() {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const mod = (modules ?? []).find((m) => m.slug === 'responsables-raciones');
     const can = {
         view: !!mod?.can_view,

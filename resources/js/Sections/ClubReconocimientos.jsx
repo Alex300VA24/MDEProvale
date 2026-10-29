@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import ComitesTab from './comites/ComitesTab';
 import ReconocimientosTab from './comites/ReconocimientosTab';
@@ -14,7 +14,7 @@ const HEADERS = {
 };
 
 export default function ClubReconocimientos({ initialAction }) {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const modComites = (modules ?? []).find((m) => m.slug === 'club-madres');
     const modReconocimientos = (modules ?? []).find((m) => m.slug === 'reconocimientos');
 

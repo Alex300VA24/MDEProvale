@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import { useToast } from '../Components/Toast';
 import PdfLinkButton from '../Components/PdfLinkButton';
@@ -122,7 +122,7 @@ function AttachmentModal({ visit, maxMb, canEdit, onClose, onChanged }) {
 
 export default function SupervisionComites() {
     const toast = useToast();
-    const { modules, upload_max_mb: uploadMaxMb = 10 } = usePage().props;
+    const { modules, uploadMaxMb } = useRuntimeState();
     const canEdit = !!(modules ?? []).find((m) => m.slug === 'club-madres')?.can_edit;
 
     const now = new Date();

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import KardexTab from './movimientos/KardexTab';
 import ReparticionTab from './movimientos/ReparticionTab';
@@ -12,7 +12,7 @@ const HEADERS = {
 };
 
 export default function Movimientos({ initialAction }) {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const mod = (modules ?? []).find((m) => m.slug === 'movimientos');
 
     const can = {

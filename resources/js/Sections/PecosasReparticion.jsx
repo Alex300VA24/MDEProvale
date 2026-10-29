@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import PecosasTab from './productos/PecosasTab';
 import PecosasPdfMensualModal from './productos/PecosasPdfMensualModal';
@@ -13,7 +13,7 @@ const HEADERS = {
 };
 
 export default function PecosasReparticion({ initialAction, onNavigate }) {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const pecosaModule = (modules ?? []).find((module) => module.slug === 'pecosas');
     const movementModule = (modules ?? []).find((module) => module.slug === 'movimientos');
     const canPecosas = { view: !!pecosaModule?.can_view, create: !!pecosaModule?.can_create, edit: !!pecosaModule?.can_edit, del: !!pecosaModule?.can_delete };

@@ -128,6 +128,30 @@ class PresidentPortalAuthenticationTest extends TestCase
             ->assertRedirect(route('president-portal.index'));
     }
 
+    public function test_inertia_logout_forces_a_full_page_redirect_to_president_login(): void
+    {
+        $user = $this->createPresidentUser(mustChangePassword: false);
+
+        $this->actingAs($user)
+            ->withHeader('X-Inertia', 'true')
+            ->post(route('president.logout'))
+            ->assertStatus(409)
+            ->assertHeader('X-Inertia-Location', route('president.login'));
+
+        $this->assertGuest();
+    }
+
+    public function test_standard_logout_redirects_to_president_login(): void
+    {
+        $user = $this->createPresidentUser(mustChangePassword: false);
+
+        $this->actingAs($user)
+            ->post(route('president.logout'))
+            ->assertRedirect(route('president.login'));
+
+        $this->assertGuest();
+    }
+
     public function test_cached_dashboard_api_redirects_president_instead_of_returning_403(): void
     {
         $user = $this->createPresidentUser(mustChangePassword: false);

@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
-import { router } from '@inertiajs/react';
 import http from '../../http';
+import { useRuntimeState } from '../../RuntimeState';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
 import ConfirmDialog from '../../Components/ConfirmDialog';
@@ -154,6 +154,7 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
 
 const RolesTab = forwardRef(function RolesTab({ can }, ref) {
     const toast = useToast();
+    const { refreshModules } = useRuntimeState();
     const [data, setData] = useState(null);
     const [modulos, setModulos] = useState([]);
     const [page, setPage] = useState(1);
@@ -204,6 +205,8 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
             toast.success('Rol eliminado correctamente.');
             setDeleting(null);
             load();
+            window.dispatchEvent(new CustomEvent('roles:changed'));
+            await refreshModules().catch(() => toast.error('El rol se eliminó, pero no se pudieron refrescar los permisos.'));
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar el rol.'));
             setDeleting(null);
@@ -298,7 +301,8 @@ const RolesTab = forwardRef(function RolesTab({ can }, ref) {
                     onSaved={() => {
                         setFormOpen(false);
                         load();
-                        router.reload({ only: ['modules'], preserveState: true, preserveScroll: true });
+                        window.dispatchEvent(new CustomEvent('roles:changed'));
+                        refreshModules().catch(() => toast.error('El rol se guardó, pero no se pudieron refrescar los permisos.'));
                     }}
                 />
             )}

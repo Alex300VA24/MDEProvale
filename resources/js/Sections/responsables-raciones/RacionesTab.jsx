@@ -128,6 +128,7 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
     const [yearFilter, setYearFilter] = useState('');
 
     const load = useCallback(async () => {
+        setLoadError(false);
         try {
             const res = await http.get(`${BASE}/raciones`);
             setRaciones(res.data.data);
@@ -165,7 +166,10 @@ const RacionesTab = forwardRef(function RacionesTab({ can }, ref) {
         return (
             <div className="empty-state">
                 <i className="fas fa-exclamation-triangle" />
-                <p>No se pudieron cargar los datos de la sección. Recarga la página.</p>
+                <p>No se pudieron cargar los datos de la sección.</p>
+                <button type="button" onClick={load} className="btn-secondary mt-3">
+                    <i className="fas fa-rotate-right mr-2" />Reintentar
+                </button>
             </div>
         );
     }

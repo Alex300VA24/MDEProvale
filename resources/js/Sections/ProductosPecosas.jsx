@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import ProductosTab from './productos/ProductosTab';
 import PecosasTab from './productos/PecosasTab';
@@ -14,7 +14,7 @@ const HEADERS = {
 };
 
 export default function ProductosPecosas({ initialAction }) {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const modProductos = (modules ?? []).find((m) => m.slug === 'productos');
     const modPecosas = (modules ?? []).find((m) => m.slug === 'pecosas');
 

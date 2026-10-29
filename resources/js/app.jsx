@@ -15,6 +15,7 @@ import { createRoot } from 'react-dom/client';
 import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ToastProvider } from './Components/Toast';
+import { RuntimeStateProvider } from './RuntimeState';
 import { registerInertiaErrorAlerts } from './httpAlerts';
 
 const appName = import.meta.env.VITE_APP_NAME || 'MDEProvale';
@@ -27,9 +28,15 @@ createInertiaApp({
         resolvePageComponent(`./Pages/${name}.jsx`, import.meta.glob('./Pages/**/*.jsx')),
     setup({ el, App, props }) {
         createRoot(el).render(
-            <ToastProvider>
-                <App {...props} />
-            </ToastProvider>
+            <RuntimeStateProvider
+                initialModules={props.initialPage.props.modules}
+                initialUploadMaxMb={props.initialPage.props.upload_max_mb}
+                initialUser={props.initialPage.props.auth?.user}
+            >
+                <ToastProvider>
+                    <App {...props} />
+                </ToastProvider>
+            </RuntimeStateProvider>
         );
     },
 });

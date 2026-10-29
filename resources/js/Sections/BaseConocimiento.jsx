@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import errorMessage from '../errorMessage';
 import MarkdownContent from '../Components/MarkdownContent';
@@ -44,7 +44,7 @@ function StatusBadge({ status }) {
 
 export default function BaseConocimiento() {
     const toast = useToast();
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const permission = (modules || []).find((item) => item.slug === 'base-conocimiento');
     const can = { view: !!permission?.can_view, create: !!permission?.can_create, del: !!permission?.can_delete };
 

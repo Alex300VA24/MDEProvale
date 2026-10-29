@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import SociosTab from './socios/SociosTab';
 import PadronModal from './socios/PadronModal';
@@ -8,7 +8,7 @@ import PdfLinkButton from '../Components/PdfLinkButton';
 const BASE = '/api/dashboard/socios-beneficiarios';
 
 export default function SociosBeneficiarios({ initialAction }) {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const module = (modules ?? []).find((m) => m.slug === 'socios-beneficiarios');
     const can = {
         create: !!module?.can_create,

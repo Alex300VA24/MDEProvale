@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import ProductosTab from './productos/ProductosTab';
 import KardexTab from './movimientos/KardexTab';
@@ -15,7 +15,7 @@ const HEADERS = {
 };
 
 export default function ProductosProgramacion({ initialAction }) {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const productModule = (modules ?? []).find((module) => module.slug === 'productos');
     const movementModule = (modules ?? []).find((module) => module.slug === 'movimientos');
     const canProducts = { view: !!productModule?.can_view, create: !!productModule?.can_create, edit: !!productModule?.can_edit, del: !!productModule?.can_delete };
@@ -32,18 +32,23 @@ export default function ProductosProgramacion({ initialAction }) {
     const productsRef = useRef(null);
     const kardexRef = useRef(null);
 
-    useEffect(() => {
-        let active = true;
-        Promise.all([
+    const loadOptions = useCallback(async () => {
+        try {
+            const [products, movements] = await Promise.all([
             canProducts.view ? http.get(`${PRODUCT_BASE}/products/options`) : Promise.resolve(null),
             canMovements.view ? http.get(`${MOVEMENT_BASE}/transactions/options`) : Promise.resolve(null),
-        ]).then(([products, movements]) => {
-            if (!active) return;
+            ]);
             setProductOptions(products?.data ?? {});
             setMovementOptions(movements?.data ?? {});
-        }).catch(() => { if (active) setOptionsError(true); });
-        return () => { active = false; };
+            setOptionsError(false);
+        } catch {
+            setOptionsError(true);
+        }
     }, [canProducts.view, canMovements.view]);
+
+    useEffect(() => {
+        loadOptions();
+    }, [loadOptions]);
 
     useEffect(() => {
         if (initialAction === 'ingresos' && canMovements.view) setTab('ingresos');
@@ -74,7 +79,7 @@ export default function ProductosProgramacion({ initialAction }) {
 
             <div className="p-4 sm:p-6">
                 {optionsError && <div className="mb-3 text-xs text-clay bg-clay-light rounded-lg px-3 py-2"><i className="fas fa-exclamation-triangle mr-1" />No se pudieron cargar algunas opciones.</div>}
-                {canProducts.view && <div className={tab === 'productos' ? '' : 'hidden'}><ProductosTab ref={productsRef} options={productOptions ?? {}} can={canProducts} /></div>}
+                {canProducts.view && <div className={tab === 'productos' ? '' : 'hidden'}><ProductosTab ref={productsRef} options={productOptions ?? {}} can={canProducts} onProductsChanged={loadOptions} /></div>}
                 {canMovements.view && <div className={tab === 'ingresos' ? '' : 'hidden'}><KardexTab ref={kardexRef} options={movementOptions ?? {}} can={canMovements} /></div>}
                 {canProducts.view && tab === 'programacion' && <ProgramacionEntregaTab can={canProducts} onGoToIngresos={() => canMovements.view && setTab('ingresos')} />}
             </div>

@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import errorMessage from '../../errorMessage';
+import { useRuntimeState } from '../../RuntimeState';
 
 const BASE = '/api/dashboard/sistema/upload-config';
 
 export default function ParametrosTab({ can }) {
     const toast = useToast();
+    const { setUploadMaxMb } = useRuntimeState();
     const [data, setData] = useState(null);
     const [value, setValue] = useState(10);
     const [saving, setSaving] = useState(false);
@@ -22,9 +24,12 @@ export default function ParametrosTab({ can }) {
         event.preventDefault();
         setSaving(true);
         try {
-            await http.put(BASE, { max_attachment_mb: Number(value) });
-            toast.success('Límite actualizado. Recargue formularios abiertos para aplicar el cambio.');
-            setData((current) => ({ ...current, max_attachment_mb: Number(value) }));
+            const response = await http.put(BASE, { max_attachment_mb: Number(value) });
+            const savedValue = Number(response.data?.data?.max_attachment_mb ?? value);
+            setUploadMaxMb(savedValue);
+            setValue(savedValue);
+            setData((current) => ({ ...current, max_attachment_mb: savedValue }));
+            toast.success('Límite actualizado en toda la interfaz.');
         } catch (error) {
             toast.error(errorMessage(error, 'No se pudo actualizar el límite.'));
         } finally {

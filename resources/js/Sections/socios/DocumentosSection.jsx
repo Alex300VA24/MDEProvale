@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../../RuntimeState';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
@@ -57,7 +57,7 @@ export function PendingDocumentSection({
     required = false,
 }) {
     const toast = useToast();
-    const maxUploadMb = Number(usePage().props.upload_max_mb || 10);
+    const { uploadMaxMb: maxUploadMb } = useRuntimeState();
     const fileInputRef = useRef(null);
     const availableTypes = allowedTypes || documentTypesFor(attachableType);
     const document = value || { documentType: availableTypes[0], file: null };
@@ -163,7 +163,7 @@ export default function DocumentosSection({
     highlightType = null,
 }) {
     const toast = useToast();
-    const maxUploadMb = Number(usePage().props.upload_max_mb || 10);
+    const { uploadMaxMb: maxUploadMb } = useRuntimeState();
     const [documents, setDocuments] = useState(initialDocuments);
     const [selectedType, setSelectedType] = useState(
         allowedTypes?.[0] || (attachableType === 'partner' ? 'ficha_fisica' : 'dni_beneficiario')

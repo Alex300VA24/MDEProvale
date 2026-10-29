@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../../RuntimeState';
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
@@ -40,7 +40,7 @@ function resolutionLabel(res) {
 
 function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     const toast = useToast();
-    const maxUploadMb = Number(usePage().props.upload_max_mb || 10);
+    const { uploadMaxMb: maxUploadMb } = useRuntimeState();
     const [code, setCode] = useState(() => {
         if (mode === 'edit' && club) return club.code || '';
         return options.next_code ? String(options.next_code) : '';

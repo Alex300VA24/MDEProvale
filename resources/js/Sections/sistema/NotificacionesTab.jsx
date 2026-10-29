@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { usePage } from '@inertiajs/react';
 import http from '../../http';
+import { useRuntimeState } from '../../RuntimeState';
 import { useToast } from '../../Components/Toast';
 import errorMessage from '../../errorMessage';
 
@@ -21,8 +21,8 @@ function fmtDateTime(d) {
 
 export default function NotificacionesTab() {
     const toast = useToast();
-    const { auth } = usePage().props;
-    const isAdmin = auth?.user?.rol_id === 1;
+    const { currentUser } = useRuntimeState();
+    const isAdmin = currentUser?.rol_id === 1;
 
     const [notifications, setNotifications] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -42,7 +42,9 @@ export default function NotificacionesTab() {
 
     useEffect(() => {
         load();
-        http.post(`${BASE}/notifications/mark-seen`).catch(() => {});
+        http.post(`${BASE}/notifications/mark-seen`)
+            .then(() => window.dispatchEvent(new CustomEvent('notifications:changed')))
+            .catch(() => {});
     }, [load]);
 
     const handleApprove = async (n) => {
@@ -50,7 +52,8 @@ export default function NotificacionesTab() {
         try {
             await http.post(`${BASE}/notifications/${n.id}/approve`);
             toast.success('Solicitud aprobada: la contraseña fue restaurada al DNI.');
-            load();
+            await load();
+            window.dispatchEvent(new CustomEvent('notifications:changed'));
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo aprobar la solicitud.'));
         } finally {
@@ -63,7 +66,8 @@ export default function NotificacionesTab() {
         try {
             await http.post(`${BASE}/notifications/${n.id}/reject`);
             toast.success('Solicitud rechazada.');
-            load();
+            await load();
+            window.dispatchEvent(new CustomEvent('notifications:changed'));
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo rechazar la solicitud.'));
         } finally {

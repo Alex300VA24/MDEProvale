@@ -127,6 +127,13 @@ class SistemaController extends Controller
 
     // ==================== MÓDULOS ====================
 
+    public function currentModules(Request $request)
+    {
+        return response()->json([
+            'data' => $this->modules->permissionsFor($request->user())->values(),
+        ]);
+    }
+
     public function modulos(Request $request)
     {
         return ModuleResource::collection($this->modules->list((int) $request->input('per_page', 10)));

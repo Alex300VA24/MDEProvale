@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { useRuntimeState } from '../RuntimeState';
 import UsuariosTab from './sistema/UsuariosTab';
 import RolesTab from './sistema/RolesTab';
 import ModulosTab from './sistema/ModulosTab';
@@ -21,7 +21,7 @@ const HEADERS = {
 };
 
 export default function Sistema() {
-    const { modules } = usePage().props;
+    const { modules } = useRuntimeState();
     const mod = (modules ?? []).find((m) => m.slug === 'sistema');
     const can = {
         view: !!mod?.can_view,
