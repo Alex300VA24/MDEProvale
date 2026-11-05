@@ -97,7 +97,7 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
             $query->where('place_sector_id', $filters['place_sector_id']);
         }
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        return $query->orderByRaw('CHAR_LENGTH(code)')->orderBy('code')->paginate($perPage);
     }
 
 

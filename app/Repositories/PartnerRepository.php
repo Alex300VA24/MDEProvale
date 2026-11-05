@@ -2,7 +2,12 @@
 
 namespace App\Repositories;
 
+use App\Models\Beneficiarie;
+use App\Models\BeneficiaryHistory;
+use App\Models\DocumentAttachment;
+use App\Models\ObstetricData;
 use App\Models\Partner;
+use App\Models\Pecosa;
 use App\Models\DetailProduct;
 use App\Models\People;
 use App\Repositories\Concerns\FiltersByNameTerms;
@@ -10,6 +15,7 @@ use App\Repositories\Contracts\PartnerRepositoryInterface;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class PartnerRepository extends BaseRepository implements PartnerRepositoryInterface
 {
@@ -33,6 +39,16 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
         return Partner::class;
     }
 
+    private function orderByFatherLastname($query): void
+    {
+        foreach (['father_lastname', 'mother_lastname', 'names'] as $column) {
+            $query->orderBy(
+                DB::table('people')->select($column)->whereColumn('people.id', 'partners.person_id')->limit(1)
+            );
+        }
+        $query->orderBy('partners.id');
+    }
+
     public function searchWithFilters(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return $this->model
@@ -46,7 +62,7 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             })
             ->when($filters['association_id'] ?? null, fn($q, $v) => $q->where('association_id', $v))
             ->when($filters['state_id'] ?? null, fn($q, $v) => $q->where('state_id', $v))
-            ->orderBy('id', 'desc')
+            ->tap(fn ($q) => $this->orderByFatherLastname($q))
             ->paginate($perPage);
     }
 
@@ -131,7 +147,7 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('people', fn ($p) => $p->searchIdentity($search)))
             ->when($filters['association_id'] ?? null, fn ($q, $v) => $q->where('association_id', $v))
             ->when($filters['state_id'] ?? null, fn ($q, $v) => $q->where('state_id', $v))
-            ->orderBy('id', 'desc')
+            ->tap(fn ($q) => $this->orderByFatherLastname($q))
             ->paginate($perPage);
     }
 
@@ -150,7 +166,7 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->whereHas('people', fn ($p) => $p->searchIdentity($search)))
             ->when($filters['association_id'] ?? null, fn ($q, $v) => $q->where('association_id', $v))
             ->when($filters['state_id'] ?? null, fn ($q, $v) => $q->where('state_id', $v))
-            ->orderBy('id', 'desc')
+            ->tap(fn ($q) => $this->orderByFatherLastname($q))
             ->paginate($perPage);
     }
 
@@ -174,13 +190,45 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
         return People::create($data);
     }
 
-    public function deleteBeneficiaries(Partner $partner): void
+    public function deleteBeneficiaries(Partner $partner, ?array $onlyIds = null): void
     {
-        $partner->beneficiaries()->delete();
+        $ids = $partner->beneficiaries()
+            ->when($onlyIds !== null, fn ($q) => $q->whereIn('id', $onlyIds))
+            ->pluck('id');
+
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $historyIds = BeneficiaryHistory::whereIn('beneficiary_id', $ids)->pluck('id');
+
+        ObstetricData::whereIn('child_beneficiary_id', $ids)->update(['child_beneficiary_id' => null]);
+        ObstetricData::whereIn('beneficiary_history_id', $historyIds)->delete();
+        BeneficiaryHistory::whereIn('id', $historyIds)->delete();
+        Beneficiarie::whereIn('id', $ids)->delete();
+    }
+
+    public function beneficiaryDocuments(Partner $partner, ?array $onlyIds = null): Collection
+    {
+        return DocumentAttachment::query()
+            ->where('attachable_type', (new Beneficiarie())->getMorphClass())
+            ->whereIn('attachable_id', $partner->beneficiaries()
+                ->when($onlyIds !== null, fn ($q) => $q->whereIn('id', $onlyIds))
+                ->select('id'))
+            ->get();
+    }
+
+    public function hasPecosas(Partner $partner): bool
+    {
+        return Pecosa::where('president_id', $partner->id)
+            ->orWhere('managing_partner_id', $partner->id)
+            ->exists();
     }
 
     public function deletePartner(Partner $partner): void
     {
+        $partner->directives()->delete();
+        $partner->rosterPeriods()->delete();
         $partner->delete();
     }
 

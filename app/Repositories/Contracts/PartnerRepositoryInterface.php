@@ -28,7 +28,14 @@ interface PartnerRepositoryInterface
 
     public function createPerson(array $data): People;
 
-    public function deleteBeneficiaries(Partner $partner): void;
+    /** Elimina beneficiarios (todos o los ids dados) con sus historiales y datos obstétricos. */
+    public function deleteBeneficiaries(Partner $partner, ?array $onlyIds = null): void;
+
+    /** Adjuntos de los beneficiarios del socio (todos o los ids dados). */
+    public function beneficiaryDocuments(Partner $partner, ?array $onlyIds = null): Collection;
+
+    /** El socio figura como presidenta o gestora en alguna PECOSA. */
+    public function hasPecosas(Partner $partner): bool;
 
     public function deletePartner(Partner $partner): void;
 

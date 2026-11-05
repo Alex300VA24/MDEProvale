@@ -1,0 +1,407 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-11-02T01:03:41.558Z",
+  "specification": {
+    "path": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\candidate.json",
+    "sha256": "f3d3a092d1bfe442fd619746a21aeacc7cffeaf4194224d8366c6a6ca7305827",
+    "bytes": 9264
+  },
+  "artifact": {
+    "path": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+    "sha256": "326266644001479d8e7a9bd62b98a52109698eff4a2ddef1d0ad9032c585ac4d",
+    "bytes": 873282
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\ASUS\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\candidate.json",
+        "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+        "--quality",
+        "showcase",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "f3d3a092d1bfe442fd619746a21aeacc7cffeaf4194224d8366c6a6ca7305827",
+          "bytes": 9264
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "engineeringProfile": "deployment-ownership",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 839,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\ASUS\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "deliver",
+        "architecture",
+        "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\candidate.json",
+        "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+        "--quality",
+        "showcase",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "66f85739-8423-4cb0-b24b-2d280c1a8631",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\candidate.json",
+        "output": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+        "specification": {
+          "sha256": "f3d3a092d1bfe442fd619746a21aeacc7cffeaf4194224d8366c6a6ca7305827",
+          "bytes": 9264
+        },
+        "artifact": {
+          "sha256": "326266644001479d8e7a9bd62b98a52109698eff4a2ddef1d0ad9032c585ac4d",
+          "bytes": 873282
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "engineeringProfile": "deployment-ownership",
+          "errors": 0,
+          "warnings": 0
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 380,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\ASUS\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "check",
+        "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+        "artifact": {
+          "sha256": "326266644001479d8e7a9bd62b98a52109698eff4a2ddef1d0ad9032c585ac4d",
+          "bytes": 873282
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 7,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.014551333872272,
+            "maxBends": 3,
+            "routesOverSuggestedBends": 3,
+            "maxStretch": 1.324,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 16,
+            "minInteriorSegmentPx": 55,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": [
+              {
+                "relationship": {
+                  "from": "personal-pvl",
+                  "to": "dns-dominio",
+                  "label": "acceso HTTPS",
+                  "collectionIndex": 1,
+                  "artifactIndex": 2
+                },
+                "bends": 3,
+                "stretch": 1.31
+              },
+              {
+                "relationship": {
+                  "from": "laravel-runtime",
+                  "to": "storage-link",
+                  "label": "lee / escribe archivos",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "bends": 3,
+                "stretch": 1.324
+              },
+              {
+                "relationship": {
+                  "from": "personal-oti",
+                  "to": "phpmyadmin",
+                  "label": "HTTPS + sesión cPanel",
+                  "collectionIndex": 15,
+                  "artifactIndex": 16
+                },
+                "bends": 3,
+                "stretch": 1
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 70,
+            "emptyTopRatio": 0.067,
+            "occupiedTop": 70,
+            "viewBoxTop": 0,
+            "canvasHeight": 1052,
+            "typicalNodeHeight": 64,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": null,
+              "from": "usuarios-publicos",
+              "to": "dns-dominio"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 6.014551333872272,
+            "semanticTextCount": 52
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "66f85739-8423-4cb0-b24b-2d280c1a8631"
+      }
+    },
+    "browser-check": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": 66,
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\ASUS\\.agents\\skills\\archify\\bin\\archify.mjs",
+        "browser-check",
+        "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "fail",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "66f85739-8423-4cb0-b24b-2d280c1a8631",
+        "artifact": {
+          "path": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html",
+          "sha256": "326266644001479d8e7a9bd62b98a52109698eff4a2ddef1d0ad9032c585ac4d",
+          "bytes": 873282
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/browser-check-runtime",
+            "severity": "error",
+            "message": "browser-check could not complete its Chrome inspection.",
+            "subject": {
+              "artifact": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html"
+            },
+            "evidence": {
+              "reason": "Temporary directory ancestor identity is unavailable: C:\\Users\\ASUS\\AppData\\Local\\Temp"
+            },
+            "supportedFixes": [
+              "resolve the reported Chrome inspection error, then rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "fail",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "fail",
+          "viewports": []
+        },
+        "readability": {
+          "status": "fail",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "fail",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "despliegue-laravel-cpanel.browser-check.json",
+          "files": []
+        },
+        "error": "Temporary directory ancestor identity is unavailable: C:\\Users\\ASUS\\AppData\\Local\\Temp"
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.html"
+      },
+      "evidence": {
+        "reason": "Temporary directory ancestor identity is unavailable: C:\\Users\\ASUS\\AppData\\Local\\Temp"
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.finalize.json",
+    "summaryReceipt": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.finalize-summary.json",
+    "browserCheckReceipt": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\deployment-laravel-cpanel-20261101-200033\\despliegue-laravel-cpanel.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-11-02T01:03:43.446Z",
+  "durationMs": 1887,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-02T00:58:26.855Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}

@@ -108,7 +108,6 @@ resoluciones_comites.xlsx
 !/database/seeders/ResponsibleSeeder.php
 !/database/seeders/AssociationSeeder.php
 !/database/seeders/AssociationRosterPeriodSeeder.php
-!/database/seeders/CierreMesSeeder.php
 !/database/seeders/RosterCleanupSeeder.php
 # Seeders temporales (PHP delgados que leen JSON)
 !/database/seeders/PeopleSeeder.php

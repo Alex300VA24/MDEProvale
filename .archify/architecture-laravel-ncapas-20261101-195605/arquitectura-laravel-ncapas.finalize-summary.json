@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\architecture-laravel-ncapas-20261101-195605\\candidate.json",
+    "sha256": "a5fb034450985ef42fa1d079b067190d4d424a0e7f06204c668e24704691aff3",
+    "bytes": 8233
+  },
+  "artifact": {
+    "path": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\architecture-laravel-ncapas-20261101-195605\\arquitectura-laravel-ncapas.html",
+    "sha256": "8d6cfc4d6d5a8a321fe3dc296d16f78d13062269083a3a9d6d5cb4c2c88c2d5e",
+    "bytes": 868070
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\architecture-laravel-ncapas-20261101-195605\\arquitectura-laravel-ncapas.finalize.json",
+    "summaryReceipt": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\architecture-laravel-ncapas-20261101-195605\\arquitectura-laravel-ncapas.finalize-summary.json",
+    "browserCheckReceipt": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\architecture-laravel-ncapas-20261101-195605\\arquitectura-laravel-ncapas.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-02T00:58:26.855Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6668,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  },
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 2
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "validated-input",
+            "from": "form-requests",
+            "to": "http-controllers",
+            "label": "entrada validada",
+            "collectionIndex": 8,
+            "artifactIndex": 9
+          },
+          "bends": 3,
+          "stretch": 1.234
+        },
+        {
+          "relationship": {
+            "id": "schema-to-mysql",
+            "from": "migrations-seeders",
+            "to": "mysql",
+            "label": "crea y siembra esquema",
+            "collectionIndex": 12,
+            "artifactIndex": 13
+          },
+          "bends": 3,
+          "stretch": 1.192
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "form-requests → http-controllers needs 3 bends: move node form-requests or http-controllers so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "migrations-seeders → mysql needs 3 bends: move node migrations-seeders or mysql so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

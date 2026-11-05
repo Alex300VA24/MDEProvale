@@ -278,11 +278,11 @@ class ComitesApiTest extends TestCase
         $this->actingAs($this->userWithAccess())
             ->getJson(self::BASE . '/clubs')
             ->assertOk()
-            ->assertJsonPath('data.1.code', 'CDM')
-            ->assertJsonPath('data.1.president_name', 'María Apellido')
-            ->assertJsonPath('data.1.president_partner_id', 1)
-            ->assertJsonPath('data.1.latest_resolution.document', 'RES-002')
-            ->assertJsonCount(2, 'data.1.all_resolutions');
+            ->assertJsonPath('data.0.code', 'CDM')
+            ->assertJsonPath('data.0.president_name', 'María Apellido')
+            ->assertJsonPath('data.0.president_partner_id', 1)
+            ->assertJsonPath('data.0.latest_resolution.document', 'RES-002')
+            ->assertJsonCount(2, 'data.0.all_resolutions');
     }
 
     public function test_clubs_endpoint_filters_by_state(): void
@@ -291,7 +291,7 @@ class ComitesApiTest extends TestCase
             ->getJson(self::BASE . '/clubs?state_id=2')
             ->assertOk()
             ->assertJsonPath('meta.total', 2)
-            ->assertJsonPath('data.0.code', 'CDM2');
+            ->assertJsonPath('data.0.code', 'CDM');
     }
 
     public function test_clubs_options_endpoint(): void

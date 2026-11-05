@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "a2127345-12fb-4589-a75e-06cb8b5a1198",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\architecture-laravel-ncapas-20261101-195605\\candidate.json",
+  "output": "C:\\xampp8.1\\htdocs\\MDEProvale\\.archify\\architecture-laravel-ncapas-20261101-195605\\arquitectura-laravel-ncapas.html",
+  "specification": {
+    "sha256": "a5fb034450985ef42fa1d079b067190d4d424a0e7f06204c668e24704691aff3",
+    "bytes": 8233
+  },
+  "artifact": {
+    "sha256": "8d6cfc4d6d5a8a321fe3dc296d16f78d13062269083a3a9d6d5cb4c2c88c2d5e",
+    "bytes": 868070
+  }
+}

@@ -310,7 +310,7 @@ function RosterAuditModal({ audit, metricKey, periodLabel, onClose }) {
     );
 }
 
-function StockCard({ products = [], closed = false, periodLabel = '', className = '' }) {
+function StockCard({ products = [], periodLabel = '', className = '' }) {
     const [index, setIndex] = useState(0);
     const formatStock = (value) => Number(value || 0).toLocaleString('es-PE');
     const activeIndex = index % Math.max(1, products.length);
@@ -327,16 +327,6 @@ function StockCard({ products = [], closed = false, periodLabel = '', className 
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-base sm:text-lg bg-teal-light text-teal shadow-sm">
                         <i className="fas fa-boxes-stacked" aria-hidden="true" />
                     </div>
-                    <span
-                        className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
-                            closed
-                                ? 'text-teal bg-teal-light border-teal/25'
-                                : 'text-amber-dark bg-amber-light border-amber/30'
-                        }`}
-                    >
-                        <i className={`fas ${closed ? 'fa-lock' : 'fa-clock'} text-[9px]`} aria-hidden="true" />
-                        {closed ? 'Mes cerrado' : 'En curso'}
-                    </span>
                 </div>
 
                 <div className="flex items-center justify-between mb-2">
@@ -422,17 +412,6 @@ function StockCard({ products = [], closed = false, periodLabel = '', className 
                         </div>
                     );
                 })()}
-            </div>
-
-            {/* Footer de cierre */}
-            <div className="mt-3 pt-2.5 border-t border-mist/70 flex items-center justify-between text-[11px] text-slate font-medium">
-                <span className="inline-flex items-center gap-1.5 truncate">
-                    <i className={`fas ${closed ? 'fa-circle-check text-leaf' : 'fa-clock-rotate-left text-amber'} text-xs`} aria-hidden="true" />
-                    <span>{closed ? 'Cifras definitivas' : 'En proceso'}</span>
-                </span>
-                <span className="text-[10px] font-bold text-slate/70 uppercase shrink-0">
-                    {closed ? 'Auditado' : 'Parcial'}
-                </span>
             </div>
         </div>
     );
@@ -908,7 +887,6 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                 />
                 <StockCard
                     products={stats.stock_productos}
-                    closed={(stats.stock_productos ?? []).every((product) => product.cerrado)}
                     periodLabel={cardsPeriodLabel}
                 />
             </div>

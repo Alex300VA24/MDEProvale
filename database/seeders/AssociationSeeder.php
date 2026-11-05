@@ -28,6 +28,28 @@ class AssociationSeeder extends Seeder
             ->where('document', 'PENDIENTE-COMITE-256')
             ->value('id');
 
+        // Comités nuevos de SQL Server (COM_id 110 y 179) con PECOSAs de
+        // agosto a octubre 2026. Faltan código oficial, resolución y sector
+        // reales: se usan marcadores explícitos hasta contar con esos datos.
+        $pendingResolutionIds = [];
+        foreach (['PENDIENTE-COMITE-390', 'PENDIENTE-COMITE-395'] as $document) {
+            DB::table('resolutions')->updateOrInsert(
+                ['document' => $document],
+                [
+                    'date_document' => '2026-08-01 00:00:00',
+                    'date_start' => '2026-08-01',
+                    'date_end' => '2026-12-31',
+                    'file_path' => null,
+                    'state_id' => DB::table('states')->where('abbreviation', 'VEN')->value('id'),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+            $pendingResolutionIds[$document] = DB::table('resolutions')
+                ->where('document', $document)
+                ->value('id');
+        }
+
         /**
          * Asociaciones y comités del padrón de beneficiarios.
          * La resolución 1 crea el comité y se guarda en associations.resolution_id.
@@ -968,6 +990,30 @@ class AssociationSeeder extends Seeder
                 'resolution_id'    => DB::table('resolutions')->where('document', '1235-2025')->whereDate('date_start', '2025-11-20')->whereDate('date_end', '2027-11-20')->value('id'),
                 'state_id'         => 1,
                 'place_sector_id'  => 27,
+                'type_premises_id' => 1,
+            ],
+            [
+                'code'             => '390',
+                'name'             => 'ISABEL CRUZ DE MARCELO',
+                'company_name'     => 'CDM',
+                'address'          => 'Mz.G Lt.22 Las Palmeras',
+                'observation'      => 'Comité de SQL Server (COM_id 110). Falta código oficial, resolución y sector reales; datos provisionales.',
+                'phone'            => null,
+                'resolution_id'    => $pendingResolutionIds['PENDIENTE-COMITE-390'],
+                'state_id'         => DB::table('states')->where('abbreviation', 'VEN')->value('id'),
+                'place_sector_id'  => 2,
+                'type_premises_id' => 1,
+            ],
+            [
+                'code'             => '395',
+                'name'             => 'LOS ANGELITOS',
+                'company_name'     => 'CDM',
+                'address'          => 'Mz.E Lt.04 Las Palmeras IV',
+                'observation'      => 'Comité de SQL Server (COM_id 179). Falta código oficial, resolución y sector reales; datos provisionales.',
+                'phone'            => null,
+                'resolution_id'    => $pendingResolutionIds['PENDIENTE-COMITE-395'],
+                'state_id'         => DB::table('states')->where('abbreviation', 'VEN')->value('id'),
+                'place_sector_id'  => 2,
                 'type_premises_id' => 1,
             ],
         ];

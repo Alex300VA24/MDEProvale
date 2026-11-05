@@ -189,7 +189,7 @@ Los controladores resultantes tienen pocas líneas por acción; si una acción c
 | Comités y resoluciones | `ComitesController` | `CommitteeService`, `ResolutionService`, `MunicipalResolutionService`, `AssociationStateService` |
 | Socios y beneficiarios | `SociosBeneficiariosController`, `PartnerController`, `BeneficiarieController` | `PartnerService`, `BeneficiaryService`, `BenefitExpiryService`, `BenefitPeriodCalculator`, `PersonService` |
 | Productos y PECOSAs | `ProductosPecosasController` (web y API) | `ProductService`, `PecosaService`, `ProgramacionEntregaService`, `StockService`, `SchedulingService` |
-| Movimientos / kárdex | `MovimientosController`, `KardexController`, `TransactionController` | `TransactionService`, `MonthClosureService` |
+| Movimientos / kárdex | `MovimientosController`, `KardexController`, `TransactionController` | `TransactionService` |
 | Raciones y responsables | `ResponsablesRacionesController` | `RacionService`, `ResponsibleService` |
 | Reparto | `ReparticionController` | `ReparticionService`, `DistributionExcelService` |
 | Supervisión y evaluación nutricional | `SupervisionComitesController`, `EvaluacionNutricionalController` | `SupervisionService`, `NutritionalEvaluationService` |

@@ -6466,5 +6466,3225 @@
     "source_pecosa_id": 24268,
     "quantity": 42,
     "observation": "Salida por Pecosa 260693"
+  },
+  {
+    "source_detail_id": 28378,
+    "source_product_id": 333,
+    "source_pecosa_id": 24269,
+    "quantity": 68,
+    "observation": "Salida por Pecosa 260694"
+  },
+  {
+    "source_detail_id": 28379,
+    "source_product_id": 334,
+    "source_pecosa_id": 24269,
+    "quantity": 142,
+    "observation": "Salida por Pecosa 260694"
+  },
+  {
+    "source_detail_id": 28380,
+    "source_product_id": 333,
+    "source_pecosa_id": 24270,
+    "quantity": 65,
+    "observation": "Salida por Pecosa 260695"
+  },
+  {
+    "source_detail_id": 28381,
+    "source_product_id": 334,
+    "source_pecosa_id": 24270,
+    "quantity": 135,
+    "observation": "Salida por Pecosa 260695"
+  },
+  {
+    "source_detail_id": 28382,
+    "source_product_id": 333,
+    "source_pecosa_id": 24271,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260696"
+  },
+  {
+    "source_detail_id": 28383,
+    "source_product_id": 334,
+    "source_pecosa_id": 24271,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260696"
+  },
+  {
+    "source_detail_id": 28384,
+    "source_product_id": 333,
+    "source_pecosa_id": 24272,
+    "quantity": 68,
+    "observation": "Salida por Pecosa 260697"
+  },
+  {
+    "source_detail_id": 28385,
+    "source_product_id": 334,
+    "source_pecosa_id": 24272,
+    "quantity": 142,
+    "observation": "Salida por Pecosa 260697"
+  },
+  {
+    "source_detail_id": 28386,
+    "source_product_id": 333,
+    "source_pecosa_id": 24273,
+    "quantity": 88,
+    "observation": "Salida por Pecosa 260698"
+  },
+  {
+    "source_detail_id": 28387,
+    "source_product_id": 334,
+    "source_pecosa_id": 24273,
+    "quantity": 184,
+    "observation": "Salida por Pecosa 260698"
+  },
+  {
+    "source_detail_id": 28388,
+    "source_product_id": 333,
+    "source_pecosa_id": 24274,
+    "quantity": 79,
+    "observation": "Salida por Pecosa 260699"
+  },
+  {
+    "source_detail_id": 28389,
+    "source_product_id": 334,
+    "source_pecosa_id": 24274,
+    "quantity": 164,
+    "observation": "Salida por Pecosa 260699"
+  },
+  {
+    "source_detail_id": 28390,
+    "source_product_id": 333,
+    "source_pecosa_id": 24275,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260700"
+  },
+  {
+    "source_detail_id": 28391,
+    "source_product_id": 334,
+    "source_pecosa_id": 24275,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260700"
+  },
+  {
+    "source_detail_id": 28392,
+    "source_product_id": 333,
+    "source_pecosa_id": 24276,
+    "quantity": 43,
+    "observation": "Salida por Pecosa 260701"
+  },
+  {
+    "source_detail_id": 28393,
+    "source_product_id": 334,
+    "source_pecosa_id": 24276,
+    "quantity": 90,
+    "observation": "Salida por Pecosa 260701"
+  },
+  {
+    "source_detail_id": 28394,
+    "source_product_id": 333,
+    "source_pecosa_id": 24277,
+    "quantity": 102,
+    "observation": "Salida por Pecosa 260702"
+  },
+  {
+    "source_detail_id": 28395,
+    "source_product_id": 334,
+    "source_pecosa_id": 24277,
+    "quantity": 212,
+    "observation": "Salida por Pecosa 260702"
+  },
+  {
+    "source_detail_id": 28396,
+    "source_product_id": 333,
+    "source_pecosa_id": 24278,
+    "quantity": 83,
+    "observation": "Salida por Pecosa 260703"
+  },
+  {
+    "source_detail_id": 28397,
+    "source_product_id": 334,
+    "source_pecosa_id": 24278,
+    "quantity": 174,
+    "observation": "Salida por Pecosa 260703"
+  },
+  {
+    "source_detail_id": 28398,
+    "source_product_id": 333,
+    "source_pecosa_id": 24279,
+    "quantity": 96,
+    "observation": "Salida por Pecosa 260704"
+  },
+  {
+    "source_detail_id": 28399,
+    "source_product_id": 334,
+    "source_pecosa_id": 24279,
+    "quantity": 200,
+    "observation": "Salida por Pecosa 260704"
+  },
+  {
+    "source_detail_id": 28400,
+    "source_product_id": 333,
+    "source_pecosa_id": 24280,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260705"
+  },
+  {
+    "source_detail_id": 28401,
+    "source_product_id": 334,
+    "source_pecosa_id": 24280,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260705"
+  },
+  {
+    "source_detail_id": 28402,
+    "source_product_id": 333,
+    "source_pecosa_id": 24281,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260706"
+  },
+  {
+    "source_detail_id": 28403,
+    "source_product_id": 334,
+    "source_pecosa_id": 24281,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260706"
+  },
+  {
+    "source_detail_id": 28404,
+    "source_product_id": 333,
+    "source_pecosa_id": 24282,
+    "quantity": 65,
+    "observation": "Salida por Pecosa 260707"
+  },
+  {
+    "source_detail_id": 28405,
+    "source_product_id": 334,
+    "source_pecosa_id": 24282,
+    "quantity": 135,
+    "observation": "Salida por Pecosa 260707"
+  },
+  {
+    "source_detail_id": 28406,
+    "source_product_id": 333,
+    "source_pecosa_id": 24283,
+    "quantity": 87,
+    "observation": "Salida por Pecosa 260708"
+  },
+  {
+    "source_detail_id": 28407,
+    "source_product_id": 334,
+    "source_pecosa_id": 24283,
+    "quantity": 180,
+    "observation": "Salida por Pecosa 260708"
+  },
+  {
+    "source_detail_id": 28408,
+    "source_product_id": 333,
+    "source_pecosa_id": 24284,
+    "quantity": 39,
+    "observation": "Salida por Pecosa 260709"
+  },
+  {
+    "source_detail_id": 28409,
+    "source_product_id": 334,
+    "source_pecosa_id": 24284,
+    "quantity": 80,
+    "observation": "Salida por Pecosa 260709"
+  },
+  {
+    "source_detail_id": 28410,
+    "source_product_id": 333,
+    "source_pecosa_id": 24285,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260710"
+  },
+  {
+    "source_detail_id": 28411,
+    "source_product_id": 334,
+    "source_pecosa_id": 24285,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260710"
+  },
+  {
+    "source_detail_id": 28412,
+    "source_product_id": 333,
+    "source_pecosa_id": 24286,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260711"
+  },
+  {
+    "source_detail_id": 28413,
+    "source_product_id": 334,
+    "source_pecosa_id": 24286,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260711"
+  },
+  {
+    "source_detail_id": 28414,
+    "source_product_id": 333,
+    "source_pecosa_id": 24287,
+    "quantity": 76,
+    "observation": "Salida por Pecosa 260712"
+  },
+  {
+    "source_detail_id": 28415,
+    "source_product_id": 334,
+    "source_pecosa_id": 24287,
+    "quantity": 158,
+    "observation": "Salida por Pecosa 260712"
+  },
+  {
+    "source_detail_id": 28418,
+    "source_product_id": 333,
+    "source_pecosa_id": 24288,
+    "quantity": 83,
+    "observation": "Salida por Pecosa 260713"
+  },
+  {
+    "source_detail_id": 28419,
+    "source_product_id": 334,
+    "source_pecosa_id": 24288,
+    "quantity": 174,
+    "observation": "Salida por Pecosa 260713"
+  },
+  {
+    "source_detail_id": 28420,
+    "source_product_id": 333,
+    "source_pecosa_id": 24289,
+    "quantity": 63,
+    "observation": "Salida por Pecosa 260714"
+  },
+  {
+    "source_detail_id": 28421,
+    "source_product_id": 334,
+    "source_pecosa_id": 24289,
+    "quantity": 132,
+    "observation": "Salida por Pecosa 260714"
+  },
+  {
+    "source_detail_id": 28422,
+    "source_product_id": 333,
+    "source_pecosa_id": 24290,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260715"
+  },
+  {
+    "source_detail_id": 28423,
+    "source_product_id": 334,
+    "source_pecosa_id": 24290,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260715"
+  },
+  {
+    "source_detail_id": 28424,
+    "source_product_id": 333,
+    "source_pecosa_id": 24291,
+    "quantity": 49,
+    "observation": "Salida por Pecosa 260716"
+  },
+  {
+    "source_detail_id": 28425,
+    "source_product_id": 334,
+    "source_pecosa_id": 24291,
+    "quantity": 103,
+    "observation": "Salida por Pecosa 260716"
+  },
+  {
+    "source_detail_id": 28426,
+    "source_product_id": 333,
+    "source_pecosa_id": 24292,
+    "quantity": 53,
+    "observation": "Salida por Pecosa 260717"
+  },
+  {
+    "source_detail_id": 28427,
+    "source_product_id": 334,
+    "source_pecosa_id": 24292,
+    "quantity": 109,
+    "observation": "Salida por Pecosa 260717"
+  },
+  {
+    "source_detail_id": 28428,
+    "source_product_id": 333,
+    "source_pecosa_id": 24293,
+    "quantity": 57,
+    "observation": "Salida por Pecosa 260718"
+  },
+  {
+    "source_detail_id": 28429,
+    "source_product_id": 334,
+    "source_pecosa_id": 24293,
+    "quantity": 119,
+    "observation": "Salida por Pecosa 260718"
+  },
+  {
+    "source_detail_id": 28430,
+    "source_product_id": 333,
+    "source_pecosa_id": 24294,
+    "quantity": 68,
+    "observation": "Salida por Pecosa 260719"
+  },
+  {
+    "source_detail_id": 28431,
+    "source_product_id": 334,
+    "source_pecosa_id": 24294,
+    "quantity": 142,
+    "observation": "Salida por Pecosa 260719"
+  },
+  {
+    "source_detail_id": 28432,
+    "source_product_id": 333,
+    "source_pecosa_id": 24295,
+    "quantity": 63,
+    "observation": "Salida por Pecosa 260720"
+  },
+  {
+    "source_detail_id": 28433,
+    "source_product_id": 334,
+    "source_pecosa_id": 24295,
+    "quantity": 132,
+    "observation": "Salida por Pecosa 260720"
+  },
+  {
+    "source_detail_id": 28434,
+    "source_product_id": 333,
+    "source_pecosa_id": 24296,
+    "quantity": 79,
+    "observation": "Salida por Pecosa 260721"
+  },
+  {
+    "source_detail_id": 28435,
+    "source_product_id": 334,
+    "source_pecosa_id": 24296,
+    "quantity": 164,
+    "observation": "Salida por Pecosa 260721"
+  },
+  {
+    "source_detail_id": 28436,
+    "source_product_id": 333,
+    "source_pecosa_id": 24297,
+    "quantity": 56,
+    "observation": "Salida por Pecosa 260722"
+  },
+  {
+    "source_detail_id": 28437,
+    "source_product_id": 334,
+    "source_pecosa_id": 24297,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260722"
+  },
+  {
+    "source_detail_id": 28438,
+    "source_product_id": 333,
+    "source_pecosa_id": 24298,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260723"
+  },
+  {
+    "source_detail_id": 28439,
+    "source_product_id": 334,
+    "source_pecosa_id": 24298,
+    "quantity": 203,
+    "observation": "Salida por Pecosa 260723"
+  },
+  {
+    "source_detail_id": 28440,
+    "source_product_id": 333,
+    "source_pecosa_id": 24299,
+    "quantity": 100,
+    "observation": "Salida por Pecosa 260724"
+  },
+  {
+    "source_detail_id": 28441,
+    "source_product_id": 334,
+    "source_pecosa_id": 24299,
+    "quantity": 209,
+    "observation": "Salida por Pecosa 260724"
+  },
+  {
+    "source_detail_id": 28442,
+    "source_product_id": 333,
+    "source_pecosa_id": 24300,
+    "quantity": 71,
+    "observation": "Salida por Pecosa 260725"
+  },
+  {
+    "source_detail_id": 28443,
+    "source_product_id": 334,
+    "source_pecosa_id": 24300,
+    "quantity": 148,
+    "observation": "Salida por Pecosa 260725"
+  },
+  {
+    "source_detail_id": 28444,
+    "source_product_id": 333,
+    "source_pecosa_id": 24301,
+    "quantity": 74,
+    "observation": "Salida por Pecosa 260726"
+  },
+  {
+    "source_detail_id": 28445,
+    "source_product_id": 334,
+    "source_pecosa_id": 24301,
+    "quantity": 155,
+    "observation": "Salida por Pecosa 260726"
+  },
+  {
+    "source_detail_id": 28446,
+    "source_product_id": 333,
+    "source_pecosa_id": 24302,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260727"
+  },
+  {
+    "source_detail_id": 28447,
+    "source_product_id": 334,
+    "source_pecosa_id": 24302,
+    "quantity": 258,
+    "observation": "Salida por Pecosa 260727"
+  },
+  {
+    "source_detail_id": 28448,
+    "source_product_id": 333,
+    "source_pecosa_id": 24303,
+    "quantity": 49,
+    "observation": "Salida por Pecosa 260728"
+  },
+  {
+    "source_detail_id": 28449,
+    "source_product_id": 334,
+    "source_pecosa_id": 24303,
+    "quantity": 103,
+    "observation": "Salida por Pecosa 260728"
+  },
+  {
+    "source_detail_id": 28450,
+    "source_product_id": 333,
+    "source_pecosa_id": 24304,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260729"
+  },
+  {
+    "source_detail_id": 28451,
+    "source_product_id": 334,
+    "source_pecosa_id": 24304,
+    "quantity": 241,
+    "observation": "Salida por Pecosa 260729"
+  },
+  {
+    "source_detail_id": 28452,
+    "source_product_id": 333,
+    "source_pecosa_id": 24305,
+    "quantity": 111,
+    "observation": "Salida por Pecosa 260730"
+  },
+  {
+    "source_detail_id": 28453,
+    "source_product_id": 334,
+    "source_pecosa_id": 24305,
+    "quantity": 232,
+    "observation": "Salida por Pecosa 260730"
+  },
+  {
+    "source_detail_id": 28454,
+    "source_product_id": 333,
+    "source_pecosa_id": 24306,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260731"
+  },
+  {
+    "source_detail_id": 28455,
+    "source_product_id": 334,
+    "source_pecosa_id": 24306,
+    "quantity": 203,
+    "observation": "Salida por Pecosa 260731"
+  },
+  {
+    "source_detail_id": 28456,
+    "source_product_id": 333,
+    "source_pecosa_id": 24307,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260732"
+  },
+  {
+    "source_detail_id": 28457,
+    "source_product_id": 334,
+    "source_pecosa_id": 24307,
+    "quantity": 258,
+    "observation": "Salida por Pecosa 260732"
+  },
+  {
+    "source_detail_id": 28458,
+    "source_product_id": 333,
+    "source_pecosa_id": 24308,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260733"
+  },
+  {
+    "source_detail_id": 28459,
+    "source_product_id": 334,
+    "source_pecosa_id": 24308,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260733"
+  },
+  {
+    "source_detail_id": 28460,
+    "source_product_id": 333,
+    "source_pecosa_id": 24309,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260734"
+  },
+  {
+    "source_detail_id": 28461,
+    "source_product_id": 334,
+    "source_pecosa_id": 24309,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260734"
+  },
+  {
+    "source_detail_id": 28462,
+    "source_product_id": 333,
+    "source_pecosa_id": 24310,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260735"
+  },
+  {
+    "source_detail_id": 28463,
+    "source_product_id": 334,
+    "source_pecosa_id": 24310,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260735"
+  },
+  {
+    "source_detail_id": 28464,
+    "source_product_id": 333,
+    "source_pecosa_id": 24311,
+    "quantity": 85,
+    "observation": "Salida por Pecosa 260770"
+  },
+  {
+    "source_detail_id": 28465,
+    "source_product_id": 334,
+    "source_pecosa_id": 24311,
+    "quantity": 177,
+    "observation": "Salida por Pecosa 260770"
+  },
+  {
+    "source_detail_id": 28466,
+    "source_product_id": 333,
+    "source_pecosa_id": 24312,
+    "quantity": 46,
+    "observation": "Salida por Pecosa 260736"
+  },
+  {
+    "source_detail_id": 28467,
+    "source_product_id": 334,
+    "source_pecosa_id": 24312,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260736"
+  },
+  {
+    "source_detail_id": 28468,
+    "source_product_id": 333,
+    "source_pecosa_id": 24313,
+    "quantity": 79,
+    "observation": "Salida por Pecosa 260737"
+  },
+  {
+    "source_detail_id": 28469,
+    "source_product_id": 334,
+    "source_pecosa_id": 24313,
+    "quantity": 164,
+    "observation": "Salida por Pecosa 260737"
+  },
+  {
+    "source_detail_id": 28470,
+    "source_product_id": 333,
+    "source_pecosa_id": 24314,
+    "quantity": 63,
+    "observation": "Salida por Pecosa 260738"
+  },
+  {
+    "source_detail_id": 28471,
+    "source_product_id": 334,
+    "source_pecosa_id": 24314,
+    "quantity": 132,
+    "observation": "Salida por Pecosa 260738"
+  },
+  {
+    "source_detail_id": 28472,
+    "source_product_id": 333,
+    "source_pecosa_id": 24315,
+    "quantity": 77,
+    "observation": "Salida por Pecosa 260739"
+  },
+  {
+    "source_detail_id": 28473,
+    "source_product_id": 334,
+    "source_pecosa_id": 24315,
+    "quantity": 161,
+    "observation": "Salida por Pecosa 260739"
+  },
+  {
+    "source_detail_id": 28474,
+    "source_product_id": 333,
+    "source_pecosa_id": 24316,
+    "quantity": 122,
+    "observation": "Salida por Pecosa 260740"
+  },
+  {
+    "source_detail_id": 28475,
+    "source_product_id": 334,
+    "source_pecosa_id": 24316,
+    "quantity": 254,
+    "observation": "Salida por Pecosa 260740"
+  },
+  {
+    "source_detail_id": 28476,
+    "source_product_id": 333,
+    "source_pecosa_id": 24317,
+    "quantity": 42,
+    "observation": "Salida por Pecosa 260741"
+  },
+  {
+    "source_detail_id": 28477,
+    "source_product_id": 334,
+    "source_pecosa_id": 24317,
+    "quantity": 87,
+    "observation": "Salida por Pecosa 260741"
+  },
+  {
+    "source_detail_id": 28478,
+    "source_product_id": 333,
+    "source_pecosa_id": 24318,
+    "quantity": 99,
+    "observation": "Salida por Pecosa 260742"
+  },
+  {
+    "source_detail_id": 28479,
+    "source_product_id": 334,
+    "source_pecosa_id": 24318,
+    "quantity": 206,
+    "observation": "Salida por Pecosa 260742"
+  },
+  {
+    "source_detail_id": 28480,
+    "source_product_id": 333,
+    "source_pecosa_id": 24319,
+    "quantity": 71,
+    "observation": "Salida por Pecosa 260743"
+  },
+  {
+    "source_detail_id": 28481,
+    "source_product_id": 334,
+    "source_pecosa_id": 24319,
+    "quantity": 148,
+    "observation": "Salida por Pecosa 260743"
+  },
+  {
+    "source_detail_id": 28482,
+    "source_product_id": 334,
+    "source_pecosa_id": 24320,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260744"
+  },
+  {
+    "source_detail_id": 28483,
+    "source_product_id": 333,
+    "source_pecosa_id": 24320,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260744"
+  },
+  {
+    "source_detail_id": 28484,
+    "source_product_id": 333,
+    "source_pecosa_id": 24321,
+    "quantity": 70,
+    "observation": "Salida por Pecosa 260745"
+  },
+  {
+    "source_detail_id": 28485,
+    "source_product_id": 334,
+    "source_pecosa_id": 24321,
+    "quantity": 145,
+    "observation": "Salida por Pecosa 260745"
+  },
+  {
+    "source_detail_id": 28486,
+    "source_product_id": 333,
+    "source_pecosa_id": 24322,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260746"
+  },
+  {
+    "source_detail_id": 28487,
+    "source_product_id": 334,
+    "source_pecosa_id": 24322,
+    "quantity": 258,
+    "observation": "Salida por Pecosa 260746"
+  },
+  {
+    "source_detail_id": 28488,
+    "source_product_id": 333,
+    "source_pecosa_id": 24323,
+    "quantity": 119,
+    "observation": "Salida por Pecosa 260747"
+  },
+  {
+    "source_detail_id": 28489,
+    "source_product_id": 334,
+    "source_pecosa_id": 24323,
+    "quantity": 248,
+    "observation": "Salida por Pecosa 260747"
+  },
+  {
+    "source_detail_id": 28490,
+    "source_product_id": 333,
+    "source_pecosa_id": 24324,
+    "quantity": 46,
+    "observation": "Salida por Pecosa 260748"
+  },
+  {
+    "source_detail_id": 28491,
+    "source_product_id": 334,
+    "source_pecosa_id": 24324,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260748"
+  },
+  {
+    "source_detail_id": 28492,
+    "source_product_id": 333,
+    "source_pecosa_id": 24325,
+    "quantity": 79,
+    "observation": "Salida por Pecosa 260749"
+  },
+  {
+    "source_detail_id": 28493,
+    "source_product_id": 334,
+    "source_pecosa_id": 24325,
+    "quantity": 164,
+    "observation": "Salida por Pecosa 260749"
+  },
+  {
+    "source_detail_id": 28494,
+    "source_product_id": 333,
+    "source_pecosa_id": 24326,
+    "quantity": 96,
+    "observation": "Salida por Pecosa 260750"
+  },
+  {
+    "source_detail_id": 28495,
+    "source_product_id": 334,
+    "source_pecosa_id": 24326,
+    "quantity": 200,
+    "observation": "Salida por Pecosa 260750"
+  },
+  {
+    "source_detail_id": 28496,
+    "source_product_id": 333,
+    "source_pecosa_id": 24327,
+    "quantity": 42,
+    "observation": "Salida por Pecosa 260751"
+  },
+  {
+    "source_detail_id": 28497,
+    "source_product_id": 334,
+    "source_pecosa_id": 24327,
+    "quantity": 87,
+    "observation": "Salida por Pecosa 260751"
+  },
+  {
+    "source_detail_id": 28498,
+    "source_product_id": 333,
+    "source_pecosa_id": 24328,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260752"
+  },
+  {
+    "source_detail_id": 28499,
+    "source_product_id": 334,
+    "source_pecosa_id": 24328,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260752"
+  },
+  {
+    "source_detail_id": 28500,
+    "source_product_id": 333,
+    "source_pecosa_id": 24329,
+    "quantity": 66,
+    "observation": "Salida por Pecosa 260753"
+  },
+  {
+    "source_detail_id": 28501,
+    "source_product_id": 334,
+    "source_pecosa_id": 24329,
+    "quantity": 138,
+    "observation": "Salida por Pecosa 260753"
+  },
+  {
+    "source_detail_id": 28502,
+    "source_product_id": 333,
+    "source_pecosa_id": 24330,
+    "quantity": 96,
+    "observation": "Salida por Pecosa 260754"
+  },
+  {
+    "source_detail_id": 28503,
+    "source_product_id": 334,
+    "source_pecosa_id": 24330,
+    "quantity": 200,
+    "observation": "Salida por Pecosa 260754"
+  },
+  {
+    "source_detail_id": 28504,
+    "source_product_id": 333,
+    "source_pecosa_id": 24331,
+    "quantity": 93,
+    "observation": "Salida por Pecosa 260755"
+  },
+  {
+    "source_detail_id": 28505,
+    "source_product_id": 334,
+    "source_pecosa_id": 24331,
+    "quantity": 193,
+    "observation": "Salida por Pecosa 260755"
+  },
+  {
+    "source_detail_id": 28506,
+    "source_product_id": 333,
+    "source_pecosa_id": 24332,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260756"
+  },
+  {
+    "source_detail_id": 28507,
+    "source_product_id": 334,
+    "source_pecosa_id": 24332,
+    "quantity": 241,
+    "observation": "Salida por Pecosa 260756"
+  },
+  {
+    "source_detail_id": 28508,
+    "source_product_id": 333,
+    "source_pecosa_id": 24333,
+    "quantity": 125,
+    "observation": "Salida por Pecosa 260757"
+  },
+  {
+    "source_detail_id": 28509,
+    "source_product_id": 334,
+    "source_pecosa_id": 24333,
+    "quantity": 261,
+    "observation": "Salida por Pecosa 260757"
+  },
+  {
+    "source_detail_id": 28510,
+    "source_product_id": 333,
+    "source_pecosa_id": 24334,
+    "quantity": 111,
+    "observation": "Salida por Pecosa 260758"
+  },
+  {
+    "source_detail_id": 28511,
+    "source_product_id": 334,
+    "source_pecosa_id": 24334,
+    "quantity": 232,
+    "observation": "Salida por Pecosa 260758"
+  },
+  {
+    "source_detail_id": 28512,
+    "source_product_id": 333,
+    "source_pecosa_id": 24335,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260759"
+  },
+  {
+    "source_detail_id": 28513,
+    "source_product_id": 334,
+    "source_pecosa_id": 24335,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260759"
+  },
+  {
+    "source_detail_id": 28514,
+    "source_product_id": 333,
+    "source_pecosa_id": 24336,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260760"
+  },
+  {
+    "source_detail_id": 28515,
+    "source_product_id": 334,
+    "source_pecosa_id": 24336,
+    "quantity": 241,
+    "observation": "Salida por Pecosa 260760"
+  },
+  {
+    "source_detail_id": 28516,
+    "source_product_id": 333,
+    "source_pecosa_id": 24337,
+    "quantity": 73,
+    "observation": "Salida por Pecosa 260761"
+  },
+  {
+    "source_detail_id": 28517,
+    "source_product_id": 334,
+    "source_pecosa_id": 24337,
+    "quantity": 151,
+    "observation": "Salida por Pecosa 260761"
+  },
+  {
+    "source_detail_id": 28518,
+    "source_product_id": 333,
+    "source_pecosa_id": 24338,
+    "quantity": 91,
+    "observation": "Salida por Pecosa 260762"
+  },
+  {
+    "source_detail_id": 28519,
+    "source_product_id": 334,
+    "source_pecosa_id": 24338,
+    "quantity": 189,
+    "observation": "Salida por Pecosa 260762"
+  },
+  {
+    "source_detail_id": 28520,
+    "source_product_id": 333,
+    "source_pecosa_id": 24339,
+    "quantity": 93,
+    "observation": "Salida por Pecosa 260763"
+  },
+  {
+    "source_detail_id": 28521,
+    "source_product_id": 334,
+    "source_pecosa_id": 24339,
+    "quantity": 193,
+    "observation": "Salida por Pecosa 260763"
+  },
+  {
+    "source_detail_id": 28522,
+    "source_product_id": 333,
+    "source_pecosa_id": 24340,
+    "quantity": 90,
+    "observation": "Salida por Pecosa 260764"
+  },
+  {
+    "source_detail_id": 28523,
+    "source_product_id": 334,
+    "source_pecosa_id": 24340,
+    "quantity": 186,
+    "observation": "Salida por Pecosa 260764"
+  },
+  {
+    "source_detail_id": 28524,
+    "source_product_id": 333,
+    "source_pecosa_id": 24341,
+    "quantity": 56,
+    "observation": "Salida por Pecosa 260765"
+  },
+  {
+    "source_detail_id": 28525,
+    "source_product_id": 334,
+    "source_pecosa_id": 24341,
+    "quantity": 115,
+    "observation": "Salida por Pecosa 260765"
+  },
+  {
+    "source_detail_id": 28526,
+    "source_product_id": 333,
+    "source_pecosa_id": 24342,
+    "quantity": 94,
+    "observation": "Salida por Pecosa 260766"
+  },
+  {
+    "source_detail_id": 28527,
+    "source_product_id": 334,
+    "source_pecosa_id": 24342,
+    "quantity": 196,
+    "observation": "Salida por Pecosa 260766"
+  },
+  {
+    "source_detail_id": 28530,
+    "source_product_id": 333,
+    "source_pecosa_id": 24343,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260767"
+  },
+  {
+    "source_detail_id": 28531,
+    "source_product_id": 334,
+    "source_pecosa_id": 24343,
+    "quantity": 257,
+    "observation": "Salida por Pecosa 260767"
+  },
+  {
+    "source_detail_id": 28532,
+    "source_product_id": 333,
+    "source_pecosa_id": 24344,
+    "quantity": 74,
+    "observation": "Salida por Pecosa 260768"
+  },
+  {
+    "source_detail_id": 28533,
+    "source_product_id": 334,
+    "source_pecosa_id": 24344,
+    "quantity": 154,
+    "observation": "Salida por Pecosa 260768"
+  },
+  {
+    "source_detail_id": 28534,
+    "source_product_id": 333,
+    "source_pecosa_id": 24345,
+    "quantity": 40,
+    "observation": "Salida por Pecosa 260769"
+  },
+  {
+    "source_detail_id": 28535,
+    "source_product_id": 334,
+    "source_pecosa_id": 24345,
+    "quantity": 83,
+    "observation": "Salida por Pecosa 260769"
+  },
+  {
+    "source_detail_id": 28536,
+    "source_product_id": 335,
+    "source_pecosa_id": 24346,
+    "quantity": 70,
+    "observation": "Salida por Pecosa 260771"
+  },
+  {
+    "source_detail_id": 28537,
+    "source_product_id": 336,
+    "source_pecosa_id": 24346,
+    "quantity": 146,
+    "observation": "Salida por Pecosa 260771"
+  },
+  {
+    "source_detail_id": 28538,
+    "source_product_id": 335,
+    "source_pecosa_id": 24347,
+    "quantity": 67,
+    "observation": "Salida por Pecosa 260772"
+  },
+  {
+    "source_detail_id": 28539,
+    "source_product_id": 336,
+    "source_pecosa_id": 24347,
+    "quantity": 140,
+    "observation": "Salida por Pecosa 260772"
+  },
+  {
+    "source_detail_id": 28540,
+    "source_product_id": 335,
+    "source_pecosa_id": 24348,
+    "quantity": 64,
+    "observation": "Salida por Pecosa 260773"
+  },
+  {
+    "source_detail_id": 28541,
+    "source_product_id": 336,
+    "source_pecosa_id": 24348,
+    "quantity": 133,
+    "observation": "Salida por Pecosa 260773"
+  },
+  {
+    "source_detail_id": 28542,
+    "source_product_id": 335,
+    "source_pecosa_id": 24349,
+    "quantity": 70,
+    "observation": "Salida por Pecosa 260774"
+  },
+  {
+    "source_detail_id": 28543,
+    "source_product_id": 336,
+    "source_pecosa_id": 24349,
+    "quantity": 146,
+    "observation": "Salida por Pecosa 260774"
+  },
+  {
+    "source_detail_id": 28544,
+    "source_product_id": 335,
+    "source_pecosa_id": 24350,
+    "quantity": 91,
+    "observation": "Salida por Pecosa 260775"
+  },
+  {
+    "source_detail_id": 28545,
+    "source_product_id": 336,
+    "source_pecosa_id": 24350,
+    "quantity": 190,
+    "observation": "Salida por Pecosa 260775"
+  },
+  {
+    "source_detail_id": 28546,
+    "source_product_id": 335,
+    "source_pecosa_id": 24351,
+    "quantity": 81,
+    "observation": "Salida por Pecosa 260776"
+  },
+  {
+    "source_detail_id": 28547,
+    "source_product_id": 336,
+    "source_pecosa_id": 24351,
+    "quantity": 170,
+    "observation": "Salida por Pecosa 260776"
+  },
+  {
+    "source_detail_id": 28548,
+    "source_product_id": 335,
+    "source_pecosa_id": 24352,
+    "quantity": 70,
+    "observation": "Salida por Pecosa 260777"
+  },
+  {
+    "source_detail_id": 28549,
+    "source_product_id": 336,
+    "source_pecosa_id": 24352,
+    "quantity": 146,
+    "observation": "Salida por Pecosa 260777"
+  },
+  {
+    "source_detail_id": 28550,
+    "source_product_id": 335,
+    "source_pecosa_id": 24353,
+    "quantity": 45,
+    "observation": "Salida por Pecosa 260778"
+  },
+  {
+    "source_detail_id": 28551,
+    "source_product_id": 336,
+    "source_pecosa_id": 24353,
+    "quantity": 93,
+    "observation": "Salida por Pecosa 260778"
+  },
+  {
+    "source_detail_id": 28552,
+    "source_product_id": 335,
+    "source_pecosa_id": 24354,
+    "quantity": 105,
+    "observation": "Salida por Pecosa 260779"
+  },
+  {
+    "source_detail_id": 28553,
+    "source_product_id": 336,
+    "source_pecosa_id": 24354,
+    "quantity": 220,
+    "observation": "Salida por Pecosa 260779"
+  },
+  {
+    "source_detail_id": 28554,
+    "source_product_id": 335,
+    "source_pecosa_id": 24355,
+    "quantity": 86,
+    "observation": "Salida por Pecosa 260780"
+  },
+  {
+    "source_detail_id": 28555,
+    "source_product_id": 336,
+    "source_pecosa_id": 24355,
+    "quantity": 180,
+    "observation": "Salida por Pecosa 260780"
+  },
+  {
+    "source_detail_id": 28556,
+    "source_product_id": 335,
+    "source_pecosa_id": 24356,
+    "quantity": 99,
+    "observation": "Salida por Pecosa 260781"
+  },
+  {
+    "source_detail_id": 28557,
+    "source_product_id": 336,
+    "source_pecosa_id": 24356,
+    "quantity": 206,
+    "observation": "Salida por Pecosa 260781"
+  },
+  {
+    "source_detail_id": 28558,
+    "source_product_id": 335,
+    "source_pecosa_id": 24357,
+    "quantity": 64,
+    "observation": "Salida por Pecosa 260782"
+  },
+  {
+    "source_detail_id": 28559,
+    "source_product_id": 336,
+    "source_pecosa_id": 24357,
+    "quantity": 133,
+    "observation": "Salida por Pecosa 260782"
+  },
+  {
+    "source_detail_id": 28560,
+    "source_product_id": 335,
+    "source_pecosa_id": 24358,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260783"
+  },
+  {
+    "source_detail_id": 28561,
+    "source_product_id": 336,
+    "source_pecosa_id": 24358,
+    "quantity": 130,
+    "observation": "Salida por Pecosa 260783"
+  },
+  {
+    "source_detail_id": 28562,
+    "source_product_id": 335,
+    "source_pecosa_id": 24359,
+    "quantity": 75,
+    "observation": "Salida por Pecosa 260784"
+  },
+  {
+    "source_detail_id": 28563,
+    "source_product_id": 336,
+    "source_pecosa_id": 24359,
+    "quantity": 156,
+    "observation": "Salida por Pecosa 260784"
+  },
+  {
+    "source_detail_id": 28564,
+    "source_product_id": 335,
+    "source_pecosa_id": 24360,
+    "quantity": 40,
+    "observation": "Salida por Pecosa 260785"
+  },
+  {
+    "source_detail_id": 28565,
+    "source_product_id": 336,
+    "source_pecosa_id": 24360,
+    "quantity": 83,
+    "observation": "Salida por Pecosa 260785"
+  },
+  {
+    "source_detail_id": 28566,
+    "source_product_id": 335,
+    "source_pecosa_id": 24361,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260786"
+  },
+  {
+    "source_detail_id": 28567,
+    "source_product_id": 336,
+    "source_pecosa_id": 24361,
+    "quantity": 130,
+    "observation": "Salida por Pecosa 260786"
+  },
+  {
+    "source_detail_id": 28568,
+    "source_product_id": 335,
+    "source_pecosa_id": 24362,
+    "quantity": 73,
+    "observation": "Salida por Pecosa 260787"
+  },
+  {
+    "source_detail_id": 28569,
+    "source_product_id": 336,
+    "source_pecosa_id": 24362,
+    "quantity": 153,
+    "observation": "Salida por Pecosa 260787"
+  },
+  {
+    "source_detail_id": 28570,
+    "source_product_id": 335,
+    "source_pecosa_id": 24363,
+    "quantity": 78,
+    "observation": "Salida por Pecosa 260788"
+  },
+  {
+    "source_detail_id": 28571,
+    "source_product_id": 336,
+    "source_pecosa_id": 24363,
+    "quantity": 163,
+    "observation": "Salida por Pecosa 260788"
+  },
+  {
+    "source_detail_id": 28574,
+    "source_product_id": 335,
+    "source_pecosa_id": 24364,
+    "quantity": 86,
+    "observation": "Salida por Pecosa 260789"
+  },
+  {
+    "source_detail_id": 28575,
+    "source_product_id": 336,
+    "source_pecosa_id": 24364,
+    "quantity": 180,
+    "observation": "Salida por Pecosa 260789"
+  },
+  {
+    "source_detail_id": 28576,
+    "source_product_id": 336,
+    "source_pecosa_id": 24365,
+    "quantity": 136,
+    "observation": "Salida por Pecosa 260790"
+  },
+  {
+    "source_detail_id": 28577,
+    "source_product_id": 335,
+    "source_pecosa_id": 24365,
+    "quantity": 65,
+    "observation": "Salida por Pecosa 260790"
+  },
+  {
+    "source_detail_id": 28578,
+    "source_product_id": 335,
+    "source_pecosa_id": 24366,
+    "quantity": 64,
+    "observation": "Salida por Pecosa 260791"
+  },
+  {
+    "source_detail_id": 28579,
+    "source_product_id": 336,
+    "source_pecosa_id": 24366,
+    "quantity": 133,
+    "observation": "Salida por Pecosa 260791"
+  },
+  {
+    "source_detail_id": 28580,
+    "source_product_id": 335,
+    "source_pecosa_id": 24367,
+    "quantity": 51,
+    "observation": "Salida por Pecosa 260792"
+  },
+  {
+    "source_detail_id": 28581,
+    "source_product_id": 336,
+    "source_pecosa_id": 24367,
+    "quantity": 106,
+    "observation": "Salida por Pecosa 260792"
+  },
+  {
+    "source_detail_id": 28582,
+    "source_product_id": 335,
+    "source_pecosa_id": 24368,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260793"
+  },
+  {
+    "source_detail_id": 28583,
+    "source_product_id": 336,
+    "source_pecosa_id": 24368,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260793"
+  },
+  {
+    "source_detail_id": 28584,
+    "source_product_id": 335,
+    "source_pecosa_id": 24369,
+    "quantity": 59,
+    "observation": "Salida por Pecosa 260794"
+  },
+  {
+    "source_detail_id": 28585,
+    "source_product_id": 336,
+    "source_pecosa_id": 24369,
+    "quantity": 123,
+    "observation": "Salida por Pecosa 260794"
+  },
+  {
+    "source_detail_id": 28586,
+    "source_product_id": 335,
+    "source_pecosa_id": 24370,
+    "quantity": 70,
+    "observation": "Salida por Pecosa 260795"
+  },
+  {
+    "source_detail_id": 28587,
+    "source_product_id": 336,
+    "source_pecosa_id": 24370,
+    "quantity": 146,
+    "observation": "Salida por Pecosa 260795"
+  },
+  {
+    "source_detail_id": 28588,
+    "source_product_id": 335,
+    "source_pecosa_id": 24371,
+    "quantity": 65,
+    "observation": "Salida por Pecosa 260796"
+  },
+  {
+    "source_detail_id": 28589,
+    "source_product_id": 336,
+    "source_pecosa_id": 24371,
+    "quantity": 136,
+    "observation": "Salida por Pecosa 260796"
+  },
+  {
+    "source_detail_id": 28590,
+    "source_product_id": 335,
+    "source_pecosa_id": 24372,
+    "quantity": 89,
+    "observation": "Salida por Pecosa 260797"
+  },
+  {
+    "source_detail_id": 28591,
+    "source_product_id": 336,
+    "source_pecosa_id": 24372,
+    "quantity": 186,
+    "observation": "Salida por Pecosa 260797"
+  },
+  {
+    "source_detail_id": 28592,
+    "source_product_id": 335,
+    "source_pecosa_id": 24373,
+    "quantity": 57,
+    "observation": "Salida por Pecosa 260798"
+  },
+  {
+    "source_detail_id": 28593,
+    "source_product_id": 336,
+    "source_pecosa_id": 24373,
+    "quantity": 120,
+    "observation": "Salida por Pecosa 260798"
+  },
+  {
+    "source_detail_id": 28594,
+    "source_product_id": 335,
+    "source_pecosa_id": 24374,
+    "quantity": 101,
+    "observation": "Salida por Pecosa 260799"
+  },
+  {
+    "source_detail_id": 28595,
+    "source_product_id": 336,
+    "source_pecosa_id": 24374,
+    "quantity": 210,
+    "observation": "Salida por Pecosa 260799"
+  },
+  {
+    "source_detail_id": 28596,
+    "source_product_id": 335,
+    "source_pecosa_id": 24375,
+    "quantity": 104,
+    "observation": "Salida por Pecosa 260800"
+  },
+  {
+    "source_detail_id": 28597,
+    "source_product_id": 336,
+    "source_pecosa_id": 24375,
+    "quantity": 216,
+    "observation": "Salida por Pecosa 260800"
+  },
+  {
+    "source_detail_id": 28598,
+    "source_product_id": 335,
+    "source_pecosa_id": 24376,
+    "quantity": 73,
+    "observation": "Salida por Pecosa 260801"
+  },
+  {
+    "source_detail_id": 28599,
+    "source_product_id": 336,
+    "source_pecosa_id": 24376,
+    "quantity": 153,
+    "observation": "Salida por Pecosa 260801"
+  },
+  {
+    "source_detail_id": 28600,
+    "source_product_id": 335,
+    "source_pecosa_id": 24377,
+    "quantity": 77,
+    "observation": "Salida por Pecosa 260802"
+  },
+  {
+    "source_detail_id": 28601,
+    "source_product_id": 336,
+    "source_pecosa_id": 24377,
+    "quantity": 160,
+    "observation": "Salida por Pecosa 260802"
+  },
+  {
+    "source_detail_id": 28602,
+    "source_product_id": 335,
+    "source_pecosa_id": 24378,
+    "quantity": 128,
+    "observation": "Salida por Pecosa 260803"
+  },
+  {
+    "source_detail_id": 28603,
+    "source_product_id": 336,
+    "source_pecosa_id": 24378,
+    "quantity": 266,
+    "observation": "Salida por Pecosa 260803"
+  },
+  {
+    "source_detail_id": 28604,
+    "source_product_id": 335,
+    "source_pecosa_id": 24379,
+    "quantity": 67,
+    "observation": "Salida por Pecosa 260804"
+  },
+  {
+    "source_detail_id": 28605,
+    "source_product_id": 336,
+    "source_pecosa_id": 24379,
+    "quantity": 140,
+    "observation": "Salida por Pecosa 260804"
+  },
+  {
+    "source_detail_id": 28606,
+    "source_product_id": 335,
+    "source_pecosa_id": 24380,
+    "quantity": 120,
+    "observation": "Salida por Pecosa 260805"
+  },
+  {
+    "source_detail_id": 28607,
+    "source_product_id": 336,
+    "source_pecosa_id": 24380,
+    "quantity": 250,
+    "observation": "Salida por Pecosa 260805"
+  },
+  {
+    "source_detail_id": 28608,
+    "source_product_id": 335,
+    "source_pecosa_id": 24381,
+    "quantity": 115,
+    "observation": "Salida por Pecosa 260806"
+  },
+  {
+    "source_detail_id": 28609,
+    "source_product_id": 336,
+    "source_pecosa_id": 24381,
+    "quantity": 240,
+    "observation": "Salida por Pecosa 260806"
+  },
+  {
+    "source_detail_id": 28610,
+    "source_product_id": 335,
+    "source_pecosa_id": 24382,
+    "quantity": 101,
+    "observation": "Salida por Pecosa 260807"
+  },
+  {
+    "source_detail_id": 28611,
+    "source_product_id": 336,
+    "source_pecosa_id": 24382,
+    "quantity": 210,
+    "observation": "Salida por Pecosa 260807"
+  },
+  {
+    "source_detail_id": 28612,
+    "source_product_id": 335,
+    "source_pecosa_id": 24383,
+    "quantity": 128,
+    "observation": "Salida por Pecosa 260808"
+  },
+  {
+    "source_detail_id": 28613,
+    "source_product_id": 336,
+    "source_pecosa_id": 24383,
+    "quantity": 266,
+    "observation": "Salida por Pecosa 260808"
+  },
+  {
+    "source_detail_id": 28614,
+    "source_product_id": 335,
+    "source_pecosa_id": 24384,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260809"
+  },
+  {
+    "source_detail_id": 28615,
+    "source_product_id": 336,
+    "source_pecosa_id": 24384,
+    "quantity": 130,
+    "observation": "Salida por Pecosa 260809"
+  },
+  {
+    "source_detail_id": 28616,
+    "source_product_id": 335,
+    "source_pecosa_id": 24385,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260810"
+  },
+  {
+    "source_detail_id": 28617,
+    "source_product_id": 336,
+    "source_pecosa_id": 24385,
+    "quantity": 130,
+    "observation": "Salida por Pecosa 260810"
+  },
+  {
+    "source_detail_id": 28618,
+    "source_product_id": 335,
+    "source_pecosa_id": 24386,
+    "quantity": 56,
+    "observation": "Salida por Pecosa 260811"
+  },
+  {
+    "source_detail_id": 28619,
+    "source_product_id": 336,
+    "source_pecosa_id": 24386,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260811"
+  },
+  {
+    "source_detail_id": 28620,
+    "source_product_id": 335,
+    "source_pecosa_id": 24387,
+    "quantity": 88,
+    "observation": "Salida por Pecosa 260812"
+  },
+  {
+    "source_detail_id": 28621,
+    "source_product_id": 336,
+    "source_pecosa_id": 24387,
+    "quantity": 183,
+    "observation": "Salida por Pecosa 260812"
+  },
+  {
+    "source_detail_id": 28624,
+    "source_product_id": 335,
+    "source_pecosa_id": 24388,
+    "quantity": 48,
+    "observation": "Salida por Pecosa 260813"
+  },
+  {
+    "source_detail_id": 28625,
+    "source_product_id": 336,
+    "source_pecosa_id": 24388,
+    "quantity": 100,
+    "observation": "Salida por Pecosa 260813"
+  },
+  {
+    "source_detail_id": 28626,
+    "source_product_id": 335,
+    "source_pecosa_id": 24389,
+    "quantity": 89,
+    "observation": "Salida por Pecosa 260814"
+  },
+  {
+    "source_detail_id": 28627,
+    "source_product_id": 336,
+    "source_pecosa_id": 24389,
+    "quantity": 186,
+    "observation": "Salida por Pecosa 260814"
+  },
+  {
+    "source_detail_id": 28628,
+    "source_product_id": 335,
+    "source_pecosa_id": 24390,
+    "quantity": 65,
+    "observation": "Salida por Pecosa 260815"
+  },
+  {
+    "source_detail_id": 28629,
+    "source_product_id": 336,
+    "source_pecosa_id": 24390,
+    "quantity": 136,
+    "observation": "Salida por Pecosa 260815"
+  },
+  {
+    "source_detail_id": 28630,
+    "source_product_id": 335,
+    "source_pecosa_id": 24391,
+    "quantity": 80,
+    "observation": "Salida por Pecosa 260816"
+  },
+  {
+    "source_detail_id": 28631,
+    "source_product_id": 336,
+    "source_pecosa_id": 24391,
+    "quantity": 166,
+    "observation": "Salida por Pecosa 260816"
+  },
+  {
+    "source_detail_id": 28632,
+    "source_product_id": 335,
+    "source_pecosa_id": 24392,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260817"
+  },
+  {
+    "source_detail_id": 28633,
+    "source_product_id": 336,
+    "source_pecosa_id": 24392,
+    "quantity": 263,
+    "observation": "Salida por Pecosa 260817"
+  },
+  {
+    "source_detail_id": 28634,
+    "source_product_id": 335,
+    "source_pecosa_id": 24393,
+    "quantity": 43,
+    "observation": "Salida por Pecosa 260818"
+  },
+  {
+    "source_detail_id": 28635,
+    "source_product_id": 336,
+    "source_pecosa_id": 24393,
+    "quantity": 90,
+    "observation": "Salida por Pecosa 260818"
+  },
+  {
+    "source_detail_id": 28636,
+    "source_product_id": 335,
+    "source_pecosa_id": 24394,
+    "quantity": 102,
+    "observation": "Salida por Pecosa 260819"
+  },
+  {
+    "source_detail_id": 28637,
+    "source_product_id": 336,
+    "source_pecosa_id": 24394,
+    "quantity": 213,
+    "observation": "Salida por Pecosa 260819"
+  },
+  {
+    "source_detail_id": 28638,
+    "source_product_id": 335,
+    "source_pecosa_id": 24395,
+    "quantity": 73,
+    "observation": "Salida por Pecosa 260820"
+  },
+  {
+    "source_detail_id": 28639,
+    "source_product_id": 336,
+    "source_pecosa_id": 24395,
+    "quantity": 153,
+    "observation": "Salida por Pecosa 260820"
+  },
+  {
+    "source_detail_id": 28640,
+    "source_product_id": 335,
+    "source_pecosa_id": 24396,
+    "quantity": 64,
+    "observation": "Salida por Pecosa 260821"
+  },
+  {
+    "source_detail_id": 28641,
+    "source_product_id": 336,
+    "source_pecosa_id": 24396,
+    "quantity": 133,
+    "observation": "Salida por Pecosa 260821"
+  },
+  {
+    "source_detail_id": 28642,
+    "source_product_id": 335,
+    "source_pecosa_id": 24397,
+    "quantity": 72,
+    "observation": "Salida por Pecosa 260822"
+  },
+  {
+    "source_detail_id": 28643,
+    "source_product_id": 336,
+    "source_pecosa_id": 24397,
+    "quantity": 150,
+    "observation": "Salida por Pecosa 260822"
+  },
+  {
+    "source_detail_id": 28644,
+    "source_product_id": 335,
+    "source_pecosa_id": 24398,
+    "quantity": 128,
+    "observation": "Salida por Pecosa 260823"
+  },
+  {
+    "source_detail_id": 28645,
+    "source_product_id": 336,
+    "source_pecosa_id": 24398,
+    "quantity": 266,
+    "observation": "Salida por Pecosa 260823"
+  },
+  {
+    "source_detail_id": 28646,
+    "source_product_id": 335,
+    "source_pecosa_id": 24399,
+    "quantity": 123,
+    "observation": "Salida por Pecosa 260824"
+  },
+  {
+    "source_detail_id": 28647,
+    "source_product_id": 336,
+    "source_pecosa_id": 24399,
+    "quantity": 256,
+    "observation": "Salida por Pecosa 260824"
+  },
+  {
+    "source_detail_id": 28648,
+    "source_product_id": 335,
+    "source_pecosa_id": 24400,
+    "quantity": 48,
+    "observation": "Salida por Pecosa 260825"
+  },
+  {
+    "source_detail_id": 28649,
+    "source_product_id": 336,
+    "source_pecosa_id": 24400,
+    "quantity": 100,
+    "observation": "Salida por Pecosa 260825"
+  },
+  {
+    "source_detail_id": 28650,
+    "source_product_id": 335,
+    "source_pecosa_id": 24401,
+    "quantity": 81,
+    "observation": "Salida por Pecosa 260826"
+  },
+  {
+    "source_detail_id": 28651,
+    "source_product_id": 336,
+    "source_pecosa_id": 24401,
+    "quantity": 170,
+    "observation": "Salida por Pecosa 260826"
+  },
+  {
+    "source_detail_id": 28652,
+    "source_product_id": 335,
+    "source_pecosa_id": 24402,
+    "quantity": 99,
+    "observation": "Salida por Pecosa 260827"
+  },
+  {
+    "source_detail_id": 28653,
+    "source_product_id": 336,
+    "source_pecosa_id": 24402,
+    "quantity": 206,
+    "observation": "Salida por Pecosa 260827"
+  },
+  {
+    "source_detail_id": 28654,
+    "source_product_id": 335,
+    "source_pecosa_id": 24403,
+    "quantity": 43,
+    "observation": "Salida por Pecosa 260828"
+  },
+  {
+    "source_detail_id": 28655,
+    "source_product_id": 336,
+    "source_pecosa_id": 24403,
+    "quantity": 90,
+    "observation": "Salida por Pecosa 260828"
+  },
+  {
+    "source_detail_id": 28656,
+    "source_product_id": 335,
+    "source_pecosa_id": 24404,
+    "quantity": 56,
+    "observation": "Salida por Pecosa 260829"
+  },
+  {
+    "source_detail_id": 28657,
+    "source_product_id": 336,
+    "source_pecosa_id": 24404,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260829"
+  },
+  {
+    "source_detail_id": 28658,
+    "source_product_id": 335,
+    "source_pecosa_id": 24405,
+    "quantity": 69,
+    "observation": "Salida por Pecosa 260830"
+  },
+  {
+    "source_detail_id": 28659,
+    "source_product_id": 336,
+    "source_pecosa_id": 24405,
+    "quantity": 143,
+    "observation": "Salida por Pecosa 260830"
+  },
+  {
+    "source_detail_id": 28662,
+    "source_product_id": 335,
+    "source_pecosa_id": 24406,
+    "quantity": 99,
+    "observation": "Salida por Pecosa 260831"
+  },
+  {
+    "source_detail_id": 28663,
+    "source_product_id": 336,
+    "source_pecosa_id": 24406,
+    "quantity": 206,
+    "observation": "Salida por Pecosa 260831"
+  },
+  {
+    "source_detail_id": 28664,
+    "source_product_id": 335,
+    "source_pecosa_id": 24407,
+    "quantity": 112,
+    "observation": "Salida por Pecosa 260832"
+  },
+  {
+    "source_detail_id": 28665,
+    "source_product_id": 336,
+    "source_pecosa_id": 24407,
+    "quantity": 233,
+    "observation": "Salida por Pecosa 260832"
+  },
+  {
+    "source_detail_id": 28666,
+    "source_product_id": 335,
+    "source_pecosa_id": 24408,
+    "quantity": 120,
+    "observation": "Salida por Pecosa 260833"
+  },
+  {
+    "source_detail_id": 28667,
+    "source_product_id": 336,
+    "source_pecosa_id": 24408,
+    "quantity": 250,
+    "observation": "Salida por Pecosa 260833"
+  },
+  {
+    "source_detail_id": 28668,
+    "source_product_id": 335,
+    "source_pecosa_id": 24409,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260834"
+  },
+  {
+    "source_detail_id": 28669,
+    "source_product_id": 336,
+    "source_pecosa_id": 24409,
+    "quantity": 269,
+    "observation": "Salida por Pecosa 260834"
+  },
+  {
+    "source_detail_id": 28670,
+    "source_product_id": 335,
+    "source_pecosa_id": 24410,
+    "quantity": 115,
+    "observation": "Salida por Pecosa 260835"
+  },
+  {
+    "source_detail_id": 28671,
+    "source_product_id": 336,
+    "source_pecosa_id": 24410,
+    "quantity": 240,
+    "observation": "Salida por Pecosa 260835"
+  },
+  {
+    "source_detail_id": 28672,
+    "source_product_id": 335,
+    "source_pecosa_id": 24411,
+    "quantity": 56,
+    "observation": "Salida por Pecosa 260836"
+  },
+  {
+    "source_detail_id": 28673,
+    "source_product_id": 336,
+    "source_pecosa_id": 24411,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260836"
+  },
+  {
+    "source_detail_id": 28674,
+    "source_product_id": 335,
+    "source_pecosa_id": 24412,
+    "quantity": 120,
+    "observation": "Salida por Pecosa 260837"
+  },
+  {
+    "source_detail_id": 28675,
+    "source_product_id": 336,
+    "source_pecosa_id": 24412,
+    "quantity": 250,
+    "observation": "Salida por Pecosa 260837"
+  },
+  {
+    "source_detail_id": 28678,
+    "source_product_id": 335,
+    "source_pecosa_id": 24413,
+    "quantity": 91,
+    "observation": "Salida por Pecosa 260838"
+  },
+  {
+    "source_detail_id": 28679,
+    "source_product_id": 336,
+    "source_pecosa_id": 24413,
+    "quantity": 190,
+    "observation": "Salida por Pecosa 260838"
+  },
+  {
+    "source_detail_id": 28680,
+    "source_product_id": 335,
+    "source_pecosa_id": 24414,
+    "quantity": 95,
+    "observation": "Salida por Pecosa 260839"
+  },
+  {
+    "source_detail_id": 28681,
+    "source_product_id": 336,
+    "source_pecosa_id": 24414,
+    "quantity": 196,
+    "observation": "Salida por Pecosa 260839"
+  },
+  {
+    "source_detail_id": 28682,
+    "source_product_id": 335,
+    "source_pecosa_id": 24415,
+    "quantity": 96,
+    "observation": "Salida por Pecosa 260840"
+  },
+  {
+    "source_detail_id": 28683,
+    "source_product_id": 336,
+    "source_pecosa_id": 24415,
+    "quantity": 200,
+    "observation": "Salida por Pecosa 260840"
+  },
+  {
+    "source_detail_id": 28684,
+    "source_product_id": 335,
+    "source_pecosa_id": 24416,
+    "quantity": 93,
+    "observation": "Salida por Pecosa 260841"
+  },
+  {
+    "source_detail_id": 28685,
+    "source_product_id": 336,
+    "source_pecosa_id": 24416,
+    "quantity": 193,
+    "observation": "Salida por Pecosa 260841"
+  },
+  {
+    "source_detail_id": 28686,
+    "source_product_id": 335,
+    "source_pecosa_id": 24417,
+    "quantity": 58,
+    "observation": "Salida por Pecosa 260842"
+  },
+  {
+    "source_detail_id": 28687,
+    "source_product_id": 336,
+    "source_pecosa_id": 24417,
+    "quantity": 120,
+    "observation": "Salida por Pecosa 260842"
+  },
+  {
+    "source_detail_id": 28688,
+    "source_product_id": 335,
+    "source_pecosa_id": 24418,
+    "quantity": 98,
+    "observation": "Salida por Pecosa 260843"
+  },
+  {
+    "source_detail_id": 28689,
+    "source_product_id": 336,
+    "source_pecosa_id": 24418,
+    "quantity": 203,
+    "observation": "Salida por Pecosa 260843"
+  },
+  {
+    "source_detail_id": 28690,
+    "source_product_id": 335,
+    "source_pecosa_id": 24419,
+    "quantity": 128,
+    "observation": "Salida por Pecosa 260844"
+  },
+  {
+    "source_detail_id": 28691,
+    "source_product_id": 336,
+    "source_pecosa_id": 24419,
+    "quantity": 266,
+    "observation": "Salida por Pecosa 260844"
+  },
+  {
+    "source_detail_id": 28692,
+    "source_product_id": 335,
+    "source_pecosa_id": 24420,
+    "quantity": 77,
+    "observation": "Salida por Pecosa 260845"
+  },
+  {
+    "source_detail_id": 28693,
+    "source_product_id": 336,
+    "source_pecosa_id": 24420,
+    "quantity": 160,
+    "observation": "Salida por Pecosa 260845"
+  },
+  {
+    "source_detail_id": 28696,
+    "source_product_id": 336,
+    "source_pecosa_id": 24421,
+    "quantity": 86,
+    "observation": "Salida por Pecosa 260846"
+  },
+  {
+    "source_detail_id": 28697,
+    "source_product_id": 335,
+    "source_pecosa_id": 24421,
+    "quantity": 42,
+    "observation": "Salida por Pecosa 260846"
+  },
+  {
+    "source_detail_id": 28704,
+    "source_product_id": 338,
+    "source_pecosa_id": 24425,
+    "quantity": 68,
+    "observation": "Salida por Pecosa 260847"
+  },
+  {
+    "source_detail_id": 28705,
+    "source_product_id": 337,
+    "source_pecosa_id": 24425,
+    "quantity": 142,
+    "observation": "Salida por Pecosa 260847"
+  },
+  {
+    "source_detail_id": 28706,
+    "source_product_id": 337,
+    "source_pecosa_id": 24426,
+    "quantity": 135,
+    "observation": "Salida por Pecosa 260848"
+  },
+  {
+    "source_detail_id": 28707,
+    "source_product_id": 338,
+    "source_pecosa_id": 24426,
+    "quantity": 65,
+    "observation": "Salida por Pecosa 260848"
+  },
+  {
+    "source_detail_id": 28708,
+    "source_product_id": 337,
+    "source_pecosa_id": 24427,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260849"
+  },
+  {
+    "source_detail_id": 28709,
+    "source_product_id": 338,
+    "source_pecosa_id": 24427,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260849"
+  },
+  {
+    "source_detail_id": 28710,
+    "source_product_id": 337,
+    "source_pecosa_id": 24428,
+    "quantity": 80,
+    "observation": "Salida por Pecosa 260850"
+  },
+  {
+    "source_detail_id": 28711,
+    "source_product_id": 338,
+    "source_pecosa_id": 24428,
+    "quantity": 39,
+    "observation": "Salida por Pecosa 260850"
+  },
+  {
+    "source_detail_id": 28712,
+    "source_product_id": 337,
+    "source_pecosa_id": 24429,
+    "quantity": 142,
+    "observation": "Salida por Pecosa 260851"
+  },
+  {
+    "source_detail_id": 28713,
+    "source_product_id": 338,
+    "source_pecosa_id": 24429,
+    "quantity": 68,
+    "observation": "Salida por Pecosa 260851"
+  },
+  {
+    "source_detail_id": 28714,
+    "source_product_id": 337,
+    "source_pecosa_id": 24430,
+    "quantity": 184,
+    "observation": "Salida por Pecosa 260852"
+  },
+  {
+    "source_detail_id": 28715,
+    "source_product_id": 338,
+    "source_pecosa_id": 24430,
+    "quantity": 88,
+    "observation": "Salida por Pecosa 260852"
+  },
+  {
+    "source_detail_id": 28716,
+    "source_product_id": 337,
+    "source_pecosa_id": 24431,
+    "quantity": 164,
+    "observation": "Salida por Pecosa 260853"
+  },
+  {
+    "source_detail_id": 28717,
+    "source_product_id": 338,
+    "source_pecosa_id": 24431,
+    "quantity": 79,
+    "observation": "Salida por Pecosa 260853"
+  },
+  {
+    "source_detail_id": 28718,
+    "source_product_id": 337,
+    "source_pecosa_id": 24432,
+    "quantity": 142,
+    "observation": "Salida por Pecosa 260854"
+  },
+  {
+    "source_detail_id": 28719,
+    "source_product_id": 338,
+    "source_pecosa_id": 24432,
+    "quantity": 68,
+    "observation": "Salida por Pecosa 260854"
+  },
+  {
+    "source_detail_id": 28720,
+    "source_product_id": 337,
+    "source_pecosa_id": 24433,
+    "quantity": 90,
+    "observation": "Salida por Pecosa 260855"
+  },
+  {
+    "source_detail_id": 28721,
+    "source_product_id": 338,
+    "source_pecosa_id": 24433,
+    "quantity": 43,
+    "observation": "Salida por Pecosa 260855"
+  },
+  {
+    "source_detail_id": 28722,
+    "source_product_id": 337,
+    "source_pecosa_id": 24434,
+    "quantity": 212,
+    "observation": "Salida por Pecosa 260856"
+  },
+  {
+    "source_detail_id": 28723,
+    "source_product_id": 338,
+    "source_pecosa_id": 24434,
+    "quantity": 102,
+    "observation": "Salida por Pecosa 260856"
+  },
+  {
+    "source_detail_id": 28724,
+    "source_product_id": 337,
+    "source_pecosa_id": 24435,
+    "quantity": 171,
+    "observation": "Salida por Pecosa 260857"
+  },
+  {
+    "source_detail_id": 28725,
+    "source_product_id": 338,
+    "source_pecosa_id": 24435,
+    "quantity": 82,
+    "observation": "Salida por Pecosa 260857"
+  },
+  {
+    "source_detail_id": 28726,
+    "source_product_id": 337,
+    "source_pecosa_id": 24436,
+    "quantity": 200,
+    "observation": "Salida por Pecosa 260858"
+  },
+  {
+    "source_detail_id": 28727,
+    "source_product_id": 338,
+    "source_pecosa_id": 24436,
+    "quantity": 96,
+    "observation": "Salida por Pecosa 260858"
+  },
+  {
+    "source_detail_id": 28728,
+    "source_product_id": 337,
+    "source_pecosa_id": 24437,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260859"
+  },
+  {
+    "source_detail_id": 28729,
+    "source_product_id": 338,
+    "source_pecosa_id": 24437,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260859"
+  },
+  {
+    "source_detail_id": 28730,
+    "source_product_id": 337,
+    "source_pecosa_id": 24438,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260860"
+  },
+  {
+    "source_detail_id": 28731,
+    "source_product_id": 338,
+    "source_pecosa_id": 24438,
+    "quantity": 46,
+    "observation": "Salida por Pecosa 260860"
+  },
+  {
+    "source_detail_id": 28732,
+    "source_product_id": 337,
+    "source_pecosa_id": 24439,
+    "quantity": 151,
+    "observation": "Salida por Pecosa 260861"
+  },
+  {
+    "source_detail_id": 28733,
+    "source_product_id": 338,
+    "source_pecosa_id": 24439,
+    "quantity": 73,
+    "observation": "Salida por Pecosa 260861"
+  },
+  {
+    "source_detail_id": 28734,
+    "source_product_id": 337,
+    "source_pecosa_id": 24440,
+    "quantity": 80,
+    "observation": "Salida por Pecosa 260862"
+  },
+  {
+    "source_detail_id": 28735,
+    "source_product_id": 338,
+    "source_pecosa_id": 24440,
+    "quantity": 39,
+    "observation": "Salida por Pecosa 260862"
+  },
+  {
+    "source_detail_id": 28736,
+    "source_product_id": 337,
+    "source_pecosa_id": 24441,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260863"
+  },
+  {
+    "source_detail_id": 28737,
+    "source_product_id": 338,
+    "source_pecosa_id": 24441,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260863"
+  },
+  {
+    "source_detail_id": 28738,
+    "source_product_id": 337,
+    "source_pecosa_id": 24442,
+    "quantity": 148,
+    "observation": "Salida por Pecosa 260864"
+  },
+  {
+    "source_detail_id": 28739,
+    "source_product_id": 338,
+    "source_pecosa_id": 24442,
+    "quantity": 71,
+    "observation": "Salida por Pecosa 260864"
+  },
+  {
+    "source_detail_id": 28740,
+    "source_product_id": 337,
+    "source_pecosa_id": 24443,
+    "quantity": 158,
+    "observation": "Salida por Pecosa 260865"
+  },
+  {
+    "source_detail_id": 28741,
+    "source_product_id": 338,
+    "source_pecosa_id": 24443,
+    "quantity": 76,
+    "observation": "Salida por Pecosa 260865"
+  },
+  {
+    "source_detail_id": 28744,
+    "source_product_id": 337,
+    "source_pecosa_id": 24444,
+    "quantity": 174,
+    "observation": "Salida por Pecosa 260866"
+  },
+  {
+    "source_detail_id": 28745,
+    "source_product_id": 338,
+    "source_pecosa_id": 24444,
+    "quantity": 83,
+    "observation": "Salida por Pecosa 260866"
+  },
+  {
+    "source_detail_id": 28746,
+    "source_product_id": 337,
+    "source_pecosa_id": 24445,
+    "quantity": 132,
+    "observation": "Salida por Pecosa 260867"
+  },
+  {
+    "source_detail_id": 28747,
+    "source_product_id": 338,
+    "source_pecosa_id": 24445,
+    "quantity": 63,
+    "observation": "Salida por Pecosa 260867"
+  },
+  {
+    "source_detail_id": 28748,
+    "source_product_id": 337,
+    "source_pecosa_id": 24446,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260868"
+  },
+  {
+    "source_detail_id": 28749,
+    "source_product_id": 338,
+    "source_pecosa_id": 24446,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260868"
+  },
+  {
+    "source_detail_id": 28750,
+    "source_product_id": 337,
+    "source_pecosa_id": 24447,
+    "quantity": 103,
+    "observation": "Salida por Pecosa 260869"
+  },
+  {
+    "source_detail_id": 28751,
+    "source_product_id": 338,
+    "source_pecosa_id": 24447,
+    "quantity": 49,
+    "observation": "Salida por Pecosa 260869"
+  },
+  {
+    "source_detail_id": 28752,
+    "source_product_id": 337,
+    "source_pecosa_id": 24448,
+    "quantity": 109,
+    "observation": "Salida por Pecosa 260870"
+  },
+  {
+    "source_detail_id": 28753,
+    "source_product_id": 338,
+    "source_pecosa_id": 24448,
+    "quantity": 53,
+    "observation": "Salida por Pecosa 260870"
+  },
+  {
+    "source_detail_id": 28754,
+    "source_product_id": 337,
+    "source_pecosa_id": 24449,
+    "quantity": 119,
+    "observation": "Salida por Pecosa 260871"
+  },
+  {
+    "source_detail_id": 28755,
+    "source_product_id": 338,
+    "source_pecosa_id": 24449,
+    "quantity": 57,
+    "observation": "Salida por Pecosa 260871"
+  },
+  {
+    "source_detail_id": 28756,
+    "source_product_id": 337,
+    "source_pecosa_id": 24450,
+    "quantity": 142,
+    "observation": "Salida por Pecosa 260872"
+  },
+  {
+    "source_detail_id": 28757,
+    "source_product_id": 338,
+    "source_pecosa_id": 24450,
+    "quantity": 68,
+    "observation": "Salida por Pecosa 260872"
+  },
+  {
+    "source_detail_id": 28758,
+    "source_product_id": 337,
+    "source_pecosa_id": 24451,
+    "quantity": 132,
+    "observation": "Salida por Pecosa 260873"
+  },
+  {
+    "source_detail_id": 28759,
+    "source_product_id": 338,
+    "source_pecosa_id": 24451,
+    "quantity": 63,
+    "observation": "Salida por Pecosa 260873"
+  },
+  {
+    "source_detail_id": 28760,
+    "source_product_id": 337,
+    "source_pecosa_id": 24452,
+    "quantity": 180,
+    "observation": "Salida por Pecosa 260874"
+  },
+  {
+    "source_detail_id": 28761,
+    "source_product_id": 338,
+    "source_pecosa_id": 24452,
+    "quantity": 87,
+    "observation": "Salida por Pecosa 260874"
+  },
+  {
+    "source_detail_id": 28762,
+    "source_product_id": 337,
+    "source_pecosa_id": 24453,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260875"
+  },
+  {
+    "source_detail_id": 28763,
+    "source_product_id": 338,
+    "source_pecosa_id": 24453,
+    "quantity": 56,
+    "observation": "Salida por Pecosa 260875"
+  },
+  {
+    "source_detail_id": 28764,
+    "source_product_id": 337,
+    "source_pecosa_id": 24454,
+    "quantity": 203,
+    "observation": "Salida por Pecosa 260876"
+  },
+  {
+    "source_detail_id": 28765,
+    "source_product_id": 338,
+    "source_pecosa_id": 24454,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260876"
+  },
+  {
+    "source_detail_id": 28766,
+    "source_product_id": 337,
+    "source_pecosa_id": 24455,
+    "quantity": 209,
+    "observation": "Salida por Pecosa 260877"
+  },
+  {
+    "source_detail_id": 28767,
+    "source_product_id": 338,
+    "source_pecosa_id": 24455,
+    "quantity": 100,
+    "observation": "Salida por Pecosa 260877"
+  },
+  {
+    "source_detail_id": 28768,
+    "source_product_id": 337,
+    "source_pecosa_id": 24456,
+    "quantity": 148,
+    "observation": "Salida por Pecosa 260878"
+  },
+  {
+    "source_detail_id": 28769,
+    "source_product_id": 338,
+    "source_pecosa_id": 24456,
+    "quantity": 71,
+    "observation": "Salida por Pecosa 260878"
+  },
+  {
+    "source_detail_id": 28770,
+    "source_product_id": 337,
+    "source_pecosa_id": 24457,
+    "quantity": 155,
+    "observation": "Salida por Pecosa 260879"
+  },
+  {
+    "source_detail_id": 28771,
+    "source_product_id": 338,
+    "source_pecosa_id": 24457,
+    "quantity": 74,
+    "observation": "Salida por Pecosa 260879"
+  },
+  {
+    "source_detail_id": 28772,
+    "source_product_id": 337,
+    "source_pecosa_id": 24458,
+    "quantity": 258,
+    "observation": "Salida por Pecosa 260880"
+  },
+  {
+    "source_detail_id": 28773,
+    "source_product_id": 338,
+    "source_pecosa_id": 24458,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260880"
+  },
+  {
+    "source_detail_id": 28774,
+    "source_product_id": 337,
+    "source_pecosa_id": 24459,
+    "quantity": 135,
+    "observation": "Salida por Pecosa 260881"
+  },
+  {
+    "source_detail_id": 28775,
+    "source_product_id": 338,
+    "source_pecosa_id": 24459,
+    "quantity": 65,
+    "observation": "Salida por Pecosa 260881"
+  },
+  {
+    "source_detail_id": 28776,
+    "source_product_id": 337,
+    "source_pecosa_id": 24460,
+    "quantity": 241,
+    "observation": "Salida por Pecosa 260882"
+  },
+  {
+    "source_detail_id": 28777,
+    "source_product_id": 338,
+    "source_pecosa_id": 24460,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260882"
+  },
+  {
+    "source_detail_id": 28778,
+    "source_product_id": 337,
+    "source_pecosa_id": 24461,
+    "quantity": 232,
+    "observation": "Salida por Pecosa 260883"
+  },
+  {
+    "source_detail_id": 28779,
+    "source_product_id": 338,
+    "source_pecosa_id": 24461,
+    "quantity": 111,
+    "observation": "Salida por Pecosa 260883"
+  },
+  {
+    "source_detail_id": 28780,
+    "source_product_id": 337,
+    "source_pecosa_id": 24462,
+    "quantity": 203,
+    "observation": "Salida por Pecosa 260884"
+  },
+  {
+    "source_detail_id": 28781,
+    "source_product_id": 338,
+    "source_pecosa_id": 24462,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260884"
+  },
+  {
+    "source_detail_id": 28782,
+    "source_product_id": 337,
+    "source_pecosa_id": 24463,
+    "quantity": 258,
+    "observation": "Salida por Pecosa 260885"
+  },
+  {
+    "source_detail_id": 28783,
+    "source_product_id": 338,
+    "source_pecosa_id": 24463,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260885"
+  },
+  {
+    "source_detail_id": 28784,
+    "source_product_id": 337,
+    "source_pecosa_id": 24464,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260886"
+  },
+  {
+    "source_detail_id": 28785,
+    "source_product_id": 338,
+    "source_pecosa_id": 24464,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260886"
+  },
+  {
+    "source_detail_id": 28786,
+    "source_product_id": 337,
+    "source_pecosa_id": 24465,
+    "quantity": 126,
+    "observation": "Salida por Pecosa 260887"
+  },
+  {
+    "source_detail_id": 28787,
+    "source_product_id": 338,
+    "source_pecosa_id": 24465,
+    "quantity": 60,
+    "observation": "Salida por Pecosa 260887"
+  },
+  {
+    "source_detail_id": 28788,
+    "source_product_id": 337,
+    "source_pecosa_id": 24466,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260888"
+  },
+  {
+    "source_detail_id": 28789,
+    "source_product_id": 338,
+    "source_pecosa_id": 24466,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260888"
+  },
+  {
+    "source_detail_id": 28790,
+    "source_product_id": 337,
+    "source_pecosa_id": 24467,
+    "quantity": 177,
+    "observation": "Salida por Pecosa 260889"
+  },
+  {
+    "source_detail_id": 28791,
+    "source_product_id": 338,
+    "source_pecosa_id": 24467,
+    "quantity": 85,
+    "observation": "Salida por Pecosa 260889"
+  },
+  {
+    "source_detail_id": 28792,
+    "source_product_id": 337,
+    "source_pecosa_id": 24468,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260890"
+  },
+  {
+    "source_detail_id": 28793,
+    "source_product_id": 338,
+    "source_pecosa_id": 24468,
+    "quantity": 46,
+    "observation": "Salida por Pecosa 260890"
+  },
+  {
+    "source_detail_id": 28794,
+    "source_product_id": 337,
+    "source_pecosa_id": 24469,
+    "quantity": 180,
+    "observation": "Salida por Pecosa 260891"
+  },
+  {
+    "source_detail_id": 28795,
+    "source_product_id": 338,
+    "source_pecosa_id": 24469,
+    "quantity": 87,
+    "observation": "Salida por Pecosa 260891"
+  },
+  {
+    "source_detail_id": 28796,
+    "source_product_id": 337,
+    "source_pecosa_id": 24470,
+    "quantity": 132,
+    "observation": "Salida por Pecosa 260892"
+  },
+  {
+    "source_detail_id": 28797,
+    "source_product_id": 338,
+    "source_pecosa_id": 24470,
+    "quantity": 63,
+    "observation": "Salida por Pecosa 260892"
+  },
+  {
+    "source_detail_id": 28798,
+    "source_product_id": 337,
+    "source_pecosa_id": 24471,
+    "quantity": 161,
+    "observation": "Salida por Pecosa 260893"
+  },
+  {
+    "source_detail_id": 28799,
+    "source_product_id": 338,
+    "source_pecosa_id": 24471,
+    "quantity": 77,
+    "observation": "Salida por Pecosa 260893"
+  },
+  {
+    "source_detail_id": 28800,
+    "source_product_id": 337,
+    "source_pecosa_id": 24472,
+    "quantity": 254,
+    "observation": "Salida por Pecosa 260894"
+  },
+  {
+    "source_detail_id": 28801,
+    "source_product_id": 338,
+    "source_pecosa_id": 24472,
+    "quantity": 122,
+    "observation": "Salida por Pecosa 260894"
+  },
+  {
+    "source_detail_id": 28802,
+    "source_product_id": 337,
+    "source_pecosa_id": 24473,
+    "quantity": 87,
+    "observation": "Salida por Pecosa 260895"
+  },
+  {
+    "source_detail_id": 28803,
+    "source_product_id": 338,
+    "source_pecosa_id": 24473,
+    "quantity": 42,
+    "observation": "Salida por Pecosa 260895"
+  },
+  {
+    "source_detail_id": 28804,
+    "source_product_id": 337,
+    "source_pecosa_id": 24474,
+    "quantity": 206,
+    "observation": "Salida por Pecosa 260896"
+  },
+  {
+    "source_detail_id": 28805,
+    "source_product_id": 338,
+    "source_pecosa_id": 24474,
+    "quantity": 99,
+    "observation": "Salida por Pecosa 260896"
+  },
+  {
+    "source_detail_id": 28806,
+    "source_product_id": 337,
+    "source_pecosa_id": 24475,
+    "quantity": 148,
+    "observation": "Salida por Pecosa 260897"
+  },
+  {
+    "source_detail_id": 28807,
+    "source_product_id": 338,
+    "source_pecosa_id": 24475,
+    "quantity": 71,
+    "observation": "Salida por Pecosa 260897"
+  },
+  {
+    "source_detail_id": 28808,
+    "source_product_id": 337,
+    "source_pecosa_id": 24476,
+    "quantity": 129,
+    "observation": "Salida por Pecosa 260898"
+  },
+  {
+    "source_detail_id": 28809,
+    "source_product_id": 338,
+    "source_pecosa_id": 24476,
+    "quantity": 62,
+    "observation": "Salida por Pecosa 260898"
+  },
+  {
+    "source_detail_id": 28810,
+    "source_product_id": 337,
+    "source_pecosa_id": 24477,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260899"
+  },
+  {
+    "source_detail_id": 28811,
+    "source_product_id": 338,
+    "source_pecosa_id": 24477,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260899"
+  },
+  {
+    "source_detail_id": 28812,
+    "source_product_id": 337,
+    "source_pecosa_id": 24478,
+    "quantity": 258,
+    "observation": "Salida por Pecosa 260900"
+  },
+  {
+    "source_detail_id": 28813,
+    "source_product_id": 338,
+    "source_pecosa_id": 24478,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260900"
+  },
+  {
+    "source_detail_id": 28814,
+    "source_product_id": 337,
+    "source_pecosa_id": 24479,
+    "quantity": 248,
+    "observation": "Salida por Pecosa 260901"
+  },
+  {
+    "source_detail_id": 28815,
+    "source_product_id": 338,
+    "source_pecosa_id": 24479,
+    "quantity": 119,
+    "observation": "Salida por Pecosa 260901"
+  },
+  {
+    "source_detail_id": 28816,
+    "source_product_id": 337,
+    "source_pecosa_id": 24480,
+    "quantity": 97,
+    "observation": "Salida por Pecosa 260902"
+  },
+  {
+    "source_detail_id": 28817,
+    "source_product_id": 338,
+    "source_pecosa_id": 24480,
+    "quantity": 46,
+    "observation": "Salida por Pecosa 260902"
+  },
+  {
+    "source_detail_id": 28818,
+    "source_product_id": 337,
+    "source_pecosa_id": 24481,
+    "quantity": 164,
+    "observation": "Salida por Pecosa 260903"
+  },
+  {
+    "source_detail_id": 28819,
+    "source_product_id": 338,
+    "source_pecosa_id": 24481,
+    "quantity": 79,
+    "observation": "Salida por Pecosa 260903"
+  },
+  {
+    "source_detail_id": 28820,
+    "source_product_id": 337,
+    "source_pecosa_id": 24482,
+    "quantity": 200,
+    "observation": "Salida por Pecosa 260904"
+  },
+  {
+    "source_detail_id": 28821,
+    "source_product_id": 338,
+    "source_pecosa_id": 24482,
+    "quantity": 96,
+    "observation": "Salida por Pecosa 260904"
+  },
+  {
+    "source_detail_id": 28822,
+    "source_product_id": 337,
+    "source_pecosa_id": 24483,
+    "quantity": 87,
+    "observation": "Salida por Pecosa 260905"
+  },
+  {
+    "source_detail_id": 28823,
+    "source_product_id": 338,
+    "source_pecosa_id": 24483,
+    "quantity": 42,
+    "observation": "Salida por Pecosa 260905"
+  },
+  {
+    "source_detail_id": 28824,
+    "source_product_id": 337,
+    "source_pecosa_id": 24484,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260906"
+  },
+  {
+    "source_detail_id": 28825,
+    "source_product_id": 338,
+    "source_pecosa_id": 24484,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260906"
+  },
+  {
+    "source_detail_id": 28826,
+    "source_product_id": 337,
+    "source_pecosa_id": 24485,
+    "quantity": 138,
+    "observation": "Salida por Pecosa 260907"
+  },
+  {
+    "source_detail_id": 28827,
+    "source_product_id": 338,
+    "source_pecosa_id": 24485,
+    "quantity": 66,
+    "observation": "Salida por Pecosa 260907"
+  },
+  {
+    "source_detail_id": 28828,
+    "source_product_id": 337,
+    "source_pecosa_id": 24486,
+    "quantity": 200,
+    "observation": "Salida por Pecosa 260908"
+  },
+  {
+    "source_detail_id": 28829,
+    "source_product_id": 338,
+    "source_pecosa_id": 24486,
+    "quantity": 96,
+    "observation": "Salida por Pecosa 260908"
+  },
+  {
+    "source_detail_id": 28830,
+    "source_product_id": 337,
+    "source_pecosa_id": 24487,
+    "quantity": 225,
+    "observation": "Salida por Pecosa 260909"
+  },
+  {
+    "source_detail_id": 28831,
+    "source_product_id": 338,
+    "source_pecosa_id": 24487,
+    "quantity": 108,
+    "observation": "Salida por Pecosa 260909"
+  },
+  {
+    "source_detail_id": 28832,
+    "source_product_id": 337,
+    "source_pecosa_id": 24488,
+    "quantity": 241,
+    "observation": "Salida por Pecosa 260910"
+  },
+  {
+    "source_detail_id": 28833,
+    "source_product_id": 338,
+    "source_pecosa_id": 24488,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260910"
+  },
+  {
+    "source_detail_id": 28834,
+    "source_product_id": 337,
+    "source_pecosa_id": 24489,
+    "quantity": 261,
+    "observation": "Salida por Pecosa 260911"
+  },
+  {
+    "source_detail_id": 28835,
+    "source_product_id": 338,
+    "source_pecosa_id": 24489,
+    "quantity": 125,
+    "observation": "Salida por Pecosa 260911"
+  },
+  {
+    "source_detail_id": 28836,
+    "source_product_id": 337,
+    "source_pecosa_id": 24490,
+    "quantity": 232,
+    "observation": "Salida por Pecosa 260912"
+  },
+  {
+    "source_detail_id": 28837,
+    "source_product_id": 338,
+    "source_pecosa_id": 24490,
+    "quantity": 111,
+    "observation": "Salida por Pecosa 260912"
+  },
+  {
+    "source_detail_id": 28838,
+    "source_product_id": 337,
+    "source_pecosa_id": 24491,
+    "quantity": 113,
+    "observation": "Salida por Pecosa 260913"
+  },
+  {
+    "source_detail_id": 28839,
+    "source_product_id": 338,
+    "source_pecosa_id": 24491,
+    "quantity": 54,
+    "observation": "Salida por Pecosa 260913"
+  },
+  {
+    "source_detail_id": 28840,
+    "source_product_id": 337,
+    "source_pecosa_id": 24492,
+    "quantity": 241,
+    "observation": "Salida por Pecosa 260914"
+  },
+  {
+    "source_detail_id": 28841,
+    "source_product_id": 338,
+    "source_pecosa_id": 24492,
+    "quantity": 116,
+    "observation": "Salida por Pecosa 260914"
+  },
+  {
+    "source_detail_id": 28842,
+    "source_product_id": 337,
+    "source_pecosa_id": 24493,
+    "quantity": 183,
+    "observation": "Salida por Pecosa 260915"
+  },
+  {
+    "source_detail_id": 28843,
+    "source_product_id": 338,
+    "source_pecosa_id": 24493,
+    "quantity": 88,
+    "observation": "Salida por Pecosa 260915"
+  },
+  {
+    "source_detail_id": 28844,
+    "source_product_id": 337,
+    "source_pecosa_id": 24494,
+    "quantity": 189,
+    "observation": "Salida por Pecosa 260916"
+  },
+  {
+    "source_detail_id": 28845,
+    "source_product_id": 338,
+    "source_pecosa_id": 24494,
+    "quantity": 91,
+    "observation": "Salida por Pecosa 260916"
+  },
+  {
+    "source_detail_id": 28846,
+    "source_product_id": 337,
+    "source_pecosa_id": 24495,
+    "quantity": 193,
+    "observation": "Salida por Pecosa 260917"
+  },
+  {
+    "source_detail_id": 28847,
+    "source_product_id": 338,
+    "source_pecosa_id": 24495,
+    "quantity": 93,
+    "observation": "Salida por Pecosa 260917"
+  },
+  {
+    "source_detail_id": 28848,
+    "source_product_id": 337,
+    "source_pecosa_id": 24496,
+    "quantity": 186,
+    "observation": "Salida por Pecosa 260918"
+  },
+  {
+    "source_detail_id": 28849,
+    "source_product_id": 338,
+    "source_pecosa_id": 24496,
+    "quantity": 90,
+    "observation": "Salida por Pecosa 260918"
+  },
+  {
+    "source_detail_id": 28850,
+    "source_product_id": 337,
+    "source_pecosa_id": 24497,
+    "quantity": 115,
+    "observation": "Salida por Pecosa 260919"
+  },
+  {
+    "source_detail_id": 28851,
+    "source_product_id": 338,
+    "source_pecosa_id": 24497,
+    "quantity": 56,
+    "observation": "Salida por Pecosa 260919"
+  },
+  {
+    "source_detail_id": 28852,
+    "source_product_id": 337,
+    "source_pecosa_id": 24498,
+    "quantity": 196,
+    "observation": "Salida por Pecosa 260920"
+  },
+  {
+    "source_detail_id": 28853,
+    "source_product_id": 338,
+    "source_pecosa_id": 24498,
+    "quantity": 94,
+    "observation": "Salida por Pecosa 260920"
+  },
+  {
+    "source_detail_id": 28854,
+    "source_product_id": 337,
+    "source_pecosa_id": 24499,
+    "quantity": 257,
+    "observation": "Salida por Pecosa 260921"
+  },
+  {
+    "source_detail_id": 28855,
+    "source_product_id": 338,
+    "source_pecosa_id": 24499,
+    "quantity": 124,
+    "observation": "Salida por Pecosa 260921"
+  },
+  {
+    "source_detail_id": 28856,
+    "source_product_id": 337,
+    "source_pecosa_id": 24500,
+    "quantity": 154,
+    "observation": "Salida por Pecosa 260922"
+  },
+  {
+    "source_detail_id": 28857,
+    "source_product_id": 338,
+    "source_pecosa_id": 24500,
+    "quantity": 74,
+    "observation": "Salida por Pecosa 260922"
+  },
+  {
+    "source_detail_id": 28858,
+    "source_product_id": 337,
+    "source_pecosa_id": 24501,
+    "quantity": 84,
+    "observation": "Salida por Pecosa 260923"
+  },
+  {
+    "source_detail_id": 28859,
+    "source_product_id": 338,
+    "source_pecosa_id": 24501,
+    "quantity": 40,
+    "observation": "Salida por Pecosa 260923"
   }
 ]

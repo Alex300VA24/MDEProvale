@@ -1,0 +1,338 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Despliegue seguro de Laravel en cPanel",
+    "locale": "es",
+    "output": ".archify/deployment-laravel-cpanel-20261101-200033/despliegue-laravel-cpanel.html",
+    "quality_profile": "showcase",
+    "engineering_profile": "deployment-ownership",
+    "views": [
+      {
+        "id": "trafico-web",
+        "label": "Tráfico web HTTPS",
+        "focus": ["usuarios-publicos", "personal-pvl", "personal-oti", "dns-dominio", "autossl", "servidor-web", "public-html", "laravel-runtime"],
+        "note": "Entrada pública e interna por el dominio municipal, TLS y el front controller de Laravel."
+      },
+      {
+        "id": "operacion-oti",
+        "label": "Operación OTI",
+        "focus": ["personal-oti", "terminal-ssh", "artisan-composer", "phpmyadmin", "proyecto-privado", "mysql"],
+        "note": "Canales privilegiados para despliegue, mantenimiento y administración de datos."
+      },
+      {
+        "id": "tareas-datos",
+        "label": "Tareas y datos",
+        "focus": ["cron-cpanel", "laravel-runtime", "storage-link", "proyecto-privado", "mysql"],
+        "note": "Scheduler, archivos persistentes y conexión local PDO a la base de datos."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "usuarios-publicos",
+      "type": "external",
+      "label": "Usuarios externos",
+      "sublabel": "Portal Público",
+      "pos": [40, 70],
+      "size": [142, 62],
+      "tag": "ciudadanía"
+    },
+    {
+      "id": "personal-pvl",
+      "type": "external",
+      "label": "Personal PVL",
+      "sublabel": "Intranet y módulos",
+      "pos": [40, 200],
+      "size": [142, 62],
+      "tag": "oficinas PVL"
+    },
+    {
+      "id": "personal-oti",
+      "type": "external",
+      "label": "Personal OTI",
+      "sublabel": "App y operación",
+      "pos": [40, 345],
+      "size": [142, 62],
+      "tag": "administración"
+    },
+    {
+      "id": "dns-dominio",
+      "type": "cloud",
+      "label": "DNS / Dominio",
+      "sublabel": "Municipalidad",
+      "pos": [235, 200],
+      "size": [142, 62],
+      "tag": "resolución pública"
+    },
+    {
+      "id": "autossl",
+      "type": "security",
+      "label": "AutoSSL / Let's Encrypt",
+      "sublabel": "TLS · puerto 443",
+      "pos": [440, 200],
+      "size": [158, 64],
+      "tag": "certificado HTTPS"
+    },
+    {
+      "id": "servidor-web",
+      "type": "cloud",
+      "label": "Apache / LiteSpeed",
+      "sublabel": "Servidor web cPanel",
+      "pos": [710, 200],
+      "size": [152, 64],
+      "tag": "VirtualHost"
+    },
+    {
+      "id": "public-html",
+      "type": "frontend",
+      "label": "/public_html",
+      "sublabel": "DocumentRoot → Laravel public/",
+      "pos": [950, 200],
+      "size": [160, 64],
+      "tag": "única raíz web"
+    },
+    {
+      "id": "laravel-runtime",
+      "type": "backend",
+      "label": "PHP-FPM 8.x + Laravel",
+      "sublabel": "index.php · ciclo HTTP",
+      "pos": [1030, 395],
+      "size": [145, 64],
+      "tag": "runtime aplicación"
+    },
+    {
+      "id": "cron-cpanel",
+      "type": "messagebus",
+      "label": "Cron Jobs de cPanel",
+      "sublabel": "cada minuto",
+      "pos": [700, 395],
+      "size": [152, 64],
+      "tag": "schedule:run"
+    },
+    {
+      "id": "proyecto-privado",
+      "type": "security",
+      "label": "Proyecto Laravel privado",
+      "sublabel": "app · config · .env · vendor",
+      "pos": [870, 555],
+      "size": [160, 66],
+      "tag": "fuera de public_html"
+    },
+    {
+      "id": "terminal-ssh",
+      "type": "security",
+      "label": "cPanel Terminal / SSH",
+      "sublabel": "acceso privilegiado OTI",
+      "pos": [440, 555],
+      "size": [158, 66],
+      "tag": "autenticación cPanel"
+    },
+    {
+      "id": "artisan-composer",
+      "type": "backend",
+      "label": "Artisan + Composer",
+      "sublabel": "deploy y mantenimiento",
+      "pos": [700, 555],
+      "size": [152, 66],
+      "tag": "CLI PHP 8.x"
+    },
+    {
+      "id": "storage-link",
+      "type": "database",
+      "label": "Storage persistente",
+      "sublabel": "storage/app/public",
+      "pos": [700, 720],
+      "size": [160, 66],
+      "tag": "public/storage → symlink"
+    },
+    {
+      "id": "phpmyadmin",
+      "type": "security",
+      "label": "phpMyAdmin",
+      "sublabel": "Administración cPanel",
+      "pos": [800, 900],
+      "size": [160, 64],
+      "tag": "solo OTI"
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL / MariaDB",
+      "sublabel": "localhost :3306",
+      "pos": [1030, 900],
+      "size": [145, 64],
+      "tag": "persistencia relacional"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "DNS municipal externo",
+      "wraps": ["dns-dominio"],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "Servidor principal · cPanel Host",
+      "wraps": ["autossl", "servidor-web", "public-html", "laravel-runtime", "cron-cpanel", "proyecto-privado", "terminal-ssh", "artisan-composer", "storage-link", "phpmyadmin", "mysql"],
+      "pad": 22
+    },
+    {
+      "kind": "security-group",
+      "label": "Superficie web expuesta",
+      "wraps": ["autossl", "servidor-web", "public-html"],
+      "pad": 14
+    },
+    {
+      "kind": "security-group",
+      "label": "Zona privada de aplicación",
+      "wraps": ["laravel-runtime", "cron-cpanel", "proyecto-privado", "artisan-composer", "storage-link"],
+      "pad": 14
+    },
+    {
+      "kind": "security-group",
+      "label": "Administración y datos locales",
+      "wraps": ["phpmyadmin", "mysql"],
+      "pad": 14
+    }
+  ],
+  "connections": [
+    {
+      "from": "usuarios-publicos",
+      "to": "dns-dominio",
+      "label": "resuelve dominio",
+      "variant": "emphasis"
+    },
+    {
+      "from": "personal-pvl",
+      "to": "dns-dominio",
+      "label": "acceso HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "from": "personal-oti",
+      "to": "dns-dominio",
+      "label": "panel web OTI",
+      "variant": "emphasis"
+    },
+    {
+      "from": "dns-dominio",
+      "to": "autossl",
+      "label": "HTTPS :443",
+      "variant": "security"
+    },
+    {
+      "from": "autossl",
+      "to": "servidor-web",
+      "label": "TLS terminado",
+      "variant": "security"
+    },
+    {
+      "from": "servidor-web",
+      "to": "public-html",
+      "label": "DocumentRoot",
+      "variant": "emphasis"
+    },
+    {
+      "from": "public-html",
+      "to": "laravel-runtime",
+      "label": "index.php → PHP-FPM",
+      "variant": "emphasis"
+    },
+    {
+      "from": "laravel-runtime",
+      "to": "proyecto-privado",
+      "label": "carga código y .env",
+      "variant": "security"
+    },
+    {
+      "from": "laravel-runtime",
+      "to": "storage-link",
+      "label": "lee / escribe archivos",
+      "fromSide": "bottom",
+      "toSide": "right",
+      "via": [[1102.5, 840], [880, 840], [880, 753]]
+    },
+    {
+      "from": "artisan-composer",
+      "to": "storage-link",
+      "label": "php artisan storage:link",
+      "variant": "dashed"
+    },
+    {
+      "from": "cron-cpanel",
+      "to": "laravel-runtime",
+      "label": "php artisan schedule:run",
+      "variant": "dashed"
+    },
+    {
+      "from": "laravel-runtime",
+      "to": "mysql",
+      "label": "PDO MySQL · credenciales .env",
+      "variant": "security"
+    },
+    {
+      "from": "personal-oti",
+      "to": "terminal-ssh",
+      "label": "SSH / Terminal",
+      "variant": "security"
+    },
+    {
+      "from": "terminal-ssh",
+      "to": "artisan-composer",
+      "label": "ejecuta CLI",
+      "variant": "security"
+    },
+    {
+      "from": "artisan-composer",
+      "to": "proyecto-privado",
+      "label": "deploy · cache · migrate",
+      "variant": "dashed"
+    },
+    {
+      "from": "personal-oti",
+      "to": "phpmyadmin",
+      "label": "HTTPS + sesión cPanel",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [[111, 855], [770, 855], [770, 932]]
+    },
+    {
+      "from": "phpmyadmin",
+      "to": "mysql",
+      "label": "SQL local",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Flujo de una petición web",
+      "items": [
+        "Usuario → DNS municipal → HTTPS/AutoSSL → Apache o LiteSpeed",
+        "El VirtualHost sirve únicamente /public_html y delega index.php a PHP-FPM",
+        "Laravel carga el proyecto privado, procesa la petición y usa PDO hacia MySQL local"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Controles DevSecOps",
+      "items": [
+        ".env, app, config, vendor y storage no son accesibles directamente desde la web",
+        "Terminal/SSH y phpMyAdmin son canales privilegiados exclusivos de OTI",
+        "Las credenciales de base de datos viven en .env; no se versionan ni se exponen en public_html"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Operación de Laravel",
+      "items": [
+        "Cron de cPanel ejecuta php artisan schedule:run cada minuto",
+        "php artisan storage:link publica solo storage/app/public mediante un enlace simbólico",
+        "Artisan y Composer se ejecutan con el PHP CLI compatible con PHP-FPM 8.x"
+      ]
+    }
+  ]
+}

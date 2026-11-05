@@ -230,13 +230,6 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
         Route::post('notifications/{notification}/approve', [SistemaController::class, 'approveNotification'])->name('notifications.approve');
         Route::post('notifications/{notification}/reject', [SistemaController::class, 'rejectNotification'])->name('notifications.reject');
 
-        // Cierre de mes: el administrador cierra el mes finalizado y recién
-        // entonces se muestran los avisos/detalles históricos en Inicio.
-        Route::get('cierre-mes', [SistemaController::class, 'cierreMesIndex'])->name('cierre-mes');
-        Route::post('cierre-mes', [SistemaController::class, 'storeCierreMes'])
-            ->middleware('module:sistema,edit')
-            ->name('cierre-mes.store');
-
         // Parámetros del límite de consultas del asistente IA.
         Route::get('asistente-config', [SistemaController::class, 'asistenteConfig'])->name('asistente-config');
         Route::put('asistente-config', [SistemaController::class, 'updateAsistenteConfig'])->name('asistente-config.update');

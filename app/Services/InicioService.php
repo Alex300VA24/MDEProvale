@@ -15,8 +15,7 @@ class InicioService
     private const MIN_YEAR = 2019;
 
     public function __construct(
-        private DashboardRepositoryInterface $dashboard,
-        private MonthClosureService $closures
+        private DashboardRepositoryInterface $dashboard
     ) {
     }
 
@@ -151,10 +150,9 @@ class InicioService
      *
      * Devuelve para cada alimento lo ingresado durante el mes, lo utilizado
      * (salidas sobre el lote del mes) y el restante (ingresado - utilizado;
-     * negativo implica faltante). El flag `cerrado` indica si el período ya fue
-     * cerrado por el administrador, momento recién en el que tienen sentido definitivo.
+     * negativo implica faltante).
      *
-     * @return array<int, array{key:string, name:string, unit:string, ingresado:int, utilizado:int, restante:int, stock:int, cerrado:bool}>
+     * @return array<int, array{key:string, name:string, unit:string, ingresado:int, utilizado:int, restante:int, stock:int}>
      */
     private function stockProductosForPeriod(int $year, int $month): array
     {
@@ -162,12 +160,11 @@ class InicioService
         $end = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
 
         $rows = $this->dashboard->oatAndMilkLots($start, $end);
-        $cerrado = $this->closures->isPeriodClosed($year, $month);
 
         return collect([
             ['key' => 'hojuelas', 'name' => 'Hojuelas', 'needle' => 'hojuela'],
             ['key' => 'leche', 'name' => 'Leche', 'needle' => 'leche'],
-        ])->map(function ($definition) use ($rows, $cerrado) {
+        ])->map(function ($definition) use ($rows) {
             $matching = $rows->filter(
                 fn ($item) => stripos((string) $item->product, $definition['needle']) !== false
             );
@@ -184,7 +181,6 @@ class InicioService
                 'utilizado' => $utilizado,
                 'restante' => $restante,
                 'stock' => $restante,
-                'cerrado' => $cerrado,
             ];
         })->values()->all();
     }
@@ -258,12 +254,6 @@ class InicioService
      */
     private function rosterAudit(int $year, int $month, array $current, array $dualRole): ?array
     {
-        // Los avisos de un período solo se exponen cuando ese mes ya fue
-        // cerrado por el administrador.
-        if (! $this->closures->isPeriodClosed($year, $month)) {
-            return null;
-        }
-
         $period = sprintf('%04d-%02d', $year, $month);
         $audit = config("roster_audits.{$period}");
 

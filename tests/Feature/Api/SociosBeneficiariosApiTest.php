@@ -609,6 +609,34 @@ class SociosBeneficiariosApiTest extends TestCase
         $this->assertDatabaseMissing('partners', ['id' => $partnerId]);
     }
 
+    public function test_destroy_partner_with_beneficiary_and_history_deletes_everything(): void
+    {
+        [$partnerId, $relationshipId] = $this->seedPartnerWithRelationship();
+        $db = \Illuminate\Support\Facades\DB::class;
+        $beneficiaryId = $db::table('beneficiaries')->insertGetId([
+            'person_id' => $this->seedPerson(), 'partner_id' => $partnerId, 'relationship_id' => $relationshipId,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $stateId = $db::table('states')->insertGetId(['title' => 'Vigente', 'abbreviation' => \App\Models\State::CURRENT]);
+        $typeBenefitId = $db::table('type_benefits')->insertGetId([
+            'title' => 'Primera infancia', 'abbreviation' => 'PIN', 'min_age' => 0, 'max_age' => 6,
+            'priority' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $db::table('beneficiary_histories')->insert([
+            'beneficiary_id' => $beneficiaryId, 'type_benefit_id' => $typeBenefitId, 'state_id' => $stateId,
+            'weight' => 0, 'height' => 0, 'hmg' => 0, 'date_begin' => now()->toDateString(),
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $this->actingAs($this->userWithAccess())
+            ->deleteJson(self::BASE . "/partners/{$partnerId}")
+            ->assertStatus(204);
+
+        $this->assertDatabaseMissing('partners', ['id' => $partnerId]);
+        $this->assertDatabaseMissing('beneficiaries', ['id' => $beneficiaryId]);
+        $this->assertDatabaseMissing('beneficiary_histories', ['beneficiary_id' => $beneficiaryId]);
+    }
+
     // ==================== BENEFICIARIOS: CRUD ====================
 
     private function seedPartnerWithRelationship(): array

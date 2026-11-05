@@ -58,6 +58,7 @@ class DatabaseSeeder extends Seeder
         // DETALLE_PECOSA.PEC_id >= 23729
         // PECOSA.PEC_fecha >= 2026-02-26
         // KARDEX.KAR_id >= 20168
+        // Datos hasta octubre 2026 (PEC_id 24501, KAR_id 20185, PRO_id 338).
         $this->call(ProductSeeder::class);
         $this->call(DetailProductSeeder::class);
         $this->call(RacionesSeeder::class);
@@ -65,9 +66,5 @@ class DatabaseSeeder extends Seeder
         $this->call(DetailPecosaSeeder::class);
         $this->call(TransactionSeeder::class);
         $this->call(ProductStockSeeder::class);
-
-        // 9. Cierre de mes: agosto 2026 como último período cerrado. Septiembre
-        // (mes en curso) queda sin cierre y sus avisos no se muestran en Inicio.
-        $this->call(CierreMesSeeder::class);
     }
 }

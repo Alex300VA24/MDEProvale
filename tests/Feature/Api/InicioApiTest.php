@@ -4,7 +4,6 @@ namespace Tests\Feature\Api;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use App\Models\Setting;
 use Tests\TestCase;
 use Tests\Traits\SeedsBaseData;
 
@@ -116,10 +115,6 @@ public function test_historical_cards_show_source_relations_audit_and_dual_roles
         $this->seedPanelData();
         $now = now();
 
-        // Cierre administrativo de septiembre: recién con el mes cerrado se
-        // exponen los avisos/observaciones del panel de Inicio.
-        Setting::put('cierre_mes', '2026-09');
-
         DB::table('partners')->insert([
             'id' => 3,
             'person_id' => 1,
@@ -188,32 +183,6 @@ public function test_historical_cards_show_source_relations_audit_and_dual_roles
             ->assertJsonCount(3, 'stats.roster_audit.metrics.socios.observations');
     }
 
-    public function test_unclosed_month_hides_roster_audit_and_observations(): void
-    {
-        $this->seedPanelData();
-        $now = now();
-
-        Setting::put('cierre_mes', '2026-08');
-
-        DB::table('type_benefits')->insert([
-            'id' => 1,
-            'title' => 'Lactante',
-            'abbreviation' => 'LAC',
-            'min_age' => 0,
-            'max_age' => 99,
-            'priority' => 1,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        $this->actingAs($this->adminUser())
-            ->getJson(self::BASE . '/panel?periodo_anio=2026&periodo_mes=9')
-            ->assertOk()
-            ->assertJsonPath('stats.roster_audit', null)
-            ->assertJsonPath('stats.stock_productos.0.key', 'hojuelas')
-            ->assertJsonPath('stats.stock_productos.0.cerrado', false);
-    }
-
     public function test_panel_uses_balance_from_latest_entry_for_each_food(): void
     {
         $now = now();
@@ -233,8 +202,6 @@ public function test_historical_cards_show_source_relations_audit_and_dual_roles
             ['detail_product_id' => 3, 'quantity' => 80, 'observation' => 'Salida por Pecosa', 'created_at' => $now, 'updated_at' => $now],
         ]);
 
-        Setting::put('cierre_mes', $now->format('Y-m'));
-
         $this->actingAs($this->adminUser())
             ->getJson(self::BASE . '/panel')
             ->assertOk()
@@ -244,14 +211,12 @@ public function test_historical_cards_show_source_relations_audit_and_dual_roles
             ->assertJsonPath('stats.stock_productos.0.restante', 85)
             ->assertJsonPath('stats.stock_productos.0.stock', 85)
             ->assertJsonPath('stats.stock_productos.0.unit', 'UNIDADES')
-            ->assertJsonPath('stats.stock_productos.0.cerrado', true)
             ->assertJsonPath('stats.stock_productos.1.key', 'leche')
             ->assertJsonPath('stats.stock_productos.1.ingresado', 200)
             ->assertJsonPath('stats.stock_productos.1.utilizado', 80)
             ->assertJsonPath('stats.stock_productos.1.restante', 120)
             ->assertJsonPath('stats.stock_productos.1.stock', 120)
-            ->assertJsonPath('stats.stock_productos.1.unit', 'UNIDADES')
-            ->assertJsonPath('stats.stock_productos.1.cerrado', true);
+            ->assertJsonPath('stats.stock_productos.1.unit', 'UNIDADES');
     }
 
     public function test_panel_available_to_any_authenticated_user_without_module_access(): void

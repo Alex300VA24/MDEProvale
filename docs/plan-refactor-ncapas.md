@@ -125,7 +125,7 @@ Comprobación automática (se añade en la Tarea 0): script/test que hace grep d
 
 ### Tarea 6 · Inicio, Dashboard, Búsqueda, Movimientos
 - `Api/InicioController` (456), `DashboardController`, `SearchController`, `Api/MovimientosController` (250).
-- Servicios de lectura/estadística: `InicioMetricsService`, `GlobalSearchService`, `MovimientosService`, `MonthClosureService`.
+- Servicios de lectura/estadística: `InicioMetricsService`, `GlobalSearchService`, `MovimientosService`.
 - Repos de consulta: `DashboardQueryRepository`, `SearchRepository`.
 
 ### Tarea 7 · Sistema, Usuarios, Roles, Módulos, Autenticación

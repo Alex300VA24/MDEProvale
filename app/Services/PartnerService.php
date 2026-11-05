@@ -11,6 +11,7 @@ use App\Repositories\Contracts\PartnerRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PartnerService
 {
@@ -121,8 +122,7 @@ class PartnerService
         $this->partnerRepo->updatePartner($partner, $partnerData);
 
         if ($beneficiaries !== null) {
-            $this->partnerRepo->deleteBeneficiaries($partner);
-            $this->syncBeneficiaries($partner, $beneficiaries);
+            $this->syncExistingBeneficiaries($partner, $beneficiaries);
         }
 
         $this->syncPartnerAsBeneficiary($partner, $benefitContext);
@@ -132,8 +132,67 @@ class PartnerService
 
     public function deleteWithRelations(Partner $partner): void
     {
-        $this->partnerRepo->deleteBeneficiaries($partner);
-        $this->partnerRepo->deletePartner($partner);
+        if ($this->partnerRepo->hasPecosas($partner)) {
+            throw ValidationException::withMessages([
+                'partner' => 'No se puede eliminar: el socio figura como presidenta o gestora en PECOSAs registradas.',
+            ]);
+        }
+
+        $documents = $this->partnerRepo->beneficiaryDocuments($partner)->concat($partner->documents);
+
+        DB::transaction(function () use ($partner) {
+            $this->partnerRepo->deleteBeneficiaries($partner);
+            $this->partnerRepo->deletePartner($partner);
+        });
+
+        $documents->each(fn (DocumentAttachment $document) => $this->attachments->delete($document));
+    }
+
+    /**
+     * Actualiza los beneficiarios que traen `id`, crea los nuevos y elimina los que ya no vienen.
+     * La fila del propio socio (beneficiario de sí mismo) no se toca aquí.
+     */
+    private function syncExistingBeneficiaries(Partner $partner, array $beneficiaries): void
+    {
+        $existing = $partner->beneficiaries()
+            ->where('person_id', '!=', $partner->person_id)
+            ->get()
+            ->keyBy('id');
+
+        $kept = [];
+        $created = [];
+
+        foreach ($beneficiaries as $b) {
+            $beneficiary = isset($b['id']) ? $existing->get((int) $b['id']) : null;
+            if (! $beneficiary) {
+                $created[] = $b;
+                continue;
+            }
+
+            $kept[] = $beneficiary->id;
+            $this->beneficiaryRepo->updateBeneficiary($beneficiary, [
+                'person_id' => $b['person_id'],
+                'relationship_id' => $b['relationship_id'],
+                'priority' => $b['priority'] ?? $beneficiary->priority,
+            ]);
+
+            $history = $beneficiary->histories()->latest('date_begin')->first();
+            if ($history && ! empty($b['type_benefit_id'])) {
+                $this->beneficiaryRepo->updateHistory($history, [
+                    'type_benefit_id' => $b['type_benefit_id'],
+                    'date_end' => $this->benefitEndDate($b['person_id'], $b['type_benefit_id']),
+                ]);
+            }
+        }
+
+        $removedIds = $existing->keys()->diff($kept)->values()->all();
+        if ($removedIds) {
+            $documents = $this->partnerRepo->beneficiaryDocuments($partner, $removedIds);
+            $this->partnerRepo->deleteBeneficiaries($partner, $removedIds);
+            $documents->each(fn (DocumentAttachment $document) => $this->attachments->delete($document));
+        }
+
+        $this->syncBeneficiaries($partner, $created);
     }
 
     private function storeRegistrationDocuments(Partner $partner, array $beneficiaries, array $documents): void
