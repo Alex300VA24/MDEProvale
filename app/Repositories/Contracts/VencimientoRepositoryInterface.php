@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Contracts;
 
+use App\Models\Resolution;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection as SupportCollection;
@@ -22,4 +23,7 @@ interface VencimientoRepositoryInterface
 
     /** Resoluciones con fecha de término en el rango, con sus comités principales. */
     public function resolutionsEndingBetween(Carbon $from, Carbon $to): Collection;
+
+    /** Resolución con los comités para los que es la vigente; null si no existe. */
+    public function resolutionWithCommittees(int $id): ?Resolution;
 }

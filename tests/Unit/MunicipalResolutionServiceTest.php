@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Exceptions\MunicipalPortalException;
 use App\Models\Resolution;
 use App\Services\MunicipalResolutionService;
 use Illuminate\Http\Client\Request;
@@ -43,7 +44,7 @@ class MunicipalResolutionServiceTest extends TestCase
             'https://www.muniesperanza.gob.pe/admin/panel/img/resolucion-0207.pdf',
             $result['pdf_url'],
         );
-        Http::assertSentCount(4);
+        Http::assertSentCount(12);
     }
 
     public function test_it_ignores_a_different_document_returned_by_the_portal(): void
@@ -58,6 +59,34 @@ class MunicipalResolutionServiceTest extends TestCase
 
         $this->assertNull(app(MunicipalResolutionService::class)->resolve($resolution));
         Http::assertSentCount(12);
+    }
+
+    public function test_it_throws_a_timeout_error_and_does_not_cache_the_failure(): void
+    {
+        Http::fake(fn () => throw new \Illuminate\Http\Client\ConnectionException('cURL error 28: Operation timed out'));
+
+        $resolution = new Resolution(['document' => '0207-2021', 'date_start' => '2021-03-02']);
+        $resolution->id = 987656;
+
+        try {
+            app(MunicipalResolutionService::class)->resolve($resolution);
+            $this->fail('Debió lanzar MunicipalPortalException');
+        } catch (MunicipalPortalException $e) {
+            $this->assertSame(MunicipalPortalException::TIMEOUT, $e->reason());
+        }
+
+        $this->assertNull(Cache::get('resolucion_externa_v3_987656_0207-2021'));
+    }
+
+    public function test_it_reports_server_errors_instead_of_not_found(): void
+    {
+        Http::fake(Http::response('boom', 503));
+
+        $resolution = new Resolution(['document' => '0207-2021', 'date_start' => '2021-03-02']);
+        $resolution->id = 987657;
+
+        $this->expectException(MunicipalPortalException::class);
+        app(MunicipalResolutionService::class)->resolve($resolution);
     }
 
     private function resultHtml(): string

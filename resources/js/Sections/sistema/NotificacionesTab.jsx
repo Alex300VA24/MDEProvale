@@ -10,6 +10,9 @@ const STATUS_LABEL = {
     pending: { label: 'Pendiente', cls: 'badge-pending' },
     approved: { label: 'Aprobada', cls: 'badge-current' },
     rejected: { label: 'Rechazada', cls: 'badge-expired' },
+    informativo: { label: 'Informativo', cls: 'badge-unknown' },
+    por_solucionar: { label: 'Por solucionar', cls: 'badge-pending' },
+    solucionado: { label: 'Solucionado', cls: 'badge-current' },
 };
 
 function fmtDateTime(d) {

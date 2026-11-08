@@ -8,7 +8,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, fmtDateTime, stateBadge } from './format';
+import { fmtDate, fmtDateTime, committeeStateBadge, committeeStateTitle } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
@@ -248,7 +248,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                         <div className="sm:col-span-2 rounded-xl border-2 border-wheat bg-base p-4 space-y-3">
                             <p className="text-xs font-bold uppercase tracking-wider text-charcoal">Cambio de estado del comité</p>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <div><label htmlFor="committee-state" className={labelCls}>Estado</label><select id="committee-state" value={stateId} onChange={(event) => setStateId(event.target.value)} className={inputCls}>{editableStates.map((state) => <option key={state.id} value={state.id}>{state.title}</option>)}</select></div>
+                                <div><label htmlFor="committee-state" className={labelCls}>Estado</label><select id="committee-state" value={stateId} onChange={(event) => setStateId(event.target.value)} className={inputCls}>{editableStates.map((state) => <option key={state.id} value={state.id}>{committeeStateTitle(state)}</option>)}</select></div>
                                 {goingInactive && <div><label htmlFor="committee-reason" className={labelCls}>Motivo</label><select id="committee-reason" value={statusReason} onChange={(event) => setStatusReason(event.target.value)} className={inputCls}><option value="RENUNCIA">Renuncia</option><option value="OTRO">Otro</option></select></div>}
                             </div>
                             {goingInactive && <>
@@ -294,7 +294,7 @@ function ClubViewModal({ club, onClose }) {
                     <Field label="Zona / Sector" value={[club.place_sector?.place?.title, club.place_sector?.sector?.title].filter(Boolean).join(' - ')} />
                     <Field label="Tipo de local" value={club.type_premises?.title} />
                     <Field label="Estado">
-                        <span className={`badge ${stateBadge(club.state).cls}`}>{stateBadge(club.state).label}</span>
+                        <span className={`badge ${committeeStateBadge(club.state).cls}`}>{committeeStateBadge(club.state).label}</span>
                     </Field>
                 </FieldGrid>
             </DetailGroup>
@@ -624,7 +624,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can, reloadOptions 
                     <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
                         <option value="">Estados</option>
                         {(options.states || []).map((state) => (
-                            <option key={state.id} value={state.id}>{state.title}</option>
+                            <option key={state.id} value={state.id}>{committeeStateTitle(state)}</option>
                         ))}
                     </select>
                 </div>
@@ -678,7 +678,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can, reloadOptions 
                                 </tr>
                             ) : (
                                 data.data.map((club) => {
-                                    const status = stateBadge(club.state);
+                                    const status = committeeStateBadge(club.state);
                                     return (
                                         <tr key={club.id} className="row-enter">
                                             <td className="px-3 sm:px-4 py-3 font-semibold">{club.code || '-'}</td>

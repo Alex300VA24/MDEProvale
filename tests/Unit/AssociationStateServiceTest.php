@@ -29,23 +29,13 @@ class AssociationStateServiceTest extends TestCase
         );
     }
 
-    public function test_association_is_pending_for_one_month_after_expiration(): void
+    public function test_association_is_inactive_the_day_after_resolution_expires(): void
     {
         $association = $this->associationEndingOn('2026-08-24');
 
         $this->assertSame(
-            State::PENDING,
-            $this->service->abbreviationFor($association, Carbon::parse('2026-09-24'))
-        );
-    }
-
-    public function test_association_is_expired_after_pending_month(): void
-    {
-        $association = $this->associationEndingOn('2026-08-24');
-
-        $this->assertSame(
-            State::EXPIRED,
-            $this->service->abbreviationFor($association, Carbon::parse('2026-09-25'))
+            State::INACTIVE,
+            $this->service->abbreviationFor($association, Carbon::parse('2026-08-25'))
         );
     }
 

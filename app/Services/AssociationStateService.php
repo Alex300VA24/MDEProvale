@@ -6,7 +6,6 @@ use App\Models\Association;
 use App\Models\State;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
 
 class AssociationStateService
 {
@@ -14,6 +13,10 @@ class AssociationStateService
     {
     }
 
+    /**
+     * Activo (VIG) mientras la última resolución esté vigente; inactivo (INA)
+     * cuando venció. La renuncia se registra a mano (state_source MANUAL).
+     */
     public function abbreviationFor(Association $association, ?CarbonInterface $today = null): string
     {
         $today = ($today ?? now())->copy()->startOfDay();
@@ -29,11 +32,8 @@ class AssociationStateService
             return State::CURRENT;
         }
 
-        $pendingUntil = Carbon::parse($dateEnd)->addMonthNoOverflow()->startOfDay();
-
-        return $today->lessThanOrEqualTo($pendingUntil)
-            ? State::PENDING
-            : State::EXPIRED;
+        // Resolución vencida: el comité queda inactivo hasta que se renueve.
+        return State::INACTIVE;
     }
 
     public function sync(Association $association, ?CarbonInterface $today = null): bool

@@ -51,6 +51,31 @@ class NotificationRepository implements NotificationRepositoryInterface
         return Notification::create($data);
     }
 
+    public function deleteByDedupeKey(string $type, string $dedupeKey): int
+    {
+        return Notification::where('type', $type)
+            ->where(fn ($query) => $query
+                ->where('dedupe_key', $dedupeKey)
+                ->orWhere('metadata->dedupe_key', $dedupeKey))
+            ->delete();
+    }
+
+    public function openOfType(string $type): Collection
+    {
+        return Notification::where('type', $type)
+            ->where('status', Notification::STATUS_OPEN)
+            ->get();
+    }
+
+    public function markSolved(Notification $notification, string $reason): void
+    {
+        $notification->update([
+            'status' => Notification::STATUS_SOLVED,
+            'processed_at' => now(),
+            'metadata' => ($notification->metadata ?? []) + ['solucion' => $reason],
+        ]);
+    }
+
     public function existsWithDedupeKey(string $type, string $dedupeKey): bool
     {
         return Notification::where('type', $type)

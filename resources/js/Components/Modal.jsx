@@ -49,8 +49,9 @@ export default function Modal({ open, onClose, title, icon, iconClass = 'text-le
     if (!open) return null;
 
     return createPortal(
-        <div className="modal-overlay is-open animate-fade-in" onClick={onClose}>
-            <div className={`modal-panel ${maxWidth}`} onClick={(e) => e.stopPropagation()}>
+        // El overlay no cierra el modal: un clic accidental fuera no debe perder lo ya digitado.
+        <div className="modal-overlay is-open animate-fade-in">
+            <div className={`modal-panel ${maxWidth}`}>
                 <div ref={dialogRef} className="modal-card modal-enter" role="dialog" aria-modal="true" aria-labelledby={titleId}>
                     <div className="modal-header">
                         <h3 id={titleId} className="font-extrabold text-charcoal text-xl flex items-center gap-2">

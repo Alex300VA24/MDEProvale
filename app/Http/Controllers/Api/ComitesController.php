@@ -15,6 +15,7 @@ use App\Models\Association;
 use App\Models\Resolution;
 use App\Models\State;
 use App\Services\CommitteeService;
+use App\Exceptions\MunicipalPortalException;
 use App\Services\MunicipalResolutionService;
 use App\Services\ResolutionService;
 use App\Services\UploadSettingsService;
@@ -70,7 +71,7 @@ class ComitesController extends Controller
         $data = $request->validate([
             'state_id' => [
                 'required',
-                Rule::exists('states', 'id')->where(fn ($query) => $query->whereIn('abbreviation', [State::CURRENT, State::PENDING, State::EXPIRED, State::INACTIVE])),
+                Rule::exists('states', 'id')->where(fn ($query) => $query->whereIn('abbreviation', [State::CURRENT, State::INACTIVE])),
             ],
             'reason' => ['required', Rule::in(['RENUNCIA', 'OTRO'])],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -177,12 +178,19 @@ class ComitesController extends Controller
 
     public function buscarResolucionExterna(Resolution $resolution, MunicipalResolutionService $municipal)
     {
-        $match = $municipal->resolve($resolution);
+        try {
+            $match = $municipal->resolve($resolution);
+        } catch (MunicipalPortalException $e) {
+            return response()->json($e->toPayload(), $e->httpStatus());
+        }
 
         if (! $match) {
             return response()->json([
                 'success' => false,
+                'reason' => 'not_found',
                 'message' => 'No se encontró esta resolución en el portal de la Municipalidad de La Esperanza.',
+                'hint' => 'El portal respondió con normalidad, pero la resolución no figura publicada. Verifica el número y año del documento.',
+                'retryable' => false,
             ], 404);
         }
 
@@ -207,11 +215,18 @@ class ComitesController extends Controller
     {
         try {
             $pdf = $municipal->fetchPdf($resolution);
-        } catch (\RuntimeException $e) {
-            abort(502, $e->getMessage());
+        } catch (MunicipalPortalException $e) {
+            return response()->json($e->toPayload(), $e->httpStatus());
         }
 
-        abort_if(! $pdf, 404, 'No se encontró esta resolución en el portal de la Municipalidad.');
+        if (! $pdf) {
+            return response()->json([
+                'success' => false,
+                'reason' => 'not_found',
+                'message' => 'No se encontró esta resolución en el portal de la Municipalidad.',
+                'retryable' => false,
+            ], 404);
+        }
 
         return response($pdf['body'], 200, [
             'Content-Type' => 'application/pdf',

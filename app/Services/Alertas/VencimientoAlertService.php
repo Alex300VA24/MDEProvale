@@ -3,6 +3,7 @@
 namespace App\Services\Alertas;
 
 use App\Models\BeneficiaryHistory;
+use App\Models\Notification;
 use App\Models\Resolution;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
 use App\Repositories\Contracts\VencimientoRepositoryInterface;
@@ -59,7 +60,53 @@ class VencimientoAlertService
             }
         }
 
+        $this->resolveSolvedResolutionAlerts($today);
+
         return $result;
+    }
+
+    /**
+     * Pasa a "solucionado" los avisos de resolución que ya no aplican: la
+     * resolución se renovó (su vigencia quedó fuera de los umbrales), se eliminó,
+     * dejó de tener comités, o un aviso más reciente de la misma resolución lo
+     * reemplaza. Mientras no ocurra, el aviso sigue contando en la campanita.
+     *
+     * @return int cantidad de avisos solucionados
+     */
+    public function resolveSolvedResolutionAlerts(?Carbon $today = null): int
+    {
+        $today = ($today ?? now())->copy()->startOfDay();
+        $horizon = $today->copy()->addDays((int) collect(config('alertas.resoluciones.umbrales_dias', [60, 30, 7]))->max());
+        $solved = 0;
+
+        $open = $this->notifications->openOfType(self::TYPE_RESOLUCION)->sortByDesc('id');
+        $seen = [];
+
+        foreach ($open as $notification) {
+            $resolutionId = (int) ($notification->metadata['resolution_id'] ?? 0);
+            $reason = null;
+
+            if (isset($seen[$resolutionId])) {
+                $reason = 'reemplazado por un aviso más reciente';
+            } else {
+                $resolution = $this->alerts->resolutionWithCommittees($resolutionId);
+
+                if (! $resolution || $resolution->primaryAssociations->isEmpty()) {
+                    $reason = 'la resolución o su comité ya no existe';
+                } elseif ($resolution->date_end === null || $resolution->date_end->copy()->startOfDay()->gt($horizon)) {
+                    $reason = 'la resolución fue renovada';
+                }
+            }
+
+            $seen[$resolutionId] = true;
+
+            if ($reason !== null) {
+                $this->notifications->markSolved($notification, $reason);
+                $solved++;
+            }
+        }
+
+        return $solved;
     }
 
     /**
@@ -197,7 +244,7 @@ class VencimientoAlertService
      *
      * @return Collection<int, array>
      */
-    public function detectResolutionAlerts(Carbon $today): Collection
+    public function detectResolutionAlerts(Carbon $today, ?int $associationId = null): Collection
     {
         $thresholds = collect(config('alertas.resoluciones.umbrales_dias', [60, 30, 7]))
             ->map(fn ($d) => (int) $d)->filter(fn ($d) => $d > 0)->sort()->values();
@@ -210,7 +257,9 @@ class VencimientoAlertService
 
         return $this->alerts
             ->resolutionsEndingBetween($today->copy()->subDays($grace), $today->copy()->addDays($thresholds->max()))
-            ->filter(fn (Resolution $r) => $r->primaryAssociations->isNotEmpty())
+            ->filter(fn (Resolution $r) => $associationId !== null
+                ? $r->primaryAssociations->contains('id', $associationId)
+                : $r->primaryAssociations->isNotEmpty())
             ->map(function (Resolution $resolution) use ($today, $thresholds) {
                 $days = (int) $today->diffInDays($resolution->date_end->copy()->startOfDay(), false);
                 $stage = $days < 0 ? 'vencida' : (string) $thresholds->first(fn ($t) => $days <= $t);
@@ -258,27 +307,39 @@ class VencimientoAlertService
             return false;
         }
 
-        $description = $alert['description'];
-        $metadata = $alert['metadata'] + ['dedupe_key' => $alert['dedupe_key']];
+        $notification = $this->publish($alert, $type, (bool) config('alertas.ai_enabled'));
 
-        $insight = $this->insight($alert['ai_facts']);
-        if ($insight) {
-            $metadata['ia'] = $insight;
+        if (! empty($notification->metadata['ia'])) {
             $result['con_ia']++;
         }
 
-        $this->notifications->create([
+        return true;
+    }
+
+    /**
+     * Crea el aviso sin revisar duplicados. Con $useAi añade el complemento de
+     * IA (si el proveedor responde); sin él, el aviso lleva solo el texto base.
+     */
+    public function publish(array $alert, string $type, bool $useAi): Notification
+    {
+        $metadata = $alert['metadata'] + ['dedupe_key' => $alert['dedupe_key']];
+
+        $insight = $useAi ? $this->insight($alert['ai_facts']) : null;
+        if ($insight) {
+            $metadata['ia'] = $insight;
+        }
+
+        return $this->notifications->create([
             'type' => $type,
             'dedupe_key' => $alert['dedupe_key'],
             'title' => $alert['title'],
-            'description' => $description,
-            'status' => 'informativo',
+            'description' => $alert['description'],
+            // La resolución por vencer exige acción: cuenta en la campanita hasta solucionarse.
+            'status' => $type === self::TYPE_RESOLUCION ? Notification::STATUS_OPEN : 'informativo',
             'requested_at' => now(),
             'is_seen' => false,
             'metadata' => $metadata,
         ]);
-
-        return true;
     }
 
     /** Urgencia determinista por días restantes: no depende de la IA. */
@@ -299,7 +360,7 @@ class VencimientoAlertService
      */
     private function insight(array $facts): ?array
     {
-        if (! config('alertas.ai_enabled') || $this->ai->provider() === 'none') {
+        if ($this->ai->provider() === 'none') {
             return null;
         }
 

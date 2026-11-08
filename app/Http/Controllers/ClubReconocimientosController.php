@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Resolution;
+use App\Exceptions\MunicipalPortalException;
 use App\Services\ClubReportService;
 use App\Services\MunicipalResolutionService;
 use Barryvdh\DomPDF\Facade\PDF;
@@ -22,7 +23,11 @@ class ClubReconocimientosController extends Controller
      */
     public function buscarResolucionExterna(Resolution $resolution, MunicipalResolutionService $municipal)
     {
-        $match = $municipal->resolve($resolution);
+        try {
+            $match = $municipal->resolve($resolution);
+        } catch (MunicipalPortalException $e) {
+            return response()->json($e->toPayload(), $e->httpStatus());
+        }
 
         if (!$match) {
             return response()->json([
@@ -54,8 +59,8 @@ class ClubReconocimientosController extends Controller
     {
         try {
             $pdf = $municipal->fetchPdf($resolution);
-        } catch (\RuntimeException $e) {
-            abort(502, $e->getMessage());
+        } catch (MunicipalPortalException $e) {
+            return response()->json($e->toPayload(), $e->httpStatus());
         }
 
         abort_if(!$pdf, 404, 'No se encontró esta resolución en el portal de la Municipalidad.');

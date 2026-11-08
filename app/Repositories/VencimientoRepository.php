@@ -40,6 +40,11 @@ class VencimientoRepository implements VencimientoRepositoryInterface
             ->get();
     }
 
+    public function resolutionWithCommittees(int $id): ?Resolution
+    {
+        return Resolution::with('primaryAssociations:id,name,resolution_id')->find($id);
+    }
+
     public function resolutionsEndingBetween(Carbon $from, Carbon $to): Collection
     {
         return Resolution::query()

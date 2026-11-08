@@ -64,18 +64,27 @@ class Notification extends Model
     // (ej. recuperación de contraseña) que solo ve el admin o quien las pidió.
     public const SYSTEM_WIDE_TYPES = ['normativa_pvl', 'alerta_beneficiarios', 'alerta_resolucion'];
 
+    // Avisos que exigen una acción: siguen contando en la campanita, aunque ya
+    // se hayan visto, hasta que se solucionen.
+    public const STATUS_OPEN = 'por_solucionar';
+    public const STATUS_SOLVED = 'solucionado';
+
     public static function unreadCountForUser(?User $user): int
     {
         if (!$user || !$user->id) {
             return 0;
         }
 
+        $query = self::where(fn ($q) => $q
+            ->where('is_seen', false)
+            ->orWhere('status', self::STATUS_OPEN));
+
         if ((int) $user->rol_id === 1) {
-            return self::where('is_seen', false)->count();
+            return $query->count();
         }
 
-        return self::where('is_seen', false)
-            ->where(fn ($query) => $query
+        return $query
+            ->where(fn ($q) => $q
                 ->where('requested_by', $user->id)
                 ->orWhereIn('type', self::SYSTEM_WIDE_TYPES))
             ->count();

@@ -7,7 +7,9 @@ use App\Models\State;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
 use App\Repositories\Contracts\ResolutionRepositoryInterface;
+use App\Services\Alertas\VencimientoAlertService;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Reconocimientos: resoluciones que acreditan a los comités.
@@ -19,7 +21,8 @@ class ResolutionService
         private AssociationRepositoryInterface $associations,
         private CatalogRepositoryInterface $catalogs,
         private ResolutionStateService $resolutionStates,
-        private AssociationStateService $associationStates
+        private AssociationStateService $associationStates,
+        private VencimientoAlertService $expiryAlerts
     ) {
     }
 
@@ -55,6 +58,9 @@ class ResolutionService
         $this->associations->linkedToResolution($resolution->id)
             ->each(fn ($association) => $this->associationStates->sync($association));
 
+        // Si la renovación aleja la fecha de término, el aviso pendiente se soluciona.
+        $this->expiryAlerts->resolveSolvedResolutionAlerts();
+
         return $this->resolutions->loadRelations($resolution);
     }
 
@@ -63,10 +69,26 @@ class ResolutionService
      */
     public function delete(Resolution $resolution): void
     {
-        if ($this->resolutions->isReferenced($resolution)) {
-            throw new \DomainException('No se puede eliminar la resolución: tiene comités o directivas asociadas');
-        }
+        DB::transaction(function () use ($resolution) {
+            // Los comités cuya resolución vigente es esta se eliminan junto con ella,
+            // salvo que tengan socios o pecosas: ese caso sigue bloqueado.
+            $this->associations->linkedToResolution($resolution->id)
+                ->where('resolution_id', $resolution->id)
+                ->each(function ($association) {
+                    if ($this->associations->hasPartners($association) || $this->associations->hasPecosas($association)) {
+                        throw new \DomainException('No se puede eliminar la resolución: su comité tiene socios o pecosas asociadas');
+                    }
 
-        $this->resolutions->delete($resolution);
+                    $this->associations->deleteAssociation($association);
+                });
+
+            if ($this->resolutions->isReferenced($resolution)) {
+                throw new \DomainException('No se puede eliminar la resolución: tiene comités o directivas asociadas');
+            }
+
+            $this->resolutions->delete($resolution);
+        });
+
+        $this->expiryAlerts->resolveSolvedResolutionAlerts();
     }
 }

@@ -678,7 +678,7 @@ class ComitesApiTest extends TestCase
         $this->actingAs($this->userWithAccess())
             ->deleteJson(self::BASE . '/reconocimientos/1')
             ->assertStatus(422)
-            ->assertJsonPath('message', 'No se puede eliminar la resolución: tiene comités o directivas asociadas');
+            ->assertJsonPath('message', 'No se puede eliminar la resolución: su comité tiene socios o pecosas asociadas');
 
         $this->assertDatabaseHas('resolutions', ['id' => 1]);
     }

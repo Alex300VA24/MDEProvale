@@ -37,8 +37,8 @@ export default function PromptDialog({
     };
 
     return createPortal(
-        <div className="modal-overlay is-open animate-fade-in" onClick={onCancel}>
-            <div className="modal-panel sm:max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay is-open animate-fade-in">
+            <div className="modal-panel sm:max-w-md">
                 <form onSubmit={submit} className="modal-card modal-enter">
                     <div className="p-6">
                         <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 bg-sky-light">

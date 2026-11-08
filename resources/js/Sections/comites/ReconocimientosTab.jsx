@@ -432,7 +432,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Resolución"
-                message="Se eliminará esta resolución de forma permanente."
+                message="Advertencia: al eliminar esta resolución también se eliminará el comité asociado a ella. Esta acción es permanente."
                 details={deleting ? [
                     { label: 'Documento', value: deleting.document },
                     { label: 'Periodo', value: fmtPeriod(deleting) },

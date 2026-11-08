@@ -534,14 +534,7 @@
             document.getElementById(id).style.display = 'none';
         }
 
-        // Cerrar modal al hacer clic fuera
-        document.querySelectorAll('[class*="fixed inset-0"]').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.style.display = 'none';
-                }
-            });
-        });
+        // Los modales solo se cierran con su botón (o Esc): un clic accidental fuera no debe perder lo digitado.
 
         async function submitForgotPassword(e) {
             e.preventDefault();

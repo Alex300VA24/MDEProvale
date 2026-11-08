@@ -85,6 +85,17 @@ export function stateBadge(state) {
     return { label: state.title || 'Sin estado', cls: stateClass(state) };
 }
 
+// Los comités solo tienen dos estados: Activo (resolución vigente) e Inactivo
+// (resolución vencida o renuncia). VIG se muestra como "Activo".
+export function committeeStateTitle(state) {
+    if (!state) return 'Sin estado';
+    return String(state.abbreviation || '').trim().toUpperCase() === 'VIG' ? 'Activo' : (state.title || 'Sin estado');
+}
+
+export function committeeStateBadge(state) {
+    return { label: committeeStateTitle(state), cls: stateClass(state) };
+}
+
 export function datetimeInputValue(dt) {
     if (!dt) return '';
     return String(dt).replace(' ', 'T').slice(0, 16);

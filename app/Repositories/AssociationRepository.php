@@ -46,6 +46,15 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
             ->get();
     }
 
+    public function searchByName(string $term): Collection
+    {
+        return $this->model
+            ->with(['resolution', 'resolutionsHistory'])
+            ->where('name', 'like', '%'.trim($term).'%')
+            ->orderBy('name')
+            ->get();
+    }
+
     public function findOrFailAssociation(int $id): Association
     {
         return $this->model->findOrFail($id);
@@ -184,6 +193,8 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
 
     public function deleteAssociation(Association $association): void
     {
+        // Limpia su historial de resoluciones (tabla pivote) antes de borrar el comité.
+        $association->resolutionsHistory()->detach();
         $association->delete();
     }
 

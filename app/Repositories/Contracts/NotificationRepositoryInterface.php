@@ -25,8 +25,17 @@ interface NotificationRepositoryInterface
 
     public function create(array $data): Notification;
 
+    /** Avisos del tipo que siguen por solucionar. */
+    public function openOfType(string $type): Collection;
+
+    /** Pasa el aviso a solucionado y deja registrado el motivo. */
+    public function markSolved(Notification $notification, string $reason): void;
+
     /** Indica si ya existe un aviso del tipo con esa clave de deduplicación. */
     public function existsWithDedupeKey(string $type, string $dedupeKey): bool;
+
+    /** Elimina los avisos del tipo con esa clave de deduplicación; devuelve cuántos. */
+    public function deleteByDedupeKey(string $type, string $dedupeKey): int;
 
     /** Cantidad de avisos sin ver que el usuario solicitó. */
     public function unreadRequestedBy(User $user): int;

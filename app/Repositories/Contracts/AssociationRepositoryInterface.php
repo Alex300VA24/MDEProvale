@@ -16,6 +16,9 @@ interface AssociationRepositoryInterface
 
     public function findOrFailAssociation(int $id): Association;
 
+    /** Comités cuyo nombre contiene el texto, con su resolución actual e historial. */
+    public function searchByName(string $term): Collection;
+
     public function findWithPlaceSector(int $id): ?Association;
 
     /** Padrón mensual del comité para el período (primer día del mes). */
