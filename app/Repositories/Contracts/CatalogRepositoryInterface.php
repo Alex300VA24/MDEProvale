@@ -19,6 +19,11 @@ interface CatalogRepositoryInterface
 
     public function temporalStates(array $columns = ['*']): Collection;
 
+    public function administrativeStates(array $columns = ['*']): Collection;
+
+    /** Vigente, Vencido y Pendiente (estados de una resolución). */
+    public function resolutionStates(array $columns = ['*']): Collection;
+
     public function uoms(array $columns = ['*']): Collection;
 
     public function products(array $columns = ['id', 'title', 'abbreviation']): Collection;

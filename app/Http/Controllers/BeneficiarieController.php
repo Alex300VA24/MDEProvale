@@ -15,9 +15,7 @@ class BeneficiarieController extends Controller
 
     public function index(Request $request)
     {
-        $data = $this->beneficiaryService->indexData($request->only(['search', 'partner_id', 'relationship_id']));
-
-        return view('socios-beneficiarios.beneficiarios.index', $data);
+        return redirect()->route('dashboard');
     }
 
     public function imprimirFicha()
@@ -33,21 +31,21 @@ class BeneficiarieController extends Controller
     {
         $this->beneficiaryService->create($this->validated($request));
 
-        return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario registrado exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Beneficiario registrado exitosamente');
     }
 
     public function update(Request $request, Beneficiarie $beneficiarie)
     {
         $this->beneficiaryService->update($beneficiarie, $this->validated($request));
 
-        return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario actualizado exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Beneficiario actualizado exitosamente');
     }
 
     public function destroy(Beneficiarie $beneficiarie)
     {
         $this->beneficiaryService->delete($beneficiarie);
 
-        return redirect()->route('socios-beneficiarios.beneficiarios.index')->with('success', 'Beneficiario eliminado exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Beneficiario eliminado exitosamente');
     }
 
     private function validated(Request $request): array

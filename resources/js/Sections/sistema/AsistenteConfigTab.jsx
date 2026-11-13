@@ -112,7 +112,7 @@ export default function AsistenteConfigTab({ can }) {
                     <p className="text-earth text-xs mt-1">Entre {minVent} y {maxVent} horas.</p>
                 </div>
 
-                <div className="bg-base border-2 border-wheat rounded-xl px-4 py-3 text-sm text-charcoal font-semibold">
+                <div className="bg-fog border-2 border-wheat rounded-xl px-4 py-3 text-sm text-charcoal font-semibold">
                     <i className="fas fa-gauge-high text-leaf mr-2" aria-hidden="true" />
                     Cada usuario podrá hacer {Number(maxConsultas) || 0} consultas cada {Number(ventanaHoras) || 0} h.
                 </div>

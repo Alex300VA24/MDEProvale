@@ -41,7 +41,11 @@ class DirectiveRepository implements DirectiveRepositoryInterface
             ->whereIn('resolution_id', $resolutionIds)
             ->where('position_id', $positionId)
             ->where('state_id', $currentStateId)
-            ->update(['state_id' => $expiredStateId, 'date_end' => $dateEnd]);
+            ->update([
+                'state_id' => $expiredStateId,
+                // Un cargo asignado el mismo día no puede terminar antes de empezar.
+                'date_end' => DB::raw("CASE WHEN date_start IS NOT NULL AND date_start > '{$dateEnd}' THEN date_start ELSE '{$dateEnd}' END"),
+            ]);
     }
 
     public function create(array $data): Directive

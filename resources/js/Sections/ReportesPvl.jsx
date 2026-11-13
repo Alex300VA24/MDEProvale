@@ -278,7 +278,7 @@ function DataPreview({ data }) {
     return (
         <div className="space-y-3">
             {Object.entries(data).map(([report, values]) => (
-                <details key={report} open className="border border-mist bg-base">
+                <details key={report} open className="border border-mist bg-fog">
                     <summary className="cursor-pointer px-4 py-3 font-extrabold text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-blue">
                         {report === 'pvl' ? 'Valores del Formato PVL' : 'Valores de Ración A'}
                     </summary>
@@ -600,7 +600,7 @@ export default function ReportesPvl() {
                                     </div>
                                 </div>
                             )}
-                            <div className="border-t border-mist bg-base px-4 py-3 text-xs text-earth sm:px-6" aria-live="polite"><i className="fas fa-database mr-2 text-teal" />Orden de consulta: base de datos del sistema, valores predeterminados para vacíos y documentos del periodo. La IA concilia; Laravel conserva cálculos y validación.</div>
+                            <div className="border-t border-mist bg-fog px-4 py-3 text-xs text-earth sm:px-6" aria-live="polite"><i className="fas fa-database mr-2 text-teal" />Orden de consulta: base de datos del sistema, valores predeterminados para vacíos y documentos del periodo. La IA concilia; Laravel conserva cálculos y validación.</div>
                             {currentRun ? <ReviewPanel run={currentRun} onGenerate={generate} onRunUpdated={setCurrentRun} generating={generating} canGenerate={can.edit} /> : <div className="empty-state border-t border-mist py-14"><i className="fas fa-file-circle-check" /><p>Seleccione periodo y tipo de informe para iniciar revisión.</p></div>}
                         </>
                     )}

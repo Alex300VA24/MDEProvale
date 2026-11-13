@@ -7,8 +7,8 @@ import errorMessage from '../errorMessage';
 
 const BASE = '/api/dashboard/evaluacion-nutricional';
 
-const th = 'px-3 py-2 text-left text-xs font-bold text-slate-600 whitespace-nowrap bg-mist/60';
-const td = 'px-3 py-2 text-xs sm:text-sm text-charcoal border-t border-mist';
+const th = 'px-3 py-3 text-left whitespace-nowrap';
+const td = 'px-3 py-3';
 
 export default function EvaluacionNutricional() {
     const toast = useToast();
@@ -83,8 +83,8 @@ export default function EvaluacionNutricional() {
                 ) : rows.length === 0 ? (
                     <p className="text-sm text-earth py-10 text-center">Este comité no tiene beneficiarios registrados.</p>
                 ) : (
-                    <div className="overflow-x-auto border-2 border-mist rounded-xl">
-                        <table className="w-full border-collapse">
+                    <div className="overflow-auto max-h-[calc(100vh-20rem)] border-2 border-charcoal/30">
+                        <table className="data-table w-full min-w-[900px] border-collapse text-sm [&_th]:border [&_th]:border-white/20 [&_td]:border [&_td]:border-charcoal/20 [&_th]:sticky [&_th]:top-0 [&_th]:z-10">
                             <thead>
                                 <tr>
                                     <th className={th}>N°</th>

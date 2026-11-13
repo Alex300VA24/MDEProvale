@@ -15,6 +15,7 @@ class Resolution extends Model
         'date_start',
         'date_end',
         'file',
+        'observation',
         'state_id',
     ];
 
@@ -31,7 +32,8 @@ class Resolution extends Model
                 $resolution->date_document = $resolution->date_start;
             }
 
-            if (!$resolution->date_end) {
+            // Una resolución Pendiente conserva su estado hasta regularizarse.
+            if (!$resolution->date_end || $resolution->isPending()) {
                 return;
             }
 
@@ -49,6 +51,13 @@ class Resolution extends Model
     public function state()
     {
         return $this->belongsTo(State::class);
+    }
+
+    public function isPending(): bool
+    {
+        $pendingId = State::idFor(State::PENDING);
+
+        return $pendingId !== null && (int) $this->state_id === (int) $pendingId;
     }
 
     public function directives()

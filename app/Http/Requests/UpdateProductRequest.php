@@ -22,7 +22,7 @@ class UpdateProductRequest extends FormRequest
             'title' => 'sometimes|required|string|max:100',
             'abbreviation' => 'sometimes|nullable|string|max:20',
             'code' => 'sometimes|required|string|max:50|unique:products,code,' . $productId,
-            'state_id' => ['sometimes', 'required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
+            'state_id' => ['sometimes', 'required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::ACTIVE, State::INACTIVE]))],
             'uom_id' => 'sometimes|required|exists:uoms,id',
         ];
     }

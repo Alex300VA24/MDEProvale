@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import useModalFormHints from './useModalFormHints';
 
 export default function Modal({ open, onClose, title, icon, iconClass = 'text-leaf', maxWidth = 'sm:max-w-2xl', children }) {
     const titleId = useId();
@@ -46,6 +47,8 @@ export default function Modal({ open, onClose, title, icon, iconClass = 'text-le
         };
     }, [open]);
 
+    const hasRequired = useModalFormHints(dialogRef, open);
+
     if (!open) return null;
 
     return createPortal(
@@ -62,6 +65,12 @@ export default function Modal({ open, onClose, title, icon, iconClass = 'text-le
                             <i className="fas fa-times" aria-hidden="true" />
                         </button>
                     </div>
+                    {hasRequired && (
+                        <p className="px-4 pt-3 text-xs text-earth sm:px-6">
+                            <span className="font-extrabold text-clay" aria-hidden="true">(*)</span>{' '}
+                            <span className="sr-only">Asterisco: </span>Campo obligatorio. Los campos sin asterisco son opcionales.
+                        </p>
+                    )}
                     {children}
                 </div>
             </div>

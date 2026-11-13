@@ -51,7 +51,8 @@ class CommitteeService
         $resolutions = $this->resolutions->availableForCommittees(
             State::idFor(State::CURRENT),
             now()->toDateString(),
-            $includeResolutionId
+            $includeResolutionId,
+            State::idFor(State::PENDING)
         );
 
         $existingCodes = $this->associations->idsAndCodes();
@@ -97,7 +98,7 @@ class CommitteeService
             return $association;
         });
 
-        return $this->present($association);
+        return $this->present($association->refresh());
     }
 
     public function update(Association $association, array $data): Association
@@ -192,6 +193,10 @@ class CommitteeService
             throw new \DomainException('La socia seleccionada no pertenece a este comité');
         }
 
+        if (! $this->associations->partnerIsActive($association, $partnerId)) {
+            throw new \DomainException('La socia seleccionada tiene su ficha vencida y no puede ocupar un cargo');
+        }
+
         DB::transaction(function () use ($association, $partnerId, $positionTitle) {
             $position = $this->directives->firstOrCreatePosition($positionTitle);
             $current = $this->catalogs->stateByAbbreviationOrFail(State::CURRENT);
@@ -247,6 +252,12 @@ class CommitteeService
 
         if ($this->associations->partnerIdsAmong($association, $partnerIds)->count() !== $partnerIds->count()) {
             throw new \DomainException('Una de las socias seleccionadas no pertenece a este comité');
+        }
+
+        foreach ($partnerIds as $partnerId) {
+            if (! $this->associations->partnerIsActive($association, $partnerId)) {
+                throw new \DomainException('Una de las socias seleccionadas tiene su ficha vencida y no puede ocupar un cargo');
+            }
         }
 
         DB::transaction(function () use ($association, $assignments) {

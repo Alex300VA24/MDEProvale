@@ -37,6 +37,12 @@ interface PartnerRepositoryInterface
     /** El socio figura como presidenta o gestora en alguna PECOSA. */
     public function hasPecosas(Partner $partner): bool;
 
+    /** La persona ya es socia con ficha vigente (sin fecha de término o aún no vencida), excepto $exceptPartnerId. */
+    public function personHasActivePartner(int $personId, string $today, ?int $exceptPartnerId = null): bool;
+
+    /** Alguna de las personas ya es beneficiaria vigente de otra socia vigente. */
+    public function beneficiariesTakenByOtherPartner(array $personIds, string $today, ?int $exceptPartnerId = null): bool;
+
     public function deletePartner(Partner $partner): void;
 
     public function loadForFicha(Partner $partner): Partner;

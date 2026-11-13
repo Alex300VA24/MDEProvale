@@ -27,6 +27,9 @@ interface AssociationRepositoryInterface
     /** Recorre todos los comités con su resolución e historial en bloques. */
     public function chunkWithResolutions(int $size, callable $callback): void;
 
+    /** Comités con el estado dado, con sus resoluciones cargadas. */
+    public function inStateWithResolutions(int $stateId): \Illuminate\Database\Eloquent\Collection;
+
     /** Filtros: search (nombre o código), state_id, place_id, sector_id, place_sector_id. */
     public function paginateClubs(array $filters, int $perPage = 10): LengthAwarePaginator;
 
@@ -77,6 +80,9 @@ interface AssociationRepositoryInterface
     public function hasResolutionHistory(Association $association): bool;
 
     public function partnerBelongs(Association $association, int $partnerId): bool;
+
+    /** La socia pertenece al comité y su ficha no está vencida. */
+    public function partnerIsActive(Association $association, int $partnerId): bool;
 
     /** Ids de socias del comité, entre los indicados. */
     public function partnerIdsAmong(Association $association, SupportCollection $partnerIds): SupportCollection;

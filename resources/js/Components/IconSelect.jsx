@@ -145,7 +145,7 @@ export default function IconSelect({
                         maxHeight: coords.maxHeight,
                     }}
                 >
-                    <div className="p-3 border-b border-wheat bg-base">
+                    <div className="p-3 border-b border-wheat bg-fog">
                         <label htmlFor={`${id}-search`} className="sr-only">Buscar ícono</label>
                         <div className="relative">
                             <i className="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-earth text-xs" aria-hidden="true" />
@@ -225,7 +225,7 @@ export default function IconSelect({
                     </div>
 
                     {value && (
-                        <div className="p-2 border-t border-wheat bg-base">
+                        <div className="p-2 border-t border-wheat bg-fog">
                             <button
                                 type="button"
                                 onClick={() => select('')}

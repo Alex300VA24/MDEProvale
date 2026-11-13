@@ -21,7 +21,8 @@ class BeneficiaryReportService
         private AssociationRepositoryInterface $associationRepo,
         private PecosaRepositoryInterface $pecosaRepo,
         private CatalogRepositoryInterface $catalogs,
-        private PDFService $pdfService
+        private PDFService $pdfService,
+        private PadronGuardService $padronGuard
     ) {
     }
 
@@ -29,6 +30,8 @@ class BeneficiaryReportService
     {
         $association = $this->associationRepo->findWithPlaceSector($associationId)
             ?? throw (new ModelNotFoundException())->setModel(Association::class, [$associationId]);
+        $this->padronGuard->assertCanGenerate($association);
+
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
         $cutoffDate = $endDate;

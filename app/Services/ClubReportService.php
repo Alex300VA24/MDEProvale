@@ -13,8 +13,10 @@ class ClubReportService
     private const MESES = ['', 'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
         'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 
-    public function __construct(private AssociationRepositoryInterface $associations)
-    {
+    public function __construct(
+        private AssociationRepositoryInterface $associations,
+        private PadronGuardService $padronGuard
+    ) {
     }
 
     /**
@@ -23,6 +25,8 @@ class ClubReportService
      */
     public function padron(int $mes, int $anio): array
     {
+        $this->padronGuard->assertNoneBlocked();
+
         $startDate = Carbon::createFromDate($anio, $mes, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
         $start = $startDate->toDateString();

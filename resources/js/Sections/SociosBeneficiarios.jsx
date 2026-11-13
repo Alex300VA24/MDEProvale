@@ -3,7 +3,7 @@ import { useRuntimeState } from '../RuntimeState';
 import http from '../http';
 import SociosTab from './socios/SociosTab';
 import PadronModal from './socios/PadronModal';
-import PdfLinkButton from '../Components/PdfLinkButton';
+import RowActionsMenu from '../Components/RowActionsMenu';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
 
@@ -44,21 +44,23 @@ export default function SociosBeneficiarios({ initialAction }) {
     return (
         <>
             <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-                <div className="px-4 sm:px-6 py-4 sm:py-5">
-                    <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
-                        <i className="fas fa-people-roof text-leaf" /> Socios y Beneficiarios
-                    </h3>
-                    <p className="text-earth text-xs sm:text-sm mt-1">Administra cada familia desde una ficha única de socio y beneficiario.</p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-wheat">
                     <div>
-                        <p className="font-bold text-charcoal text-sm">Padrón familiar</p>
-                        <p className="text-xs text-earth">Socio titular con sus beneficiarios asociados</p>
+                        <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
+                            <i className="fas fa-people-roof text-leaf" /> Socios y Beneficiarios
+                        </h3>
+                        <p className="text-earth text-xs sm:text-sm mt-1">Administra cada familia desde una ficha única de socio y beneficiario.</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <button type="button" onClick={() => setPadronOpen(true)} className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"><i className="fas fa-clipboard-list" aria-hidden="true" />Generar Padrón</button>
-                        <PdfLinkButton href={`${window.APP_URL}/socios-beneficiarios/beneficiarios-imprimir`} loadingTitle="Generando Ficha de Beneficiario" icon="fa-print" className="btn-secondary flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60">Ficha Beneficiario</PdfLinkButton>
+                        <RowActionsMenu
+                            label="Acciones"
+                            triggerText="Acciones"
+                            triggerClassName="btn-secondary text-xs sm:text-sm"
+                            items={[
+                                { label: 'Generar Padrón', icon: 'fa-clipboard-list', onClick: () => setPadronOpen(true) },
+                                { label: 'Abrir Ficha Beneficiario', icon: 'fa-print', pdf: { href: `${window.APP_URL}/socios-beneficiarios/beneficiarios-imprimir`, loadingTitle: 'Generando Ficha de Beneficiario' } },
+                            ]}
+                        />
                         {can.create && <button type="button" onClick={() => sociosRef.current?.openCreate()} className="btn-primary flex items-center gap-2 text-xs sm:text-sm"><i className="fas fa-plus" aria-hidden="true" />Registrar Socio y Beneficiario</button>}
                     </div>
                 </div>

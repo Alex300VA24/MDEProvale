@@ -261,6 +261,9 @@ class PecosaService
     {
         $pecosa = $this->pecosaRepo->findOrFailPecosa($id);
 
+        // `pecosa_number` es opcional al actualizar: se conserva el existente.
+        $data['pecosa_number'] ??= $pecosa->pecosa_number;
+
         return DB::transaction(function () use ($pecosa, $data) {
             $this->stockService->revertStockByPecosa($pecosa->id);
             $this->pecosaRepo->deleteDetails($pecosa->id);

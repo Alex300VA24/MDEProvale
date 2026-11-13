@@ -48,7 +48,7 @@ export default function AuditoriaTab() {
 
             <div className="overflow-x-auto rounded-xl border-2 border-wheat">
                 <table className="w-full min-w-[780px] text-left text-sm">
-                    <thead className="bg-base text-xs uppercase tracking-wide text-earth">
+                    <thead className="bg-fog text-xs uppercase tracking-wide text-earth">
                         <tr>
                             <th className="px-4 py-3">Fecha</th>
                             <th className="px-4 py-3">Evento</th>
@@ -64,7 +64,7 @@ export default function AuditoriaTab() {
                         ) : events.length === 0 ? (
                             <tr><td colSpan="6" className="px-4 py-10 text-center text-earth">No hay eventos registrados.</td></tr>
                         ) : events.map((event) => (
-                            <tr key={event.id} className="hover:bg-base/70">
+                            <tr key={event.id} className="hover:bg-fog/70">
                                 <td className="whitespace-nowrap px-4 py-3 text-earth">{event.occurred_at}</td>
                                 <td className="px-4 py-3 font-bold text-charcoal">{EVENT_LABELS[event.event_type] ?? event.event_type}</td>
                                 <td className="px-4 py-3 text-charcoal">{event.subject}</td>

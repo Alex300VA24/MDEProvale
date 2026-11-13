@@ -4,7 +4,7 @@ import http from '../http';
 import ComitesTab from './comites/ComitesTab';
 import ReconocimientosTab from './comites/ReconocimientosTab';
 import PadronModal from './comites/PadronModal';
-import PdfLinkButton from '../Components/PdfLinkButton';
+import RowActionsMenu from '../Components/RowActionsMenu';
 
 const BASE = '/api/dashboard/club-madres';
 
@@ -51,6 +51,8 @@ export default function ClubReconocimientos({ initialAction }) {
             const reconOpts = can.reconocimientos.view ? results.shift() : null;
             setOptions({
                 states: comitesOpts?.data?.states ?? reconOpts?.data?.states ?? [],
+                // Resoluciones: Vigente, Vencido y Pendiente (distinto de los estados de comité).
+                resolution_states: reconOpts?.data?.states ?? [],
                 place_sectors: comitesOpts?.data?.place_sectors ?? [],
                 type_premises: comitesOpts?.data?.type_premises ?? [],
                 resolutions: comitesOpts?.data?.resolutions ?? [],
@@ -115,33 +117,16 @@ export default function ClubReconocimientos({ initialAction }) {
 
                         <div className="flex flex-wrap items-center gap-2">
                             {can.comites.view && tab === 'comites' && (
-                                <button
-                                    type="button"
-                                    onClick={() => setPadronOpen(true)}
-                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm"
-                                >
-                                    <i className="fas fa-clipboard-list" aria-hidden="true" /> Generar Padrón
-                                </button>
-                            )}
-                            {can.comites.view && tab === 'comites' && (
-                                <PdfLinkButton
-                                    href={`${window.APP_URL || ''}/club-reconocimientos/acta-renuncia`}
-                                    loadingTitle="Generando Acta de Renuncia"
-                                    icon="fa-file-signature"
-                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60"
-                                >
-                                    Acta de Renuncia
-                                </PdfLinkButton>
-                            )}
-                            {can.comites.view && tab === 'comites' && (
-                                <PdfLinkButton
-                                    href={`${window.APP_URL || ''}/club-reconocimientos/acta-reuniones`}
-                                    loadingTitle="Generando Acta de Reuniones"
-                                    icon="fa-users-line"
-                                    className="btn-secondary flex items-center gap-2 text-xs sm:text-sm disabled:opacity-60"
-                                >
-                                    Acta de Reuniones
-                                </PdfLinkButton>
+                                <RowActionsMenu
+                                    label="Acciones"
+                                    triggerText="Acciones"
+                                    triggerClassName="btn-secondary text-xs sm:text-sm"
+                                    items={[
+                                        { label: 'Generar Padrón', icon: 'fa-clipboard-list', onClick: () => setPadronOpen(true) },
+                                        { label: 'Abrir Acta de Renuncia', icon: 'fa-file-signature', pdf: { href: `${window.APP_URL || ''}/club-reconocimientos/acta-renuncia`, loadingTitle: 'Generando Acta de Renuncia' } },
+                                        { label: 'Abrir Acta de Reuniones', icon: 'fa-users-line', pdf: { href: `${window.APP_URL || ''}/club-reconocimientos/acta-reuniones`, loadingTitle: 'Generando Acta de Reuniones' } },
+                                    ]}
+                                />
                             )}
                             {can.comites.view && tab === 'comites' && can.comites.create && (
                                 <button

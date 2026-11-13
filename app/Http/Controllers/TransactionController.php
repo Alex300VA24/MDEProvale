@@ -15,9 +15,7 @@ class TransactionController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'type_transaction_id', 'fecha_inicio', 'fecha_fin']);
-
-        return view('movimientos.index', $this->transactionService->indexData($filters));
+        return redirect()->route('dashboard');
     }
 
     public function store(StoreTransactionRequest $request)
@@ -30,9 +28,9 @@ class TransactionController extends Controller
                 : $this->transactionService->registerSalida($request->validated());
 
             $message = $isIngreso ? 'Ingreso registrado correctamente.' : 'Salida registrada correctamente.';
-            return redirect()->route('movimientos.index')->with('success', $message);
+            return redirect()->route('dashboard')->with('success', $message);
         } catch (\Throwable $e) {
-            return redirect()->route('movimientos.index')->with('error', $e->getMessage());
+            return redirect()->route('dashboard')->with('error', $e->getMessage());
         }
     }
 
@@ -49,9 +47,9 @@ class TransactionController extends Controller
 
         try {
             $this->transactionService->updateTransaction($transaction, $validated);
-            return redirect()->route('movimientos.index')->with('success', 'Movimiento actualizado correctamente.');
+            return redirect()->route('dashboard')->with('success', 'Movimiento actualizado correctamente.');
         } catch (\Throwable $e) {
-            return redirect()->route('movimientos.index')->with('error', $e->getMessage());
+            return redirect()->route('dashboard')->with('error', $e->getMessage());
         }
     }
 
@@ -59,9 +57,9 @@ class TransactionController extends Controller
     {
         try {
             $this->transactionService->deleteTransaction($transaction);
-            return redirect()->route('movimientos.index')->with('success', 'Movimiento eliminado correctamente.');
+            return redirect()->route('dashboard')->with('success', 'Movimiento eliminado correctamente.');
         } catch (\Throwable $e) {
-            return redirect()->route('movimientos.index')->with('error', $e->getMessage());
+            return redirect()->route('dashboard')->with('error', $e->getMessage());
         }
     }
 }

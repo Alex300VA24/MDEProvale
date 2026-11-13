@@ -3,6 +3,7 @@ import { Head, router } from '@inertiajs/react';
 import LoadingScreen from '../Components/LoadingScreen';
 import http from '../http';
 import AsistentePROVALE from '../Components/AsistentePROVALE';
+import ProfileModal from '../Components/ProfileModal';
 import { useRuntimeState } from '../RuntimeState';
 
 // Secciones cargadas bajo demanda (React.lazy => chunk separado por sección).
@@ -60,6 +61,14 @@ const NOTIF_TYPE_LABELS = {
     normativa_pvl: 'Normativa PVL',
     alerta_beneficiarios: 'Límite de edad',
     alerta_resolucion: 'Resolución por vencer',
+    regularizacion: 'Regularización',
+};
+
+const NOTIF_STATUS_BADGES = {
+    approved: { label: 'Aprobado', cls: 'bg-teal-light text-teal' },
+    rejected: { label: 'Rechazado', cls: 'bg-coral-light text-coral' },
+    por_solucionar: { label: 'Por regularizar', cls: 'bg-sun-light text-earth' },
+    solucionado: { label: 'Regularizado', cls: 'bg-teal-light text-teal' },
 };
 
 // Etiquetas de urgencia (calculadas por el sistema) y prioridad (sugerida por IA, opcional).
@@ -73,6 +82,7 @@ const NOTIF_TYPE_STYLES = {
     normativa_pvl: 'bg-emerald-600 text-white border-emerald-700',
     alerta_beneficiarios: 'bg-violet-600 text-white border-violet-700',
     alerta_resolucion: 'bg-orange-600 text-white border-orange-700',
+    regularizacion: 'bg-amber-500 text-white border-amber-600',
 };
 const NOTIF_PRIORITY_LABELS = { alta: 'Alta', media: 'Media', baja: 'Baja' };
 const NOTIF_PRIORITY_STYLES = {
@@ -112,13 +122,10 @@ function NotifBadges({ n }) {
                     <i className="fas fa-wand-magic-sparkles" aria-hidden="true" /> Prioridad IA: {NOTIF_PRIORITY_LABELS[priority] || priority}
                 </span>
             )}
-            {n.status && n.status !== 'pending' && n.status !== 'informativo' && (
-                <span className={`px-2 py-1 text-xs font-bold rounded ${
-                    n.status === 'approved' ? 'bg-teal-light text-teal' : 'bg-coral-light text-coral'
-                }`}>
-                    {n.status === 'approved' ? 'Aprobado' : 'Rechazado'}
-                </span>
-            )}
+            {n.status && n.status !== 'pending' && n.status !== 'informativo' && (() => {
+                const st = NOTIF_STATUS_BADGES[n.status] || NOTIF_STATUS_BADGES.rejected;
+                return <span className={`px-2 py-1 text-xs font-bold rounded ${st.cls}`}>{st.label}</span>;
+            })()}
         </div>
     );
 }
@@ -164,7 +171,7 @@ function NotifDetailBody({ n }) {
 
             {meta.ia && (
                 <Section title="Análisis de IA (complementario)">
-                    <div className="rounded-xl border-2 border-mist bg-base p-3 text-sm space-y-2">
+                    <div className="rounded-xl border-2 border-mist bg-fog p-3 text-sm space-y-2">
                         <p className="text-navy">{meta.ia.resumen}</p>
                         <p className="text-navy"><span className="font-bold">Acción sugerida:</span> {meta.ia.accion_sugerida}</p>
                     </div>
@@ -180,7 +187,7 @@ function NotifDetailBody({ n }) {
                             ['Días restantes', meta.dias_restantes < 0 ? `Venció hace ${Math.abs(meta.dias_restantes)}` : meta.dias_restantes],
                             ['Comités alcanzados', meta.total_comites],
                         ].map(([label, value]) => (
-                            <div key={label} className="rounded-xl border-2 border-mist bg-base px-3 py-2">
+                            <div key={label} className="rounded-xl border-2 border-mist bg-fog px-3 py-2">
                                 <dt className="text-slate text-xs">{label}</dt>
                                 <dd className="font-bold text-navy mt-0.5">{value}</dd>
                             </div>
@@ -206,7 +213,7 @@ function NotifDetailBody({ n }) {
                     </p>
                     <div className="max-h-64 overflow-y-auto rounded-xl border-2 border-mist">
                         <table className="w-full text-sm">
-                            <thead className="bg-base text-slate text-xs text-left">
+                            <thead className="bg-fog text-slate text-xs text-left">
                                 <tr>
                                     <th className="px-3 py-2">Beneficiario</th>
                                     <th className="px-3 py-2">Tipo</th>
@@ -336,6 +343,23 @@ export default function Dashboard() {
     const [detailNotif, setDetailNotif] = useState(null);
     const [notifLoading, setNotifLoading] = useState(false);
     const notifLoaded = useRef(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [profileOpen, setProfileOpen] = useState(false);
+    const userMenuRef = useRef(null);
+
+    useEffect(() => {
+        if (!userMenuOpen) return undefined;
+        const onPointerDown = (e) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
+        };
+        const onKeyDown = (e) => { if (e.key === 'Escape') setUserMenuOpen(false); };
+        document.addEventListener('mousedown', onPointerDown);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('mousedown', onPointerDown);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [userMenuOpen]);
 
     const toggleSidebar = () => {
         setSidebarExpanded((expanded) => {
@@ -474,7 +498,7 @@ export default function Dashboard() {
 
                     <nav id="sidebar-navigation" className="px-3 py-4 overflow-y-auto overflow-x-hidden flex flex-col scrollbar-thin" style={{ height: 'calc(100% - 88px)' }}>
                         <div className="flex-1">
-                            {navItems.map((item) => {
+                            {navItems.filter((item) => item.key !== 'sistema' && item.key !== 'ayuda').map((item) => {
                                 const selected = activeSection === item.key;
 
                                 return (
@@ -575,25 +599,52 @@ export default function Dashboard() {
 
                             <div className="hidden sm:block w-px h-9 bg-gradient-to-b from-transparent via-mist to-transparent" />
 
-                            <div className="hidden sm:flex items-center gap-3 pl-1.5 pr-4 py-1.5 rounded-md border border-mist bg-white shadow-sm hover:shadow-md hover:border-sky/50 transition-all">
-                                <div className="w-9 h-9 rounded-md bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-sm ring-2 ring-white shadow-sm flex-shrink-0">
-                                    {(user?.name || 'A').charAt(0).toUpperCase()}
-                                </div>
-                                <div className="leading-tight">
-                                    <div className="text-navy font-bold text-sm">{user?.name ?? 'Usuario'}</div>
-                                    <div className="text-slate text-[11px] font-semibold">{user?.rol ?? ''}</div>
-                                </div>
-                            </div>
+                            <div ref={userMenuRef} className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setUserMenuOpen((open) => !open)}
+                                    aria-haspopup="menu"
+                                    aria-expanded={userMenuOpen}
+                                    title="Menú de usuario"
+                                    className="flex items-center gap-3 pl-1.5 pr-2 sm:pr-3 py-1.5 rounded-md border border-mist bg-white shadow-sm hover:shadow-md hover:border-sky/50 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-sky"
+                                >
+                                    <div className="w-9 h-9 rounded-md bg-gradient-to-br from-sky to-blue-mid flex items-center justify-center text-white font-bold text-sm ring-2 ring-white shadow-sm flex-shrink-0">
+                                        {(user?.name || 'A').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div className="hidden sm:block leading-tight text-left">
+                                        <div className="text-navy font-bold text-sm">{user?.name ?? 'Usuario'}</div>
+                                        <div className="text-slate text-[11px] font-semibold">{user?.rol ?? ''}</div>
+                                    </div>
+                                    <i className={`fas fa-chevron-down text-xs text-slate transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+                                </button>
 
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                title="Cerrar sesión"
-                                className="group flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-md bg-coral-light text-coral font-bold text-xs sm:text-sm border border-coral/30 hover:bg-coral/15 hover:border-coral/60 transition-colors"
-                            >
-                                <i className="fas fa-power-off text-coral/80 group-hover:text-coral transition-colors" />
-                                <span className="hidden md:inline">Cerrar sesión</span>
-                            </button>
+                                {userMenuOpen && (
+                                    <div
+                                        role="menu"
+                                        className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-mist bg-white shadow-xl py-1.5 z-50 animate-fade-in"
+                                    >
+                                        <div className="px-4 py-2.5 border-b border-mist sm:hidden">
+                                            <div className="text-navy font-bold text-sm truncate">{user?.name ?? 'Usuario'}</div>
+                                            <div className="text-slate text-[11px] font-semibold">{user?.rol ?? ''}</div>
+                                        </div>
+                                        <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); setProfileOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
+                                            <i className="fas fa-user w-4 text-center text-slate" aria-hidden="true" /> Perfil
+                                        </button>
+                                        {allowedSectionKeys.has('sistema') && (
+                                            <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate('sistema'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
+                                                <i className="fas fa-gear w-4 text-center text-slate" aria-hidden="true" /> Sistema
+                                            </button>
+                                        )}
+                                        <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate('ayuda'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
+                                            <i className="fas fa-circle-question w-4 text-center text-slate" aria-hidden="true" /> Ayuda
+                                        </button>
+                                        <div className="my-1.5 border-t border-mist" />
+                                        <button type="button" role="menuitem" onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold text-coral hover:bg-coral-light transition-colors">
+                                            <i className="fas fa-power-off w-4 text-center" aria-hidden="true" /> Cerrar sesión
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </header>
 
@@ -615,6 +666,8 @@ export default function Dashboard() {
             </div>
 
             {panelLoading && <LoadingScreen subtitle="Cargando panel..." />}
+
+            <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
 
             <AsistentePROVALE open={assistantOpen} onOpenChange={setAssistantOpen} />
 
@@ -657,7 +710,7 @@ export default function Dashboard() {
                                 ) : (
                                     <div className="space-y-4">
                                         {notifs.map((n) => (
-                                            <div key={n.id} className="p-4 rounded-xl border-2 border-mist bg-base">
+                                            <div key={n.id} className="p-4 rounded-xl border-2 border-mist bg-fog">
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex-1">
                                                         <NotifBadges n={n} />

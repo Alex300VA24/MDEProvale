@@ -810,27 +810,7 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                         <p className="text-white/80 text-sm sm:text-lg font-medium max-w-lg">
                             Gestiona beneficiarios, club de madres y entregas de manera eficiente.
                         </p>
-                        <div className="flex flex-wrap gap-3 sm:gap-4 mt-5 sm:mt-7">
-                            {allowedSections.has('productos') && (
-                                <button
-                                    type="button"
-                                    onClick={() => onNavigate?.('productos', 'new-pecosa')}
-                                    className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg text-sm sm:text-base hover:bg-white/30 transition-all border border-white/20"
-                                >
-                                    <i className="fas fa-plus mr-2" />Registrar Pecosa
-                                </button>
-                            )}
-                            {allowedSections.has('comites') && (
-                                <button
-                                    type="button"
-                                    onClick={() => onNavigate?.('comites')}
-                                    className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white font-semibold rounded-lg text-sm sm:text-base border border-blue/15 hover:bg-blue-light transition-all shadow-sm"
-                                    style={{ color: '#0B3A66' }}
-                                >
-                                    <i className="fas fa-file-alt mr-2" />Comités
-                                </button>
-                            )}
-                        </div>
+                        
                     </div>
                 </div>
             </div>
@@ -859,7 +839,7 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     barClass="bg-gradient-to-r from-blue to-sky"
                     value={nfmt(stats.total_socios)}
                     label="Socias registradas"
-                    subtitle="Relaciones del padrón sin depurar"
+                    subtitle="Total de Socias registras en los comités de Vaso de Leche"
                     detail={stats.roster_audit?.metrics?.socios}
                     onDetail={() => setAuditMetric('socios')}
                 />
@@ -869,7 +849,7 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                     barClass="bg-gradient-to-r from-sky to-[#7ec3e8]"
                     value={nfmt(stats.total_beneficiarios)}
                     label="Beneficiarios registrados"
-                    subtitle="Relaciones del padrón sin depurar"
+                    subtitle="Total de Beneficiarios registrados en los comités de Vaso de Leche"
                     detail={stats.roster_audit?.metrics?.beneficiarios}
                     onDetail={() => setAuditMetric('beneficiarios')}
                 />

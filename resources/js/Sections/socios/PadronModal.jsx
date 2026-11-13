@@ -126,7 +126,7 @@ export default function PadronModal({ open, onClose, options }) {
                 </div>
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={onClose} disabled={loading} className="btn-secondary flex-1">
-                        Cerrar
+                        Cancelar
                     </button>
                     <button
                         type="button"

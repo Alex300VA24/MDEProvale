@@ -57,19 +57,21 @@ class FullDatabaseSeederTest extends TestCase
         }
 
         $this->assertSame(2, DB::table('products')->count());
-        $this->assertSame(12, DB::table('detail_products')->count());
-        $this->assertSame(539, DB::table('pecosas')->count());
+        $this->assertSame(18, DB::table('detail_products')->count());
+        $this->assertSame(769, DB::table('pecosas')->count());
         $expiredStateId = DB::table('states')->where('abbreviation', 'VEN')->value('id');
-        $this->assertSame(539, DB::table('pecosas')->where('state_id', $expiredStateId)->count());
-        $this->assertSame(924, DB::table('detail_pecosas')->count());
-        $this->assertSame(924, DB::table('product_stocks')->count());
-        $this->assertSame(936, DB::table('transactions')->count());
+        $expectedExpired = DB::table('pecosas')->pluck('delivery_date')
+            ->filter(fn ($date) => Pecosa::stateAbbreviationForDeliveryDate($date) === 'VEN')->count();
+        $this->assertSame($expectedExpired, DB::table('pecosas')->where('state_id', $expiredStateId)->count());
+        $this->assertSame(1384, DB::table('detail_pecosas')->count());
+        $this->assertSame(1384, DB::table('product_stocks')->count());
+        $this->assertSame(1402, DB::table('transactions')->count());
         $this->assertSame(0, DB::table('product_stocks')->whereNull('transaction_id')->count());
 
         $ingresoId = DB::table('type_transactions')->where('title', 'Ingreso')->value('id');
         $salidaId = DB::table('type_transactions')->where('title', 'Salida')->value('id');
-        $this->assertSame(12, DB::table('transactions')->where('type_transaction_id', $ingresoId)->count());
-        $this->assertSame(924, DB::table('transactions')->where('type_transaction_id', $salidaId)->count());
+        $this->assertSame(18, DB::table('transactions')->where('type_transaction_id', $ingresoId)->count());
+        $this->assertSame(1384, DB::table('transactions')->where('type_transaction_id', $salidaId)->count());
         $this->assertSame(0, DB::table('detail_products')->whereRaw(
             'detail_products.quantity <> '
             . '(SELECT COALESCE(SUM(product_stocks.quantity), 0) '
@@ -80,13 +82,13 @@ class FullDatabaseSeederTest extends TestCase
         $this->actingAs($admin)
             ->getJson('/api/dashboard/productos-pecosas/pecosas?per_page=10')
             ->assertOk()
-            ->assertJsonPath('meta.total', 539)
+            ->assertJsonPath('meta.total', 769)
             ->assertJsonPath('period.year', null)
             ->assertJsonPath('period.month', null);
         $this->actingAs($admin)
             ->getJson('/api/dashboard/movimientos/transactions?per_page=15')
             ->assertOk()
-            ->assertJsonPath('meta.total', 936);
+            ->assertJsonPath('meta.total', 1402);
 
         $relations = [
             ['partners', 'people', 'person_id'],

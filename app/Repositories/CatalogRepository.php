@@ -42,6 +42,16 @@ class CatalogRepository implements CatalogRepositoryInterface
         return State::temporal()->get($columns);
     }
 
+    public function administrativeStates(array $columns = ['*']): Collection
+    {
+        return State::administrative()->get($columns);
+    }
+
+    public function resolutionStates(array $columns = ['*']): Collection
+    {
+        return State::whereIn('abbreviation', [State::CURRENT, State::EXPIRED, State::PENDING])->get($columns);
+    }
+
     public function uoms(array $columns = ['*']): Collection
     {
         return Uom::select($columns)->get();

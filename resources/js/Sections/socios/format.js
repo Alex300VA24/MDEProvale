@@ -1,6 +1,7 @@
 export function formatDate(value) {
     if (!value) return '';
-    const date = new Date(`${value}T00:00:00`);
+    const day = String(value).slice(0, 10);
+    const date = new Date(`${day}T00:00:00`);
     if (Number.isNaN(date.getTime())) return value;
     const dd = String(date.getDate()).padStart(2, '0');
     const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -29,4 +30,12 @@ export function stateClass(state) {
     if (STATE_CLASS_BY_ABBR[abbr]) return STATE_CLASS_BY_ABBR[abbr];
     const title = String(state.title || '').trim().toLowerCase();
     return STATE_CLASS_BY_TITLE[title] || 'badge-unknown';
+}
+
+/** Socios: solo Activo / Inactivo (vigente = activo, vencido = inactivo). */
+export function partnerStateLabel(state) {
+    const abbr = String(state?.abbreviation || '').trim().toUpperCase();
+    if (['VIG', 'ACT'].includes(abbr)) return 'Activo';
+    if (['VEN', 'INA'].includes(abbr)) return 'Inactivo';
+    return state?.title || 'N/A';
 }

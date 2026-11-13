@@ -13,8 +13,6 @@ class KardexController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['product_id', 'periodo', 'stock_status', 'search']);
-
-        return view('productos-pecosas.kardex.index', $this->productService->kardexData($filters));
+        return redirect()->route('dashboard');
     }
 }

@@ -228,14 +228,14 @@ export function FichaControlInternoModal({ onClose }) {
                     </div>
                 </fieldset>
 
-                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-mist pt-5 sm:flex-row sm:justify-end">
-                    <button type="button" onClick={onClose} className="btn-secondary sm:min-w-32">Cerrar</button>
+                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-mist pt-5 sm:flex-row">
+                    <button type="button" onClick={onClose} className="btn-secondary sm:flex-1">Cancelar</button>
                     <PdfLinkButton
                         href={pdfUrl('movimientos-ficha-control')}
                         postData={pdfBody(product, payload)}
                         loadingTitle="Generando Ficha de Control Interno"
                         icon="fa-print"
-                        className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 sm:min-w-52"
+                        className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 sm:flex-1"
                     >
                         Generar ficha PDF
                     </PdfLinkButton>
@@ -435,15 +435,15 @@ export function TarjetaControlModal({ product, year, month, onClose }) {
                     </p>
                 </div>
 
-                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-mist pt-5 sm:flex-row sm:justify-end">
-                    <button type="button" onClick={onClose} className="btn-secondary sm:min-w-32">Cerrar</button>
+                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-mist pt-5 sm:flex-row">
+                    <button type="button" onClick={onClose} className="btn-secondary sm:flex-1">Cancelar</button>
                     <PdfLinkButton
                         href={pdfUrl('movimientos-tarjeta-control')}
                         postData={pdfBody(product, payload)}
                         disabled={loading}
                         loadingTitle="Generando Tarjeta de Control"
                         icon="fa-print"
-                        className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 sm:min-w-52 disabled:opacity-40"
+                        className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 sm:flex-1 disabled:opacity-40"
                     >
                         Generar tarjeta PDF
                     </PdfLinkButton>

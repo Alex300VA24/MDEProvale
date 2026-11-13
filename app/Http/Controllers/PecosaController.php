@@ -21,21 +21,19 @@ class PecosaController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'association_id', 'state_id', 'fecha_inicio', 'fecha_fin']);
-
-        return view('productos-pecosas.pecosas.index', $this->pecosaService->indexData($filters));
+        return redirect()->route('dashboard');
     }
 
     public function create()
     {
-        return view('productos-pecosas.pecosas.create', $this->pecosaService->createData());
+        return redirect()->route('dashboard');
     }
 
     public function store(StorePecosaRequest $request)
     {
         try {
             $this->pecosaService->createPecosa($request->validated());
-            return redirect()->route('pecosas.index')
+            return redirect()->route('dashboard')
                 ->with('success', 'Pecosa creada exitosamente');
         } catch (\DomainException $e) {
             return back()->withInput()->with('error', $e->getMessage());
@@ -46,21 +44,19 @@ class PecosaController extends Controller
 
     public function show(Pecosa $pecosa)
     {
-        $pecosa = $this->pecosaService->showPecosa($pecosa);
-
-        return view('productos-pecosas.pecosas.show', compact('pecosa'));
+        return redirect()->route('dashboard');
     }
 
     public function edit(Pecosa $pecosa)
     {
-        return view('productos-pecosas.pecosas.edit', ['pecosa' => $pecosa] + $this->pecosaService->editData());
+        return redirect()->route('dashboard');
     }
 
     public function update(UpdatePecosaRequest $request, Pecosa $pecosa)
     {
         try {
             $this->pecosaService->updatePecosa($pecosa->id, $request->validated());
-            return redirect()->route('pecosas.index')
+            return redirect()->route('dashboard')
                 ->with('success', 'Pecosa actualizada exitosamente');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Error al actualizar PECOSA: ' . $e->getMessage());
@@ -71,7 +67,7 @@ class PecosaController extends Controller
     {
         try {
             $this->pecosaService->deletePecosa($pecosa);
-            return redirect()->route('pecosas.index')->with('success', 'Pecosa eliminada exitosamente');
+            return redirect()->route('dashboard')->with('success', 'Pecosa eliminada exitosamente');
         } catch (\Exception $e) {
             return back()->with('error', 'Error al eliminar PECOSA: ' . $e->getMessage());
         }
@@ -101,7 +97,7 @@ class PecosaController extends Controller
 
     public function reportes()
     {
-        return view('productos-pecosas.pecosas.reportes');
+        return redirect()->route('dashboard');
     }
 
     /**

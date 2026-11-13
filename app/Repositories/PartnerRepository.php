@@ -41,7 +41,7 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
 
     private function orderByFatherLastname($query): void
     {
-        foreach (['father_lastname', 'mother_lastname', 'names'] as $column) {
+        foreach (['names', 'father_lastname', 'mother_lastname'] as $column) {
             $query->orderBy(
                 DB::table('people')->select($column)->whereColumn('people.id', 'partners.person_id')->limit(1)
             );
@@ -216,6 +216,31 @@ class PartnerRepository extends BaseRepository implements PartnerRepositoryInter
                 ->when($onlyIds !== null, fn ($q) => $q->whereIn('id', $onlyIds))
                 ->select('id'))
             ->get();
+    }
+
+    public function personHasActivePartner(int $personId, string $today, ?int $exceptPartnerId = null): bool
+    {
+        return Partner::where('person_id', $personId)
+            ->when($exceptPartnerId, fn ($q) => $q->whereKeyNot($exceptPartnerId))
+            ->where(fn ($q) => $q->whereNull('date_end')->orWhereDate('date_end', '>=', $today))
+            ->exists();
+    }
+
+    public function beneficiariesTakenByOtherPartner(array $personIds, string $today, ?int $exceptPartnerId = null): bool
+    {
+        return DB::table('beneficiaries')
+            ->join('partners', 'partners.id', '=', 'beneficiaries.partner_id')
+            ->whereIn('beneficiaries.person_id', $personIds)
+            ->when($exceptPartnerId, fn ($q) => $q->where('partners.id', '!=', $exceptPartnerId))
+            ->whereColumn('beneficiaries.person_id', '!=', 'partners.person_id')
+            ->where(fn ($q) => $q->whereNull('partners.date_end')->orWhere('partners.date_end', '>=', $today))
+            ->where(function ($q) use ($today) {
+                $q->whereNotExists(fn ($h) => $h->selectRaw('1')->from('beneficiary_histories')->whereColumn('beneficiary_histories.beneficiary_id', 'beneficiaries.id'))
+                    ->orWhereExists(fn ($h) => $h->selectRaw('1')->from('beneficiary_histories')
+                        ->whereColumn('beneficiary_histories.beneficiary_id', 'beneficiaries.id')
+                        ->where(fn ($d) => $d->whereNull('date_end')->orWhere('date_end', '>=', $today)));
+            })
+            ->exists();
     }
 
     public function hasPecosas(Partner $partner): bool

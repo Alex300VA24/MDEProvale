@@ -106,7 +106,7 @@ export default function PecosasPdfMensualModal({ open, onClose }) {
                 </div>
                 <div className="flex gap-3 pt-2">
                     <button type="button" onClick={onClose} disabled={loading} className="btn-secondary flex-1">
-                        Cerrar
+                        Cancelar
                     </button>
                     <button
                         type="button"

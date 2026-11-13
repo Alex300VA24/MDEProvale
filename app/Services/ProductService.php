@@ -28,7 +28,7 @@ class ProductService
 
         return [
             'products' => $this->productRepo->searchWithFilters($productFilters),
-            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'states' => $this->catalogs->administrativeStates(['id', 'title', 'abbreviation']),
             'uoms' => $this->catalogs->uoms(['id', 'title']),
             'detailProducts' => $this->productRepo->paginateDetailProducts($lotFilters),
         ];
@@ -38,7 +38,7 @@ class ProductService
     public function formCatalogs(): array
     {
         return [
-            'states' => $this->catalogs->temporalStates(),
+            'states' => $this->catalogs->administrativeStates(),
             'uoms' => $this->catalogs->uoms(),
         ];
     }
@@ -60,7 +60,7 @@ class ProductService
     public function optionsData(): array
     {
         return [
-            'states' => $this->catalogs->temporalStates(['id', 'title', 'abbreviation']),
+            'states' => $this->catalogs->administrativeStates(['id', 'title', 'abbreviation']),
             'uoms' => $this->catalogs->uoms(['id', 'title']),
         ];
     }
@@ -73,13 +73,13 @@ class ProductService
     /**
      * Registra un producto vigente; la abreviatura se deriva del título si no viene.
      *
-     * @throws \DomainException si no existe el estado Vigente
+     * @throws \DomainException si no existe el estado Activo
      */
     public function register(array $data): Product
     {
-        $data['state_id'] = State::idFor(State::CURRENT);
+        $data['state_id'] = State::idFor(State::ACTIVE);
         if (! $data['state_id']) {
-            throw new \DomainException('No se encontró el estado Vigente para crear el producto.');
+            throw new \DomainException('No se encontró el estado Activo para crear el producto.');
         }
         $data['abbreviation'] = ($data['abbreviation'] ?? null)
             ?: Str::upper(Str::substr(Str::ascii($data['title']), 0, 5));

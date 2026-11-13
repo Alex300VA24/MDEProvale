@@ -62,7 +62,9 @@ class Notification extends Model
     // Tipos de aviso del sistema (sin dueño individual): visibles para todos los
     // usuarios autenticados, a diferencia de las solicitudes personales
     // (ej. recuperación de contraseña) que solo ve el admin o quien las pidió.
-    public const SYSTEM_WIDE_TYPES = ['normativa_pvl', 'alerta_beneficiarios', 'alerta_resolucion'];
+    public const TYPE_REGULARIZATION = 'regularizacion';
+
+    public const SYSTEM_WIDE_TYPES = ['normativa_pvl', 'alerta_beneficiarios', 'alerta_resolucion', self::TYPE_REGULARIZATION];
 
     // Avisos que exigen una acción: siguen contando en la campanita, aunque ya
     // se hayan visto, hasta que se solucionen.

@@ -32,12 +32,29 @@ class MunicipalResolutionService
      */
     public function resolve(Resolution $resolution): ?array
     {
-        if (! $resolution->document
-            || ! preg_match('/^(\d+)-(\d{4})$/', $resolution->document, $documentParts)) {
+        if (! $resolution->document) {
             return null;
         }
 
-        $cacheKey = "resolucion_externa_v3_{$resolution->id}_{$resolution->document}";
+        return $this->resolveByDocument($resolution->document, $resolution->date_start?->month);
+    }
+
+    /**
+     * Busca por número de documento (formato NNNN-AAAA) sin necesidad de la
+     * resolución en BD: sirve antes de registrar.
+     *
+     * @return array{pdf_url: string, titulo: string, fecha: ?string}|null null si el portal no la publica
+     * @throws MunicipalPortalException si el portal no responde o responde con error
+     */
+    public function resolveByDocument(string $document, ?int $preferredMonth = null): ?array
+    {
+        $document = trim($document);
+
+        if (! preg_match('/^(\d+)-(\d{4})$/', $document, $documentParts)) {
+            return null;
+        }
+
+        $cacheKey = "resolucion_externa_v3_{$document}";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
@@ -48,9 +65,8 @@ class MunicipalResolutionService
         }
 
         [, $number, $year] = $documentParts;
-        $preferredMonth = $resolution->date_start?->month;
 
-        $match = $this->searchMonths($resolution->document, $year, $number, $preferredMonth);
+        $match = $this->searchMonths($document, $year, $number, $preferredMonth);
 
         Cache::put($cacheKey, $match ?? false, $match ? self::TTL_FOUND : self::TTL_NOT_FOUND);
 

@@ -114,8 +114,10 @@ Route::prefix('dashboard/club-madres')->middleware('module:club-madres')->name('
     Route::post('reconocimientos', [ComitesController::class, 'storeReconocimiento'])->name('reconocimientos.store');
     Route::put('reconocimientos/{resolution}', [ComitesController::class, 'updateReconocimiento'])->name('reconocimientos.update');
     Route::delete('reconocimientos/{resolution}', [ComitesController::class, 'destroyReconocimiento'])->name('reconocimientos.destroy');
+    Route::post('reconocimientos/{resolution}/regularizar', [ComitesController::class, 'regularizeReconocimiento'])->name('reconocimientos.regularize');
 
     // Portal municipal (proxy de resoluciones externas)
+    Route::get('reconocimientos/verificar-externa', [ComitesController::class, 'buscarResolucionExternaPorNumero'])->name('reconocimientos.externa.verificar');
     Route::get('reconocimientos/{resolution}/buscar-externa', [ComitesController::class, 'buscarResolucionExterna'])->name('reconocimientos.externa.buscar');
     Route::get('reconocimientos/{resolution}/preview-externa', [ComitesController::class, 'previewResolucionExterna'])->name('reconocimientos.externa.preview');
     Route::get('reconocimientos/{resolution}/descargar-externa', [ComitesController::class, 'descargarResolucionExterna'])->name('reconocimientos.externa.descargar');

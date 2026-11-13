@@ -18,7 +18,9 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
     private const CLUB_WITH = [
         'state:id,title,abbreviation',
         'resolution:id,document,date_document,date_start,date_end,state_id',
+        'resolution.state:id,title,abbreviation',
         'resolutionsHistory:id,document,date_document,date_start,date_end,state_id',
+        'resolutionsHistory.state:id,title,abbreviation',
         'placeSector:id,place_id,sector_id',
         'placeSector.place:id,title',
         'placeSector.sector:id,title',
@@ -71,6 +73,11 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
             ->where('association_id', $associationId)
             ->whereDate('period', $period)
             ->first();
+    }
+
+    public function inStateWithResolutions(int $stateId): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->model->where('state_id', $stateId)->with(['resolution', 'resolutionsHistory'])->get();
     }
 
     public function chunkWithResolutions(int $size, callable $callback): void
@@ -246,6 +253,16 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
     public function partnerBelongs(Association $association, int $partnerId): bool
     {
         return $association->partners()->whereKey($partnerId)->exists();
+    }
+
+    public function partnerIsActive(Association $association, int $partnerId): bool
+    {
+        $today = now()->toDateString();
+
+        return $association->partners()
+            ->whereKey($partnerId)
+            ->where(fn ($q) => $q->whereNull('date_end')->orWhereDate('date_end', '>=', $today))
+            ->exists();
     }
 
     public function partnerIdsAmong(Association $association, SupportCollection $partnerIds): SupportCollection

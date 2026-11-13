@@ -33,7 +33,6 @@ module.exports = {
                 jakarta: ['"Source Sans 3"', 'sans-serif'],
             },
             colors: {
-                base:  tok('--c-base'),
                 mist:  tok('--c-mist'),
                 slate: tok('--c-slate'),
                 wheat: tok('--c-wheat'),
@@ -82,6 +81,11 @@ module.exports = {
                 'green-light':  tok('--c-green-light'),
 
                 // Tokens semánticos de superficie, lienzo y contenido.
+                // El color se llama `fog` y NO `base`: `text-base` es la
+                // utilidad de tipografía de Tailwind y un color con ese nombre
+                // genera una segunda regla `.text-base{color}` que pisaba a
+                // otros colores (p. ej. el icono de la tarjeta ámbar de Inicio).
+                fog:       tok('--c-base'),
                 surface:   tok('--c-surface'),
                 'surface-2': tok('--c-surface-2'),
                 canvas:    tok('--c-canvas'),

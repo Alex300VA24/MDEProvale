@@ -41,7 +41,7 @@ export default function ParametrosTab({ can }) {
 
     return (
         <form onSubmit={save} className="max-w-xl space-y-4">
-            <div className="rounded-xl border-2 border-wheat bg-base p-4">
+            <div className="rounded-xl border-2 border-wheat bg-fog p-4">
                 <label htmlFor="max-attachment-mb" className="block text-xs font-bold uppercase tracking-wider text-slate-600">Peso máximo por archivo</label>
                 <div className="mt-2 flex items-center gap-3">
                     <input id="max-attachment-mb" type="number" min={data.min} max={data.max} value={value} onChange={(event) => setValue(event.target.value)} className="w-28 rounded-xl border-2 border-wheat px-4 py-2 font-semibold focus:border-leaf focus:outline-none" disabled={!can.edit} />

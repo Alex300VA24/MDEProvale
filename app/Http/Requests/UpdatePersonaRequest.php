@@ -23,8 +23,7 @@ class UpdatePersonaRequest extends FormRequest
             'dni' => [
                 'sometimes',
                 'required',
-                'string',
-                'max:8',
+                'digits:8',
                 Rule::unique('people', 'dni')->ignore($this->route('person')?->id),
             ],
             'birthdate' => 'nullable|date',

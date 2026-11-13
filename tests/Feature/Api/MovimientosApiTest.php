@@ -548,6 +548,7 @@ class MovimientosApiTest extends TestCase
     public function test_reparticion_requires_an_ingreso_in_the_same_period(): void
     {
         $this->seedReparticionContext();
+        $this->moveLotOutsideReparticionPeriod();
         $year = now()->year;
 
         $this->actingAs($this->adminUser())
@@ -592,6 +593,7 @@ class MovimientosApiTest extends TestCase
     public function test_reparticion_save_and_exports_are_blocked_without_ingreso(): void
     {
         $this->seedReparticionContext();
+        $this->moveLotOutsideReparticionPeriod();
         $year = now()->year;
 
         $this->actingAs($this->adminUser())
@@ -662,6 +664,12 @@ class MovimientosApiTest extends TestCase
             ->assertStatus(201);
 
         return (int) $response->json('data.id');
+    }
+
+    /** El lote sembrado empieza hace 30 dias (puede caer en el mes bajo prueba): se fija fuera del periodo. */
+    private function moveLotOutsideReparticionPeriod(): void
+    {
+        DB::table('detail_products')->where('id', 1)->update(['start_date' => '2026-01-15']);
     }
 
     private function seedIngresoForPeriod(int $year, int $month): void

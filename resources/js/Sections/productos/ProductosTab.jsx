@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } fro
 import http from '../../http';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
-import DetailModal, { DetailGroup, Field, FieldGrid } from '../../Components/DetailModal';
+import IconInput from '../../Components/IconInput';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
@@ -14,6 +14,8 @@ const BASE = '/api/dashboard/productos-pecosas';
 const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
+
+const iconCls = `${inputCls} pl-10`;
 
 const MESES = [
     { value: '1', label: 'Enero' },
@@ -94,29 +96,29 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                         <label className={labelCls}>Nombre del Producto *</label>
-                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-box"><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={iconCls} placeholder="Ej: Hojuelas de avena 1000" required /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Abreviatura</label>
-                        <input type="text" value={abbreviation} onChange={(e) => setAbbreviation(e.target.value)} className={inputCls} />
+                        <IconInput icon="fa-tag"><input type="text" value={abbreviation} onChange={(e) => setAbbreviation(e.target.value)} className={iconCls} placeholder="Ej: HOJ01" /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Unidad de Medida *</label>
-                        <select value={uomId} onChange={(e) => setUomId(e.target.value)} className={inputCls} required>
+                        <IconInput icon="fa-ruler"><select value={uomId} onChange={(e) => setUomId(e.target.value)} className={iconCls} required>
                             <option value="">Seleccione</option>
                             {(options.uoms || []).map((u) => (
                                 <option key={u.id} value={u.id}>{u.title}</option>
                             ))}
-                        </select>
+                        </select></IconInput>
                     </div>
                     {mode === 'edit' && <div>
                         <label className={labelCls}>Estado *</label>
-                        <select value={stateId} onChange={(e) => setStateId(e.target.value)} className={inputCls} required>
+                        <IconInput icon="fa-toggle-on"><select value={stateId} onChange={(e) => setStateId(e.target.value)} className={iconCls} required>
                             <option value="">Seleccione</option>
                             {(options.states || []).map((s) => (
                                 <option key={s.id} value={s.id}>{s.title}</option>
                             ))}
-                        </select>
+                        </select></IconInput>
                     </div>}
                 </div>
                 <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
@@ -131,26 +133,6 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
     );
 }
 
-function ProductViewModal({ product, onClose }) {
-    if (!product) return null;
-    return (
-        <DetailModal open onClose={onClose} title="Detalle del producto" icon="fa-box" maxWidth="sm:max-w-lg">
-            <DetailGroup>
-                <FieldGrid>
-                    <Field label="Nombre" value={product.title} />
-                    <Field label="Abreviatura" value={product.abbreviation} />
-                    <Field label="Unidad de medida" value={product.uom?.title} />
-                    <Field label="Estado">
-                        <span className={`badge ${stateClass(product.state)}`}>
-                            {product.state?.title || 'Sin estado'}
-                        </span>
-                    </Field>
-                </FieldGrid>
-            </DetailGroup>
-        </DetailModal>
-    );
-}
-
 const ProductosTab = forwardRef(function ProductosTab({ options, can, onProductsChanged }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
@@ -160,7 +142,6 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can, onProducts
     const [formOpen, setFormOpen] = useState(false);
     const [formMode, setFormMode] = useState('create');
     const [editing, setEditing] = useState(null);
-    const [viewing, setViewing] = useState(null);
     const [deleting, setDeleting] = useState(null);
 
     // Detalle Productos (endpoint paginado /products/detail-products)
@@ -367,20 +348,12 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can, onProducts
                                             </span>
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 text-center">
-                                            <div className="inline-grid grid-cols-[repeat(3,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setViewing(product)}
-                                                    className="btn-action col-start-1 bg-sky-light text-[#0284C7] hover:bg-sky hover:text-white"
-                                                    title="Ver"
-                                                >
-                                                    <i className="fas fa-eye" />
-                                                </button>
-                                                {can.edit && (
+                                            <div className="inline-grid grid-cols-[repeat(2,2.25rem)] items-center justify-items-center gap-1 sm:gap-2">
+{can.edit && (
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(product)}
-                                                        className="btn-action col-start-2 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
+                                                        className="btn-action col-start-1 bg-sun-light text-[#D97706] hover:bg-sun hover:text-white"
                                                         title="Editar"
                                                     >
                                                         <i className="fas fa-edit" />
@@ -390,7 +363,7 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can, onProducts
                                                     <button
                                                         type="button"
                                                         onClick={() => setDeleting(product)}
-                                                        className="btn-action col-start-3 bg-clay-light text-clay hover:bg-clay hover:text-white"
+                                                        className="btn-action col-start-2 bg-clay-light text-clay hover:bg-clay hover:text-white"
                                                         title="Eliminar"
                                                     >
                                                         <i className="fas fa-trash" />
@@ -586,11 +559,6 @@ const ProductosTab = forwardRef(function ProductosTab({ options, can, onProducts
                     }}
                 />
             )}
-
-            <ProductViewModal
-                product={viewing}
-                onClose={() => setViewing(null)}
-            />
 
             <ConfirmDialog
                 open={!!deleting}

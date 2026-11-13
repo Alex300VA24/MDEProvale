@@ -20,7 +20,7 @@ interface ResolutionRepositoryInterface
     /** Todas las resoluciones, la de documento más reciente primero. */
 
     /** Resoluciones vigentes sin comité asignado; con `$includeId` también esa resolución. */
-    public function availableForCommittees(?int $currentStateId, string $today, ?int $includeId = null): Collection;
+    public function availableForCommittees(?int $currentStateId, string $today, ?int $includeId = null, ?int $pendingStateId = null): Collection;
 
     /** Años distintos de inicio, del más reciente al más antiguo. */
     public function startYears(): SupportCollection;
@@ -28,6 +28,8 @@ interface ResolutionRepositoryInterface
     public function create(array $data): Resolution;
 
     public function update(Resolution $resolution, array $data): bool;
+
+    public function documentExists(string $document, ?int $exceptId = null): bool;
 
     public function delete(Resolution $resolution): bool;
 

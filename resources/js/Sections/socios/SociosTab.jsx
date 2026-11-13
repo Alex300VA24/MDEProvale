@@ -8,7 +8,7 @@ import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import PdfLinkButton from '../../Components/PdfLinkButton';
 import { useDebounced } from './hooks';
-import { formatDate, personFullName, personLabel, stateClass } from './format';
+import { formatDate, partnerStateLabel, personFullName, personLabel, stateClass } from './format';
 import { associationLabel } from '../comites/format';
 import errorMessage from '../../errorMessage';
 import ReniecPhoto from './ReniecPhoto';
@@ -559,7 +559,7 @@ function SocioViewModal({ partner, onClose }) {
                         <FieldGrid cols={3}>
                             <Field label="DNI" value={partner.person?.dni} mono />
                             <Field label="Estado">
-                                <span className={`badge ${stateCls}`}>{partner.state?.title || 'N/A'}</span>
+                                <span className={`badge ${stateCls}`}>{partnerStateLabel(partner.state)}</span>
                             </Field>
                             <Field label="Club" value={partner.association?.name} />
                         </FieldGrid>
@@ -606,7 +606,7 @@ function SocioViewModal({ partner, onClose }) {
                         {(partner.beneficiaries || []).map((b) => {
                             const h = latestHistory(b);
                             return (
-                                <div key={b.id} className="rounded-xl border border-mist bg-base/60 p-3">
+                                <div key={b.id} className="rounded-xl border border-mist bg-fog/60 p-3">
                                     <FieldGrid cols={3}>
                                         <Field label="Nombre" value={personFullName(b.person)} />
                                         <Field label="DNI" value={b.person?.dni} mono />
@@ -616,7 +616,7 @@ function SocioViewModal({ partner, onClose }) {
                                         <FieldGrid cols={4}>
                                             <Field label="Prioridad" value={b.priority === 2 ? 'Segunda' : 'Primera'} />
                                             <Field label="Tipo beneficio" value={h?.type_benefit?.title} />
-                                            <Field label="Estado" value={h?.state?.title} />
+                                            <Field label="Estado" value={h?.state ? partnerStateLabel(h.state) : ''} />
                                             <Field label="Inicio" value={formatDate(h?.date_begin)} />
                                             <Field label="Fin" value={formatDate(h?.date_end)} />
                                         </FieldGrid>
@@ -715,7 +715,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
         id: a.id,
         label: associationLabel(a),
     }));
-    const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: s.title }));
+    const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: partnerStateLabel(s) }));
 
     return (
         <>
@@ -825,7 +825,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
                                                     loadingTitle="Generando Ficha del Socio"
                                                     icon="fa-print"
                                                     className="btn-action bg-leaf-light text-leaf hover:bg-leaf hover:text-white disabled:opacity-60"
-                                                    title="Imprimir ficha A4"
+                                                    title="Abrir ficha beneficiario"
                                                 />
 
                                                 {/* Ver */}

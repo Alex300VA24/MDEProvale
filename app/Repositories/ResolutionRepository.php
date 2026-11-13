@@ -23,6 +23,13 @@ class ResolutionRepository implements ResolutionRepositoryInterface
     {
     }
 
+    public function documentExists(string $document, ?int $exceptId = null): bool
+    {
+        return Resolution::where('document', $document)
+            ->when($exceptId, fn ($q) => $q->whereKeyNot($exceptId))
+            ->exists();
+    }
+
     public function paginateFiltered(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         $query = Resolution::with(self::RELATIONS);
@@ -71,13 +78,15 @@ class ResolutionRepository implements ResolutionRepositoryInterface
 
 
 
-    public function availableForCommittees(?int $currentStateId, string $today, ?int $includeId = null): Collection
+    public function availableForCommittees(?int $currentStateId, string $today, ?int $includeId = null, ?int $pendingStateId = null): Collection
     {
         return Resolution::select(['id', 'document', 'date_document', 'date_start', 'date_end', 'state_id'])
-            ->where(function ($q) use ($currentStateId, $today, $includeId) {
-                $q->where(function ($sub) use ($currentStateId, $today) {
-                    if ($currentStateId) {
-                        $sub->where('state_id', $currentStateId);
+            ->where(function ($q) use ($currentStateId, $pendingStateId, $today, $includeId) {
+                $q->where(function ($sub) use ($currentStateId, $pendingStateId, $today) {
+                    // Las Pendientes también se ofrecen: se regularizan después.
+                    $stateIds = array_filter([$currentStateId, $pendingStateId]);
+                    if ($stateIds) {
+                        $sub->whereIn('state_id', $stateIds);
                     }
                     $sub->where('date_end', '>=', $today)
                         ->whereNotIn('id', Association::whereNotNull('resolution_id')->select('resolution_id'))

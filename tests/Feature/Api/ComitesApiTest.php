@@ -233,6 +233,9 @@ class ComitesApiTest extends TestCase
     {
         return [
             'document' => $document,
+            // Pendiente: no consulta el portal municipal, que no está disponible en pruebas.
+            'pending' => true,
+            'observation' => 'Resolución en trámite',
             'date_start' => '2026-01-10',
             'date_end' => '2026-12-31',
             'state_id' => 1,
@@ -782,5 +785,86 @@ class ComitesApiTest extends TestCase
             'position_id' => $tesoreraId,
             'state_id' => 2,
         ]);
+    }
+
+    public function test_pending_resolution_requires_observation(): void
+    {
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE.'/reconocimientos', [
+                'document' => '999-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31', 'pending' => true,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('observation');
+    }
+
+    public function test_pending_resolution_keeps_state_and_emits_regularization_notification(): void
+    {
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE.'/reconocimientos', [
+                'document' => '999-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31',
+                'pending' => true, 'observation' => 'Falta publicar en el portal',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.state.abbreviation', 'PEN')
+            ->assertJsonPath('data.observation', 'Falta publicar en el portal');
+
+        $this->assertDatabaseHas('notifications', ['type' => 'regularizacion', 'status' => 'por_solucionar']);
+    }
+
+    public function test_deleting_pending_resolution_removes_its_regularization_notification(): void
+    {
+        $id = $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE.'/reconocimientos', [
+                'document' => '998-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31',
+                'pending' => true, 'observation' => 'Falta publicar',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertDatabaseHas('notifications', ['type' => 'regularizacion', 'dedupe_key' => 'regularizacion_'.$id]);
+
+        $this->actingAs($this->userWithAccess())
+            ->deleteJson(self::BASE.'/reconocimientos/'.$id)
+            ->assertStatus(204);
+
+        $this->assertDatabaseMissing('notifications', ['type' => 'regularizacion', 'dedupe_key' => 'regularizacion_'.$id]);
+    }
+
+    public function test_regularize_fails_when_resolution_not_in_municipal_portal(): void
+    {
+        \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response('<html></html>', 200)]);
+        DB::table('resolutions')->where('id', 2)->update(['state_id' => 3]);
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE.'/reconocimientos/2/regularizar', ['document' => '777-2026'])
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('resolutions', ['id' => 2, 'state_id' => 3]);
+    }
+
+    public function test_regularize_moves_pending_to_current_when_portal_has_it(): void
+    {
+        $html = '<table><tr class="od"><td>1</td><td>x</td><td>RESOLUCION DE ALCALDIA 777-2026</td><td>01/01/2026</td>'
+            ."<td><a onclick=\"window.open('../files/777.pdf')\">pdf</a></td></tr></table>";
+        \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response($html, 200)]);
+        DB::table('resolutions')->where('id', 2)->update(['state_id' => 3, 'observation' => 'x']);
+        \Illuminate\Support\Facades\Cache::flush();
+
+        $this->actingAs($this->userWithAccess())
+            ->postJson(self::BASE.'/reconocimientos/2/regularizar', ['document' => '777-2026'])
+            ->assertOk()
+            ->assertJsonPath('data.state.abbreviation', 'VIG');
+
+        $this->assertDatabaseHas('resolutions', ['id' => 2, 'document' => '777-2026', 'state_id' => 2, 'observation' => null]);
+    }
+
+    public function test_padron_is_blocked_for_active_committee_with_pending_latest_resolution(): void
+    {
+        // Resolución 2 (2025-02-20) es la más reciente del comité 1.
+        DB::table('resolutions')->where('id', 2)->update(['state_id' => 3]);
+
+        $this->actingAs($this->userWithAccess())
+            ->getJson('/club-reconocimientos/club-padron?month=1&year=2026')
+            ->assertStatus(422);
     }
 }

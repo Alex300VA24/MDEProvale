@@ -49,21 +49,23 @@ class ProductMigrationSeederTest extends TestCase
         ]);
 
         $this->assertDatabaseCount('products', 2);
-        $this->assertDatabaseCount('detail_products', 12);
-        $this->assertDatabaseCount('pecosas', 539);
-        $this->assertDatabaseCount('detail_pecosas', 924);
-        $this->assertDatabaseCount('product_stocks', 924);
-        $this->assertDatabaseCount('transactions', 936);
+        $this->assertDatabaseCount('detail_products', 18);
+        $this->assertDatabaseCount('pecosas', 769);
+        $this->assertDatabaseCount('detail_pecosas', 1384);
+        $this->assertDatabaseCount('product_stocks', 1384);
+        $this->assertDatabaseCount('transactions', 1402);
 
         $ingresoId = DB::table('type_transactions')->where('title', 'Ingreso')->value('id');
         $salidaId = DB::table('type_transactions')->where('title', 'Salida')->value('id');
-        $this->assertSame(12, DB::table('transactions')->where('type_transaction_id', $ingresoId)->count());
-        $this->assertSame(924, DB::table('transactions')->where('type_transaction_id', $salidaId)->count());
+        $this->assertSame(18, DB::table('transactions')->where('type_transaction_id', $ingresoId)->count());
+        $this->assertSame(1384, DB::table('transactions')->where('type_transaction_id', $salidaId)->count());
         $this->assertSame(0, DB::table('product_stocks')->whereNull('transaction_id')->count());
 
         $expiredStateId = DB::table('states')->where('abbreviation', 'VEN')->value('id');
         $administrativeStateIds = DB::table('states')->whereIn('abbreviation', ['ACT', 'INA'])->pluck('id');
-        $this->assertSame(539, DB::table('pecosas')->where('state_id', $expiredStateId)->count());
+        $expectedExpired = DB::table('pecosas')->pluck('delivery_date')
+            ->filter(fn ($date) => \App\Models\Pecosa::stateAbbreviationForDeliveryDate($date) === 'VEN')->count();
+        $this->assertSame($expectedExpired, DB::table('pecosas')->where('state_id', $expiredStateId)->count());
         $this->assertSame(0, DB::table('pecosas')->whereIn('state_id', $administrativeStateIds)->count());
 
         $this->assertSame('2026-03-01', (string) DB::table('detail_products')->min('start_date'));
@@ -78,10 +80,10 @@ class ProductMigrationSeederTest extends TestCase
             ->pluck('total', 'month')
             ->map(fn ($total) => (int) $total)
             ->all();
-        $this->assertSame([2 => 77, 3 => 77, 4 => 77, 5 => 154, 6 => 77, 7 => 77], $months);
+        $this->assertSame([2 => 77, 3 => 77, 4 => 77, 5 => 154, 6 => 77, 7 => 77, 8 => 76, 9 => 77, 10 => 77], $months);
 
-        $this->assertSame(539, app(PecosaRepository::class)->searchWithFilters([], 10)->total());
-        $this->assertSame(539, app(PecosaRepository::class)->searchWithFilters(['year' => 2026], 10)->total());
+        $this->assertSame(769, app(PecosaRepository::class)->searchWithFilters([], 10)->total());
+        $this->assertSame(769, app(PecosaRepository::class)->searchWithFilters(['year' => 2026], 10)->total());
 
         $unbalancedLots = DB::table('detail_products')
             ->whereRaw(

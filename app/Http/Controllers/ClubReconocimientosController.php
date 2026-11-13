@@ -82,7 +82,15 @@ class ClubReconocimientosController extends Controller
         $mes  = (int) $request->get('month', date('n'));
         $anio = (int) $request->get('year', date('Y'));
 
-        $pdf = PDF::loadView('padron_club', $this->reports->padron($mes, $anio))->setPaper('a4', 'landscape');
+        try {
+            $data = $this->reports->padron($mes, $anio);
+        } catch (\DomainException $e) {
+            return $request->expectsJson()
+                ? response()->json(['message' => $e->getMessage()], 422)
+                : abort(422, $e->getMessage());
+        }
+
+        $pdf = PDF::loadView('padron_club', $data)->setPaper('a4', 'landscape');
 
         return $pdf->stream('padron-club-madres-' . $anio . '-' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.pdf');
     }

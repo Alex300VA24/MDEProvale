@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AsignarCargoRequest;
 use App\Http\Requests\AsignarCargosRequest;
+use App\Http\Requests\RegularizeReconocimientoRequest;
 use App\Http\Requests\StoreClubRequest;
 use App\Http\Requests\StoreReconocimientoRequest;
 use App\Http\Requests\UpdateClubRequest;
@@ -151,11 +152,66 @@ class ComitesController extends Controller
         return response()->json($this->resolutions->options());
     }
 
-    public function storeReconocimiento(StoreReconocimientoRequest $request)
+    public function storeReconocimiento(StoreReconocimientoRequest $request, MunicipalResolutionService $municipal)
     {
-        return (new ReconocimientoResource($this->resolutions->create($request->validated())))
+        $data = $request->validated();
+
+        // Sin Pendiente: el número debe existir en el portal municipal para guardar.
+        if (! ($data['pending'] ?? false)) {
+            $document = trim($data['document']);
+
+            if (! preg_match('/^\d+-\d{4}$/', $document)) {
+                return response()->json([
+                    'success' => false,
+                    'reason' => 'invalid_format',
+                    'message' => 'El documento "'.$document.'" no tiene el formato NNNN-AAAA (ej: 0123-2026).',
+                    'hint' => 'Corrige el número o marca la resolución como Pendiente para guardarla sin validación.',
+                    'retryable' => false,
+                ], 422);
+            }
+
+            try {
+                $match = $municipal->resolveByDocument($document);
+            } catch (MunicipalPortalException $e) {
+                return response()->json($e->toPayload(), $e->httpStatus());
+            }
+
+            if (! $match) {
+                return response()->json([
+                    'success' => false,
+                    'reason' => 'not_found',
+                    'message' => 'La resolución '.$document.' no existe en el portal de la Municipalidad de La Esperanza.',
+                    'hint' => 'Verifica el número o marca la resolución como Pendiente para guardarla sin validación.',
+                    'retryable' => false,
+                ], 422);
+            }
+        }
+
+        try {
+            $resolution = $this->resolutions->create($data);
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return (new ReconocimientoResource($resolution))
             ->response()
             ->setStatusCode(201);
+    }
+
+    /** Pendiente -> Vigente: valida que el número exista en el portal municipal. */
+    public function regularizeReconocimiento(RegularizeReconocimientoRequest $request, Resolution $resolution)
+    {
+        try {
+            return new ReconocimientoResource($this->resolutions->regularize(
+                $resolution,
+                $request->validated('document'),
+                array_filter($request->safe()->only(['date_start', 'date_end']))
+            ));
+        } catch (MunicipalPortalException $e) {
+            return response()->json($e->toPayload(), $e->httpStatus());
+        } catch (\DomainException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
     }
 
     public function updateReconocimiento(UpdateReconocimientoRequest $request, Resolution $resolution)
@@ -175,6 +231,50 @@ class ComitesController extends Controller
     }
 
     // ==================== RESOLUCIÓN EXTERNA (PORTAL MUNICIPAL) ====================
+
+    /** Consulta previa al registro: valida el número contra el portal sin persistir. */
+    public function buscarResolucionExternaPorNumero(Request $request, MunicipalResolutionService $municipal)
+    {
+        $request->validate([
+            'document' => 'required|string|max:100',
+        ], [
+            'document.required' => 'Ingrese el número de resolución a verificar.',
+        ]);
+
+        $document = trim($request->input('document'));
+
+        if (! preg_match('/^\d+-\d{4}$/', $document)) {
+            return response()->json([
+                'success' => false,
+                'reason' => 'invalid_format',
+                'message' => 'El documento "'.$document.'" no tiene el formato NNNN-AAAA (ej: 0123-2026).',
+                'hint' => 'Corrige el número o marca la resolución como Pendiente.',
+                'retryable' => false,
+            ], 422);
+        }
+
+        try {
+            $match = $municipal->resolveByDocument($document);
+        } catch (MunicipalPortalException $e) {
+            return response()->json($e->toPayload(), $e->httpStatus());
+        }
+
+        if (! $match) {
+            return response()->json([
+                'success' => false,
+                'reason' => 'not_found',
+                'message' => 'La resolución '.$document.' no existe en el portal de la Municipalidad de La Esperanza.',
+                'hint' => 'Verifica el número o marca la resolución como Pendiente.',
+                'retryable' => false,
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'titulo' => $match['titulo'],
+            'fecha' => $match['fecha'],
+        ]);
+    }
 
     public function buscarResolucionExterna(Resolution $resolution, MunicipalResolutionService $municipal)
     {

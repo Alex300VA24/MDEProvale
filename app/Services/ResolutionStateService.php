@@ -19,6 +19,11 @@ class ResolutionStateService
 
     public function sync(Resolution $resolution, ?CarbonInterface $today = null): bool
     {
+        // Pendiente solo sale de ese estado por regularización (ResolutionService::regularize).
+        if ($resolution->isPending()) {
+            return false;
+        }
+
         $stateId = State::idFor($this->abbreviationFor($resolution, $today));
 
         if (!$stateId || (int) $resolution->state_id === $stateId) {

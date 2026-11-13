@@ -30,19 +30,30 @@ class PartnerController extends Controller
 
     public function index(Request $request)
     {
-        $data = $this->partnerService->indexData($request->only(['search', 'association_id', 'state_id']));
+        return redirect()->route('dashboard');
+    }
 
-        return view('socios-beneficiarios.index', $data);
+    private const FIELDS_OUT_OF_MODEL = ['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id'];
+
+    private function registrationDocuments(Request $request): array
+    {
+        return [
+            'family' => $request->file('family_document'),
+            'conadis' => $request->file('conadis_document'),
+            'beneficiaries' => $request->file('beneficiary_documents', []),
+        ];
     }
 
     public function store(StorePartnerRequest $request)
     {
         try {
-            $this->partnerService->storeWithBeneficiaries(
-                $request->validated(),
-                $request->input('beneficiaries')
+            $this->partnerService->register(
+                $request->safe()->except(self::FIELDS_OUT_OF_MODEL),
+                $request->input('beneficiaries'),
+                $request->only(['fum', 'benefit_child_person_id']),
+                $this->registrationDocuments($request)
             );
-            return redirect()->route('partners.index')->with('success', 'Socio y beneficiarios creados exitosamente');
+            return redirect()->route('dashboard')->with('success', 'Socio y beneficiarios creados exitosamente');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Error al crear socio: ' . $e->getMessage());
         }
@@ -51,12 +62,14 @@ class PartnerController extends Controller
     public function update(UpdatePartnerRequest $request, Partner $partner)
     {
         try {
-            $this->partnerService->updateWithBeneficiaries(
+            $this->partnerService->modify(
                 $partner,
-                $request->validated(),
-                $request->input('beneficiaries')
+                $request->safe()->except(self::FIELDS_OUT_OF_MODEL),
+                $request->input('beneficiaries'),
+                $request->only(['fum', 'benefit_child_person_id']),
+                $this->registrationDocuments($request)
             );
-            return redirect()->route('partners.index')->with('success', 'Socio y beneficiarios actualizados exitosamente');
+            return redirect()->route('dashboard')->with('success', 'Socio y beneficiarios actualizados exitosamente');
         } catch (\Exception $e) {
             return back()->withInput()->with('error', 'Error al actualizar socio: ' . $e->getMessage());
         }
@@ -66,7 +79,7 @@ class PartnerController extends Controller
     {
         try {
             $this->partnerService->deleteWithRelations($partner);
-            return redirect()->route('partners.index')->with('success', 'Socio y beneficiarios eliminados exitosamente');
+            return redirect()->route('dashboard')->with('success', 'Socio y beneficiarios eliminados exitosamente');
         } catch (\Exception $e) {
             return back()->with('error', 'Error al eliminar socio: ' . $e->getMessage());
         }
@@ -74,14 +87,12 @@ class PartnerController extends Controller
 
     public function reportePadronBeneficiarios(Request $request)
     {
-        $associations = $this->partnerService->allAssociations();
         $associationId = $request->get('association_id');
         $mes = $request->get('month', date('n'));
         $anio = $request->get('year', date('Y'));
 
-        if (!$associationId) {
-            return view('socios-beneficiarios.beneficiarios.padron-filtros', compact('associations', 'mes', 'anio'));
-        }
+        // La selección de comité se hace en el dashboard; sin comité no hay padrón que emitir.
+        abort_unless($associationId, 422, 'Seleccione un comité para generar el padrón de beneficiarios.');
 
         try {
             $data = $this->beneficiaryReportService->generatePadronReport($associationId, (int)$mes, (int)$anio);

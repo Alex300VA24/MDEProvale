@@ -49,6 +49,26 @@ function ageFrom(birthdate) {
     return age;
 }
 
+// 0 a 6 años (hasta cumplir 7) = primera prioridad / NI0; mayor de 6 = segunda prioridad / NI7.
+export function priorityForAge(age) {
+    if (age === null || age === undefined) return null;
+    return age <= 6 ? 1 : 2;
+}
+
+// Ajusta prioridad y tipo de beneficio según la fecha de nacimiento del niño.
+function applyAgeRules(item, options) {
+    const age = ageFrom(item.personState.personData.birthdate);
+    const priority = priorityForAge(age);
+    if (priority === null) return item;
+    const current = (options.type_benefits || []).find((value) => String(value.id) === String(item.typeBenefitId));
+    const next = { ...item, priority };
+    if (!current || ['NI0', 'NI7'].includes(current.abbreviation)) {
+        const target = (options.type_benefits || []).find((value) => value.abbreviation === (priority === 1 ? 'NI0' : 'NI7'));
+        if (target) next.typeBenefitId = target.id;
+    }
+    return next;
+}
+
 function createBeneficiary(options) {
     const type = (options.type_benefits || []).find((item) => ['NI0', 'NI7', 'TBC', 'DIS'].includes(item.abbreviation));
     return {
@@ -71,7 +91,7 @@ function beneficiaryFromRecord(record) {
         personState: emptyPerson(record.person, false),
         relationshipId: record.relationship_id ?? '',
         typeBenefitId: history?.type_benefit_id ?? '',
-        dateBegin: history?.date_begin || TODAY,
+        dateBegin: String(history?.date_begin || TODAY).slice(0, 10),
         documents: record.documents || [],
         pendingDocument: { documentType: 'expediente_unico', file: null },
     };
@@ -88,6 +108,8 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
     const dateEnd = benefitEndDate(item.personState.personData.birthdate, selectedBenefit?.abbreviation);
     const isExisting = Boolean(item.id);
     const set = (field, value) => onChange({ ...item, [field]: value });
+    const setPerson = (value) => onChange(applyAgeRules({ ...item, personState: value }, options));
+    const autoPriority = ageFrom(item.personState.personData.birthdate) !== null;
 
     return (
         <section className="rounded-2xl border-2 border-blue/20 bg-blue-light/30 p-3 sm:p-4 space-y-4">
@@ -100,18 +122,18 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
             </div>
 
             <fieldset className="rounded-xl border border-blue/20 bg-white p-3">
-                <legend className="px-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">Prioridad *</legend>
+                <legend className="px-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">Prioridad *{autoPriority && <span className="ml-1 font-normal normal-case tracking-normal text-earth">(según la edad)</span>}</legend>
                 <div className="grid grid-cols-2 gap-2">
                     {[1, 2].map((priority) => (
-                        <label key={priority} className={`cursor-pointer rounded-xl border-2 px-3 py-2 text-center text-xs font-bold transition ${item.priority === priority ? 'border-leaf bg-leaf-light text-leaf' : 'border-wheat text-earth'}`}>
-                            <input type="radio" name={`priority-${item.key}`} value={priority} checked={item.priority === priority} onChange={() => set('priority', priority)} className="sr-only" />
+                        <label key={priority} className={`${autoPriority ? 'cursor-not-allowed' : 'cursor-pointer'} rounded-xl border-2 px-3 py-2 text-center text-xs font-bold transition ${item.priority === priority ? 'border-leaf bg-leaf-light text-leaf' : 'border-wheat text-earth'}`}>
+                            <input type="radio" name={`priority-${item.key}`} value={priority} checked={item.priority === priority} onChange={() => set('priority', priority)} disabled={autoPriority} className="sr-only" />
                             {priority === 1 ? 'Primera prioridad' : 'Segunda prioridad'}
                         </label>
                     ))}
                 </div>
             </fieldset>
 
-            <PersonaInlineFields value={item.personState} onChange={(value) => set('personState', value)} title="Datos del Beneficiario" />
+            <PersonaInlineFields value={item.personState} onChange={setPerson} title="Datos del Beneficiario" />
 
             <div className="grid grid-cols-1 gap-3 rounded-xl border border-wheat bg-white p-3 sm:grid-cols-2">
                 <div>
@@ -124,16 +146,16 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
                 </div>
                 <div>
                     <label className={labelCls}>Inicio del beneficio</label>
-                    <div className="rounded-xl border-2 border-wheat bg-base px-4 py-2 text-xs font-semibold text-earth">{item.dateBegin}</div>
+                    <div className="rounded-xl border-2 border-wheat bg-fog px-4 py-2 text-xs font-semibold text-earth">{item.dateBegin}</div>
                 </div>
                 <div>
                     <label className={labelCls}>Fin calculado</label>
-                    <div className="rounded-xl border-2 border-wheat bg-base px-4 py-2 text-xs font-semibold text-earth">{dateEnd || 'Sin fecha de fin automática'}</div>
+                    <div className="rounded-xl border-2 border-wheat bg-fog px-4 py-2 text-xs font-semibold text-earth">{dateEnd || 'Sin fecha de fin automática'}</div>
                 </div>
             </div>
 
             <PendingDocumentSection attachableType="beneficiarie" value={item.pendingDocument} onChange={(value) => set('pendingDocument', value)} inputId={`beneficiary-file-${item.key}`} allowedTypes={['expediente_unico']} showTypeSelect={false} title={isExisting ? 'Reemplazar expediente único del beneficiario' : 'Expediente único del beneficiario'} pdfOnly required={!isExisting} />
-            {isExisting && <DocumentosSection attachableType="beneficiarie" attachableId={item.id} initialDocuments={item.documents || []} allowedTypes={['expediente_unico']} title="Expediente del beneficiario" />}
+            {isExisting && <DocumentosSection attachableType="beneficiarie" attachableId={item.id} initialDocuments={item.documents || []} allowedTypes={['expediente_unico']} title="Expediente del beneficiario" canUpload={false} />}
 
             <div className="flex items-center justify-between gap-2 border-t border-blue/15 pt-3">
                 <button type="button" onClick={onPrevious} disabled={index === 0} className="btn-secondary text-xs disabled:opacity-40"><i className="fas fa-chevron-left mr-1" />Anterior</button>
@@ -168,7 +190,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         const existing = mode === 'edit'
             ? (partner?.beneficiaries || []).filter((record) => Number(record.person_id) !== Number(partner.person_id)).map(beneficiaryFromRecord)
             : [];
-        return existing.length ? existing : [createBeneficiary(options)];
+        return existing.length ? existing.map((item) => applyAgeRules(item, options)) : [createBeneficiary(options)];
     });
     const [activeBeneficiary, setActiveBeneficiary] = useState(0);
     const [submitting, setSubmitting] = useState(false);
@@ -177,7 +199,12 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         id: value.id,
         label: associationLabel(value),
     }));
-    const currentBeneficiary = beneficiaries[activeBeneficiary];
+    // Lactante (obligatorio) o sin condición: se registra beneficiario. Gestante y demás condiciones: solo la socia.
+    const requiresBeneficiary = condition === 'LACTANTE';
+    // Al editar, sin condición solo se muestra el beneficiario si la socia ya tiene uno registrado.
+    const hasRegisteredBeneficiaries = mode === 'edit' && beneficiaries.some((item) => item.id);
+    const showBeneficiaries = requiresBeneficiary || (condition === '' && (mode === 'create' || hasRegisteredBeneficiaries));
+    const currentBeneficiary = showBeneficiaries ? beneficiaries[activeBeneficiary] : null;
     const hasConadis = partner?.documents?.some((document) => document.document_type === 'conadis');
     const conditionOptions = [
         ['GESTANTE', 'Gestante'], ['LACTANTE', 'Lactante'], ['ADULTO_MAYOR', 'Adulto Mayor'],
@@ -230,7 +257,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         if (condition === 'DISCAPACITADO' && !hasConadis && !conadisDocument.file) return toast.error('Adjunte el documento CONADIS en PDF.');
         if (mode === 'create' && !familyDocument.file) return toast.error('Adjunte el expediente único de la socia en PDF.');
 
-        const invalidIndex = beneficiaries.findIndex((item) => !item.relationshipId || !item.typeBenefitId || (!item.id && !item.pendingDocument.file));
+        const invalidIndex = !showBeneficiaries ? -1 : beneficiaries.findIndex((item) => !item.relationshipId || !item.typeBenefitId || (!item.id && !item.pendingDocument.file));
         if (invalidIndex >= 0) {
             setActiveBeneficiary(invalidIndex);
             return toast.error(`Complete parentesco, beneficio y expediente PDF del beneficiario ${invalidIndex + 1}.`);
@@ -239,12 +266,12 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         setSubmitting(true);
         try {
             const personId = await resolvePerson(personState);
-            const resolvedBeneficiaries = await Promise.all(beneficiaries.map(async (item) => ({ ...item, personId: await resolvePerson(item.personState) })));
+            const resolvedBeneficiaries = !showBeneficiaries ? [] : await Promise.all(beneficiaries.map(async (item) => ({ ...item, personId: await resolvePerson(item.personState) })));
             const payload = {
                 person_id: personId,
                 association_id: associationId,
                 state_id: stateId,
-                date_begin: partner?.date_begin || TODAY,
+                date_begin: String(partner?.date_begin || TODAY).slice(0, 10),
                 date_end: null,
                 observations: condition === 'OTROS' ? observations.trim() : null,
                 marital_status: maritalStatus || null,
@@ -297,9 +324,9 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
     };
 
     return (
-        <Modal open onClose={onClose} title={mode === 'edit' ? 'Editar Ficha del Socio y Beneficiarios' : 'Registrar Socio y Beneficiarios'} icon={mode === 'edit' ? 'fa-edit' : 'fa-user-plus'} iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'} maxWidth="sm:max-w-7xl">
+        <Modal open onClose={onClose} title={mode === 'edit' ? 'Editar Socios y Beneficiarios' : 'Registrar Socio y Beneficiarios'} icon={mode === 'edit' ? 'fa-edit' : 'fa-user-plus'} iconClass={mode === 'edit' ? 'text-sun' : 'text-leaf'} maxWidth={showBeneficiaries ? 'sm:max-w-7xl' : 'sm:max-w-3xl'}>
             <form onSubmit={handleSubmit} className="max-h-[85vh] overflow-y-auto p-4 sm:p-6">
-                <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+                <div className={`grid grid-cols-1 items-start gap-5 ${showBeneficiaries ? 'xl:grid-cols-2' : ''}`}>
                     <div className="space-y-4">
                         <section className="rounded-xl border border-wheat bg-white p-3 sm:p-4">
                             <span className="mb-3 block border-b border-wheat/60 pb-2 text-xs font-bold uppercase tracking-wider text-charcoal"><i className="fas fa-building text-leaf mr-1.5" />Datos del Comité</span>
@@ -322,7 +349,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
                             {condition === 'GESTANTE' && (
                                 <div className="grid grid-cols-1 gap-3 rounded-xl border border-blue/20 bg-blue-light/30 p-3 sm:grid-cols-2">
                                     <div><label htmlFor="fum" className={labelCls}>Fecha de última menstruación (FUM) *</label><input id="fum" type="date" max={TODAY} value={fum} onChange={(event) => setFum(event.target.value)} className={inputCls} required /></div>
-                                    <div><label className={labelCls}>Fecha de término calculada</label><div className="rounded-xl border-2 border-wheat bg-base px-4 py-2 text-xs font-semibold text-earth">{calculatedEnd || 'Ingrese la FUM'}</div></div>
+                                    <div><label className={labelCls}>Fecha de término calculada</label><div className="rounded-xl border-2 border-wheat bg-fog px-4 py-2 text-xs font-semibold text-earth">{calculatedEnd || 'Ingrese la FUM'}</div></div>
                                 </div>
                             )}
                             {condition === 'OTROS' && <div><label className={labelCls}>Observaciones / condición específica *</label><textarea rows="3" value={observations} onChange={(event) => setObservations(event.target.value)} placeholder="Ej.: Persona con TBC o desnutrición" className={inputCls} required /></div>}
@@ -330,7 +357,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
 
                         <PendingDocumentSection attachableType="partner" value={familyDocument} onChange={setFamilyDocument} inputId="partner-expediente-unico" allowedTypes={['expediente_unico']} showTypeSelect={false} title="Expediente único de la socia" pdfOnly required={mode === 'create'} />
                         {condition === 'DISCAPACITADO' && <PendingDocumentSection attachableType="partner" value={conadisDocument} onChange={setConadisDocument} inputId="partner-conadis" allowedTypes={['conadis']} showTypeSelect={false} title="Documento CONADIS" pdfOnly required={!hasConadis} />}
-                        {mode === 'edit' && partner && <DocumentosSection attachableType="partner" attachableId={partner.id} initialDocuments={partner.documents || []} allowedTypes={['expediente_unico', 'conadis']} title="Expediente de la socia" />}
+                        {mode === 'edit' && partner && <DocumentosSection attachableType="partner" attachableId={partner.id} initialDocuments={partner.documents || []} allowedTypes={['expediente_unico', 'conadis']} title="Expediente de la socia" canUpload={false} />}
                     </div>
 
                     {currentBeneficiary && <BeneficiaryPanel canRemove={beneficiaries.length > 1} item={currentBeneficiary} index={activeBeneficiary} total={beneficiaries.length} options={options} onChange={updateBeneficiary} onAdd={addBeneficiary} onRemove={removeBeneficiary} onPrevious={() => setActiveBeneficiary((value) => Math.max(0, value - 1))} onNext={() => setActiveBeneficiary((value) => Math.min(beneficiaries.length - 1, value + 1))} />}
@@ -338,7 +365,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
 
                 <div className="mt-5 flex gap-3 border-t border-wheat pt-5">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
-                    <button type="submit" disabled={submitting} className="btn-primary flex-1 disabled:opacity-50"><i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />{mode === 'edit' ? 'Actualizar Socio' : `Guardar ficha (${beneficiaries.length} beneficiario/s)`}</button>
+                    <button type="submit" disabled={submitting} className="btn-primary flex-1 disabled:opacity-50"><i className={`fas ${submitting ? 'fa-spinner fa-spin' : 'fa-save'} mr-2`} />{mode === 'edit' ? 'Actualizar Socio' : (showBeneficiaries ? `Guardar ficha (${beneficiaries.length} beneficiario/s)` : 'Guardar socia')}</button>
                 </div>
             </form>
         </Modal>

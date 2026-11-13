@@ -19,7 +19,7 @@ class StorePersonaRequest extends FormRequest
             'names' => 'required|string|max:100',
             'father_lastname' => 'required|string|max:100',
             'mother_lastname' => 'required|string|max:100',
-            'dni' => 'required|string|max:8|unique:people,dni',
+            'dni' => ['required', 'digits:8', 'unique:people,dni'],
             'birthdate' => 'nullable|date',
             'gender' => 'nullable|in:M,F',
             'address' => 'nullable|string|max:255',

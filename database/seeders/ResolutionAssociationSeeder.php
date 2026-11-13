@@ -32,7 +32,7 @@ class ResolutionAssociationSeeder extends Seeder
             // Comité 032 - LOS ANGELES DE JESUS | Resolución 3
             ['code' => '032', 'document' => '1240-2024', 'date_start' => '2024-12-02', 'date_end' => '2026-12-02'],
             // Comité 034 - MUJERES LUCHADORAS | Resolución 2
-            ['code' => '034', 'document' => '1157-2024', 'date_start' => '2024-11-13', 'date_end' => '2026-11-13'],
+            ['code' => '034', 'document' => '1157-2024', 'date_start' => '2024-11-19', 'date_end' => '2026-11-19'],
             // Comité 036 - CORAZON DE JESUS | Resolución 2
             ['code' => '036', 'document' => '0541-2025', 'date_start' => '2025-05-27', 'date_end' => '2027-05-27'],
             // Comité 037 - WILMER SANCHEZ | Resolución 2
@@ -40,7 +40,7 @@ class ResolutionAssociationSeeder extends Seeder
             // Comité 040 - LAS PALMERAS III | Resolución 2
             ['code' => '040', 'document' => '0907-2025', 'date_start' => '2025-08-20', 'date_end' => '2027-08-20'],
             // Comité 040 - LAS PALMERAS III | Resolución 3
-            ['code' => '040', 'document' => '0479-2026', 'date_start' => '2026-05-28', 'date_end' => '2028-05-28'],
+            ['code' => '040', 'document' => '0479-2026', 'date_start' => '2026-05-26', 'date_end' => '2028-05-26'],
             // Comité 045 - MADRES TRABAJANDO POR AMPLIACION | Resolución 2
             ['code' => '045', 'document' => '0155-2023', 'date_start' => '2023-01-27', 'date_end' => '2025-01-27'],
             // Comité 045 - MADRES TRABAJANDO POR AMPLIACION | Resolución 3
@@ -84,7 +84,7 @@ class ResolutionAssociationSeeder extends Seeder
             // Comité 093 - HILO ROJO | Resolución 2
             ['code' => '093', 'document' => '0312-2024', 'date_start' => '2024-05-17', 'date_end' => '2026-05-17'],
             // Comité 093 - HILO ROJO | Resolución 2
-            ['code' => '093', 'document' => '0259-2025', 'date_start' => '2025-03-17', 'date_end' => '2027-03-17'],
+            ['code' => '093', 'document' => '0259-2025', 'date_start' => '2025-03-07', 'date_end' => '2027-03-07'],
             // Comité 095 - CLEMENTINA ACUÑA DE PERALTA Nº 2 | Resolución 2
             ['code' => '095', 'document' => '0039-2024', 'date_start' => '2024-01-22', 'date_end' => '2026-01-22'],
             // Comité 095 - CLEMENTINA ACUÑA DE PERALTA Nº 2 | Resolución 3
@@ -152,7 +152,7 @@ class ResolutionAssociationSeeder extends Seeder
             // Comité 220 - RIOS DE AGUA VIVA | Resolución 2
             ['code' => '220', 'document' => '1170-2023', 'date_start' => '2023-09-13', 'date_end' => '2025-09-13'],
             // Comité 220 - RIOS DE AGUA VIVA | Resolución 3
-            ['code' => '220', 'document' => '1149-2025', 'date_start' => '2025-10-24', 'date_end' => '2027-10-24'],
+            ['code' => '220', 'document' => '1149-2025', 'date_start' => '2025-10-28', 'date_end' => '2027-10-28'],
             // Comité 230 - SANTISIMO SACRAMENTO | Resolución 2
             ['code' => '230', 'document' => '1546-2023', 'date_start' => '2023-11-13', 'date_end' => '2025-11-13'],
             // Comité 230 - SANTISIMO SACRAMENTO | Resolución 3
@@ -164,13 +164,13 @@ class ResolutionAssociationSeeder extends Seeder
             // Comité 246 - LOS GERANIOS | Resolución 2
             ['code' => '246', 'document' => '0551-2023', 'date_start' => '2023-04-27', 'date_end' => '2025-04-27'],
             // Comité 246 - LOS GERANIOS | Resolución 3
-            ['code' => '246', 'document' => '0605-2025', 'date_start' => '2025-05-12', 'date_end' => '2027-05-12'],
+            ['code' => '246', 'document' => '0605-2025', 'date_start' => '2025-06-12', 'date_end' => '2027-06-12'],
             // Comité 250 - HIJAS DE SION | Resolución 2
             ['code' => '250', 'document' => '1206-2022', 'date_start' => '2022-10-07', 'date_end' => '2024-10-07'],
             // Comité 250 - HIJAS DE SION | Resolución 3
             ['code' => '250', 'document' => '1118-2024', 'date_start' => '2024-11-08', 'date_end' => '2026-11-08'],
             // Comité 253 - NUEVO PARAISO | Resolución 2
-            ['code' => '253', 'document' => '0151-2023', 'date_start' => '2020-11-30', 'date_end' => '2022-11-30'],
+            ['code' => '253', 'document' => '0151-2023', 'date_start' => '2023-01-27', 'date_end' => '2025-01-27'],
             // Comité 253 - NUEVO PARAISO | Resolución 3
             ['code' => '253', 'document' => '0260-2025', 'date_start' => '2025-03-07', 'date_end' => '2027-03-07'],
             // Comité 255 - UNIDAS | Resolución 2

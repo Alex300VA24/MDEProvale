@@ -80,7 +80,7 @@ export default function ProductosProgramacion({ initialAction }) {
             <div className="p-4 sm:p-6">
                 {optionsError && <div className="mb-3 text-xs text-clay bg-clay-light rounded-lg px-3 py-2"><i className="fas fa-exclamation-triangle mr-1" />No se pudieron cargar algunas opciones.</div>}
                 {canProducts.view && <div className={tab === 'productos' ? '' : 'hidden'}><ProductosTab ref={productsRef} options={productOptions ?? {}} can={canProducts} onProductsChanged={loadOptions} /></div>}
-                {canMovements.view && <div className={tab === 'ingresos' ? '' : 'hidden'}><KardexTab ref={kardexRef} options={movementOptions ?? {}} can={canMovements} /></div>}
+                {canMovements.view && <div className={tab === 'ingresos' ? '' : 'hidden'}><KardexTab ref={kardexRef} options={movementOptions ?? {}} can={canMovements} onlyIngresos /></div>}
                 {canProducts.view && tab === 'programacion' && <ProgramacionEntregaTab can={canProducts} onGoToIngresos={() => canMovements.view && setTab('ingresos')} />}
             </div>
         </div>

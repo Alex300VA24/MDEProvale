@@ -16,36 +16,31 @@ class PersonaController extends Controller
 
     public function index(Request $request)
     {
-        $data = $this->personService->indexData($request->only(['search', 'gender', 'place_sector_id']));
-
-        return view('socios-beneficiarios.personas.index', $data);
+        return redirect()->route('dashboard');
     }
 
     public function create()
     {
-        return view('socios-beneficiarios.personas.create', ['placeSectors' => $this->personService->placeSectors()]);
+        return redirect()->route('dashboard');
     }
 
     public function store(StorePersonaRequest $request)
     {
         $this->personService->create($request->validated());
 
-        return redirect()->route('personas.index')->with('success', 'Persona registrada exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Persona registrada exitosamente');
     }
 
     public function edit(People $person)
     {
-        return view('socios-beneficiarios.personas.edit', [
-            'person' => $person,
-            'placeSectors' => $this->personService->placeSectors(),
-        ]);
+        return redirect()->route('dashboard');
     }
 
     public function update(UpdatePersonaRequest $request, People $person)
     {
         $this->personService->update($person, $request->validated());
 
-        return redirect()->route('personas.index')->with('success', 'Persona actualizada exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Persona actualizada exitosamente');
     }
 
     public function destroy(People $person)
@@ -53,9 +48,9 @@ class PersonaController extends Controller
         try {
             $this->personService->delete($person);
         } catch (\DomainException $e) {
-            return redirect()->route('personas.index')->with('error', $e->getMessage());
+            return redirect()->route('dashboard')->with('error', $e->getMessage());
         }
 
-        return redirect()->route('personas.index')->with('success', 'Persona eliminada exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Persona eliminada exitosamente');
     }
 }

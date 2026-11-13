@@ -242,7 +242,7 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
                         </article>)}
                     </div>
 
-                    <div className="hidden md:block overflow-auto max-h-[calc(100vh-20rem)] rounded-lg border-2 border-charcoal/30">
+                    <div className="hidden md:block overflow-auto max-h-[calc(100vh-20rem)] border-2 border-charcoal/30">
                         <table className="data-table w-full min-w-[1050px] border-collapse text-sm [&_th]:border [&_th]:border-white/20 [&_td]:border [&_td]:border-charcoal/20">
                             <thead className="sticky top-0 z-10"><tr><th className="px-3 py-3 text-left">Código / comité</th><th className="px-3 py-3 text-left">Sector</th><th className="px-3 py-3 text-center">Base</th><th className="px-3 py-3 text-center">Ajuste</th><th className="px-3 py-3 text-center">Total</th><th className="px-3 py-3 text-center">Vuelta</th><th className="px-3 py-3 text-right">Leche</th><th className="px-3 py-3 text-right">Hojuela</th><th className="px-3 py-3 text-left">Observación</th></tr></thead>
                             <tbody>{calculated.map((club) => <tr key={club.id}>

@@ -135,14 +135,18 @@ class Association extends Model
         $directive = Directive::whereIn('partner_id', $partnerIds)
             ->where('position_id', $presidentPosition->id)
             ->whereDate('date_start', '<=', $today)
-            ->whereDate('date_end', '>=', $today)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('date_end')->orWhereDate('date_end', '>=', $today);
+            })
             ->orderByDesc('date_start')
+            ->orderByDesc('id')
             ->first();
 
         if (!$directive) {
             $directive = Directive::whereIn('partner_id', $partnerIds)
                 ->where('position_id', $presidentPosition->id)
                 ->orderByDesc('date_start')
+                ->orderByDesc('id')
                 ->first();
         }
 
@@ -179,6 +183,7 @@ class Association extends Model
             )
             ->where('position_id', $presidentPosition->id)
             ->orderByDesc('date_start')
+            ->orderByDesc('id')
             ->get()
             ->groupBy('partner_id');
 
@@ -191,25 +196,15 @@ class Association extends Model
                 continue;
             }
 
-            $directive = null;
+            $all = $partners
+                ->flatMap(fn ($partner) => $directivesByPartner->get($partner->id) ?? collect())
+                ->sortByDesc(fn ($d) => [(string) $d->date_start, $d->id])
+                ->values();
 
-            foreach ($partners as $partner) {
-                $directives = $directivesByPartner->get($partner->id) ?? collect();
-
-                $covering = $directives->first(function ($d) use ($today) {
-                    return $d->date_start && $d->date_end
-                        && $d->date_start <= $today && $d->date_end >= $today;
-                });
-                if ($covering) {
-                    $directive = $covering;
-                    break;
-                }
-
-                $latest = $directives->first();
-                if ($latest && (!$directive || $latest->date_start > $directive->date_start)) {
-                    $directive = $latest;
-                }
-            }
+            $directive = $all->first(function ($d) use ($today) {
+                    return $d->date_start && $d->date_start <= $today
+                        && (!$d->date_end || $d->date_end >= $today);
+                }) ?? $all->first();
 
             if (!$directive) {
                 continue;
@@ -276,7 +271,8 @@ class Association extends Model
             ->where(function ($q) use ($date) {
                 $q->whereNull('date_end')->orWhere('date_end', '>=', $date);
             })
-            ->latest('date_start')
+            ->orderByDesc('date_start')
+            ->orderByDesc('id')
             ->first();
 
         return $directive

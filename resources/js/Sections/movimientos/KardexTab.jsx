@@ -7,6 +7,7 @@ import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
 import { fmtDate, dateValue, money, stockInt, typeBadgeClass } from './format';
 import errorMessage from '../../errorMessage';
+import IconInput from '../../Components/IconInput';
 import { FichaControlInternoModal } from './ControlInternoModals';
 
 const BASE = '/api/dashboard/movimientos';
@@ -14,7 +15,8 @@ const BASE = '/api/dashboard/movimientos';
 const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
-const readonlyCls = inputCls.replace('bg-white', 'bg-gray-100');
+const iconCls = `${inputCls} pl-10`;
+const readonlyCls = iconCls.replace('bg-white', 'bg-gray-100');
 
 const MONTHS = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -71,36 +73,36 @@ function IngresoFormModal({ options, onClose, onSaved }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Producto *</label>
-                        <select value={productId} onChange={(e) => setProductId(e.target.value)} className={inputCls} required>
+                        <IconInput icon="fa-box"><select value={productId} onChange={(e) => setProductId(e.target.value)} className={iconCls} required>
                             <option value="">Seleccionar producto...</option>
                             {(options.products || []).map((p) => (
                                 <option key={p.id} value={p.id}>{p.title}{p.abbreviation ? ` (${p.abbreviation})` : ''}</option>
                             ))}
-                        </select>
+                        </select></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Cantidad *</label>
-                        <input type="number" step="0.01" min="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-hashtag"><input type="number" step="0.01" min="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} className={iconCls} required  placeholder="Ej: 150" /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Precio unitario (S/) *</label>
-                        <input type="number" step="0.01" min="0" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-coins"><input type="number" step="0.01" min="0" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className={iconCls} required  placeholder="Ej: 12.50" /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>N° Documento</label>
-                        <input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} className={inputCls} placeholder="Guía, factura, etc." />
+                        <IconInput icon="fa-file-lines"><input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} className={iconCls} placeholder="Ej: 001-00245" /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Fecha de Ingreso *</label>
-                        <input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-calendar-day"><input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className={iconCls} required /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Vigencia del Lote - Desde *</label>
-                        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-calendar-plus"><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={iconCls} required /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Vigencia del Lote - Hasta *</label>
-                        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-calendar-check"><input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={iconCls} required /></IconInput>
                     </div>
                 </div>
                 <div className="flex gap-3">
@@ -159,33 +161,33 @@ function EditTransactionModal({ transaction, onClose, onSaved }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Producto</label>
-                        <input type="text" readOnly value={transaction.product_name || '-'} className={readonlyCls} />
+                        <IconInput icon="fa-box"><input type="text" readOnly value={transaction.product_name || '-'} className={readonlyCls} /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Cantidad *</label>
-                        <input type="number" step="0.01" min="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-hashtag"><input type="number" step="0.01" min="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} className={iconCls} required  placeholder="Ej: 150" /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Precio unitario (S/) *</label>
-                        <input type="number" step="0.01" min="0" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-coins"><input type="number" step="0.01" min="0" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className={iconCls} required  placeholder="Ej: 12.50" /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>N° Documento</label>
-                        <input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} className={inputCls} />
+                        <IconInput icon="fa-file-lines"><input type="text" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} className={iconCls} /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>{isIngreso ? 'Fecha de Ingreso' : 'Fecha de Movimiento'} *</label>
-                        <input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className={inputCls} required />
+                        <IconInput icon="fa-calendar-day"><input type="date" value={transactionDate} onChange={(e) => setTransactionDate(e.target.value)} className={iconCls} required /></IconInput>
                     </div>
                     {isIngreso && (
                         <>
                             <div>
                                 <label className={labelCls}>Vigencia del Lote - Desde</label>
-                                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={inputCls} />
+                                <IconInput icon="fa-calendar-plus"><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className={iconCls} /></IconInput>
                             </div>
                             <div>
                                 <label className={labelCls}>Vigencia del Lote - Hasta</label>
-                                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputCls} />
+                                <IconInput icon="fa-calendar-check"><input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={iconCls} /></IconInput>
                             </div>
                         </>
                     )}
@@ -201,7 +203,7 @@ function EditTransactionModal({ transaction, onClose, onSaved }) {
     );
 }
 
-const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
+const KardexTab = forwardRef(function KardexTab({ options, can, onlyIngresos = false }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -223,7 +225,9 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
         try {
             const params = { per_page: 10, page };
             if (debouncedFilters.search) params.search = debouncedFilters.search;
-            if (debouncedFilters.type_transaction_id) params.type_transaction_id = debouncedFilters.type_transaction_id;
+            const ingresoTypeId = (options.types || []).find((t) => String(t.title).toLowerCase() === 'ingreso')?.id;
+            if (onlyIngresos && ingresoTypeId) params.type_transaction_id = ingresoTypeId;
+            else if (debouncedFilters.type_transaction_id) params.type_transaction_id = debouncedFilters.type_transaction_id;
             if (debouncedFilters.year) params.year = debouncedFilters.year;
             if (debouncedFilters.month) params.month = debouncedFilters.month;
             const res = await http.get(`${BASE}/transactions`, { params });
@@ -233,7 +237,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
         } finally {
             setLoading(false);
         }
-    }, [debouncedFilters, page, toast]);
+    }, [debouncedFilters, page, toast, onlyIngresos, options.types]);
 
     useEffect(() => {
         load();
@@ -282,7 +286,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                         />
                     </div>
                 </div>
-                <div className="w-full sm:w-40">
+                {!onlyIngresos && <div className="w-full sm:w-40">
                     <label className={labelCls}>Tipo</label>
                     <select value={filters.type_transaction_id} onChange={(e) => setFilter('type_transaction_id', e.target.value)} className={inputCls}>
                         <option value="">Tipos</option>
@@ -290,7 +294,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                             <option key={t.id} value={t.id}>{t.title}</option>
                         ))}
                     </select>
-                </div>
+                </div>}
                 <div className="w-full sm:w-28">
                     <label className={labelCls}>Año</label>
                     <select value={filters.year} onChange={(e) => setFilter('year', e.target.value)} className={inputCls}>
@@ -339,7 +343,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                     <table className="data-table w-full text-xs sm:text-sm min-w-[840px]">
                         <thead>
                             <tr>
-                                <th className="px-3 sm:px-4 py-3 text-left">Tipo</th>
+                                {!onlyIngresos && <th className="px-3 sm:px-4 py-3 text-left">Tipo</th>}
                                 <th className="px-3 sm:px-4 py-3 text-left">Producto</th>
                                 <th className="px-3 sm:px-4 py-3 text-right">Cantidad</th>
                                 <th className="px-3 sm:px-4 py-3 text-right">Precio unitario</th>
@@ -352,7 +356,7 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                         <tbody>
                             {data.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8}>
+                                    <td colSpan={onlyIngresos ? 7 : 8}>
                                         <div className="empty-state">
                                             <i className="fas fa-right-left" />
                                             <p>No hay movimientos registrados</p>
@@ -362,11 +366,11 @@ const KardexTab = forwardRef(function KardexTab({ options, can }, ref) {
                             ) : (
                                 data.data.map((tx) => (
                                     <tr key={tx.id} className="row-enter">
-                                        <td className="px-3 sm:px-4 py-3">
+                                        {!onlyIngresos && <td className="px-3 sm:px-4 py-3">
                                             <span className={`px-2 py-1 rounded-lg text-xs font-bold ${typeBadgeClass(tx.type?.title)}`}>
                                                 {tx.type?.title || '-'}
                                             </span>
-                                        </td>
+                                        </td>}
                                         <td className="px-3 sm:px-4 py-3 font-semibold">{tx.product_name || '-'}</td>
                                         <td className="px-3 sm:px-4 py-3 text-right">{stockInt(tx.quantity)} {tx.uom_title || ''}</td>
                                         <td className="px-3 sm:px-4 py-3 text-right">S/ {money(tx.unit_price)}</td>

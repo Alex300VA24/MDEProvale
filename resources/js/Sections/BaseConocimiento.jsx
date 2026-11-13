@@ -219,7 +219,7 @@ export default function BaseConocimiento() {
                                             ? 'max-w-2xl bg-blue text-white'
                                             : entry.role === 'error'
                                                 ? 'max-w-2xl bg-coral-light text-coral'
-                                                : 'w-full max-w-3xl border border-mist bg-base text-charcoal'
+                                                : 'w-full max-w-3xl border border-mist bg-fog text-charcoal'
                                     }`}>
                                         {entry.role === 'assistant'
                                             ? <MarkdownContent content={entry.content} />
@@ -251,7 +251,7 @@ export default function BaseConocimiento() {
                             ))}
                             {asking && (
                                 <div className="flex justify-start">
-                                    <div className="rounded-2xl border border-mist bg-base px-4 py-3 text-sm text-earth">
+                                    <div className="rounded-2xl border border-mist bg-fog px-4 py-3 text-sm text-earth">
                                         <i className="fas fa-spinner fa-spin mr-2" /> Buscando en los documentos…
                                     </div>
                                 </div>
@@ -279,7 +279,7 @@ export default function BaseConocimiento() {
 
             {tab === 'documentos' && (
                 <div>
-                    <section className="border-b border-mist bg-base/60 p-4 sm:p-6" aria-labelledby="municipal-import-title">
+                    <section className="border-b border-mist bg-fog/60 p-4 sm:p-6" aria-labelledby="municipal-import-title">
                         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                             <div className="min-w-0 max-w-3xl">
                                 <h2 id="municipal-import-title" className="flex items-center gap-2 font-heading text-lg font-extrabold text-navy">

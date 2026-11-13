@@ -28,37 +28,8 @@ class ReparticionController extends Controller
 
     public function index(Request $request)
     {
-        $currentYear = (int) $request->get('year', date('Y'));
-        $currentMonth = (int) $request->get('month', date('n'));
-
-        if ($this->reparticionService->isBeforeFirstRecordedPeriod($currentYear, $currentMonth)) {
-            return redirect()->route('movimientos.index')
-                ->with('error', $this->reparticionService->periodRecordNotFoundMessage($currentYear, $currentMonth));
-        }
-
-        $racion = $this->reparticionService->getActiveRacion($currentYear, $currentMonth);
-        if (!$racion) {
-            return redirect()->route('movimientos.index')
-                ->with('error', 'No hay ración configurada para el período ' . $currentMonth . '/' . $currentYear . '. Configure las raciones en Responsables y Raciones.');
-        }
-        if (! $this->reparticionService->hasIngresoForPeriod($currentYear, $currentMonth)) {
-            return redirect()->route('movimientos.index')
-                ->with('error', $this->reparticionService->ingresoRequiredMessage($currentYear, $currentMonth));
-        }
-
-        $report = $this->reparticionService->buildReport($racion, $currentYear, $currentMonth);
-
-        return view('movimientos.reparticion_tabla', [
-            'associations' => $report['associations'],
-            'currentYear' => $report['year'],
-            'currentMonth' => $report['month'],
-            'daysInMonth' => $report['days_in_month'],
-            'racionLecheMl' => $report['racion_leche_ml'],
-            'racionHojuelasGr' => $report['racion_hojuelas_gr'],
-            'totalBeneficiarios' => $report['total_beneficiarios'],
-            'totalLecheLitros' => $report['total_leche_litros'],
-            'totalHojuelasKg' => $report['total_hojuelas_kg'],
-        ]);
+        // La tabla de repartición se consulta en el dashboard (Movimientos > Repartición).
+        return redirect()->route('dashboard');
     }
 
     public function pdf(Request $request)
@@ -67,18 +38,15 @@ class ReparticionController extends Controller
         $currentMonth = (int) $request->get('month', date('n'));
 
         if ($this->reparticionService->isBeforeFirstRecordedPeriod($currentYear, $currentMonth)) {
-            return redirect()->route('movimientos.index')
-                ->with('error', $this->reparticionService->periodRecordNotFoundMessage($currentYear, $currentMonth));
+            abort(404, $this->reparticionService->periodRecordNotFoundMessage($currentYear, $currentMonth));
         }
 
         $racion = $this->reparticionService->getActiveRacion($currentYear, $currentMonth);
         if (!$racion) {
-            return redirect()->route('movimientos.index')
-                ->with('error', 'No hay ración configurada para el período ' . $currentMonth . '/' . $currentYear . '. Configure las raciones en Responsables y Raciones.');
+            abort(404, 'No hay ración configurada para el período ' . $currentMonth . '/' . $currentYear . '. Configure las raciones en Responsables y Raciones.');
         }
         if (! $this->reparticionService->hasIngresoForPeriod($currentYear, $currentMonth)) {
-            return redirect()->route('movimientos.index')
-                ->with('error', $this->reparticionService->ingresoRequiredMessage($currentYear, $currentMonth));
+            abort(422, $this->reparticionService->ingresoRequiredMessage($currentYear, $currentMonth));
         }
 
         $report = $this->reparticionService->buildReport($racion, $currentYear, $currentMonth);

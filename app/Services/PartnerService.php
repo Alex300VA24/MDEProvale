@@ -109,6 +109,8 @@ class PartnerService
                 $partnerData['person_id'] = $person->id;
             }
 
+            $this->assertNoDuplicates((int) $partnerData['person_id'], $beneficiaries ?? []);
+
             $partner = $this->partnerRepo->createPartner($partnerData);
             $this->syncBeneficiaries($partner, $beneficiaries ?? []);
             $this->syncPartnerAsBeneficiary($partner, $benefitContext);
@@ -119,6 +121,12 @@ class PartnerService
 
     public function updateWithBeneficiaries(Partner $partner, array $partnerData, ?array $beneficiaries = null, array $benefitContext = []): Partner
     {
+        if ($beneficiaries !== null) {
+            $own = $partner->beneficiaries()->where('person_id', $partner->person_id)->pluck('id')->all();
+            $others = array_filter($beneficiaries, fn ($b) => ! (isset($b['id']) && in_array((int) $b['id'], $own, true)));
+            $this->assertNoDuplicates((int) ($partnerData['person_id'] ?? $partner->person_id), $others, $partner);
+        }
+
         $this->partnerRepo->updatePartner($partner, $partnerData);
 
         if ($beneficiaries !== null) {
@@ -128,6 +136,45 @@ class PartnerService
         $this->syncPartnerAsBeneficiary($partner, $benefitContext);
 
         return $partner;
+    }
+
+    /**
+     * Reglas de unicidad de la ficha: una persona es socia vigente de un solo comité,
+     * no puede ser su propia beneficiaria, y un mismo beneficiario no se repite en la
+     * ficha ni figura vigente con otra socia.
+     *
+     * @throws ValidationException
+     */
+    private function assertNoDuplicates(int $personId, array $beneficiaries, ?Partner $partner = null): void
+    {
+        $today = now()->toDateString();
+
+        if ((! $partner || $partner->person_id !== $personId)
+            && $this->partnerRepo->personHasActivePartner($personId, $today, $partner?->id)) {
+            throw ValidationException::withMessages([
+                'person_id' => 'La persona ya es socia vigente de un comité.',
+            ]);
+        }
+
+        $ids = collect($beneficiaries)->pluck('person_id')->filter()->map(fn ($id) => (int) $id);
+
+        if ($ids->contains($personId)) {
+            throw ValidationException::withMessages([
+                'beneficiaries' => 'La socia no puede registrarse como su propia beneficiaria.',
+            ]);
+        }
+
+        if ($ids->count() !== $ids->unique()->count()) {
+            throw ValidationException::withMessages([
+                'beneficiaries' => 'Un beneficiario está repetido en la ficha.',
+            ]);
+        }
+
+        if ($ids->isNotEmpty() && $this->partnerRepo->beneficiariesTakenByOtherPartner($ids->all(), $today, $partner?->id)) {
+            throw ValidationException::withMessages([
+                'beneficiaries' => 'Un beneficiario ya está registrado como vigente con otra socia.',
+            ]);
+        }
     }
 
     public function deleteWithRelations(Partner $partner): void
@@ -170,10 +217,12 @@ class PartnerService
             }
 
             $kept[] = $beneficiary->id;
+            $birthdate = $this->beneficiaryRepo->personBirthdate((int) $b['person_id']);
+            $b['type_benefit_id'] = $this->typeBenefitForAge($b['type_benefit_id'] ?? null, $birthdate);
             $this->beneficiaryRepo->updateBeneficiary($beneficiary, [
                 'person_id' => $b['person_id'],
                 'relationship_id' => $b['relationship_id'],
-                'priority' => $b['priority'] ?? $beneficiary->priority,
+                'priority' => $this->priorityForBirthdate($birthdate) ?? $b['priority'] ?? $beneficiary->priority,
             ]);
 
             $history = $beneficiary->histories()->latest('date_begin')->first();
@@ -218,11 +267,14 @@ class PartnerService
         foreach ($beneficiaries as $b) {
             if (empty($b['person_id']) || empty($b['relationship_id'])) continue;
 
+            $birthdate = $this->beneficiaryRepo->personBirthdate((int) $b['person_id']);
+            $b['type_benefit_id'] = $this->typeBenefitForAge($b['type_benefit_id'] ?? null, $birthdate);
+
             $ben = $this->beneficiaryRepo->createBeneficiary([
                 'person_id' => $b['person_id'],
                 'partner_id' => $partner->id,
                 'relationship_id' => $b['relationship_id'],
-                'priority' => $b['priority'] ?? 1,
+                'priority' => $this->priorityForBirthdate($birthdate) ?? $b['priority'] ?? 1,
             ]);
 
             if (!empty($b['type_benefit_id']) && !empty($b['history_state_id'])
@@ -321,6 +373,35 @@ class PartnerService
                 'child_beneficiary_id' => $child?->id,
             ]);
         }
+    }
+
+    /**
+     * Prioridad según la edad del niño: 0 a 6 años (hasta cumplir 7) = 1ra; mayor de 6 = 2da.
+     * Sin fecha de nacimiento devuelve null para respetar el valor enviado.
+     */
+    public function priorityForBirthdate(mixed $birthdate): ?int
+    {
+        if (! $birthdate) {
+            return null;
+        }
+
+        return Carbon::parse($birthdate)->age <= 6 ? 1 : 2;
+    }
+
+    /** NI0 (0-6 años) o NI7 (mayor de 6) según la edad; otros tipos de beneficio no se tocan. */
+    private function typeBenefitForAge(?int $typeBenefitId, mixed $birthdate): ?int
+    {
+        if (! $typeBenefitId || ! $birthdate) {
+            return $typeBenefitId;
+        }
+
+        if (! in_array($this->beneficiaryRepo->typeBenefitAbbreviation($typeBenefitId), ['NI0', 'NI7'], true)) {
+            return $typeBenefitId;
+        }
+
+        $abbreviation = Carbon::parse($birthdate)->age <= 6 ? 'NI0' : 'NI7';
+
+        return $this->beneficiaryRepo->findTypeBenefitByAbbreviation($abbreviation)?->id ?? $typeBenefitId;
     }
 
     private function benefitEndDate(int $personId, int $typeBenefitId): ?string

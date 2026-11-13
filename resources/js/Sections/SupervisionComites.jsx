@@ -20,8 +20,8 @@ const NEXT = { '': 'SI', SI: 'NO', NO: '' };
 const selectCls =
     'px-3 py-2 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf';
 
-const headCell = 'border border-charcoal/40 bg-slate/20 px-2 py-1.5 text-[11px] font-extrabold text-charcoal whitespace-nowrap';
-const bodyCell = 'border border-charcoal/30 px-2 py-1 text-[11px] font-semibold text-charcoal';
+const headCell = 'px-3 py-3 whitespace-nowrap';
+const bodyCell = 'px-3 py-2 text-sm font-semibold text-charcoal';
 
 function AttachmentModal({ visit, maxMb, canEdit, onClose, onChanged }) {
     const toast = useToast();
@@ -82,7 +82,7 @@ function AttachmentModal({ visit, maxMb, canEdit, onClose, onChanged }) {
                 <div className="space-y-4 p-5">
                     <p className="text-sm text-earth">{visit?.committee} · {visit?.date}. Un solo archivo PDF, límite {maxMb} MB.</p>
                     {scanned ? (
-                        <div className="flex items-center justify-between gap-3 rounded-xl border border-wheat bg-base p-3">
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-wheat bg-fog p-3">
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-bold text-charcoal">{scanned.file_name}</p>
                                 <p className="text-xs text-earth">{(scanned.file_size / 1024 / 1024).toFixed(2)} MB</p>
@@ -275,8 +275,8 @@ export default function SupervisionComites() {
                 ) : visible.length === 0 ? (
                     <p className="text-sm text-earth py-10 text-center">No hay comités que coincidan con la búsqueda.</p>
                 ) : (
-                    <div className="overflow-auto max-h-[calc(100vh-20rem)] min-h-[16rem] border-2 border-charcoal/30 rounded-lg">
-                        <table className="border-collapse text-[11px]">
+                    <div className="overflow-auto max-h-[calc(100vh-20rem)] min-h-[16rem] border-2 border-charcoal/30">
+                        <table className="data-table border-collapse text-sm [&_th]:border [&_th]:border-white/20 [&_td]:border [&_td]:border-charcoal/20">
                             <thead className="sticky top-0 z-20">
                                 <tr>
                                     <th className={headCell}>Cód.</th>
@@ -291,7 +291,7 @@ export default function SupervisionComites() {
                                         return (
                                             <th
                                                 key={day.date}
-                                                className={`${headCell} text-center ${off ? 'bg-yellow-300' : ''}`}
+                                                className={`${headCell} text-center ${off ? '!bg-yellow-300 !text-charcoal' : ''}`}
                                             >
                                                 {clickable ? (
                                                     <button

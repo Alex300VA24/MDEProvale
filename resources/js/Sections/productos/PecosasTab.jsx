@@ -326,7 +326,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                     </div>
 
                     {details.length === 0 && (
-                        <p className="text-sm text-earth bg-base rounded-lg px-4 py-3 mb-4">
+                        <p className="text-sm text-earth bg-fog rounded-lg px-4 py-3 mb-4">
                             No hay productos agregados. Use "Agregar Producto" para incluir ítems.
                         </p>
                     )}
@@ -416,7 +416,7 @@ function PecosaViewModal({ pecosa, onClose }) {
                 <DetailGroup title="Lista de productos" icon="fa-boxes-stacked">
                     <div className="space-y-2">
                         {details.map((d) => (
-                            <div key={d.id} className="flex items-center justify-between rounded-xl border border-mist bg-base/60 p-3">
+                            <div key={d.id} className="flex items-center justify-between rounded-xl border border-mist bg-fog/60 p-3">
                                 <div>
                                     <p className="text-sm font-bold text-charcoal">{d.product_name || d.product?.title || `Producto #${d.detail_product_id}`}</p>
                                     <p className="text-xs text-earth">{d.product_abbreviation || d.product?.abbreviation || ''}</p>

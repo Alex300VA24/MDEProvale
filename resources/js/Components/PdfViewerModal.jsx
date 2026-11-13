@@ -9,11 +9,11 @@ export default function PdfViewerModal({ open, onClose, url, title = 'Documento 
                 <iframe
                     src={`${url}#toolbar=1&navpanes=0`}
                     title={title}
-                    className="h-[75vh] w-full rounded-xl border-2 border-wheat bg-base"
+                    className="h-[75vh] w-full rounded-xl border-2 border-wheat bg-fog"
                 />
                 <div className="mt-4 flex justify-between gap-3 border-t-2 border-wheat pt-4">
-                    <button type="button" onClick={onClose} className="btn-secondary">Cerrar</button>
-                    <a href={url} target="_blank" rel="noreferrer" className="btn-primary">
+                    <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
+                    <a href={url} target="_blank" rel="noreferrer" className="btn-primary flex-1 text-center">
                         <i className="fas fa-up-right-from-square mr-2" aria-hidden="true" />
                         Abrir en pestaña nueva
                     </a>

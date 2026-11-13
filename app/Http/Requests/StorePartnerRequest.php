@@ -43,7 +43,8 @@ class StorePartnerRequest extends FormRequest
             'conadis_document' => "required_if:socioeconomic_condition,DISCAPACITADO|file|mimes:pdf|max:{$maxFile}",
             'beneficiary_documents' => 'nullable|array',
             'beneficiary_documents.*' => "nullable|file|mimes:pdf|max:{$maxFile}",
-            'beneficiaries' => 'required|array|min:1',
+            // Obligatorio para Lactante y sin condición; Gestante u otras condiciones se registran solo con los datos de la socia.
+            'beneficiaries' => [Rule::requiredIf(fn () => in_array($this->input('socioeconomic_condition'), [null, '', 'LACTANTE'], true)), 'nullable', 'array'],
             'beneficiaries.*.person_id' => 'required|exists:people,id',
             'beneficiaries.*.relationship_id' => 'required|exists:relationships,id',
             'beneficiaries.*.priority' => 'nullable|integer|in:1,2',

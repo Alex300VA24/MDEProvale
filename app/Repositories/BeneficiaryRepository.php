@@ -89,6 +89,11 @@ class BeneficiaryRepository extends BaseRepository implements BeneficiaryReposit
         ]);
     }
 
+    public function existsForPartnerAndPerson(int $partnerId, int $personId): bool
+    {
+        return Beneficiarie::where('partner_id', $partnerId)->where('person_id', $personId)->exists();
+    }
+
     public function findByPartnerAndPerson(Partner $partner, mixed $personId): ?Beneficiarie
     {
         return $partner->beneficiaries()->where('person_id', $personId)->first();

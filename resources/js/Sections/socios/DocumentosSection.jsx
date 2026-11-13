@@ -87,6 +87,18 @@ export function PendingDocumentSection({
         onChange({ ...document, file: selected });
     };
 
+    const viewFile = () => {
+        if (!document.file) return;
+        const url = URL.createObjectURL(document.file);
+        const tab = window.open(url, '_blank');
+        if (!tab) {
+            URL.revokeObjectURL(url);
+            toast.error('El navegador bloqueó la nueva pestaña. Permita ventanas emergentes e inténtelo de nuevo.');
+            return;
+        }
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    };
+
     const clearFile = () => {
         onChange({ ...document, file: null });
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -133,9 +145,14 @@ export function PendingDocumentSection({
             {document.file && (
                 <div className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-xs text-charcoal">
                     <span className="truncate font-semibold">{document.file.name}</span>
-                    <button type="button" onClick={clearFile} className="shrink-0 font-bold text-clay hover:text-red-700">
-                        Quitar
-                    </button>
+                    <div className="flex shrink-0 items-center gap-3">
+                        <button type="button" onClick={viewFile} className="font-bold text-leaf hover:underline">
+                            <i className="fas fa-eye mr-1" aria-hidden="true" />Ver
+                        </button>
+                        <button type="button" onClick={clearFile} className="font-bold text-clay hover:text-red-700">
+                            Quitar
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

@@ -10,6 +10,7 @@ use App\Repositories\Contracts\CatalogRepositoryInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class BeneficiaryService
 {
@@ -69,11 +70,17 @@ class BeneficiaryService
     {
         $data['history_state_id'] = State::idFor(State::CURRENT);
 
+        if ($this->beneficiaryRepo->existsForPartnerAndPerson((int) $data['partner_id'], (int) $data['person_id'])) {
+            throw ValidationException::withMessages([
+                'person_id' => 'La persona ya es beneficiaria de esta socia.',
+            ]);
+        }
+
         $beneficiary = $this->beneficiaryRepo->createBeneficiary([
             'person_id' => $data['person_id'],
             'partner_id' => $data['partner_id'],
             'relationship_id' => $data['relationship_id'],
-            'priority' => $data['priority'] ?? 1,
+            'priority' => $this->priorityForPerson((int) $data['person_id']) ?? $data['priority'] ?? 1,
         ]);
 
         $this->syncHistory($beneficiary, $data);
@@ -87,7 +94,7 @@ class BeneficiaryService
             'person_id' => $data['person_id'],
             'partner_id' => $data['partner_id'],
             'relationship_id' => $data['relationship_id'],
-            'priority' => $data['priority'] ?? $beneficiary->priority ?? 1,
+            'priority' => $this->priorityForPerson((int) $data['person_id']) ?? $data['priority'] ?? $beneficiary->priority ?? 1,
         ]);
 
         $this->syncHistory($beneficiary, $data);
@@ -145,6 +152,14 @@ class BeneficiaryService
         $attachable = $this->beneficiaryRepo->findAttachable($type, $id);
 
         return $this->attachments->store($attachable, $documentType, $file);
+    }
+
+    /** Prioridad por edad: 0-6 años = 1, mayor de 6 = 2 (sin fecha de nacimiento: null). */
+    private function priorityForPerson(int $personId): ?int
+    {
+        $birthdate = $this->beneficiaryRepo->personBirthdate($personId);
+
+        return $birthdate ? (Carbon::parse($birthdate)->age <= 6 ? 1 : 2) : null;
     }
 
     /** @return array{0: int, 1: int} año y mes */

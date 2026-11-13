@@ -45,11 +45,18 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
     const [dateStart, setDateStart] = useState(mode === 'edit' && resolution ? resolution.date_start || '' : '');
     const [dateEnd, setDateEnd] = useState(mode === 'edit' && resolution ? resolution.date_end || '' : '');
     const [submitting, setSubmitting] = useState(false);
+    const [pending, setPending] = useState(false);
+    const [observation, setObservation] = useState('');
+    const isPendingResolution = mode === 'edit' && resolution?.state?.abbreviation === 'PEN';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!document || !dateStart || !dateEnd) {
             toast.error('Complete los campos obligatorios de la resolución.');
+            return;
+        }
+        if (pending && !observation.trim()) {
+            toast.error('La observación es obligatoria para una resolución Pendiente.');
             return;
         }
         if (dateEnd < dateStart) {
@@ -63,16 +70,42 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
                 date_start: dateStart,
                 date_end: dateEnd,
             };
-            if (mode === 'edit') {
+            if (isPendingResolution) {
+                // Pendiente: al actualizar se valida el número en el portal municipal.
+                // Si no existe, el backend responde error y el modal permanece abierto.
+                await http.post(`${BASE}/reconocimientos/${resolution.id}/regularizar`, {
+                    ...payload,
+                    document: document.trim(),
+                });
+                toast.success('Resolución verificada en el portal: ahora está Vigente.');
+            } else if (mode === 'edit') {
                 await http.put(`${BASE}/reconocimientos/${resolution.id}`, payload);
                 toast.success('Resolución actualizada correctamente.');
             } else {
-                await http.post(`${BASE}/reconocimientos`, payload);
-                toast.success('Resolución creada exitosamente.');
+                if (!pending) {
+                    // Verifica en el portal municipal antes de guardar (bloquea si no existe).
+                    await http.get(`${BASE}/reconocimientos/verificar-externa`, {
+                        params: { document: document.trim() },
+                        timeout: 60000,
+                    });
+                }
+                await http.post(`${BASE}/reconocimientos`, {
+                    ...payload,
+                    pending,
+                    observation: pending ? observation.trim() : null,
+                }, { timeout: 60000 });
+                toast.success(
+                    pending
+                        ? 'Resolución registrada como Pendiente. Se generó una notificación de Regularización.'
+                        : 'Resolución creada exitosamente.'
+                );
             }
             onSaved();
         } catch (err) {
-            toast.error(errorMessage(err, 'Ocurrió un error al guardar la resolución.'));
+            toast.error(errorMessage(
+                err,
+                isPendingResolution ? 'La resolución es incorrecta o no se encontró en el portal.' : 'Ocurrió un error al guardar la resolución.'
+            ));
         } finally {
             setSubmitting(false);
         }
@@ -101,6 +134,49 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
                         <label className={labelCls}>Fecha de Fin *</label>
                         <input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} className={inputCls} required />
                     </div>
+
+                    {mode === 'create' && (
+                        <>
+                            <div className="sm:col-span-2">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-charcoal cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={pending}
+                                        onChange={(e) => {
+                                            setPending(e.target.checked);
+                                            if (!e.target.checked) setObservation('');
+                                        }}
+                                        className="h-4 w-4 accent-leaf"
+                                    />
+                                    Registrar como Pendiente (por regularizar)
+                                </label>
+                            </div>
+                            <div className="sm:col-span-2">
+                                <label className={labelCls}>Observación {pending && '*'}</label>
+                                <textarea
+                                    value={observation}
+                                    onChange={(e) => setObservation(e.target.value)}
+                                    disabled={!pending}
+                                    required={pending}
+                                    maxLength={1000}
+                                    rows={3}
+                                    placeholder={pending ? 'Motivo por el cual la resolución queda Pendiente' : 'Marque "Pendiente" para habilitar'}
+                                    className={`${inputCls} disabled:opacity-60 disabled:cursor-not-allowed`}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {isPendingResolution && (
+                        <div className="sm:col-span-2 rounded-xl border-2 border-sun bg-sun-light/40 p-3 text-sm">
+                            <p className="font-bold text-charcoal mb-1">Resolución Pendiente</p>
+                            {resolution.observation && <p className="text-earth mb-2">Motivo: {resolution.observation}</p>}
+                            <p className="text-earth mb-2">
+                                Ingrese el número de resolución correcto en «Documento» y presione Actualizar. Se verificará
+                                que exista en el portal municipal antes de pasarla a Vigente.
+                            </p>
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-3 mt-6 pt-4 border-t-2 border-wheat">
                     <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
@@ -268,7 +344,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
                     <label className={labelCls}>Estado</label>
                     <select value={filters.state_id} onChange={(e) => setFilter('state_id', e.target.value)} className={inputCls}>
                         <option value="">Estados</option>
-                        {(options.states || []).map((state) => (
+                        {(options.resolution_states || []).map((state) => (
                             <option key={state.id} value={state.id}>{state.title}</option>
                         ))}
                     </select>

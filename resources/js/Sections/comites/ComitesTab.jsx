@@ -8,7 +8,7 @@ import ConfirmDialog from '../../Components/ConfirmDialog';
 import Combobox from '../../Components/Combobox';
 import Pagination from '../../Components/Pagination';
 import { useDebounced } from '../socios/hooks';
-import { fmtDate, fmtDateTime, committeeStateBadge, committeeStateTitle } from './format';
+import { fmtDate, fmtDateTime, stateBadge, committeeStateBadge, committeeStateTitle } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
@@ -245,7 +245,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                         />
                     </div>
                     {mode === 'edit' && (
-                        <div className="sm:col-span-2 rounded-xl border-2 border-wheat bg-base p-4 space-y-3">
+                        <div className="sm:col-span-2 rounded-xl border-2 border-wheat bg-fog p-4 space-y-3">
                             <p className="text-xs font-bold uppercase tracking-wider text-charcoal">Cambio de estado del comité</p>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div><label htmlFor="committee-state" className={labelCls}>Estado</label><select id="committee-state" value={stateId} onChange={(event) => setStateId(event.target.value)} className={inputCls}>{editableStates.map((state) => <option key={state.id} value={state.id}>{committeeStateTitle(state)}</option>)}</select></div>
@@ -279,8 +279,45 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     );
 }
 
-function ClubViewModal({ club, onClose }) {
-    if (!club) return null;
+const COMMITTEE_POSITIONS = [
+    'PRESIDENTA',
+    'VICE PRESIDENTA',
+    'SECRETARIA',
+    'TESORERA',
+    'COORDINADORA',
+    'ALMACENERA',
+    'VOCAL',
+];
+
+function ClubViewModal({ club: listedClub, onClose }) {
+    const [detail, setDetail] = useState(null);
+    const clubId = listedClub?.id;
+
+    useEffect(() => {
+        setDetail(null);
+        if (!clubId) return undefined;
+        let cancelled = false;
+        http.get(`${BASE}/clubs/${clubId}`)
+            .then((res) => {
+                if (!cancelled) setDetail(res.data.data);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, [clubId]);
+
+    if (!listedClub) return null;
+    const club = detail ? { ...listedClub, ...detail } : listedClub;
+    const partnersById = new Map((club.partners || []).map((partner) => [String(partner.id), partner]));
+    const holderOf = (position) => {
+        const partnerId = club.current_positions?.[position];
+        if (!partnerId) return null;
+        const partner = partnersById.get(String(partnerId));
+        if (!partner) return null;
+        return partner.dni ? `${partner.name} (${partner.dni})` : partner.name;
+    };
+
     return (
         <DetailModal open onClose={onClose} title="Detalle del comité" icon="fa-people-roof" maxWidth="sm:max-w-2xl">
             <DetailGroup>
@@ -299,27 +336,35 @@ function ClubViewModal({ club, onClose }) {
                 </FieldGrid>
             </DetailGroup>
 
+            <DetailGroup title="Directiva del comité" icon="fa-user-tie">
+                <FieldGrid>
+                    {COMMITTEE_POSITIONS.map((position) => (
+                        <Field key={position} label={position} value={detail ? holderOf(position) || 'Sin asignar' : 'Cargando...'} />
+                    ))}
+                </FieldGrid>
+            </DetailGroup>
+
             <DetailGroup title="Resoluciones del comité" icon="fa-file-contract">
                 {(club.all_resolutions || []).length === 0 ? (
                     <p className="text-sm text-earth">Sin resoluciones registradas.</p>
                 ) : (
                     <div className="overflow-x-auto border border-mist rounded-xl">
                         <table className="w-full text-xs sm:text-sm">
-                            <thead className="bg-base">
+                            <thead className="bg-fog">
                                 <tr>
                                     <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Documento</th>
-                                    <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Fecha de documento</th>
                                     <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Fecha de inicio</th>
                                     <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Fecha de fin</th>
+                                    <th className="px-3 py-2 text-left font-heading font-semibold uppercase tracking-wider text-slate">Estado</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-mist">
                                 {(club.all_resolutions || []).map((r) => (
                                     <tr key={r.id} className="hover:bg-blue-light">
                                         <td className="px-3 py-2 font-semibold text-charcoal">{r.document || '—'}</td>
-                                        <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_document)}</td>
                                         <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_start)}</td>
                                         <td className="px-3 py-2 text-charcoal">{fmtDate(r.date_end)}</td>
+                                        <td className="px-3 py-2"><span className={`badge ${stateBadge(r.state).cls}`}>{stateBadge(r.state).label}</span></td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -330,16 +375,6 @@ function ClubViewModal({ club, onClose }) {
         </DetailModal>
     );
 }
-
-const COMMITTEE_POSITIONS = [
-    'PRESIDENTA',
-    'VICE PRESIDENTA',
-    'SECRETARIA',
-    'TESORERA',
-    'COORDINADORA',
-    'ALMACENERA',
-    'VOCAL',
-];
 
 function AsignarCargoModal({ club, onClose, onSaved }) {
     const toast = useToast();
@@ -420,7 +455,7 @@ function AsignarCargoModal({ club, onClose, onSaved }) {
             maxWidth="sm:max-w-5xl"
         >
             <div className="p-6">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5 rounded-2xl border border-wheat bg-base px-4 py-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5 rounded-2xl border border-wheat bg-fog px-4 py-3">
                     <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-earth">Comité</p>
                         <p className="font-heading font-bold text-charcoal">{club.name} <span className="text-earth">({club.code})</span></p>

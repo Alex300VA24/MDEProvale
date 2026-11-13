@@ -34,6 +34,8 @@ interface BeneficiaryRepositoryInterface
 
     public function findByPartnerAndPerson(Partner $partner, mixed $personId): ?Beneficiarie;
 
+    public function existsForPartnerAndPerson(int $partnerId, int $personId): bool;
+
     /** Socio (`partner`) o beneficiario al que se adjunta un documento. */
     public function findAttachable(string $type, int $id): Model;
 

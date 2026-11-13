@@ -16,34 +16,25 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $data = $this->productService->indexData(
-            $request->only(['search', 'state_id', 'uom_id']),
-            [
-                'product_id' => $request->input('product_id'),
-                'periodo' => $request->input('periodo'),
-                'search' => $request->input('search_detalle'),
-            ]
-        );
-
-        return view('productos-pecosas.productos.index', $data);
+        return redirect()->route('dashboard');
     }
 
     public function create()
     {
-        return view('productos-pecosas.productos.create', $this->productService->formCatalogs());
+        return redirect()->route('dashboard');
     }
 
     public function store(StoreProductRequest $request)
     {
-        $this->productService->create($request->validated());
+        $this->productService->register($request->validated());
 
-        return redirect()->route('products.index')->with('success', 'Producto creado exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Producto creado exitosamente');
     }
 
     public function storeAjax(StoreProductRequest $request)
     {
         try {
-            $product = $this->productService->create($request->validated());
+            $product = $this->productService->register($request->validated());
 
             return response()->json([
                 'success' => true,
@@ -60,21 +51,19 @@ class ProductController extends Controller
 
     public function show(Product $product)
     {
-        $product = $this->productService->show($product);
-
-        return view('productos-pecosas.productos.show', compact('product'));
+        return redirect()->route('dashboard');
     }
 
     public function edit(Product $product)
     {
-        return view('productos-pecosas.productos.edit', ['product' => $product] + $this->productService->formCatalogs());
+        return redirect()->route('dashboard');
     }
 
     public function update(UpdateProductRequest $request, Product $product)
     {
         $this->productService->update($product, $request->validated());
 
-        return redirect()->route('products.index')->with('success', 'Producto actualizado exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Producto actualizado exitosamente');
     }
 
     public function destroy(Product $product)
@@ -82,22 +71,20 @@ class ProductController extends Controller
         try {
             $this->productService->delete($product);
         } catch (\DomainException $e) {
-            return redirect()->route('products.index')->with('error', $e->getMessage());
+            return redirect()->route('dashboard')->with('error', $e->getMessage());
         }
 
-        return redirect()->route('products.index')->with('success', 'Producto eliminado exitosamente');
+        return redirect()->route('dashboard')->with('success', 'Producto eliminado exitosamente');
     }
 
     public function reportes()
     {
-        return view('productos-pecosas.productos.reportes');
+        return redirect()->route('dashboard');
     }
 
     public function generarReporte($tipo, Request $request)
     {
-        $filters = $request->only(['stock_minimo']);
-        $data = $this->productService->generateReport($tipo, $filters);
-
-        return view('productos-pecosas.productos.reportes.pdf', array_merge($data, ['tipo' => $tipo]));
+        // El reporte HTML/PDF de productos migró al generador de reportes del dashboard.
+        return redirect()->route('dashboard');
     }
 }
