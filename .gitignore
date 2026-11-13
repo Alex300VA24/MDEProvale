@@ -62,6 +62,7 @@ Desktop.ini
 /.cursor/
 /.gemini/
 /.impeccable/
+/.archify/
 /.kiro/
 /.opencode/
 /.codex_tmp/
@@ -75,9 +76,13 @@ Desktop.ini
 /Homestead.yaml
 
 # Migraciones y datos locales o personales
+/output/
+/plv_blade_templates/
 /migracion_productos/
 /migracion_socios/
-/migracion_responsables/*.csv
+/migracion_responsables/
+/resoluciones/
+/scripts/
 /public/fichas/
 resoluciones_comites.xlsx
 
