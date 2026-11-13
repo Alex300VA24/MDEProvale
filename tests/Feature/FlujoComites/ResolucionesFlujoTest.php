@@ -162,6 +162,15 @@ class ResolucionesFlujoTest extends TestCase
         $this->assertSame(1, DB::table('resolutions')->where('document', '0123-2026')->count());
     }
 
+    public function test_resolucion_historica_con_documento_repetido_se_admite(): void
+    {
+        DB::table('resolutions')->insert(['document' => '0123-2026', 'date_start' => $this->dias(-900), 'date_end' => $this->dias(-400), 'state_id' => $this->ven, 'created_at' => now(), 'updated_at' => now()]);
+        $this->portalPublica(['0123-2026']);
+
+        $this->crear($this->payload('0123-2026', ['date_start' => $this->dias(-800), 'date_end' => $this->dias(-100)]))->assertCreated();
+        $this->assertSame(2, DB::table('resolutions')->where('document', '0123-2026')->count());
+    }
+
     // ============ PENDIENTE (sin validación de portal) ============
 
     public function test_pendiente_exige_observacion(): void

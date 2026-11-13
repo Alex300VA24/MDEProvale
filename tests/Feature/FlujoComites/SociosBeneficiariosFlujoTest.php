@@ -426,6 +426,27 @@ class SociosBeneficiariosFlujoTest extends TestCase
         $this->registrar($this->socioPayload($persona, $otro, [$this->benef($this->nino(), 'NI0')]))->assertStatus(422);
     }
 
+    public function test_ficha_historica_vencida_se_admite_aunque_repita_socia_y_nino(): void
+    {
+        $persona = $this->persona();
+        $nino = $this->nino();
+        $this->socio($this->comite, $persona, [$this->benef($nino, 'NI0')]);
+
+        $this->registrar($this->socioPayload($persona, $this->comite, [$this->benef($nino, 'NI0')], [
+            'state_id' => $this->ven, 'date_begin' => $this->dias(-900), 'date_end' => $this->dias(-400),
+        ]))->assertCreated();
+        $this->assertSame(2, DB::table('partners')->where('person_id', $persona)->count());
+    }
+
+    public function test_editar_persona_con_dni_historico_invalido_no_se_bloquea(): void
+    {
+        $p = $this->persona();
+        DB::table('people')->where('id', $p)->update(['dni' => '1234567']);
+
+        $this->actingAs($this->admin())->putJson(self::SOCIOS."/personas/$p", ['address' => 'Nueva dirección'])->assertOk();
+        $this->actingAs($this->admin())->putJson(self::SOCIOS."/personas/$p", ['dni' => 'ABC'])->assertStatus(422);
+    }
+
     /** @group hallazgos */
     public function test_mismo_nino_no_puede_ser_beneficiario_de_dos_socias_vigentes(): void
     {

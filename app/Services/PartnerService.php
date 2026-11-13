@@ -109,7 +109,9 @@ class PartnerService
                 $partnerData['person_id'] = $person->id;
             }
 
-            $this->assertNoDuplicates((int) $partnerData['person_id'], $beneficiaries ?? []);
+            if (! $this->isHistorical($partnerData['date_end'] ?? null)) {
+                $this->assertNoDuplicates((int) $partnerData['person_id'], $beneficiaries ?? []);
+            }
 
             $partner = $this->partnerRepo->createPartner($partnerData);
             $this->syncBeneficiaries($partner, $beneficiaries ?? []);
@@ -121,10 +123,11 @@ class PartnerService
 
     public function updateWithBeneficiaries(Partner $partner, array $partnerData, ?array $beneficiaries = null, array $benefitContext = []): Partner
     {
-        if ($beneficiaries !== null) {
-            $own = $partner->beneficiaries()->where('person_id', $partner->person_id)->pluck('id')->all();
-            $others = array_filter($beneficiaries, fn ($b) => ! (isset($b['id']) && in_array((int) $b['id'], $own, true)));
-            $this->assertNoDuplicates((int) ($partnerData['person_id'] ?? $partner->person_id), $others, $partner);
+        // Registros históricos (ficha vencida) y beneficiarios ya guardados no se revalidan.
+        if ($beneficiaries !== null && ! $this->isHistorical($partnerData['date_end'] ?? $partner->date_end)) {
+            $saved = $partner->beneficiaries()->pluck('person_id', 'id');
+            $incoming = array_filter($beneficiaries, fn ($b) => ! (isset($b['id']) && (int) ($saved[(int) $b['id']] ?? 0) === (int) ($b['person_id'] ?? 0)));
+            $this->assertNoDuplicates((int) ($partnerData['person_id'] ?? $partner->person_id), $incoming, $partner);
         }
 
         $this->partnerRepo->updatePartner($partner, $partnerData);
@@ -145,6 +148,12 @@ class PartnerService
      *
      * @throws ValidationException
      */
+    /** Una ficha con fecha de término pasada es un registro histórico: se deja pasar tal cual. */
+    private function isHistorical(mixed $dateEnd): bool
+    {
+        return $dateEnd && Carbon::parse($dateEnd)->lt(now()->startOfDay());
+    }
+
     private function assertNoDuplicates(int $personId, array $beneficiaries, ?Partner $partner = null): void
     {
         $today = now()->toDateString();

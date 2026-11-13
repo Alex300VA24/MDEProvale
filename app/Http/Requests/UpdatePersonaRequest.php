@@ -23,7 +23,8 @@ class UpdatePersonaRequest extends FormRequest
             'dni' => [
                 'sometimes',
                 'required',
-                'digits:8',
+                // Solo se exige al cambiar el DNI: los históricos importados conservan el suyo.
+                fn ($attribute, $value, $fail) => $value === $this->route('person')?->dni || preg_match('/^\d{8}$/', (string) $value) ? null : $fail('El DNI debe tener 8 dígitos.'),
                 Rule::unique('people', 'dni')->ignore($this->route('person')?->id),
             ],
             'birthdate' => 'nullable|date',

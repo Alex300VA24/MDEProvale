@@ -70,7 +70,8 @@ class BeneficiaryService
     {
         $data['history_state_id'] = State::idFor(State::CURRENT);
 
-        if ($this->beneficiaryRepo->existsForPartnerAndPerson((int) $data['partner_id'], (int) $data['person_id'])) {
+        if (! $this->isHistoricalPartner((int) $data['partner_id'])
+            && $this->beneficiaryRepo->existsForPartnerAndPerson((int) $data['partner_id'], (int) $data['person_id'])) {
             throw ValidationException::withMessages([
                 'person_id' => 'La persona ya es beneficiaria de esta socia.',
             ]);
@@ -152,6 +153,14 @@ class BeneficiaryService
         $attachable = $this->beneficiaryRepo->findAttachable($type, $id);
 
         return $this->attachments->store($attachable, $documentType, $file);
+    }
+
+    /** Socia con ficha vencida: su carga es histórica y no se valida contra duplicados. */
+    private function isHistoricalPartner(int $partnerId): bool
+    {
+        $dateEnd = $this->beneficiaryRepo->partnerDateEnd($partnerId);
+
+        return $dateEnd && Carbon::parse($dateEnd)->lt(now()->startOfDay());
     }
 
     /** Prioridad por edad: 0-6 años = 1, mayor de 6 = 2 (sin fecha de nacimiento: null). */

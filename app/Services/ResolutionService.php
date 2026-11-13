@@ -67,7 +67,10 @@ class ResolutionService
             $data['observation'] = null;
         }
 
-        if (! $pending) {
+        // Una resolución ya terminada es histórica (p. ej. cargada de Excel): se admite tal cual.
+        $historical = ! empty($data['date_end']) && \Illuminate\Support\Carbon::parse($data['date_end'])->lt(now()->startOfDay());
+
+        if (! $pending && ! $historical) {
             $this->assertDocumentAvailable((string) ($data['document'] ?? ''));
         }
 

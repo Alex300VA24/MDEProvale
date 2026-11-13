@@ -112,3 +112,16 @@ php vendor/bin/phpunit tests/Feature/FlujoComites --group hallazgos        # sol
 ## 8. Nota de arquitectura
 
 Las consultas nuevas viven en los repositorios (`PartnerRepository`, `BeneficiaryRepository`, `ResolutionRepository`, `AssociationRepository`), porque `ArchitectureTest` prohíbe el acceso directo a la BD desde `app/Services`.
+
+## 9. Datos históricos (cargas desde Excel)
+
+Los registros históricos no deben bloquearse por las reglas nuevas, aunque no las cumplan. Las cargas desde Excel (seeders y JSON en `database/seeders/data`) escriben directo en la BD y no pasan por estas validaciones. Para los registros históricos que se editan o registran desde la aplicación:
+
+- **Ficha de socia con `date_end` pasada:** se registra o edita sin revisar duplicados (socia repetida, niño repetido o ya con otra socia).
+- **Edición de una socia:** solo se revisan los beneficiarios nuevos o cambiados. Los ya guardados no se revalidan.
+- **Resolución con `date_end` pasada:** puede repetir un número de documento.
+- **Edición de una persona:** el DNI solo se valida (8 dígitos) si se cambia. Una persona con DNI histórico inválido sigue siendo editable.
+- **Beneficiario por API:** no se revisa el duplicado si la socia tiene la ficha vencida.
+
+En la BD de desarrollo hay datos que hoy incumplen las reglas: 2 socias activas repetidas, 4 pares socia-beneficiario repetidos y 2 DNI que no tienen 8 dígitos. Siguen intactos y editables.
+Pruebas nuevas: `test_resolucion_historica_con_documento_repetido_se_admite`, `test_ficha_historica_vencida_se_admite_aunque_repita_socia_y_nino` y `test_editar_persona_con_dni_historico_invalido_no_se_bloquea`.

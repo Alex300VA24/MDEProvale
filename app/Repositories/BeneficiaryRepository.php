@@ -89,6 +89,11 @@ class BeneficiaryRepository extends BaseRepository implements BeneficiaryReposit
         ]);
     }
 
+    public function partnerDateEnd(int $partnerId): ?string
+    {
+        return Partner::whereKey($partnerId)->value('date_end');
+    }
+
     public function existsForPartnerAndPerson(int $partnerId, int $personId): bool
     {
         return Beneficiarie::where('partner_id', $partnerId)->where('person_id', $personId)->exists();
