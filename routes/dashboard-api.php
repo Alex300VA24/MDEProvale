@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ProductosPecosasController;
 use App\Http\Controllers\Api\SistemaController;
 use App\Http\Controllers\Api\SociosBeneficiariosController;
 use App\Http\Controllers\Api\PvlReportsController;
+use App\Http\Controllers\Api\MonthlyRosterController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,18 +31,12 @@ use Illuminate\Support\Facades\Route;
 // usuario autenticado (ver NAV_ITEMS en Dashboard.jsx, modules: []).
 Route::get('dashboard/inicio/panel', [InicioController::class, 'panel'])->name('api.inicio.panel');
 
-// ==================== REPORTES PVL INTELIGENTES ====================
+// ==================== REPORTES (informe trimestral) ====================
 Route::prefix('dashboard/reportes-pvl')->middleware(['admin', 'module:reportes'])->name('api.reportes-pvl.')->group(function () {
-    Route::get('/', [PvlReportsController::class, 'index'])->name('index');
-    Route::post('analizar', [PvlReportsController::class, 'analyze'])->name('runs.store');
-    Route::put('defaults', [PvlReportsController::class, 'updateDefaults'])->name('defaults.update');
-    Route::get('runs/{pvlReportRun}', [PvlReportsController::class, 'show'])->name('runs.show');
-    Route::put('runs/{pvlReportRun}/missing-data', [PvlReportsController::class, 'updateMissingData'])->name('runs.missing-data.update');
-    Route::post('runs/{pvlReportRun}/generar', [PvlReportsController::class, 'markGenerated'])->name('runs.generate');
-    Route::delete('runs/{pvlReportRun}', [PvlReportsController::class, 'destroyRun'])->name('runs.destroy');
-    Route::post('documents', [PvlReportsController::class, 'storeDocument'])->name('documents.store');
-    Route::get('documents/{pvlDocument}/download', [PvlReportsController::class, 'downloadDocument'])->name('documents.download');
-    Route::delete('documents/{pvlDocument}', [PvlReportsController::class, 'destroyDocument'])->name('documents.destroy');
+    Route::get('trimestral', [PvlReportsController::class, 'quarterly'])->name('quarterly');
+    Route::post('trimestral/analisis', [PvlReportsController::class, 'analysis'])->name('analysis');
+    Route::post('trimestral/documento', [PvlReportsController::class, 'document'])->name('document');
+    Route::post('trimestral/exportar/{format}', [PvlReportsController::class, 'export'])->where('format', 'pdf|docx')->name('export');
 });
 
 // ==================== MÓDULO: BASE DE CONOCIMIENTO IA (RAG) ====================
@@ -55,107 +50,134 @@ Route::prefix('dashboard/base-conocimiento')->middleware(['admin', 'module:base-
     Route::get('documents/{knowledgeBaseDocument}/download', [KnowledgeBaseController::class, 'download'])->name('documents.download');
     Route::delete('documents/{knowledgeBaseDocument}', [KnowledgeBaseController::class, 'destroy'])->name('documents.destroy');
     Route::post('preguntar', [KnowledgeBaseController::class, 'ask'])->name('ask');
+    Route::get('historial', [KnowledgeBaseController::class, 'history'])->name('history');
 });
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================
 Route::prefix('dashboard/socios-beneficiarios')->middleware('module:socios-beneficiarios')->name('api.socios-beneficiarios.')->group(function () {
-    // Socios
-    Route::get('partners', [SociosBeneficiariosController::class, 'partners'])->name('partners');
-    Route::get('partners/options', [SociosBeneficiariosController::class, 'partnersOptions'])->name('partners.options');
-    Route::post('partners', [SociosBeneficiariosController::class, 'storePartner'])->name('partners.store');
-    Route::put('partners/{partner}', [SociosBeneficiariosController::class, 'updatePartner'])->name('partners.update');
-    Route::delete('partners/{partner}', [SociosBeneficiariosController::class, 'destroyPartner'])->name('partners.destroy');
+    Route::middleware('module:padrones')->group(function () {
+        Route::get('monthly-rosters', [MonthlyRosterController::class, 'index'])->name('monthly-rosters.index');
+        Route::get('monthly-rosters/{monthlyRoster}', [MonthlyRosterController::class, 'show'])->name('monthly-rosters.show');
+        Route::post('monthly-rosters', [MonthlyRosterController::class, 'store'])->middleware('module:padrones,create')->name('monthly-rosters.store');
+        Route::post('monthly-rosters/{monthlyRoster}/sync', [MonthlyRosterController::class, 'sync'])->middleware('module:padrones,edit')->name('monthly-rosters.sync');
+        Route::post('monthly-rosters/{monthlyRoster}/close', [MonthlyRosterController::class, 'close'])->middleware('module:padrones,edit')->name('monthly-rosters.close');
+        Route::post('monthly-rosters/{monthlyRoster}/revise', [MonthlyRosterController::class, 'revise'])->middleware('module:padrones,edit')->name('monthly-rosters.revise');
+        Route::delete('monthly-rosters/{monthlyRoster}', [MonthlyRosterController::class, 'destroy'])->middleware('module:padrones,delete')->name('monthly-rosters.destroy');
+    });
 
-    // Personas
-    Route::get('personas', [SociosBeneficiariosController::class, 'personas'])->name('personas');
-    Route::get('personas/options', [SociosBeneficiariosController::class, 'personasOptions'])->name('personas.options');
-    Route::post('personas/reniec', [SociosBeneficiariosController::class, 'consultarReniec'])
-        ->middleware('throttle:10,1')
-        ->name('personas.reniec');
-    Route::get('personas/{person}/reniec-photo', [SociosBeneficiariosController::class, 'fotoReniec'])
-        ->middleware('throttle:10,1')
-        ->name('personas.reniec-photo');
-    Route::get('personas/{person}', [SociosBeneficiariosController::class, 'showPersona'])->name('personas.show');
-    Route::post('personas', [SociosBeneficiariosController::class, 'storePersona'])->name('personas.store');
-    Route::put('personas/{person}', [SociosBeneficiariosController::class, 'updatePersona'])->name('personas.update');
-    Route::delete('personas/{person}', [SociosBeneficiariosController::class, 'destroyPersona'])->name('personas.destroy');
+    // Las opciones de comité son necesarias tanto en el registro como al emitir padrones.
+    Route::get('partners/options', [SociosBeneficiariosController::class, 'partnersOptions'])
+        ->middleware('module:registro-socios-beneficiarios|padrones')
+        ->name('partners.options');
 
-    // Beneficiarios
-    Route::get('beneficiarios', [SociosBeneficiariosController::class, 'beneficiarios'])->name('beneficiarios');
-    Route::get('beneficiarios/options', [SociosBeneficiariosController::class, 'beneficiariosOptions'])->name('beneficiarios.options');
-    Route::get('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'showBeneficiario'])->name('beneficiarios.show');
-    Route::post('beneficiarios', [SociosBeneficiariosController::class, 'storeBeneficiario'])->name('beneficiarios.store');
-    Route::put('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'updateBeneficiario'])->name('beneficiarios.update');
-    Route::delete('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'destroyBeneficiario'])->name('beneficiarios.destroy');
+    Route::middleware('module:registro-socios-beneficiarios')->group(function () {
+        // Socios
+        Route::get('partners', [SociosBeneficiariosController::class, 'partners'])->name('partners');
+        Route::post('partners', [SociosBeneficiariosController::class, 'storePartner'])->name('partners.store');
+        Route::put('partners/{partner}', [SociosBeneficiariosController::class, 'updatePartner'])->name('partners.update');
+        Route::delete('partners/{partner}', [SociosBeneficiariosController::class, 'destroyPartner'])->name('partners.destroy');
 
-    // Documentos adjuntos
-    Route::post('documents', [SociosBeneficiariosController::class, 'uploadDocument'])->name('documents.upload');
-    Route::get('documents/{documentAttachment}', [SociosBeneficiariosController::class, 'downloadDocument'])->name('documents.show');
-    Route::delete('documents/{documentAttachment}', [SociosBeneficiariosController::class, 'destroyDocument'])->name('documents.destroy');
+        // Personas
+        Route::get('personas', [SociosBeneficiariosController::class, 'personas'])->name('personas');
+        Route::get('personas/options', [SociosBeneficiariosController::class, 'personasOptions'])->name('personas.options');
+        Route::post('personas/reniec', [SociosBeneficiariosController::class, 'consultarReniec'])
+            ->middleware('throttle:10,1')
+            ->name('personas.reniec');
+        Route::get('personas/{person}/reniec-photo', [SociosBeneficiariosController::class, 'fotoReniec'])
+            ->middleware('throttle:10,1')
+            ->name('personas.reniec-photo');
+        Route::get('personas/{person}', [SociosBeneficiariosController::class, 'showPersona'])->name('personas.show');
+        Route::post('personas', [SociosBeneficiariosController::class, 'storePersona'])->name('personas.store');
+        Route::put('personas/{person}', [SociosBeneficiariosController::class, 'updatePersona'])->name('personas.update');
+        Route::delete('personas/{person}', [SociosBeneficiariosController::class, 'destroyPersona'])->name('personas.destroy');
+
+        // Beneficiarios
+        Route::get('beneficiarios', [SociosBeneficiariosController::class, 'beneficiarios'])->name('beneficiarios');
+        Route::get('beneficiarios/options', [SociosBeneficiariosController::class, 'beneficiariosOptions'])->name('beneficiarios.options');
+        Route::get('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'showBeneficiario'])->name('beneficiarios.show');
+        Route::post('beneficiarios', [SociosBeneficiariosController::class, 'storeBeneficiario'])->name('beneficiarios.store');
+        Route::put('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'updateBeneficiario'])->name('beneficiarios.update');
+        Route::delete('beneficiarios/{beneficiarie}', [SociosBeneficiariosController::class, 'destroyBeneficiario'])->name('beneficiarios.destroy');
+
+        // Documentos adjuntos
+        Route::post('documents', [SociosBeneficiariosController::class, 'uploadDocument'])->name('documents.upload');
+        Route::get('documents/{documentAttachment}', [SociosBeneficiariosController::class, 'downloadDocument'])->name('documents.show');
+        Route::delete('documents/{documentAttachment}', [SociosBeneficiariosController::class, 'destroyDocument'])->name('documents.destroy');
+    });
 });
 
-// ==================== MÓDULO: COMITÉS (CLUB DE MADRES + RECONOCIMIENTOS) ====================
-Route::prefix('dashboard/club-madres')->middleware('module:club-madres')->name('api.club-madres.')->group(function () {
-    // Comités (Club de Madres)
-    Route::get('clubs', [ComitesController::class, 'clubs'])->name('clubs');
-    Route::get('clubs/options', [ComitesController::class, 'clubsOptions'])->name('clubs.options');
-    Route::get('clubs/{association}', [ComitesController::class, 'club'])->name('clubs.show');
-    Route::post('clubs', [ComitesController::class, 'storeClub'])->name('clubs.store');
-    Route::put('clubs/{association}', [ComitesController::class, 'updateClub'])->name('clubs.update');
-    Route::post('clubs/{association}/status-change', [ComitesController::class, 'changeClubStatus'])->middleware('module:club-madres,edit')->name('clubs.status-change');
-    Route::post('clubs/{association}/restore-automatic-status', [ComitesController::class, 'restoreAutomaticClubStatus'])->middleware('module:club-madres,edit')->name('clubs.restore-automatic-status');
-    Route::delete('clubs/{association}', [ComitesController::class, 'destroyClub'])->name('clubs.destroy');
-    Route::post('clubs/{association}/asignar-cargo', [ComitesController::class, 'asignarCargo'])->name('clubs.asignar-cargo');
-    Route::post('clubs/{association}/asignar-cargos', [ComitesController::class, 'asignarCargos'])->name('clubs.asignar-cargos');
+// ==================== MÓDULO: COMITÉS Y RESOLUCIONES ====================
+// Grupo "comites-resoluciones": cada submódulo tiene su propio permiso.
+// Club de Madres = Comité (slug club-madres); Reconocimiento = Resolución (slug reconocimientos).
+Route::prefix('dashboard/club-madres')->name('api.club-madres.')->group(function () {
+    // Comités (slug de submódulo: club-madres)
+    Route::middleware('module:club-madres')->group(function () {
+        Route::get('clubs', [ComitesController::class, 'clubs'])->name('clubs');
+        Route::get('clubs/options', [ComitesController::class, 'clubsOptions'])->name('clubs.options');
+        Route::get('clubs/{association}', [ComitesController::class, 'club'])->name('clubs.show');
+        Route::post('clubs', [ComitesController::class, 'storeClub'])->name('clubs.store');
+        Route::put('clubs/{association}', [ComitesController::class, 'updateClub'])->name('clubs.update');
+        Route::post('clubs/{association}/status-change', [ComitesController::class, 'changeClubStatus'])->middleware('module:club-madres,edit')->name('clubs.status-change');
+        Route::post('clubs/{association}/restore-automatic-status', [ComitesController::class, 'restoreAutomaticClubStatus'])->middleware('module:club-madres,edit')->name('clubs.restore-automatic-status');
+        Route::delete('clubs/{association}', [ComitesController::class, 'destroyClub'])->name('clubs.destroy');
+        Route::post('clubs/{association}/asignar-cargo', [ComitesController::class, 'asignarCargo'])->name('clubs.asignar-cargo');
+        Route::post('clubs/{association}/asignar-cargos', [ComitesController::class, 'asignarCargos'])->name('clubs.asignar-cargos');
+    });
 
-    // Reconocimientos (Resoluciones)
-    Route::get('reconocimientos', [ComitesController::class, 'reconocimientos'])->name('reconocimientos');
-    Route::get('reconocimientos/options', [ComitesController::class, 'reconocimientosOptions'])->name('reconocimientos.options');
-    Route::post('reconocimientos', [ComitesController::class, 'storeReconocimiento'])->name('reconocimientos.store');
-    Route::put('reconocimientos/{resolution}', [ComitesController::class, 'updateReconocimiento'])->name('reconocimientos.update');
-    Route::delete('reconocimientos/{resolution}', [ComitesController::class, 'destroyReconocimiento'])->name('reconocimientos.destroy');
-    Route::post('reconocimientos/{resolution}/regularizar', [ComitesController::class, 'regularizeReconocimiento'])->name('reconocimientos.regularize');
+    // Resoluciones / Reconocimientos (slug de submódulo: reconocimientos)
+    Route::middleware('module:reconocimientos')->group(function () {
+        Route::get('reconocimientos', [ComitesController::class, 'reconocimientos'])->name('reconocimientos');
+        Route::get('reconocimientos/options', [ComitesController::class, 'reconocimientosOptions'])->name('reconocimientos.options');
+        Route::post('reconocimientos', [ComitesController::class, 'storeReconocimiento'])->name('reconocimientos.store');
+        Route::put('reconocimientos/{resolution}', [ComitesController::class, 'updateReconocimiento'])->name('reconocimientos.update');
+        Route::delete('reconocimientos/{resolution}', [ComitesController::class, 'destroyReconocimiento'])->name('reconocimientos.destroy');
+        Route::post('reconocimientos/{resolution}/regularizar', [ComitesController::class, 'regularizeReconocimiento'])->name('reconocimientos.regularize');
 
-    // Portal municipal (proxy de resoluciones externas)
-    Route::get('reconocimientos/verificar-externa', [ComitesController::class, 'buscarResolucionExternaPorNumero'])->name('reconocimientos.externa.verificar');
-    Route::get('reconocimientos/{resolution}/buscar-externa', [ComitesController::class, 'buscarResolucionExterna'])->name('reconocimientos.externa.buscar');
-    Route::get('reconocimientos/{resolution}/preview-externa', [ComitesController::class, 'previewResolucionExterna'])->name('reconocimientos.externa.preview');
-    Route::get('reconocimientos/{resolution}/descargar-externa', [ComitesController::class, 'descargarResolucionExterna'])->name('reconocimientos.externa.descargar');
+        // Portal municipal (proxy de resoluciones externas)
+        Route::get('reconocimientos/verificar-externa', [ComitesController::class, 'buscarResolucionExternaPorNumero'])->name('reconocimientos.externa.verificar');
+        Route::get('reconocimientos/{resolution}/buscar-externa', [ComitesController::class, 'buscarResolucionExterna'])->name('reconocimientos.externa.buscar');
+        Route::get('reconocimientos/{resolution}/preview-externa', [ComitesController::class, 'previewResolucionExterna'])->name('reconocimientos.externa.preview');
+        Route::get('reconocimientos/{resolution}/descargar-externa', [ComitesController::class, 'descargarResolucionExterna'])->name('reconocimientos.externa.descargar');
+    });
 });
 
-// ==================== SUPERVISIÓN DE COMITÉS (slug de módulo: club-madres) ====================
-Route::prefix('dashboard/supervision-comites')->middleware('module:club-madres')->name('api.supervision-comites.')->group(function () {
+// ==================== SUPERVISIÓN DE COMITÉS (slug de módulo: supervision-comites) ====================
+Route::prefix('dashboard/supervision-comites')->middleware('module:supervision-comites')->name('api.supervision-comites.')->group(function () {
     Route::get('/', [SupervisionComitesController::class, 'index'])->name('index');
-    Route::put('dia-sin-supervision', [SupervisionComitesController::class, 'setOffDay'])->middleware('module:club-madres,edit')->name('dia-sin-supervision');
-    Route::post('visits/{supervisionVisit}/attachments', [SupervisionComitesController::class, 'uploadAttachment'])->middleware('module:club-madres,edit')->name('attachments.store');
+    Route::put('dia-sin-supervision', [SupervisionComitesController::class, 'setOffDay'])->middleware('module:supervision-comites,edit')->name('dia-sin-supervision');
+    Route::post('visits/{supervisionVisit}/attachments', [SupervisionComitesController::class, 'uploadAttachment'])->middleware('module:supervision-comites,edit')->name('attachments.store');
     Route::get('attachments/{documentAttachment}', [SupervisionComitesController::class, 'downloadAttachment'])->name('attachments.show');
-    Route::delete('attachments/{documentAttachment}', [SupervisionComitesController::class, 'destroyAttachment'])->middleware('module:club-madres,edit')->name('attachments.destroy');
-    Route::put('{association}/visita', [SupervisionComitesController::class, 'setVisit'])->middleware('module:club-madres,edit')->name('visita');
+    Route::delete('attachments/{documentAttachment}', [SupervisionComitesController::class, 'destroyAttachment'])->middleware('module:supervision-comites,edit')->name('attachments.destroy');
+    Route::put('{association}/visita', [SupervisionComitesController::class, 'setVisit'])->middleware('module:supervision-comites,edit')->name('visita');
 });
 
-// ==================== EVALUACIÓN NUTRICIONAL (slug de módulo: socios-beneficiarios) ====================
+// ==================== EVALUACIÓN NUTRICIONAL (slug de módulo: evaluacion-nutricional) ====================
 Route::prefix('dashboard/evaluacion-nutricional')->middleware('module:evaluacion-nutricional')->name('api.evaluacion-nutricional.')->group(function () {
     Route::get('options', [EvaluacionNutricionalController::class, 'options'])->name('options');
     Route::get('{association}/beneficiarios', [EvaluacionNutricionalController::class, 'beneficiarios'])->name('beneficiarios');
 });
 
-// ==================== MÓDULO: PRODUCTOS Y PECOSAS ====================
+// ==================== MÓDULO: PRODUCTOS Y PROGRAMACIÓN / PECOSAS Y REPARTICIÓN ====================
 Route::prefix('dashboard/productos-pecosas')->name('api.productos-pecosas.')->group(function () {
-    // Productos (slug de módulo: productos)
+    // Productos (slug de submódulo: productos)
     Route::middleware('module:productos')->group(function () {
         Route::get('products', [ProductosPecosasController::class, 'products'])->name('products');
         Route::get('products/options', [ProductosPecosasController::class, 'productsOptions'])->name('products.options');
         Route::get('products/detail-products', [ProductosPecosasController::class, 'detailProducts'])->name('products.detail-products');
-        Route::get('programacion-entrega', [ProductosPecosasController::class, 'programacionEntrega'])->name('programacion-entrega');
-        Route::put('programacion-entrega', [ProductosPecosasController::class, 'updateProgramacionEntrega'])
-            ->middleware('module:productos,edit')
-            ->name('programacion-entrega.update');
         Route::post('products', [ProductosPecosasController::class, 'storeProduct'])->name('products.store');
         Route::put('products/{product}', [ProductosPecosasController::class, 'updateProduct'])->name('products.update');
         Route::delete('products/{product}', [ProductosPecosasController::class, 'destroyProduct'])->name('products.destroy');
     });
 
-    // Pecosas (slug de módulo: pecosas)
+    // Programación de Entrega (slug de submódulo: programacion-entrega)
+    Route::middleware('module:programacion-entrega')->group(function () {
+        Route::get('programacion-entrega', [ProductosPecosasController::class, 'programacionEntrega'])->name('programacion-entrega');
+        Route::put('programacion-entrega', [ProductosPecosasController::class, 'updateProgramacionEntrega'])
+            ->middleware('module:programacion-entrega,edit')
+            ->name('programacion-entrega.update');
+    });
+
+    // Pecosas (slug de submódulo: pecosas)
     Route::middleware('module:pecosas')->group(function () {
         Route::get('pecosas', [ProductosPecosasController::class, 'pecosas'])->name('pecosas');
         Route::get('pecosas/options', [ProductosPecosasController::class, 'pecosasOptions'])->name('pecosas.options');
@@ -166,20 +188,26 @@ Route::prefix('dashboard/productos-pecosas')->name('api.productos-pecosas.')->gr
     });
 });
 
-// ==================== MÓDULO: MOVIMIENTOS ====================
-Route::prefix('dashboard/movimientos')->middleware('module:movimientos')->name('api.movimientos.')->group(function () {
-    Route::get('transactions', [MovimientosController::class, 'index'])->name('transactions');
-    Route::get('transactions/options', [MovimientosController::class, 'options'])->name('transactions.options');
-    Route::post('transactions', [MovimientosController::class, 'store'])->name('transactions.store');
-    Route::put('transactions/{transaction}', [MovimientosController::class, 'update'])->name('transactions.update');
-    Route::delete('transactions/{transaction}', [MovimientosController::class, 'destroy'])->name('transactions.destroy');
-    Route::get('tarjeta-control', [ControlInternoController::class, 'tarjetaDatos'])->name('tarjeta-control');
+// ==================== REGISTRO DE INGRESO Y REPARTICIÓN ====================
+// El antiguo módulo plano "movimientos" se dividió en dos submódulos con permisos propios.
+Route::prefix('dashboard/movimientos')->name('api.movimientos.')->group(function () {
+    // Registro de Ingreso (slug de submódulo: registro-ingreso)
+    Route::middleware('module:registro-ingreso')->group(function () {
+        Route::get('transactions', [MovimientosController::class, 'index'])->name('transactions');
+        Route::get('transactions/options', [MovimientosController::class, 'options'])->name('transactions.options');
+        Route::post('transactions', [MovimientosController::class, 'store'])->name('transactions.store');
+        Route::put('transactions/{transaction}', [MovimientosController::class, 'update'])->name('transactions.update');
+        Route::delete('transactions/{transaction}', [MovimientosController::class, 'destroy'])->name('transactions.destroy');
+        Route::get('tarjeta-control', [ControlInternoController::class, 'tarjetaDatos'])->name('tarjeta-control');
+    });
 
-    // Repartición mensual (reporte de raciones por comité + enlace al PDF)
-    Route::get('reparticion', [MovimientosController::class, 'reparticion'])->name('reparticion');
-    Route::put('reparticion', [MovimientosController::class, 'saveReparticion'])
-        ->middleware('module:movimientos,edit')
-        ->name('reparticion.update');
+    // Repartición mensual (slug de submódulo: reparticion): reporte de raciones por comité + enlace al PDF
+    Route::middleware('module:reparticion')->group(function () {
+        Route::get('reparticion', [MovimientosController::class, 'reparticion'])->name('reparticion');
+        Route::put('reparticion', [MovimientosController::class, 'saveReparticion'])
+            ->middleware('module:reparticion,edit')
+            ->name('reparticion.update');
+    });
 });
 
 // ==================== MÓDULO: RESPONSABLES Y RACIONES ====================
@@ -208,6 +236,9 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
     Route::get('notifications', [SistemaController::class, 'notifications'])->name('notifications');
     Route::get('notifications/unread-count', [SistemaController::class, 'unreadNotificationsCount'])->name('notifications.unread-count');
     Route::post('notifications/mark-seen', [SistemaController::class, 'markNotificationsSeen'])->name('notifications.mark-seen');
+    Route::post('notifications/{notification}/solve', [SistemaController::class, 'solveNotification'])->name('notifications.solve');
+    // Sincronización en segundo plano con el portal, disparada tras el login.
+    Route::post('knowledge-sync', [SistemaController::class, 'knowledgeSync'])->name('knowledge-sync');
     Route::get('current-modules', [SistemaController::class, 'currentModules'])->name('current-modules');
 
     Route::middleware('module:sistema')->group(function () {

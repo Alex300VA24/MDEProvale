@@ -147,3 +147,6 @@ resoluciones_comites.xlsx
 *.sqlite
 !database/*.sqlite.example
 
+
+# Manual de flujo operativo (local)
+/docs/manual-flujo-operativo.md

@@ -86,8 +86,11 @@ Route::middleware(['auth', 'platform.user'])->group(function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-    Route::get('/perfil', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
-    Route::put('/perfil', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    // Perfil (slug de módulo: perfil): ver con 'ver', actualizar datos/contraseña con 'editar'.
+    Route::middleware('module:perfil')->group(function () {
+        Route::get('/perfil', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+        Route::put('/perfil', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    });
 
     require __DIR__ . '/search.php';
     require __DIR__ . '/socios-beneficiarios.php';

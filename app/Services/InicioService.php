@@ -12,7 +12,10 @@ use Illuminate\Support\Carbon;
 class InicioService
 {
     /** Año mínimo seleccionable en las gráficas del panel de inicio. */
-    private const MIN_YEAR = 2019;
+    private const MIN_YEAR = 2026;
+
+    /** Primer mes seleccionable del resumen en MIN_YEAR (Marzo 2026). */
+    private const MIN_PERIOD_MONTH = 3;
 
     public function __construct(
         private DashboardRepositoryInterface $dashboard
@@ -211,10 +214,13 @@ class InicioService
     private function dashboardPeriod(array $filters): array
     {
         if (($filters['periodo_anio'] ?? '') !== '' && ($filters['periodo_mes'] ?? '') !== '') {
-            return [
-                $this->clampYear((int) $filters['periodo_anio'], now()->year),
-                max(1, min(12, (int) $filters['periodo_mes'])),
-            ];
+            $year = $this->clampYear((int) $filters['periodo_anio'], now()->year);
+            $month = max(1, min(12, (int) $filters['periodo_mes']));
+            if ($year === self::MIN_YEAR) {
+                $month = max($month, self::MIN_PERIOD_MONTH);
+            }
+
+            return [$year, $month];
         }
 
         $latestHistory = $this->dashboard->latestBeneficiaryHistoryDate();

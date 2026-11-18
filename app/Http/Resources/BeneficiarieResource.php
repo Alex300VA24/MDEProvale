@@ -22,7 +22,9 @@ class BeneficiarieResource extends JsonResource
                     'father_lastname' => $this->person->father_lastname,
                     'mother_lastname' => $this->person->mother_lastname,
                     'dni' => $this->person->dni,
-                    'birthdate' => $this->person->birthdate,
+                    'birthdate' => $this->person->birthdate
+                        ? substr((string) $this->person->birthdate, 0, 10)
+                        : null,
                     'gender' => $this->person->gender,
                     'address' => $this->person->address,
                     'age_formatted' => $this->person->age_formatted,
@@ -46,8 +48,8 @@ class BeneficiarieResource extends JsonResource
                     'weight' => $h->weight,
                     'height' => $h->height,
                     'hmg' => $h->hmg,
-                    'date_begin' => $h->date_begin,
-                    'date_end' => $h->date_end,
+                    'date_begin' => $h->date_begin?->format('Y-m-d'),
+                    'date_end' => $h->date_end?->format('Y-m-d'),
                     'type_benefit_id' => $h->type_benefit_id,
                     'state_id' => $h->state_id,
                     'reason_disqualification_id' => $h->reason_disqualification_id,
@@ -61,7 +63,7 @@ class BeneficiarieResource extends JsonResource
                         ? ['id' => $h->reasonDisqualification->id, 'title' => $h->reasonDisqualification->title]
                         : null,
                     'obstetric_data' => $h->relationLoaded('obstetricData') && $h->obstetricData ? [
-                        'fum' => $h->obstetricData->date_last_menstrual_period,
+                        'fum' => $h->obstetricData->date_last_menstrual_period?->format('Y-m-d'),
                         'child_beneficiary_id' => $h->obstetricData->child_beneficiary_id,
                     ] : null,
                 ]);

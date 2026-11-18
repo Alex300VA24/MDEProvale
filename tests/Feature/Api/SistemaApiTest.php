@@ -459,7 +459,7 @@ class SistemaApiTest extends TestCase
             ->getJson(self::BASE . '/current-modules')
             ->assertOk()
             ->assertJsonPath('data.0.slug', 'sistema')
-            ->assertJsonPath('data.0.can_view', 1);
+            ->assertJsonPath('data.0.can_view', true);
     }
 
     public function test_usuarios_endpoint_requires_sistema_module_access(): void

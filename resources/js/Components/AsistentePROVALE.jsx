@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import http from '../http';
+import { useRuntimeState } from '../RuntimeState';
 import { FormattedAnswer } from './assistantFormat';
 
 // Widget flotante de ayuda. El historial vive solo en memoria: al recargar o
@@ -11,26 +12,30 @@ const MAX_HISTORIAL = 20;
 const SUGGESTIONS = [
     {
         icon: 'fa-people-roof',
+        module: 'club-madres',
         label: 'Comités activos',
         description: 'Ver cuántos comités están vigentes.',
         prompt: '¿Cuántos comités activos hay este mes?',
     },
     {
         icon: 'fa-user-tie',
+        module: 'club-madres',
         label: 'Presidenta de un comité',
         description: 'Consultar quién preside un comité.',
         prompt: '¿Quién es la presidenta del comité ',
     },
     {
         icon: 'fa-file-circle-plus',
+        module: 'pecosas',
         label: 'Registrar una pecosa',
         description: 'Crear entrega de productos para un comité.',
         prompt: '¿Cómo registro una nueva pecosa?',
     },
     {
         icon: 'fa-boxes-stacked',
+        module: 'productos',
         label: 'Stock de productos',
-        description: 'Revisar existencias, entradas y salidas.',
+        description: 'Revisar existencias de los productos.',
         prompt: '¿Cómo consulto el stock de productos?',
     },
 ];
@@ -42,6 +47,10 @@ function horaReinicio(iso) {
 }
 
 export default function AsistentePROVALE({ open, onOpenChange }) {
+    // Solo se sugieren consultas de los módulos a los que el rol tiene acceso.
+    const { modules } = useRuntimeState();
+    const allowedModules = new Set((modules ?? []).filter((m) => m.can_view).map((m) => m.slug));
+    const suggestions = SUGGESTIONS.filter((suggestion) => allowedModules.has(suggestion.module));
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -178,7 +187,7 @@ export default function AsistentePROVALE({ open, onOpenChange }) {
                             <div className="assistant-suggestions" aria-label="Consultas sugeridas">
                                 <p>Consultas frecuentes</p>
                                 <div>
-                                    {SUGGESTIONS.map((suggestion) => (
+                                    {suggestions.map((suggestion) => (
                                         <button key={suggestion.label} type="button" onClick={() => useSuggestion(suggestion.prompt)} disabled={bloqueado}>
                                             <i className={`fas ${suggestion.icon}`} aria-hidden="true" />
                                             <span className="assistant-suggestion-copy">

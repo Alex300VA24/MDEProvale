@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         // 3. Resoluciones y comites
         $this->call(ResolutionSeeder::class);
         $this->call(AssociationSeeder::class);
+        $this->call(AssociationCodeHistorySeeder::class);
         $this->call(ResolutionAssociationSeeder::class);
 
         // El padrón mensual es la fuente de verdad para socios,
@@ -43,6 +44,7 @@ class DatabaseSeeder extends Seeder
         $this->call(TemporalBeneficiarieSeeder::class);
         $this->call(TemporalBeneficiarieHistorySeeder::class);
         $this->call(AssociationRosterPeriodSeeder::class);
+        $this->call(MonthlyRosterSeeder::class);
         $this->call(DirectiveSeeder::class);
         $this->call(ResponsibleSeeder::class);
 

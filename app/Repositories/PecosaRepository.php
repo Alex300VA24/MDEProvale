@@ -22,7 +22,7 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
     {
         return $this->model
             ->select([
-                'id', 'pecosa_number', 'delivery_date', 'observation',
+                'id', 'pecosa_number', 'delivery_date', 'service_period', 'monthly_roster_id', 'observation',
                 'association_id', 'state_id', 'managing_partner_id', 'chief_id', 'storekeeper_id',
                 'president_name', 'president_dni', 'chief_name', 'chief_dni',
                 'storekeeper_name', 'storekeeper_dni', 'managing_partner_name', 'managing_partner_dni',
@@ -33,6 +33,7 @@ class PecosaRepository extends BaseRepository implements PecosaRepositoryInterfa
             ->with([
                 'association:id,name,code,address,state_id',
                 'state:id,title,abbreviation',
+                'monthlyRoster:id,period,version,status',
                 'managingPartner.people:id,names,father_lastname,mother_lastname,dni',
                 'chief.person:id,names,father_lastname,mother_lastname,dni',
                 'storekeeper.person:id,names,father_lastname,mother_lastname,dni',

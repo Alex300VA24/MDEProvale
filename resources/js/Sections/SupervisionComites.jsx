@@ -123,7 +123,7 @@ function AttachmentModal({ visit, maxMb, canEdit, onClose, onChanged }) {
 export default function SupervisionComites() {
     const toast = useToast();
     const { modules, uploadMaxMb } = useRuntimeState();
-    const canEdit = !!(modules ?? []).find((m) => m.slug === 'club-madres')?.can_edit;
+    const canEdit = !!(modules ?? []).find((m) => m.slug === 'supervision-comites')?.can_edit;
 
     const now = new Date();
     const [year, setYear] = useState(now.getFullYear());
@@ -134,6 +134,15 @@ export default function SupervisionComites() {
     const [loading, setLoading] = useState(true);
     const [attachmentVisit, setAttachmentVisit] = useState(null);
     const [offDayPrompt, setOffDayPrompt] = useState(null);
+    // Comités inactivos: visibles siempre, pero solo se trabaja con ellos si se marcan.
+    const [enabledInactive, setEnabledInactive] = useState(() => new Set());
+    const isUsable = (row) => row.active || enabledInactive.has(row.id);
+    const toggleUsable = (row) => setEnabledInactive((current) => {
+        const next = new Set(current);
+        if (next.has(row.id)) next.delete(row.id);
+        else next.add(row.id);
+        return next;
+    });
 
     const days = useMemo(() => {
         const total = new Date(year, month, 0).getDate();
@@ -168,7 +177,7 @@ export default function SupervisionComites() {
     }, [rows, search]);
 
     const toggle = async (row, date) => {
-        if (!canEdit) return;
+        if (!canEdit || !isUsable(row)) return;
         const prev = row.visits[date] ?? '';
         const next = NEXT[prev];
         const apply = (value) =>
@@ -239,23 +248,27 @@ export default function SupervisionComites() {
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 sm:px-6 py-3 border-y-2 border-wheat">
                 <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                    <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className={selectCls} aria-label="Mes">
+                    <div className="relative w-full sm:w-[325px]">
+                        <i className="fas fa-search pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-earth" aria-hidden="true" />
+                        <input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Buscar comité, presidenta o sector"
+                            aria-label="Buscar comité, presidenta o sector"
+                            className={`${selectCls} w-full pl-10 pr-4 py-2.5`}
+                        />
+                    </div>
+                    <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className={`${selectCls} pl-4 pr-10 py-2.5 min-w-[10rem]`} aria-label="Mes">
                         {MONTHS.map((m, i) => (
                             <option key={m} value={i + 1}>{m}</option>
                         ))}
                     </select>
-                    <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={`${selectCls} pl-4 pr-10 min-w-[7rem]`} aria-label="Año">
+                    <select value={year} onChange={(e) => setYear(Number(e.target.value))} className={`${selectCls} pl-4 pr-10 py-2.5 min-w-[7rem]`} aria-label="Año">
                         {years.map((y) => (
                             <option key={y} value={y}>{y}</option>
                         ))}
                     </select>
-                    <input
-                        type="search"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar comité, presidenta o sector"
-                        className={`${selectCls} w-full sm:w-80 px-4 py-2.5`}
-                    />
                 </div>
                 <PdfLinkButton
                     href={`${window.APP_URL || ''}/club-reconocimientos/acta-supervision`}
@@ -279,6 +292,8 @@ export default function SupervisionComites() {
                         <table className="data-table border-collapse text-sm [&_th]:border [&_th]:border-white/20 [&_td]:border [&_td]:border-charcoal/20">
                             <thead className="sticky top-0 z-20">
                                 <tr>
+                                    <th className={`${headCell} text-center`}>N°</th>
+                                    <th className={`${headCell} text-center`}>Usar</th>
                                     <th className={headCell}>Cód.</th>
                                     <th className={headCell}>Club de Madres</th>
                                     <th className={headCell}>Presidenta</th>
@@ -312,7 +327,18 @@ export default function SupervisionComites() {
                             </thead>
                             <tbody>
                                 {visible.map((row, rowIndex) => (
-                                    <tr key={row.id} className="hover:bg-leaf-light/40">
+                                    <tr key={row.id} className={`hover:bg-leaf-light/40 ${isUsable(row) ? '' : 'opacity-60'}`}>
+                                        <td className={`${bodyCell} text-center`}>{rowIndex + 1}</td>
+                                        <td className={`${bodyCell} text-center`}>
+                                            {row.active ? (
+                                                <span className="inline-block rounded-full bg-leaf-light px-2 py-0.5 text-xs font-bold text-leaf">Activo</span>
+                                            ) : (
+                                                <label className="inline-flex cursor-pointer flex-col items-center gap-1">
+                                                    <span className="inline-block rounded-full bg-clay-light px-2 py-0.5 text-xs font-bold text-clay">Inactivo</span>
+                                                    <input type="checkbox" checked={enabledInactive.has(row.id)} onChange={() => toggleUsable(row)} aria-label={`Usar comité inactivo ${row.name}`} className="h-4 w-4 accent-leaf" />
+                                                </label>
+                                            )}
+                                        </td>
                                         <td className={`${bodyCell} text-center`}>{row.code}</td>
                                         <td className={`${bodyCell} min-w-[200px] uppercase`}>{row.name}</td>
                                         <td className={`${bodyCell} min-w-[180px] uppercase`}>{row.president}</td>
@@ -355,7 +381,7 @@ export default function SupervisionComites() {
                                                         <button
                                                             type="button"
                                                             onClick={() => toggle(row, day.date)}
-                                                            disabled={!canEdit}
+                                                            disabled={!canEdit || !isUsable(row)}
                                                             aria-label={`${row.name}, ${day.date}: ${value || 'sin marca'}`}
                                                             className="h-full min-w-8 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-leaf disabled:cursor-default"
                                                         >

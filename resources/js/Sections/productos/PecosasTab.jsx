@@ -71,6 +71,12 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
     const [deliveryDate, setDeliveryDate] = useState(
         mode === 'edit' && pecosa ? dateValue(pecosa.delivery_date) : ''
     );
+    const [servicePeriod, setServicePeriod] = useState(
+        mode === 'edit' && pecosa?.service_period ? String(pecosa.service_period).slice(0, 7) : ''
+    );
+    const [monthlyRosterId, setMonthlyRosterId] = useState(
+        mode === 'edit' && pecosa ? pecosa.monthly_roster_id ?? '' : ''
+    );
     const [presidentName, setPresidentName] = useState(
         mode === 'edit' && pecosa
             ? pecosa.president_name || pecosa.managing_partner_name || ''
@@ -84,6 +90,9 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         mode === 'edit' && pecosa ? (pecosa.detail_pecosas || []).map((d) => detailRowFromApi(d, options)) : []
     );
     const [submitting, setSubmitting] = useState(false);
+    const [useInactive, setUseInactive] = useState(() => (options.associations || []).some(
+        (a) => a.is_current === false && String(a.id) === String(mode === 'edit' && pecosa ? pecosa.association_id : ''),
+    ));
 
     useEffect(() => {
         if (mode !== 'create') return undefined;
@@ -116,12 +125,28 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
         : activeStorekeeper?.name;
 
     const associations = (options.associations || []).filter((a) => a && a.id !== undefined && a.id !== null);
-    const clubOptions = associations.map((a) => ({
-        id: a.id,
-        label: associationLabel(a),
-    }));
+    const clubOptions = associations.map((a) => {
+        const inactive = a.is_current === false;
+        return {
+            id: a.id,
+            label: associationLabel(a, { includeCode: true, includeAddress: false }),
+            badge: inactive ? 'Inactivo' : null,
+            disabled: inactive && !useInactive,
+        };
+    });
     const detailOptions = (options.detail_products || []).filter((dp) => Number(dp.available_stock || 0) > 0);
     const calculatedState = stateForDeliveryDate(deliveryDate, options.states);
+
+    useEffect(() => {
+        const effective = effectivePeriod(deliveryDate);
+        if (!effective) return;
+        const nextPeriod = effective.slice(0, 7);
+        setServicePeriod(nextPeriod);
+        if (mode === 'create') {
+            const suggested = (options.monthly_rosters || []).find((roster) => roster.period.slice(0, 7) <= nextPeriod);
+            setMonthlyRosterId(suggested?.id ?? '');
+        }
+    }, [deliveryDate, mode, options.monthly_rosters]);
 
     useEffect(() => {
         const assoc = associations.find((a) => String(a.id) === String(associationId));
@@ -206,6 +231,8 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
             const payload = {
                 association_id: associationId,
                 delivery_date: deliveryDate,
+                service_period: servicePeriod,
+                monthly_roster_id: monthlyRosterId || null,
                 managing_partner_id: managingPartnerId,
                 chief_id: chiefId ?? null,
                 storekeeper_id: storekeeperId ?? null,
@@ -246,7 +273,7 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                     <i className="fas fa-file-invoice text-leaf" /> Información de la Pecosa
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div>
                         <label className={labelCls}>Número de Pecosa{mode === 'create' ? ' (automático)' : ' *'}</label>
                         <input
@@ -268,10 +295,29 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                             placeholder="Buscar club..."
                             allowClear
                         />
+                        <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-earth">
+                            <input type="checkbox" checked={useInactive} onChange={(e) => setUseInactive(e.target.checked)} className="h-4 w-4 accent-leaf" />
+                            Usar comités inactivos
+                        </label>
                     </div>
                     <div>
                         <label className={labelCls}>Fecha de Entrega *</label>
                         <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} className={inputCls} required />
+                    </div>
+                    <div>
+                        <label className={labelCls}>Período de reparto *</label>
+                        <input type="month" value={servicePeriod} onChange={(e) => setServicePeriod(e.target.value)} className={inputCls} required />
+                        <p className="mt-1 text-xs text-earth">Mes al que corresponde la entrega, aunque la PECOSA se emita antes.</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                        <label className={labelCls}>Padrón utilizado *</label>
+                        <select value={monthlyRosterId} onChange={(e) => setMonthlyRosterId(e.target.value)} className={inputCls} required>
+                            <option value="">Seleccione el padrón cerrado usado para el cálculo</option>
+                            {(options.monthly_rosters || [])
+                                .filter((roster) => !servicePeriod || String(roster.period).slice(0, 7) <= servicePeriod)
+                                .map((roster) => <option key={roster.id} value={roster.id}>{roster.label} · {Number(roster.beneficiary_count || 0).toLocaleString('es-PE')} beneficiarios</option>)}
+                        </select>
+                        <p className="mt-1 text-xs text-earth">Este vínculo queda fijo y no cambia al cerrar un padrón posterior.</p>
                     </div>
                     <div>
                         <label className={labelCls}>Presidenta del Comité</label>
@@ -305,19 +351,20 @@ function PecosaFormModal({ mode, pecosa, options, onClose, onSaved }) {
                 </div>
 
                 <div className="mt-8 border-t-2 border-wheat pt-6">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                         <h4 className="font-extrabold text-charcoal text-lg flex items-center gap-2">
                             <i className="fas fa-list text-leaf" /> Detalle de Productos
                         </h4>
-                        <div className="flex items-center gap-4">
-                            <label className="flex items-center gap-2 text-sm font-bold text-charcoal cursor-pointer">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+                            <label className="flex items-start gap-2 rounded-xl border border-wheat bg-fog px-3 py-2 text-sm text-charcoal cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={allProductsSelected}
                                     onChange={(e) => toggleAllProducts(e.target.checked)}
                                     disabled={detailOptions.length === 0}
+                                    className="mt-0.5 h-4 w-4 rounded border-wheat text-leaf focus:ring-leaf"
                                 />
-                                Todos los productos
+                                <span><strong className="block">Agregar todos los productos</strong><span className="block text-xs font-normal text-earth">Incluye o quita todos los productos con stock disponible.</span></span>
                             </label>
                             <button type="button" onClick={addDetail} className="btn-secondary text-sm">
                                 <i className="fas fa-plus mr-1" /> Agregar Producto
@@ -404,6 +451,8 @@ function PecosaViewModal({ pecosa, onClose }) {
                     </Field>
                     <Field label="Club de madres" value={pecosa.association_name || pecosa.association?.name} wide />
                     <Field label="Fecha de entrega" value={fmtDate(pecosa.delivery_date)} />
+                    <Field label="Período de reparto" value={pecosa.service_period ? MONTHS[Number(String(pecosa.service_period).slice(5, 7)) - 1] + ' ' + String(pecosa.service_period).slice(0, 4) : '—'} />
+                    <Field label="Padrón utilizado" value={pecosa.monthly_roster?.label || 'Sin confirmar'} />
                     <Field label="Presidenta" value={pecosa.president_name || pecosa.managing_partner_name} />
                     <Field label="Productos">
                         <span className="text-lg font-bold text-leaf">{details.length}</span>
@@ -462,7 +511,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
     const filterAssociationOptions = (options.filter_associations || options.associations || [])
         .map((association) => ({
             id: association.id,
-            label: associationLabel(association),
+            label: associationLabel(association, { includeCode: true, includeAddress: false }),
             badge: association.is_current === false ? 'Vencido' : null,
         }));
 
@@ -727,7 +776,7 @@ const PecosasTab = forwardRef(function PecosasTab({ options, can }, ref) {
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
                 title="Eliminar Pecosa"
-                message="Se eliminará esta pecosa, se revertirá el stock y se borrarán sus movimientos de forma permanente."
+                message="Se eliminará esta pecosa, se revertirá el stock y se borrarán sus salidas de forma permanente."
                 details={deleting ? [
                     { label: 'N° Pecosa', value: deleting.pecosa_number },
                     { label: 'Comité', value: deleting.association?.name },

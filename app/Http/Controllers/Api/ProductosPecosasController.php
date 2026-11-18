@@ -27,6 +27,7 @@ class ProductosPecosasController extends Controller
         'chief.person:id,names,father_lastname,mother_lastname,dni',
         'storekeeper.person:id,names,father_lastname,mother_lastname,dni',
         'detailPecosas.detailProduct.product:id,title,abbreviation',
+        'monthlyRoster:id,period,version,status',
     ];
 
     public function __construct(
@@ -94,6 +95,7 @@ class ProductosPecosasController extends Controller
             'year' => ['required', 'integer', 'between:2019,2100'],
             'month' => ['required', 'integer', 'between:1,12'],
             'sector' => ['nullable', 'string', 'max:150'],
+            'monthly_roster_id' => ['nullable', 'integer', 'exists:monthly_rosters,id'],
         ]);
 
         $year = (int) $validated['year'];
@@ -101,7 +103,7 @@ class ProductosPecosasController extends Controller
         $sector = trim((string) ($validated['sector'] ?? ''));
 
         try {
-            $programacion = $this->programacionService->build($year, $month, $sector);
+            $programacion = $this->programacionService->build($year, $month, $sector, $validated['monthly_roster_id'] ?? null);
         } catch (ProgramacionEntregaException $e) {
             return $this->programacionError($e);
         }
@@ -121,8 +123,10 @@ class ProductosPecosasController extends Controller
             'year' => ['required', 'integer', 'between:2019,2100'],
             'month' => ['required', 'integer', 'between:1,12'],
             'sector' => ['nullable', 'string', 'max:150'],
+            'monthly_roster_id' => ['nullable', 'integer', 'exists:monthly_rosters,id'],
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.association_id' => ['required', 'integer', 'distinct', 'exists:associations,id'],
+            'rows.*.incluido' => ['nullable', 'boolean'],
             'rows.*.total_beneficiarios' => ['required', 'integer', 'min:0', 'max:1000000'],
             'rows.*.leche' => ['required', 'numeric', 'min:0', 'max:999999999999.99'],
             'rows.*.leche_redondeo' => ['required', 'integer', 'min:0', 'max:999999999999'],
@@ -131,7 +135,12 @@ class ProductosPecosasController extends Controller
         ]);
 
         try {
-            $this->programacionService->save((int) $validated['year'], (int) $validated['month'], $validated['rows']);
+            $this->programacionService->save(
+                (int) $validated['year'],
+                (int) $validated['month'],
+                $validated['rows'],
+                isset($validated['monthly_roster_id']) ? (int) $validated['monthly_roster_id'] : null
+            );
         } catch (ProgramacionEntregaException $e) {
             return $this->programacionError($e);
         }

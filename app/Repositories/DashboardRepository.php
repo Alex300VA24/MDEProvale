@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Association;
 use App\Models\Beneficiarie;
 use App\Models\Pecosa;
+use App\Models\State;
 use App\Repositories\Contracts\DashboardRepositoryInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -44,11 +45,20 @@ class DashboardRepository implements DashboardRepositoryInterface
 
     public function committeeCount(string $periodStart): int
     {
-        $snapshot = DB::table('association_roster_periods')->whereDate('period', $periodStart);
+        $snapshot = DB::table('association_roster_periods as roster')->whereDate('roster.period', $periodStart);
+        $activeAbbreviations = [State::CURRENT, State::ACTIVE];
 
         return $snapshot->exists()
-            ? $snapshot->distinct()->count('association_id')
-            : Association::count();
+            ? $snapshot
+                ->join('associations', 'associations.id', '=', 'roster.association_id')
+                ->join('states', 'states.id', '=', 'associations.state_id')
+                ->whereIn('states.abbreviation', $activeAbbreviations)
+                ->distinct()
+                ->count('roster.association_id')
+            : Association::whereHas(
+                'state',
+                fn ($query) => $query->whereIn('abbreviation', $activeAbbreviations)
+            )->count();
     }
 
     public function dualRole(string $start, string $end, bool $useSnapshot): array

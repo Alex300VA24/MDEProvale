@@ -16,7 +16,7 @@ class StoreReconocimientoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'document' => 'required|string|max:100',
+            'document' => ['required', 'string', 'max:100'],
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
             'pending' => 'sometimes|boolean',

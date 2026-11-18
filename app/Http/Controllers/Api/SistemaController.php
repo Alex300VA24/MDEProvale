@@ -176,25 +176,49 @@ class SistemaController extends Controller
     // módulo 'sistema'): la campanita de notificaciones y el flujo de
     // solicitud/estado de recuperación de contraseña son de uso general.
 
+    private function channel(Request $request): ?string
+    {
+        $channel = $request->input('channel');
+
+        return in_array($channel, [Notification::CHANNEL_BELL, Notification::CHANNEL_INBOX], true) ? $channel : null;
+    }
+
+    /**
+     * Sin `page`/`per_page` devuelve la lista corta de siempre (campanita e Inicio);
+     * con alguno de los dos devuelve la bandeja paginada ({data, links, meta}).
+     */
     public function notifications(Request $request)
     {
-        $items = $this->notifications->list(
-            $request->user(),
-            $request->query('type') ?: null,
-            (int) $request->query('limit', 100)
-        );
+        $user = $request->user();
+        $type = $request->query('type') ?: null;
+        $channel = $this->channel($request);
+
+        if ($request->has('page') || $request->has('per_page')) {
+            return NotificationResource::collection(
+                $this->notifications->paginate($user, $type, (int) $request->query('per_page', 10), $channel)
+            );
+        }
+
+        $items = $this->notifications->list($user, $type, (int) $request->query('limit', 100), $channel);
 
         return response()->json(['data' => NotificationResource::collection($items)]);
     }
 
+    public function knowledgeSync(Request $request, \App\Services\KnowledgeBase\KnowledgeSyncService $sync)
+    {
+        ignore_user_abort(true);
+
+        return response()->json($sync->runIfDue($request->user()?->id));
+    }
+
     public function unreadNotificationsCount(Request $request)
     {
-        return response()->json($this->notifications->unreadCount($request->user()));
+        return response()->json($this->notifications->unreadCount($request->user(), $this->channel($request)));
     }
 
     public function markNotificationsSeen(Request $request)
     {
-        $this->notifications->markSeen($request->user());
+        $this->notifications->markSeen($request->user(), $this->channel($request));
 
         return response()->json(['success' => true]);
     }
@@ -208,6 +232,25 @@ class SistemaController extends Controller
         }
 
         return response()->json(['data' => new NotificationResource($processed)]);
+    }
+
+    public function solveNotification(Request $request, Notification $notification)
+    {
+        $user = $request->user();
+
+        // Misma visibilidad que el listado: solo avisos generales o propios.
+        if (! $user->isAdmin() && ! in_array($notification->type, Notification::SYSTEM_WIDE_TYPES, true)
+            && (int) $notification->requested_by !== (int) $user->id) {
+            abort(403);
+        }
+
+        try {
+            $solved = $this->notifications->solve($notification, $user);
+        } catch (SistemaException $e) {
+            return $this->fail($e);
+        }
+
+        return response()->json(['data' => new NotificationResource($solved)]);
     }
 
     public function rejectNotification(Request $request, Notification $notification)

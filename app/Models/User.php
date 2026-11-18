@@ -127,13 +127,13 @@ public function isPresidentPortalUser(): bool
 
     /**
      * Per-request cache of module permissions.
-     * Loaded once via a single JOIN query, then reused for all permission checks.
+     * Loaded once (Module::effectivePermissions), then reused for all permission checks.
      * Key: module slug, Value: object with can_view, can_create, can_edit, can_delete
      */
     protected $modulePermissionsCache = null;
 
     /**
-     * Load all module permissions for this user's role in a single query.
+     * Load all module permissions for this user's role.
      * Caches the result per-request so subsequent calls are free.
      */
     protected function getModulePermissions()
@@ -147,13 +147,8 @@ public function isPresidentPortalUser(): bool
             return $this->modulePermissionsCache = collect();
         }
 
-        $permissions = DB::table('module_rol')
-            ->join('modules', 'modules.id', '=', 'module_rol.module_id')
-            ->where('module_rol.rol_id', $this->rol_id)
-            ->where('modules.is_active', true)
-            ->select('modules.slug', 'module_rol.can_view', 'module_rol.can_create', 'module_rol.can_edit', 'module_rol.can_delete')
-            ->get()
-            ->keyBy('slug');
+        // Permisos efectivos por slug: hojas con sus banderas y grupos derivados de sus submódulos.
+        $permissions = Module::effectivePermissions((int) $this->rol_id);
 
         $this->modulePermissionsCache = $permissions;
         return $permissions;
@@ -169,46 +164,50 @@ public function isPresidentPortalUser(): bool
 
     public function hasModuleAccess($moduleSlug)
     {
-        if ($this->isAdmin() && $this->rol?->is_active) {
-            return true;
-        }
-        $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view;
+        return $this->canModule($moduleSlug, 'view');
     }
 
     public function canAccessModule($moduleSlug)
     {
-        if ($this->isAdmin() && $this->rol?->is_active) {
-            return true;
-        }
-        $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view;
+        return $this->canModule($moduleSlug, 'view');
     }
 
     public function canCreateModule($moduleSlug)
     {
-        if ($this->isAdmin() && $this->rol?->is_active) {
-            return true;
-        }
-        $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view && $perms[$moduleSlug]->can_create;
+        return $this->canModule($moduleSlug, 'create');
     }
 
     public function canEditModule($moduleSlug)
     {
-        if ($this->isAdmin() && $this->rol?->is_active) {
-            return true;
-        }
-        $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view && $perms[$moduleSlug]->can_edit;
+        return $this->canModule($moduleSlug, 'edit');
     }
 
     public function canDeleteModule($moduleSlug)
     {
+        return $this->canModule($moduleSlug, 'delete');
+    }
+
+    /**
+     * Comprueba una acción (view|create|edit|delete) sobre un módulo o submódulo.
+     * Un módulo grupo (p. ej. "comites-resoluciones") se considera accesible/editable
+     * si lo es al menos uno de sus submódulos. El administrador activo accede a todo.
+     */
+    public function canModule(string $moduleSlug, string $ability = 'view'): bool
+    {
         if ($this->isAdmin() && $this->rol?->is_active) {
             return true;
         }
-        $perms = $this->getModulePermissions();
-        return isset($perms[$moduleSlug]) && $perms[$moduleSlug]->can_view && $perms[$moduleSlug]->can_delete;
+
+        $permission = $this->getModulePermissions()->get($moduleSlug);
+        if (! $permission || ! $permission->can_view) {
+            return false;
+        }
+
+        return match ($ability) {
+            'create' => (bool) $permission->can_create,
+            'edit' => (bool) $permission->can_edit,
+            'delete' => (bool) $permission->can_delete,
+            default => true,
+        };
     }
 }

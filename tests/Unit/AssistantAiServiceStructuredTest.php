@@ -4,8 +4,6 @@ namespace Tests\Unit;
 
 use App\Exceptions\AiProviderException;
 use App\Services\AssistantAiService;
-use App\Services\Pvl\PvlAiReportService;
-use App\Services\Pvl\PvlReportDataMapper;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -277,7 +275,7 @@ class AssistantAiServiceStructuredTest extends TestCase
         });
     }
 
-    public function test_the_complete_pvl_schema_is_converted_for_groq_strict_mode(): void
+    public function test_the_quarterly_analysis_schema_is_converted_for_groq_strict_mode(): void
     {
         config()->set('services.ai.provider', 'groq');
         config()->set('services.groq.key', 'groq-key');
@@ -286,14 +284,18 @@ class AssistantAiServiceStructuredTest extends TestCase
             'api.groq.test/*' => Http::response([
                 'choices' => [[
                     'message' => ['content' => json_encode([
-                        'data' => ['pvl' => [], 'racion_a' => null],
+                        'resumen' => 'ok', 'analisis_mensual' => [], 'hallazgos' => [], 'conclusiones' => [], 'recomendaciones' => [],
                     ])],
                 ]],
             ]),
         ]);
 
-        (new PvlAiReportService(new AssistantAiService(), new PvlReportDataMapper()))
-            ->analyze('PVL', 2026, 9, ['pvl' => []], []);
+        $strings = ['type' => 'ARRAY', 'items' => ['type' => 'STRING']];
+        (new AssistantAiService())->generateStructured(['trimestre_actual' => []], [
+            'type' => 'OBJECT',
+            'properties' => ['resumen' => ['type' => 'STRING'], 'analisis_mensual' => $strings, 'hallazgos' => $strings, 'conclusiones' => $strings, 'recomendaciones' => $strings],
+            'required' => ['resumen', 'analisis_mensual', 'hallazgos', 'conclusiones', 'recomendaciones'],
+        ], 'prompt');
 
         $request = Http::recorded()[0][0];
         $schema = $request['response_format']['json_schema']['schema'];

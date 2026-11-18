@@ -64,6 +64,8 @@ use App\Repositories\Contracts\DataMaintenanceRepositoryInterface;
 use App\Repositories\DataMaintenanceRepository;
 use App\Repositories\Contracts\ControlInternoRepositoryInterface;
 use App\Repositories\ControlInternoRepository;
+use App\Repositories\Contracts\KnowledgeChangeLogRepositoryInterface;
+use App\Repositories\KnowledgeChangeLogRepository;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -94,6 +96,7 @@ class RepositoryServiceProvider extends ServiceProvider
         RolRepositoryInterface::class => RolRepository::class,
         ModuleRepositoryInterface::class => ModuleRepository::class,
         NotificationRepositoryInterface::class => NotificationRepository::class,
+        KnowledgeChangeLogRepositoryInterface::class => KnowledgeChangeLogRepository::class,
         PvlReportRepositoryInterface::class => PvlReportRepository::class,
         ReportRepositoryInterface::class => ReportRepository::class,
         VerifiedDocumentRepositoryInterface::class => VerifiedDocumentRepository::class,

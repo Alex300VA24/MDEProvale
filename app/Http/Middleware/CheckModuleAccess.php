@@ -6,6 +6,15 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Autoriza el acceso a un módulo o submódulo según los permisos del rol.
+ *
+ * Uso en rutas:
+ *   module:club-madres                       acción deducida del método HTTP
+ *   module:club-madres,edit                  acción explícita (view|create|edit|delete)
+ *   module:productos|registro-ingreso        basta con tener acceso a uno de los submódulos
+ *   module:comites-resoluciones              un grupo vale si el rol ve alguno de sus submódulos
+ */
 class CheckModuleAccess
 {
     public function handle(Request $request, Closure $next, $moduleSlug, $ability = null)
@@ -21,12 +30,11 @@ class CheckModuleAccess
         }
 
         $ability = $ability ?: $this->abilityFor($request);
-        $allowed = match ($ability) {
-            'create' => $user->canCreateModule($moduleSlug),
-            'edit' => $user->canEditModule($moduleSlug),
-            'delete' => $user->canDeleteModule($moduleSlug),
-            default => $user->canAccessModule($moduleSlug),
-        };
+
+        $allowed = collect(explode('|', (string) $moduleSlug))
+            ->map(fn (string $slug) => trim($slug))
+            ->filter()
+            ->contains(fn (string $slug) => $user->canModule($slug, $ability));
 
         if (!$allowed) {
             if ($request->expectsJson()) {

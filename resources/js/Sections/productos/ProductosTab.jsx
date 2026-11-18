@@ -100,7 +100,7 @@ function ProductFormModal({ mode, product, options, onClose, onSaved }) {
                     </div>
                     <div>
                         <label className={labelCls}>Abreviatura</label>
-                        <IconInput icon="fa-tag"><input type="text" value={abbreviation} onChange={(e) => setAbbreviation(e.target.value)} className={iconCls} placeholder="Ej: HOJ01" /></IconInput>
+                        <IconInput icon="fa-tag"><input type="text" value={abbreviation} onChange={(e) => setAbbreviation(e.target.value.slice(0, 20))} className={iconCls} placeholder="Ej: LECHECIEN" maxLength={20} /></IconInput>
                     </div>
                     <div>
                         <label className={labelCls}>Unidad de Medida *</label>

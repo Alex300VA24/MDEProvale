@@ -100,7 +100,7 @@ class ReportGeneratorService
                 ],
             ],
             'movimientos' => [
-                'label' => 'Movimientos / Kardex',
+                'label' => 'Registro de Ingreso',
                 'icon' => 'fa-exchange-alt',
                 'columns' => [
                     'transaction_date' => 'Fecha',
@@ -114,7 +114,7 @@ class ReportGeneratorService
                 'default_columns' => ['transaction_date', 'document_number', 'producto', 'tipo', 'quantity', 'total_price'],
                 'group_by' => ['tipo' => 'Tipo', 'producto' => 'Producto'],
                 'filters' => [
-                    'type_transaction_id' => ['label' => 'Tipo de Movimiento', 'type' => 'select', 'source' => 'type_transactions'],
+                    'type_transaction_id' => ['label' => 'Tipo de Transacción', 'type' => 'select', 'source' => 'type_transactions'],
                     'date_from' => ['label' => 'Desde', 'type' => 'date'],
                     'date_to' => ['label' => 'Hasta', 'type' => 'date'],
                 ],

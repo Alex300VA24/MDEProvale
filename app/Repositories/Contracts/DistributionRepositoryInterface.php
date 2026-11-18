@@ -15,6 +15,8 @@ interface DistributionRepositoryInterface
 
     public function firstOrCreatePeriod(int $year, int $month, array $defaults): DistributionPeriod;
 
+    public function setPeriodRoster(DistributionPeriod $period, ?int $monthlyRosterId): void;
+
     public function upsertAssignment(int $periodId, int $associationId, array $values): void;
 
     /** true si hay un ingreso de producto (transacción o lote) entre las fechas. */

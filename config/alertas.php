@@ -5,6 +5,9 @@ return [
     // Avisos de vencimiento: la detección es determinista (fechas y reglas de
     // la BD). La IA solo redacta/prioriza el texto; si falla o está apagada,
     // el aviso se emite igual con el texto base.
+    // Minutos mínimos entre sincronizaciones automáticas con el portal (disparadas al iniciar sesión).
+    'sync_interval_minutes' => (int) env('ALERTAS_SYNC_MINUTOS', 15),
+
     'ai_enabled' => (bool) env('ALERTAS_AI_ENABLED', true),
 
     // Beneficiarios que superan el límite de edad de su tipo de beneficio.

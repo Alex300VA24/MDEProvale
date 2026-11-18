@@ -48,19 +48,26 @@ trait FlujoComiteFixtures
             'name' => 'Comités', 'slug' => 'club-madres', 'description' => 'Comités',
             'icon' => 'fa-people-group', 'route' => 'club-madres', 'order' => 3, 'is_active' => true,
         ]);
+        // Resoluciones (Reconocimientos) es un submódulo con permiso propio, distinto de Comités.
+        $resolucionesModule = DB::table('modules')->insertGetId([
+            'name' => 'Resoluciones', 'slug' => 'reconocimientos', 'description' => 'Resoluciones',
+            'icon' => 'fa-award', 'route' => 'club-reconocimientos', 'order' => 4, 'is_active' => true,
+        ]);
         $sociosModule = DB::table('modules')->where('slug', 'socios-beneficiarios')->value('id');
 
-        DB::table('module_rol')->insert([
-            'module_id' => $clubModule, 'rol_id' => 1,
-            'can_view' => true, 'can_create' => true, 'can_edit' => true, 'can_delete' => true,
-        ]);
+        foreach ([$clubModule, $resolucionesModule] as $moduleId) {
+            DB::table('module_rol')->insert([
+                'module_id' => $moduleId, 'rol_id' => 1,
+                'can_view' => true, 'can_create' => true, 'can_edit' => true, 'can_delete' => true,
+            ]);
+        }
 
-        // Rol 2: solo lectura en ambos módulos. Rol 3: sin ningún permiso.
+        // Rol 2: solo lectura en Comités, Resoluciones y Socios. Rol 3: sin ningún permiso.
         DB::table('rols')->insert([
             ['id' => 2, 'title' => 'Lector', 'description' => 'Solo lectura'],
             ['id' => 3, 'title' => 'Sin acceso', 'description' => 'Sin módulos'],
         ]);
-        foreach ([$clubModule, $sociosModule] as $moduleId) {
+        foreach ([$clubModule, $resolucionesModule, $sociosModule] as $moduleId) {
             DB::table('module_rol')->insert([
                 'module_id' => $moduleId, 'rol_id' => 2,
                 'can_view' => true, 'can_create' => false, 'can_edit' => false, 'can_delete' => false,

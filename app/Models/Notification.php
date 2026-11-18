@@ -71,15 +71,40 @@ class Notification extends Model
     public const STATUS_OPEN = 'por_solucionar';
     public const STATUS_SOLVED = 'solucionado';
 
-    public static function unreadCountForUser(?User $user): int
+    // Buzón (novedades y conocimiento IA) vs campana (alertas operativas).
+    public const CHANNEL_BELL = 'bell';
+    public const CHANNEL_INBOX = 'inbox';
+    public const INBOX_TYPES = ['normativa_pvl', 'alerta_beneficiarios'];
+
+    // Avisos que se siguen contando (vistos o no) hasta que se marquen como
+    // subsanados y la verificación confirme que el problema ya no existe.
+    public const ACTIONABLE_TYPES = ['normativa_pvl', 'alerta_beneficiarios', 'alerta_resolucion', self::TYPE_REGULARIZATION];
+
+    /** Limita la consulta al canal: buzón = tipos de novedades; campana = el resto. */
+    public static function forChannel($query, ?string $channel)
+    {
+        return match ($channel) {
+            self::CHANNEL_INBOX => $query->whereIn('type', self::INBOX_TYPES),
+            self::CHANNEL_BELL => $query->whereNotIn('type', self::INBOX_TYPES),
+            default => $query,
+        };
+    }
+
+    public static function unreadCountForUser(?User $user, ?string $channel = null): int
     {
         if (!$user || !$user->id) {
             return 0;
         }
 
-        $query = self::where(fn ($q) => $q
-            ->where('is_seen', false)
-            ->orWhere('status', self::STATUS_OPEN));
+        $query = self::forChannel(self::where(fn ($q) => $q
+            // Accionables: cuentan mientras estén abiertos, aunque ya se hayan visto.
+            ->where(fn ($open) => $open
+                ->whereIn('type', self::ACTIONABLE_TYPES)
+                ->where('status', self::STATUS_OPEN))
+            // Resto (p. ej. solicitudes de contraseña): cuentan hasta verse.
+            ->orWhere(fn ($other) => $other
+                ->whereNotIn('type', self::ACTIONABLE_TYPES)
+                ->where(fn ($w) => $w->where('is_seen', false)->orWhere('status', self::STATUS_OPEN)))), $channel);
 
         if ((int) $user->rol_id === 1) {
             return $query->count();

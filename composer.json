@@ -14,6 +14,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.11",
         "phpoffice/phpspreadsheet": "*",
+        "phpoffice/phpword": "^1.4",
         "smalot/pdfparser": "2.12"
     },
     "require-dev": {

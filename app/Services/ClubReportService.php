@@ -15,7 +15,8 @@ class ClubReportService
 
     public function __construct(
         private AssociationRepositoryInterface $associations,
-        private PadronGuardService $padronGuard
+        private PadronGuardService $padronGuard,
+        private MonthlyRosterService $monthlyRosters
     ) {
     }
 
@@ -25,19 +26,27 @@ class ClubReportService
      */
     public function padron(int $mes, int $anio): array
     {
-        $this->padronGuard->assertNoneBlocked();
-
         $startDate = Carbon::createFromDate($anio, $mes, 1)->startOfMonth();
         $endDate = Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
         $start = $startDate->toDateString();
         $end = $endDate->toDateString();
 
         $rosterPeriods = $this->associations->rosterPeriodsForMonth($start);
+        $monthlyRoster = $this->monthlyRosters->officialForPeriod($anio, $mes);
+        $monthlySnapshots = $monthlyRoster
+            ? $monthlyRoster->associations()->get()->keyBy('association_id')
+            : collect();
+
+        if (! $monthlyRoster) {
+            $this->padronGuard->assertNoneBlockedForPeriod($anio, $mes);
+        }
 
         // Entre marzo y setiembre de 2026 manda la presencia real en los
         // padrones mensuales, incluso si la resolución está pendiente.
         $associations = $this->associations->forPadron(
-            $rosterPeriods->isNotEmpty() ? $rosterPeriods->keys() : null,
+            $monthlySnapshots->isNotEmpty()
+                ? $monthlySnapshots->keys()
+                : ($rosterPeriods->isNotEmpty() ? $rosterPeriods->keys() : null),
             $start,
             $end
         );
@@ -84,16 +93,22 @@ class ClubReportService
             }
 
             $rosterPeriod = $rosterPeriods->get($association->id);
+            $monthlySnapshot = $monthlySnapshots->get($association->id);
+            $frozen = $monthlySnapshot?->association_snapshot ?? [];
 
             // El encabezado del Excel conserva incluso presidentas que no
             // aparecían como socias y por ello no pudieron ligarse a directivas.
-            $presidenta = $rosterPeriod
+            $presidenta = $monthlySnapshot
+                ? ($monthlySnapshot->president_name ?? '')
+                : ($rosterPeriod
                 ? ($rosterPeriod->president_name ?? '')
-                : ($association->getPresidentNameAt($end) ?? '');
+                : ($association->getPresidentNameAt($end) ?? ''));
 
-            $totalBenef = $rosterPeriod
+            $totalBenef = $monthlySnapshot
+                ? (int) $monthlySnapshot->beneficiary_count
+                : ($rosterPeriod
                 ? (int) $rosterPeriod->beneficiary_count
-                : $this->associations->beneficiaryCountInPeriod($association->id, $start, $end);
+                : $this->associations->beneficiaryCountInPeriod($association->id, $start, $end));
 
             // Resoluciones del comité — todas las que cubrían el periodo
             $resolutionsAll = [];
@@ -142,11 +157,11 @@ class ClubReportService
 
             $club = [
                 'numero'       => count($zonaGroups[$zonaNumero]['sectores'][$sector]['clubes']) + 1,
-                'codigo'       => $association->code ?? '',
-                'razon_social' => $association->company_name ?? '',
-                'nombre'       => mb_strtoupper($association->name, 'UTF-8'),
-                'direccion'    => $association->address ?? '',
-                'sector'       => $sector,
+                'codigo'       => $frozen['code'] ?? $association->officialCodeAt($end),
+                'razon_social' => $frozen['company_name'] ?? $association->company_name ?? '',
+                'nombre'       => mb_strtoupper($frozen['name'] ?? $association->name, 'UTF-8'),
+                'direccion'    => $frozen['address'] ?? $association->address ?? '',
+                'sector'       => $frozen['sector_name'] ?? $sector,
                 'beneficiarios'=> $totalBenef,
                 'presidenta'   => $presidenta,
                 'resolucion_1' => $resolucion_1,

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Pecosa;
+use App\Support\AssistantAccess;
+use App\Support\ModuleCatalog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -28,7 +30,17 @@ class AssistantReportService
         'beneficiarios' => 'socios y beneficiarios',
         'productos' => 'productos',
         'pecosas' => 'pecosas',
-        'movimientos' => 'movimientos / kardex',
+        // El módulo "Movimientos" ya no existe: solo queda el Registro de Ingreso.
+        'movimientos' => 'registro de ingreso',
+    ];
+
+    /** Submódulo cuyos datos expone cada entidad del reporte. */
+    private const MODULO = [
+        'comites' => ModuleCatalog::COMITES,
+        'beneficiarios' => ModuleCatalog::SOCIOS_BENEFICIARIOS,
+        'productos' => ModuleCatalog::PRODUCTOS,
+        'pecosas' => ModuleCatalog::PECOSAS,
+        'movimientos' => ModuleCatalog::REGISTRO_INGRESO,
     ];
 
     public function __construct(private AssistantDataService $datos)
@@ -38,8 +50,10 @@ class AssistantReportService
     /**
      * @return array{tipo:string,respuesta:string,entidad?:string,accion?:array}|null
      */
-    public function detect(string $question): ?array
+    public function detect(string $question, ?AssistantAccess $access = null): ?array
     {
+        $access ??= AssistantAccess::unrestricted();
+
         $q = Str::lower(Str::ascii(trim($question)));
 
         // Pregunta de navegación ("¿cómo genero...?", "¿dónde descargo...?"): no es
@@ -67,10 +81,21 @@ class AssistantReportService
             $entidades = array_values(array_diff($entidades, ['comites']));
         }
 
+        // El reporte se abre en /reportes/generar (módulo Reportes) y expone datos de la entidad:
+        // el rol necesita ambos permisos.
+        if ($denied = $access->denial(ModuleCatalog::REPORTES)) {
+            return ['tipo' => 'acceso', 'respuesta' => $denied];
+        }
+        foreach ($entidades as $entidad) {
+            if ($denied = $access->denial(self::MODULO[$entidad])) {
+                return ['tipo' => 'acceso', 'respuesta' => $denied];
+            }
+        }
+
         $esComplejo = (bool) preg_match('/\b(columna|columnas|agrupar|agrupa|cruza|cruzar|combina|combinar|combinado|union|juntar|personalizad|comparar|comparativo|varios|multiples|todos los meses)\b/', $q);
 
         if ($esComplejo || count($entidades) !== 1) {
-            return $this->guia($entidades);
+            return $this->guia($entidades, $access);
         }
 
         $entidad = $entidades[0];
@@ -108,7 +133,7 @@ class AssistantReportService
             'beneficiarios' => ['beneficiari', 'socio', 'socia'],
             'productos' => ['producto', 'stock', 'alimento'],
             'pecosas' => ['pecosa'],
-            'movimientos' => ['movimiento', 'kardex', 'transaccion'],
+            'movimientos' => ['movimiento', 'kardex', 'transaccion', 'registro de ingreso', 'ingreso'],
         ];
 
         $encontradas = [];
@@ -138,6 +163,11 @@ class AssistantReportService
                 $filtros['association_id'] = (string) $comite->id;
                 $descripcion[] = "comité {$comite->name}";
             }
+        }
+
+        if ($entidad === 'movimientos') {
+            // Registro de Ingreso: solo ingresos (tipo de transacción 1).
+            $filtros['type_transaction_id'] = '1';
         }
 
         if (in_array($entidad, ['pecosas', 'movimientos'], true)) {
@@ -171,15 +201,27 @@ class AssistantReportService
      * @param  list<string>  $entidades
      * @return array{tipo:string,respuesta:string,sugerencias?:array<int,array{label:string,prompt:string}>}
      */
-    private function guia(array $entidades): array
+    private function guia(array $entidades, AssistantAccess $access): array
     {
         $multiples = count($entidades) > 1;
+
+        // Solo se ofrecen entidades cuyo submódulo puede ver el usuario.
+        $permitidas = array_values(array_filter(
+            array_keys(self::MODULO),
+            fn (string $entidad) => $access->allows(self::MODULO[$entidad])
+        ));
 
         if ($entidades === []) {
             return [
                 'tipo' => 'guia',
-                'respuesta' => "Necesito confirmar el reporte:\n\n¿Quisiste decir alguna de estas opciones?",
-                'sugerencias' => $this->sugerenciasReporte(['beneficiarios', 'pecosas', 'productos']),
+                'respuesta' => $permitidas === []
+                    ? "Tu rol no tiene acceso a los datos de ningún reporte.\nSolicita el permiso al administrador."
+                    : "Necesito confirmar el reporte:\n\n¿Quisiste decir alguna de estas opciones?",
+                'sugerencias' => $this->sugerenciasReporte(array_slice(
+                    array_values(array_intersect(['beneficiarios', 'pecosas', 'productos', 'comites', 'movimientos'], $permitidas)),
+                    0,
+                    3
+                )),
             ];
         }
 
@@ -189,12 +231,12 @@ class AssistantReportService
 
         $texto = $motivo."\n\n"
             ."Para generártelo al instante necesito dos datos:\n"
-            ."- ¿Qué dato principal necesitas: comités, socios y beneficiarios, productos, pecosas o movimientos?\n"
+            ."- ¿Qué dato principal necesitas: ".$this->listarEtiquetas($permitidas, ' o ')."?\n"
             ."- ¿De qué comité y de qué periodo (un mes o un año)?\n\n"
             ."Con esos datos te devuelvo el reporte y el botón Ver reporte para abrirlo en una pestaña nueva. Ejemplos que puedo generar directamente:\n"
             ."- crea un reporte de pecosas de este mes\n"
             ."- crea un reporte de beneficiarios del comité (nombre)\n"
-            .'- crea un reporte de movimientos del año 2026';
+            .'- crea un reporte de '.($access->allows(ModuleCatalog::REGISTRO_INGRESO) ? 'registro de ingreso' : 'pecosas').' del año 2026';
 
         $result = ['tipo' => 'guia', 'respuesta' => $texto];
 
@@ -220,8 +262,8 @@ class AssistantReportService
     /**
      * @param  list<string>  $entidades
      */
-    private function listarEtiquetas(array $entidades): string
+    private function listarEtiquetas(array $entidades, string $separador = ', '): string
     {
-        return implode(', ', array_map(fn ($entidad) => self::ETIQUETA[$entidad] ?? $entidad, $entidades));
+        return implode($separador, array_map(fn ($entidad) => self::ETIQUETA[$entidad] ?? $entidad, $entidades));
     }
 }

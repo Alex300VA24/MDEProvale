@@ -58,12 +58,17 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
     const [statusNotes, setStatusNotes] = useState('');
     const [resignationFile, setResignationFile] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const suggestedCode = options.next_code ? String(options.next_code) : '';
 
     useEffect(() => {
         if (mode !== 'edit' && !code && options.next_code) {
             setCode(String(options.next_code));
         }
     }, [mode, options.next_code]);
+
+    const restoreSuggestedCode = () => {
+        if (!code.trim() && suggestedCode) setCode(suggestedCode);
+    };
 
     const isCodeTaken = Boolean(
         code.trim() &&
@@ -111,6 +116,10 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
         }
         if (isCodeTaken) {
             toast.error('El código ingresado ya está registrado.');
+            return;
+        }
+        if (phone && !/^\d{9}$/.test(phone)) {
+            toast.error('El teléfono debe tener exactamente 9 dígitos.');
             return;
         }
         if (statusChanged && goingInactive && !statusNotes.trim()) {
@@ -175,6 +184,7 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                             type="text"
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
+                            onBlur={restoreSuggestedCode}
                             className={`${inputCls} ${isCodeTaken ? 'border-clay focus:border-clay' : ''}`}
                             required
                             maxLength={20}
@@ -204,7 +214,19 @@ function ClubFormModal({ mode, club, options, onClose, onSaved }) {
                     </div>
                     <div>
                         <label className={labelCls}>Teléfono</label>
-                        <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} maxLength={20} />
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                            className={inputCls}
+                            minLength={9}
+                            maxLength={9}
+                            pattern="[0-9]{9}"
+                            title="Ingrese exactamente 9 dígitos"
+                        />
+                        <p className="mt-1 text-xs text-earth">9 dígitos, sin espacios ni caracteres especiales.</p>
                     </div>
                     <div>
                         <label className={labelCls}>Tipo de Local *</label>
@@ -319,7 +341,7 @@ function ClubViewModal({ club: listedClub, onClose }) {
     };
 
     return (
-        <DetailModal open onClose={onClose} title="Detalle del comité" icon="fa-people-roof" maxWidth="sm:max-w-2xl">
+        <DetailModal open onClose={onClose} title="Detalle del comité" icon="fa-people-roof" maxWidth="sm:max-w-3xl">
             <DetailGroup>
                 <FieldGrid>
                     <Field label="Código" value={club.code} />
@@ -327,7 +349,6 @@ function ClubViewModal({ club: listedClub, onClose }) {
                     <Field label="Razón social" value={club.company_name} wide />
                     <Field label="Dirección" value={club.address} wide />
                     <Field label="Teléfono" value={club.phone} />
-                    <Field label="Presidenta" value={club.president_name || 'Sin asignar'} />
                     <Field label="Zona / Sector" value={[club.place_sector?.place?.title, club.place_sector?.sector?.title].filter(Boolean).join(' - ')} />
                     <Field label="Tipo de local" value={club.type_premises?.title} />
                     <Field label="Estado">
@@ -503,7 +524,12 @@ function AsignarCargoModal({ club, onClose, onSaved }) {
                                             className={inputCls}
                                         >
                                             <option value="" disabled>Seleccione una socia</option>
-                                            {partners.map((partner) => (
+                                            {partners.filter((partner) => (
+                                                String(assignments[item] || '') === String(partner.id)
+                                                || !Object.entries(assignments).some(([position, partnerId]) => (
+                                                    position !== item && String(partnerId) === String(partner.id)
+                                                ))
+                                            )).map((partner) => (
                                                 <option key={partner.id} value={partner.id}>
                                                     {partner.dni ? `${partner.name} (${partner.dni})` : partner.name}
                                                 </option>
@@ -527,7 +553,7 @@ function AsignarCargoModal({ club, onClose, onSaved }) {
     );
 }
 
-const ComitesTab = forwardRef(function ComitesTab({ options, can, reloadOptions }, ref) {
+const ComitesTab = forwardRef(function ComitesTab({ options, can, reloadOptions, onCommitteesChanged }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -612,6 +638,7 @@ const ComitesTab = forwardRef(function ComitesTab({ options, can, reloadOptions 
             setDeleting(null);
             load();
             reloadOptions?.();
+            onCommitteesChanged?.();
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar el comité.'));
             setDeleting(null);

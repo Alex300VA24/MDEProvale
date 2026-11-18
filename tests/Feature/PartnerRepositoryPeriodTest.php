@@ -123,11 +123,30 @@ class PartnerRepositoryPeriodTest extends TestCase
                 'updated_at' => $now,
             ],
         ]);
+        DB::table('association_roster_periods')->insert([
+            'association_id' => 1,
+            'period' => '2026-09-01',
+            'partner_count' => 1,
+            'beneficiary_count' => 0,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
 
         $partners = app(PartnerRepository::class)
             ->findActiveByAssociation(1, '2026-09-01', '2026-09-30');
 
         $this->assertCount(1, $partners);
         $this->assertSame('2026-09-20', $partners->first()->date_begin);
+
+        // Sin un padrón importado para octubre, continúan vigentes las altas
+        // abiertas administradas directamente por el sistema.
+        $futurePartners = app(PartnerRepository::class)
+            ->findActiveByAssociation(1, '2026-10-01', '2026-10-31');
+
+        $this->assertCount(2, $futurePartners);
+        $this->assertSame(
+            ['2026-09-20', '2026-10-01'],
+            $futurePartners->pluck('date_begin')->sort()->values()->all()
+        );
     }
 }

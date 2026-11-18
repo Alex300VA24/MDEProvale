@@ -175,22 +175,22 @@ class ResolucionesFlujoTest extends TestCase
 
     public function test_pendiente_exige_observacion(): void
     {
-        $this->crear($this->payload('S/N', ['pending' => true]))
+        $this->crear($this->payload('0900-2026', ['pending' => true]))
             ->assertStatus(422)->assertJsonValidationErrors('observation');
     }
 
     public function test_pendiente_con_observacion_solo_espacios_se_rechaza(): void
     {
-        $this->crear($this->payload('S/N', ['pending' => true, 'observation' => '    ']))
+        $this->crear($this->payload('0901-2026', ['pending' => true, 'observation' => '    ']))
             ->assertStatus(422);
-        $this->assertDatabaseMissing('resolutions', ['document' => 'S/N']);
+        $this->assertDatabaseMissing('resolutions', ['document' => '0901-2026']);
     }
 
-    public function test_pendiente_no_consulta_el_portal_y_acepta_cualquier_formato(): void
+    public function test_pendiente_no_consulta_el_portal_y_exige_formato_actual(): void
     {
         $this->portalCaido();
 
-        $this->crear($this->payload('EN TRAMITE', ['pending' => true, 'observation' => 'Falta publicar']))
+        $this->crear($this->payload('0902-2026', ['pending' => true, 'observation' => 'Falta publicar']))
             ->assertCreated()
             ->assertJsonPath('data.state.abbreviation', 'PEN')
             ->assertJsonPath('data.observation', 'Falta publicar');
@@ -200,12 +200,12 @@ class ResolucionesFlujoTest extends TestCase
 
     public function test_pendiente_aunque_la_fecha_fin_haya_pasado_sigue_pendiente(): void
     {
-        $this->crear($this->payload('777-2026', ['pending' => true, 'observation' => 'x', 'date_start' => $this->dias(-400), 'date_end' => $this->dias(-10)]))
+        $this->crear($this->payload('0777-2026', ['pending' => true, 'observation' => 'x', 'date_start' => $this->dias(-400), 'date_end' => $this->dias(-10)]))
             ->assertCreated()->assertJsonPath('data.state.abbreviation', 'PEN');
 
         // El listado sincroniza estados: no debe pasarla a VEN.
         $this->actingAs($this->admin())->getJson(self::COMITES.'/reconocimientos')->assertOk();
-        $this->assertDatabaseHas('resolutions', ['document' => '777-2026', 'state_id' => $this->pen]);
+        $this->assertDatabaseHas('resolutions', ['document' => '0777-2026', 'state_id' => $this->pen]);
     }
 
     public function test_pending_false_se_trata_como_vigente_y_valida_portal(): void
@@ -226,7 +226,7 @@ class ResolucionesFlujoTest extends TestCase
 
     // ============ REGULARIZAR (Pendiente -> Vigente/Vencido) ============
 
-    private function pendiente(string $doc = 'TRAMITE'): int
+    private function pendiente(string $doc = '0999-2026'): int
     {
         return $this->crear($this->payload($doc, ['pending' => true, 'observation' => 'Falta publicar']))->assertCreated()->json('data.id');
     }
@@ -272,7 +272,7 @@ class ResolucionesFlujoTest extends TestCase
         $this->portalPublica(['1-2026']);
 
         $this->regularizar($id, ['document' => '0503-2026'])->assertStatus(422);
-        $this->assertDatabaseHas('resolutions', ['id' => $id, 'state_id' => $this->pen, 'document' => 'TRAMITE']);
+        $this->assertDatabaseHas('resolutions', ['id' => $id, 'state_id' => $this->pen, 'document' => '0999-2026']);
         $this->assertDatabaseHas('notifications', ['dedupe_key' => 'regularizacion_'.$id, 'status' => 'por_solucionar']);
     }
 

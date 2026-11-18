@@ -22,7 +22,8 @@ class BeneficiaryReportService
         private PecosaRepositoryInterface $pecosaRepo,
         private CatalogRepositoryInterface $catalogs,
         private PDFService $pdfService,
-        private PadronGuardService $padronGuard
+        private PadronGuardService $padronGuard,
+        private MonthlyRosterService $monthlyRosters
     ) {
     }
 
@@ -30,29 +31,52 @@ class BeneficiaryReportService
     {
         $association = $this->associationRepo->findWithPlaceSector($associationId)
             ?? throw (new ModelNotFoundException())->setModel(Association::class, [$associationId]);
-        $this->padronGuard->assertCanGenerate($association);
+
+        $officialRoster = $this->monthlyRosters->officialForPeriod($year, $month);
+        if ($this->monthlyRosters->hasAny() && ! $officialRoster) {
+            throw new \DomainException(
+                'El padrón de '.sprintf('%02d/%04d', $month, $year)
+                .' todavía no ha sido cerrado. Créelo y ciérrelo antes de generar el PDF.'
+            );
+        }
+
+        // Un padrón ya cerrado es una fotografía histórica: una resolución
+        // pendiente registrada después no puede volver a bloquear su emisión.
+        if (! $officialRoster) {
+            $this->padronGuard->assertCanGenerate($association, $year, $month);
+        }
 
         $startDate = Carbon::create($year, $month, 1)->startOfMonth();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth();
         $cutoffDate = $endDate;
         [$pecosaStart, $pecosaEnd] = Pecosa::deliveryPeriodRange($year, $month);
+        $rosterSnapshot = $this->monthlyRosters->associationSnapshot($year, $month, $associationId);
 
-        $presidenta = $association->getPresidentNameAt($endDate->toDateString())
+        if ($officialRoster && ! $rosterSnapshot) {
+            throw new \DomainException('El comité seleccionado no forma parte del padrón cerrado de ese período.');
+        }
+
+        $presidenta = $rosterSnapshot?->president_name
+            ?? $association->getPresidentNameAt($endDate->toDateString())
             ?? $association->getPresidentName();
 
-        $partners = $this->partnerRepo->findActiveByAssociation(
-            $associationId,
-            $startDate->toDateString(),
-            $endDate->toDateString()
-        );
+        $partners = $rosterSnapshot
+            ? collect()
+            : $this->partnerRepo->findActiveByAssociation(
+                $associationId,
+                $startDate->toDateString(),
+                $endDate->toDateString()
+            );
 
-        if ($partners->isEmpty()) {
+        if (! $rosterSnapshot && $partners->isEmpty()) {
             throw new \DomainException('No hay socios vigentes para el comité y periodo seleccionado.');
         }
 
         $pecosa = $this->pecosaRepo->findByAssociationAndPeriod($associationId, $pecosaStart->toDateString(), $pecosaEnd->toDateString());
 
-        [$beneficiarios, $resumen] = $this->buildReportData($partners, $cutoffDate, $startDate, $endDate);
+        [$beneficiarios, $resumen] = $rosterSnapshot
+            ? $this->buildSnapshotReportData($rosterSnapshot->entries, $cutoffDate)
+            : $this->buildReportData($partners, $cutoffDate, $startDate, $endDate);
 
         if (empty($beneficiarios)) {
             throw new \DomainException('No se encontraron beneficiarios vigentes para el comité y periodo seleccionados.');
@@ -74,13 +98,12 @@ class BeneficiaryReportService
             'resumen' => $resumen,
             'resumen_filas' => $resumenFilas,
             'observaciones' => $observaciones,
-            'club_nombre' => mb_strtoupper($association->name, 'UTF-8'),
-            'direccion' => $association->address ?? '',
-            'ccpp' => $association->placeSector ? ($association->placeSector->sector ? $association->placeSector->sector->title : '') : '',
-            'direccion' => $association->address ?? '',
+            'club_nombre' => mb_strtoupper($rosterSnapshot?->association_snapshot['name'] ?? $association->name, 'UTF-8'),
+            'direccion' => $rosterSnapshot?->association_snapshot['address'] ?? $association->address ?? '',
+            'ccpp' => $rosterSnapshot?->association_snapshot['sector_name'] ?? ($association->placeSector ? ($association->placeSector->sector ? $association->placeSector->sector->title : '') : ''),
             'presidenta' => $presidenta ?? 'SIN ASIGNAR',
-            'zona' => $association->placeSector ? ($association->placeSector->place ? $association->placeSector->place->code : '01') : '01',
-            'comite' => $association->code ?? $association->id,
+            'zona' => $rosterSnapshot?->association_snapshot['zone_code'] ?? ($association->placeSector ? ($association->placeSector->place ? $association->placeSector->place->code : '01') : '01'),
+            'comite' => $rosterSnapshot?->association_snapshot['code'] ?? $association->officialCodeAt($endDate),
             'num_mes' => $month,
             'periodo' => $periodo,
             'semestre' => $month <= 6 ? "{$year}-I" : "{$year}-II",
@@ -182,6 +205,97 @@ class BeneficiaryReportService
         }
 
         return [$beneficiarios, $resumen];
+    }
+
+    private function buildSnapshotReportData(Collection $entries, Carbon $cutoffDate): array
+    {
+        $keys = ['0_anos', '1_ano', '2_anos', '3_anos', '4_anos', '5_anos', '6_anos', 'total', 'madres_gestantes', 'madres_lactantes', 'ninos_7_13', 'ancianos', 'tuberculosos', 'discapacitados', 'gap', 'total_general'];
+        $resumen = [
+            'total' => array_fill_keys($keys, 0),
+            'masculino' => array_fill_keys($keys, 0),
+            'femenino' => array_fill_keys($keys, 0),
+        ];
+        $beneficiarios = [];
+
+        foreach ($entries->groupBy('partner_id') as $group) {
+            $partner = $group->first()->partner_snapshot;
+            $items = [];
+
+            foreach ($group as $entry) {
+                $person = $entry->beneficiary_snapshot;
+                $birth = ! empty($person['birthdate']) ? Carbon::parse($person['birthdate']) : null;
+                $age = $birth ? $birth->diffInYears($cutoffDate) : 0;
+                $ageInterval = $birth?->diff($cutoffDate);
+                $type = (string) ($person['benefit_type'] ?? '');
+                $relationship = (string) ($person['relationship'] ?? '');
+                $dateBegin = $person['date_begin'] ?? null;
+                $fum = $person['fum'] ?? null;
+                $monthsGestation = $type === 'GES' && ($fum || $dateBegin)
+                    ? Carbon::parse($fum ?: $dateBegin)->diffInMonths($cutoffDate)
+                    : null;
+                $monthsBreastfeeding = $type === 'LAC' && $dateBegin
+                    ? Carbon::parse($dateBegin)->diffInMonths($cutoffDate)
+                    : null;
+                $history = (object) ['reason_disqualification_id' => $person['reason_disqualification_id'] ?? null];
+                [$isDisqualified, $observation, $reason] = $this->evaluateBeneficiaryRules(
+                    $age,
+                    $type,
+                    $relationship,
+                    $monthsGestation,
+                    $monthsBreastfeeding,
+                    $history,
+                    $person['reason_disqualification_id'] ?? null
+                );
+
+                $items[] = new BeneficiaryReportItemDTO(
+                    mb_strtoupper($this->snapshotName($person), 'UTF-8'),
+                    $person['dni'] ?? '',
+                    in_array($type, ['LAC', 'GES'], true) ? $type : '',
+                    $birth?->format('d/m/Y') ?? '',
+                    ($person['gender'] ?? 'F') === 'M' ? 'M' : 'F',
+                    $relationship,
+                    $age,
+                    $ageInterval?->m ?? 0,
+                    $ageInterval?->d ?? 0,
+                    $isDisqualified || (! empty($reason) && (int) $reason !== 1),
+                    $observation,
+                    $dateBegin ? Carbon::parse($dateBegin)->format('d/m/Y') : '',
+                    ! empty($person['date_end']) ? Carbon::parse($person['date_end'])->format('d/m/Y') : '',
+                    ($person['dni'] ?? null) === ($partner['dni'] ?? null),
+                    $monthsGestation,
+                    $monthsBreastfeeding,
+                );
+
+                $this->updateResumen(
+                    $resumen,
+                    (object) ['gender' => $person['gender'] ?? 'F'],
+                    $type,
+                    $age,
+                    $reason
+                );
+            }
+
+            if ($items) {
+                $beneficiarios[] = [
+                    'socia_nombre' => mb_strtoupper($this->snapshotName($partner), 'UTF-8'),
+                    'socia_direccion' => $partner['address'] ?? '',
+                    'socia_dni' => $partner['dni'] ?? '',
+                    'rowspan' => count($items),
+                    'items' => $items,
+                ];
+            }
+        }
+
+        return [$beneficiarios, $resumen];
+    }
+
+    private function snapshotName(array $snapshot): string
+    {
+        return trim(collect([
+            $snapshot['father_lastname'] ?? null,
+            $snapshot['mother_lastname'] ?? null,
+            $snapshot['names'] ?? null,
+        ])->filter()->implode(' '));
     }
 
     private const PARENTESCOS_MENOR = ['hijo', 'hijos', 'hija', 'nieto', 'nieta', 'apoderado', 'tutelado'];

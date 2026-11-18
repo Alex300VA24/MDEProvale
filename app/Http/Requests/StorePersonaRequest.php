@@ -20,7 +20,7 @@ class StorePersonaRequest extends FormRequest
             'father_lastname' => 'required|string|max:100',
             'mother_lastname' => 'required|string|max:100',
             'dni' => ['required', 'digits:8', 'unique:people,dni'],
-            'birthdate' => 'nullable|date',
+            'birthdate' => 'nullable|date|before_or_equal:today',
             'gender' => 'nullable|in:M,F',
             'address' => 'nullable|string|max:255',
             'reniec_photo_token' => 'nullable|uuid',
@@ -34,6 +34,7 @@ class StorePersonaRequest extends FormRequest
             'names.required' => 'Los nombres son obligatorios.',
             'father_lastname.required' => 'El apellido paterno es obligatorio.',
             'mother_lastname.required' => 'El apellido materno es obligatorio.',
+            'birthdate.before_or_equal' => 'La fecha de nacimiento no puede ser posterior a hoy.',
         ];
     }
 }

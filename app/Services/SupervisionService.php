@@ -36,15 +36,19 @@ class SupervisionService
 
         $visits = $this->supervision->visitsBetween($start->toDateString(), $end->toDateString());
 
-        $rows = $this->associations->withResolutionAndLocation()->map(function (Association $association) use ($visits, $documentMapper) {
+        $rows = $this->associations->withResolutionAndLocation()->map(function (Association $association) use ($visits, $documentMapper, $start, $end) {
             $presidenta = $association->getPresidenta();
             $person = $presidenta?->people;
+            // Un comité inactivo en el mes no cuenta beneficiarios; en los vigentes solo los activos en el mes.
+            $activeInMonth = $this->associations->wasHabilitadoAt($association, $end->toDateString());
             $associationVisits = $visits[$association->id] ?? collect();
 
             return [
                 'id' => $association->id,
                 'code' => $association->code,
                 'name' => $association->name,
+                'active' => $association->isHabilitado(),
+                'active_in_month' => $activeInMonth,
                 'president' => $person
                     ? trim("{$person->names} {$person->father_lastname} {$person->mother_lastname}")
                     : '',
@@ -52,7 +56,7 @@ class SupervisionService
                 'sector' => $association->placeSector
                     ? trim(($association->placeSector->place?->title ?? '').' '.($association->placeSector->sector?->title ?? ''))
                     : '',
-                'beneficiaries' => $presidenta ? $this->associations->countBeneficiaries($association) : 0,
+                'beneficiaries' => $presidenta && $activeInMonth ? $this->associations->countBeneficiariesActiveDuring($association, $start->toDateString(), $end->toDateString()) : 0,
                 'visits' => $associationVisits
                     ->mapWithKeys(fn ($v) => [$v->visit_date->format('Y-m-d') => $v->result])
                     ->all(),

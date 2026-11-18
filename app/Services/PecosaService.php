@@ -6,6 +6,7 @@ use App\DTOs\PecosaSnapshotDTO;
 use App\Models\DetailPecosa;
 use App\Models\Pecosa;
 use App\Models\State;
+use App\Models\MonthlyRoster;
 use App\Models\VerifiedDocument;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
@@ -28,7 +29,8 @@ class PecosaService
         private CatalogRepositoryInterface $catalogs,
         private StockService $stockService,
         private PDFService $pdfService,
-        private VerifiedDocumentService $verifiedDocumentService
+        private VerifiedDocumentService $verifiedDocumentService,
+        private MonthlyRosterService $monthlyRosters
     ) {
     }
 
@@ -74,9 +76,9 @@ class PecosaService
             $association->is_current = ! $currentStateId || $association->state_id === $currentStateId;
         });
 
-        $associations = $currentStateId
-            ? $filterAssociations->where('state_id', $currentStateId)->values()
-            : $filterAssociations;
+        // Se listan todos los comités; los inactivos se marcan con is_current=false
+        // y el formulario exige habilitarlos explícitamente.
+        $associations = $filterAssociations;
 
         $presidentPositionId = $this->catalogs->positionIdByTitle('PRESIDENTA');
 
@@ -140,6 +142,7 @@ class PecosaService
             'president_periods' => $presidentPeriods,
             'responsibles' => $responsibles,
             'detail_products' => $detailProducts,
+            'monthly_rosters' => $this->monthlyRosters->closedOptions(),
         ];
     }
 
@@ -220,6 +223,7 @@ class PecosaService
 
     public function createPecosa(array $data): Pecosa
     {
+        $data = $this->normalizePeriodData($data);
         $association = $this->associationRepo->findOrFailAssociation($data['association_id']);
         $president = $this->resolvePresidentForDeliveryPeriod($data);
         if (!$association->isHabilitado()
@@ -263,6 +267,10 @@ class PecosaService
 
         // `pecosa_number` es opcional al actualizar: se conserva el existente.
         $data['pecosa_number'] ??= $pecosa->pecosa_number;
+        $data['delivery_date'] ??= $pecosa->delivery_date?->toDateString();
+        $data['service_period'] ??= $pecosa->service_period?->format('Y-m');
+        $data['monthly_roster_id'] ??= $pecosa->monthly_roster_id;
+        $data = $this->normalizePeriodData($data);
 
         return DB::transaction(function () use ($pecosa, $data) {
             $this->stockService->revertStockByPecosa($pecosa->id);
@@ -390,12 +398,14 @@ class PecosaService
             $president['name'],
             $president['dni'],
             $association ? $association->name : null,
-            $association ? $association->code : null,
+            $association
+                ? $association->officialCodeAt(Pecosa::effectiveDeliveryDate($data['delivery_date']))
+                : null,
             $association ? $association->address : null,
             $association ? ($association->placeSector ? ($association->placeSector->place ? $association->placeSector->place->code : null) : null) : null,
             $association ? ($association->placeSector ? ($association->placeSector->place ? $association->placeSector->place->title : null) : null) : null,
             $association ? ($association->placeSector ? ($association->placeSector->sector ? $association->placeSector->sector->title : null) : null) : null,
-            $association ? $this->partnerRepo->countBeneficiariesForAssociationAtDate($association->id, $data['delivery_date']) : 0,
+            $association ? $this->beneficiaryCountForPecosa($association->id, $data) : 0,
         );
     }
 
@@ -409,8 +419,21 @@ class PecosaService
     private function resolvePresidentForDeliveryPeriod(array $data): array
     {
         $association = $this->associationRepo->findOrFailAssociation($data['association_id']);
-        $effectiveDate = Pecosa::effectiveDeliveryDate($data['delivery_date']);
+        $effectiveDate = Carbon::parse($data['service_period'] ?? Pecosa::effectiveDeliveryDate($data['delivery_date']))->startOfMonth();
         $period = $effectiveDate->copy()->startOfMonth()->toDateString();
+
+        if (! empty($data['monthly_roster_id'])) {
+            $snapshot = MonthlyRoster::find($data['monthly_roster_id'])?->associations()
+                ->where('association_id', $association->id)
+                ->first();
+            if ($snapshot) {
+                return [
+                    'partner_id' => null,
+                    'name' => $snapshot->president_name,
+                    'dni' => $snapshot->president_dni,
+                ];
+            }
+        }
 
         $roster = $this->associationRepo->rosterForPeriod($association->id, $period);
 
@@ -441,6 +464,47 @@ class PecosaService
     private static function formatName($person): string
     {
         return trim(collect([$person->names, $person->father_lastname, $person->mother_lastname])->filter()->implode(' '));
+    }
+
+    private function normalizePeriodData(array $data): array
+    {
+        $servicePeriod = ! empty($data['service_period'])
+            ? Carbon::createFromFormat('Y-m', substr((string) $data['service_period'], 0, 7))->startOfMonth()
+            : Pecosa::effectiveDeliveryDate($data['delivery_date'])->startOfMonth();
+
+        $data['service_period'] = $servicePeriod->toDateString();
+
+        if (empty($data['monthly_roster_id'])) {
+            $data['monthly_roster_id'] = $this->monthlyRosters
+                ->latestClosedForServicePeriod($servicePeriod->toDateString())?->id;
+        }
+
+        if (! empty($data['monthly_roster_id'])) {
+            $roster = MonthlyRoster::findOrFail($data['monthly_roster_id']);
+            if ($roster->status !== MonthlyRoster::CLOSED) {
+                throw new \DomainException('La PECOSA solo puede vincularse a un padrón cerrado.');
+            }
+            if ($roster->period->gt($servicePeriod)) {
+                throw new \DomainException('La PECOSA no puede usar un padrón posterior a su período de reparto.');
+            }
+        }
+
+        return $data;
+    }
+
+    private function beneficiaryCountForPecosa(int $associationId, array $data): int
+    {
+        if (! empty($data['monthly_roster_id'])) {
+            $count = MonthlyRoster::find($data['monthly_roster_id'])?->associations()
+                ->where('association_id', $associationId)
+                ->value('beneficiary_count');
+
+            if ($count !== null) {
+                return (int) $count;
+            }
+        }
+
+        return $this->partnerRepo->countBeneficiariesForAssociationAtDate($associationId, $data['delivery_date']);
     }
 
     /**

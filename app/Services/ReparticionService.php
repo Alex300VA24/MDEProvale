@@ -72,6 +72,7 @@ class ReparticionService
             'id' => $period?->id,
             'year' => $year,
             'month' => $month,
+            'monthly_roster_id' => $period?->monthly_roster_id,
             'service_days' => $period?->service_days ?? $days,
             'milk_grams_per_beneficiary' => (float) ($period?->milk_grams_per_beneficiary ?? $racion->racion_leche_militros ?? config('distribution.defaults.milk_grams_per_beneficiary')),
             'oat_grams_per_beneficiary' => (float) ($period?->oat_grams_per_beneficiary ?? $racion->racion_hojuelas_gramos ?? config('distribution.defaults.oat_grams_per_beneficiary')),
@@ -139,10 +140,16 @@ class ReparticionService
             $adjustment = (int) ($assignment?->beneficiary_adjustment ?? 0);
             $beneficiaries = max(0, $baseBeneficiaries + $adjustment);
             $quantities = $this->calculateQuantities($beneficiaries, $configuration);
+            $active = $association->isHabilitado();
+            // Sin decisión guardada, solo los comités activos entran al cálculo.
+            // Un comité sin beneficiarios no entra por defecto, pero sigue listado.
+            $included = $assignment?->included ?? ($active && ($baseBeneficiaries > 0 || $adjustment !== 0));
 
             return [
                 'id' => $association->id,
-                'codigo' => $association->code ?? $association->id,
+                'activo' => $active,
+                'incluido' => (bool) $included,
+                'codigo' => $association->officialCodeAt($endDate),
                 'nombre' => $association->name,
                 'presidenta' => $association->getPresidentNameAt($endDate) ?? '',
                 'direccion' => $association->address ?? '',
@@ -165,9 +172,13 @@ class ReparticionService
                 'racion_diaria_leche' => $quantities['daily_milk'],
                 'racion_diaria_hojuelas' => $quantities['daily_oat'],
             ];
-        })->filter(fn ($club) => $club['beneficiarios_base'] > 0 || $club['ajuste_beneficiarios'] !== 0)
-            ->sortBy([['vuelta', 'asc'], ['codigo', 'asc']])
+        })->sortBy([['vuelta', 'asc'], ['codigo', 'asc']])
             ->values();
+
+        // Los comités no seleccionados se listan aparte: no suman a totales,
+        // vueltas ni reportes, pero siguen visibles para poder habilitarlos.
+        $excluded = $associations->where('incluido', false)->values();
+        $associations = $associations->where('incluido', true)->values();
 
         $routes = $associations->groupBy('vuelta')->map(function (Collection $clubs, $route) use ($configuration) {
             $milk = (int) $clubs->sum('leche_total');
@@ -200,6 +211,7 @@ class ReparticionService
             'racion_leche_ml' => $configuration['milk_grams_per_beneficiary'],
             'racion_hojuelas_gr' => $configuration['oat_grams_per_beneficiary'],
             'associations' => $associations,
+            'excluidos' => $excluded,
             'vueltas' => $routes,
             'total_beneficiarios' => (int) $associations->sum('beneficiarios'),
             'total_leche_litros' => $totalMilk,
@@ -237,6 +249,7 @@ class ReparticionService
                 $this->distributions->upsertAssignment($period->id, $assignment['association_id'], [
                     'route_number' => $assignment['route_number'],
                     'beneficiary_adjustment' => $assignment['beneficiary_adjustment'],
+                    'included' => $assignment['included'] ?? null,
                     'observation' => $assignment['observation'] ?? null,
                 ]);
             }

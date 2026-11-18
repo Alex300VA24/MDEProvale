@@ -11,6 +11,8 @@ import { fmtDate, stateBadge } from './format';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/club-madres';
+const CURRENT_YEAR = new Date().getFullYear();
+const DOCUMENT_PATTERN = new RegExp(`^\\d{4}-${CURRENT_YEAR}$`);
 
 const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1';
 const inputCls =
@@ -48,11 +50,16 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
     const [pending, setPending] = useState(false);
     const [observation, setObservation] = useState('');
     const isPendingResolution = mode === 'edit' && resolution?.state?.abbreviation === 'PEN';
+    const requiresCurrentFormat = mode === 'create' || isPendingResolution;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!document || !dateStart || !dateEnd) {
             toast.error('Complete los campos obligatorios de la resolución.');
+            return;
+        }
+        if (requiresCurrentFormat && !DOCUMENT_PATTERN.test(document.trim())) {
+            toast.error(`El documento debe tener el formato 1234-${CURRENT_YEAR}.`);
             return;
         }
         if (pending && !observation.trim()) {
@@ -100,6 +107,7 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
                         : 'Resolución creada exitosamente.'
                 );
             }
+            window.dispatchEvent(new CustomEvent('notifications:changed'));
             onSaved();
         } catch (err) {
             toast.error(errorMessage(
@@ -124,7 +132,24 @@ function ReconocimientoFormModal({ mode, resolution, onClose, onSaved }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                         <label className={labelCls}>Documento *</label>
-                        <input type="text" value={document} onChange={(e) => setDocument(e.target.value)} className={inputCls} required maxLength={100} />
+                        <input
+                            type="text"
+                            value={document}
+                            onChange={(e) => setDocument(requiresCurrentFormat
+                                ? e.target.value.replace(/[^\d-]/g, '').slice(0, 9)
+                                : e.target.value.slice(0, 100))}
+                            className={inputCls}
+                            required
+                            maxLength={requiresCurrentFormat ? 9 : 100}
+                            pattern={requiresCurrentFormat ? `[0-9]{4}-${CURRENT_YEAR}` : undefined}
+                            placeholder={`1234-${CURRENT_YEAR}`}
+                            aria-describedby="resolution-document-help"
+                        />
+                        <p id="resolution-document-help" className="mt-1 text-xs text-earth">
+                            {requiresCurrentFormat
+                                ? <>Formato obligatorio: 4 dígitos y año actual. Ejemplo: 1234-{CURRENT_YEAR}.</>
+                                : 'Conserve el número original de la resolución histórica.'}
+                        </p>
                     </div>
                     <div>
                         <label className={labelCls}>Fecha de Inicio *</label>
@@ -275,6 +300,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
             setEditing(null);
             setFormOpen(true);
         },
+        reload: load,
     }));
 
     const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
@@ -290,6 +316,7 @@ const ReconocimientosTab = forwardRef(function ReconocimientosTab({ options, can
         try {
             await http.delete(`${BASE}/reconocimientos/${deleting.id}`);
             toast.success('Resolución eliminada exitosamente.');
+            window.dispatchEvent(new CustomEvent('notifications:changed'));
             setDeleting(null);
             load();
             onResolutionsChanged?.();

@@ -32,7 +32,7 @@ class AssociationSeeder extends Seeder
         // agosto a octubre 2026. Faltan código oficial, resolución y sector
         // reales: se usan marcadores explícitos hasta contar con esos datos.
         $pendingResolutionIds = [];
-        foreach (['PENDIENTE-COMITE-390', 'PENDIENTE-COMITE-395'] as $document) {
+        foreach (['PENDIENTE-COMITE-019-ISABEL', 'PENDIENTE-COMITE-395'] as $document) {
             DB::table('resolutions')->updateOrInsert(
                 ['document' => $document],
                 [
@@ -81,11 +81,11 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 1,
             ],
             [
-                'code'             => '019',
+                'code'             => '019-H',
                 'name'             => 'SOL Y ARENA DE LAS PALMERITAS',
                 'company_name'     => 'CDM',
                 'address'          => 'Ampliación I - Mz.B Lt.30 calle Los Laureles - AA.HH. Las Palmeras',
-                'observation'      => null,
+                'observation'      => 'Identidad histórica; usó el código 019 hasta agosto de 2026.',
                 'phone'            => null,
                 'resolution_id'    => DB::table('resolutions')->where('document', '0535-2024')->whereDate('date_start', '2024-06-28')->whereDate('date_end', '2026-06-28')->value('id'),
                 'state_id'         => 1,
@@ -993,13 +993,13 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 1,
             ],
             [
-                'code'             => '390',
+                'code'             => '019',
                 'name'             => 'ISABEL CRUZ DE MARCELO',
                 'company_name'     => 'CDM',
                 'address'          => 'Mz.G Lt.22 Las Palmeras',
-                'observation'      => 'Comité de SQL Server (COM_id 110). Falta código oficial, resolución y sector reales; datos provisionales.',
+                'observation'      => 'Comité de SQL Server (COM_id 110). Usa el código 019 desde setiembre de 2026; resolución y sector pendientes de regularización.',
                 'phone'            => null,
-                'resolution_id'    => $pendingResolutionIds['PENDIENTE-COMITE-390'],
+                'resolution_id'    => $pendingResolutionIds['PENDIENTE-COMITE-019-ISABEL'],
                 'state_id'         => DB::table('states')->where('abbreviation', 'VEN')->value('id'),
                 'place_sector_id'  => 2,
                 'type_premises_id' => 1,

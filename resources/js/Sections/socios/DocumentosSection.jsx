@@ -59,8 +59,13 @@ export function PendingDocumentSection({
     const toast = useToast();
     const { uploadMaxMb: maxUploadMb } = useRuntimeState();
     const fileInputRef = useRef(null);
+    const [previewFile, setPreviewFile] = useState(null);
     const availableTypes = allowedTypes || documentTypesFor(attachableType);
     const document = value || { documentType: availableTypes[0], file: null };
+
+    useEffect(() => () => {
+        if (previewFile?.url) URL.revokeObjectURL(previewFile.url);
+    }, [previewFile]);
 
     const handleFileChange = (event) => {
         const selected = event.target.files?.[0] || null;
@@ -90,13 +95,7 @@ export function PendingDocumentSection({
     const viewFile = () => {
         if (!document.file) return;
         const url = URL.createObjectURL(document.file);
-        const tab = window.open(url, '_blank');
-        if (!tab) {
-            URL.revokeObjectURL(url);
-            toast.error('El navegador bloqueó la nueva pestaña. Permita ventanas emergentes e inténtelo de nuevo.');
-            return;
-        }
-        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        setPreviewFile({ url, name: document.file.name, mime: document.file.type });
     };
 
     const clearFile = () => {
@@ -154,6 +153,26 @@ export function PendingDocumentSection({
                         </button>
                     </div>
                 </div>
+            )}
+            {previewFile && (
+                <Modal
+                    open
+                    onClose={() => setPreviewFile(null)}
+                    title={previewFile.name}
+                    icon={previewFile.mime.startsWith('image/') ? 'fa-file-image' : 'fa-file-pdf'}
+                    maxWidth="sm:max-w-5xl"
+                >
+                    <div className="p-4">
+                        {previewFile.mime.startsWith('image/') ? (
+                            <img src={previewFile.url} alt={previewFile.name} className="max-h-[75vh] w-full rounded-xl object-contain" />
+                        ) : (
+                            <iframe src={`${previewFile.url}#toolbar=1&navpanes=0`} title={previewFile.name} className="h-[75vh] w-full rounded-xl border-2 border-wheat bg-fog" />
+                        )}
+                        <div className="mt-4 flex justify-end border-t-2 border-wheat pt-4">
+                            <button type="button" onClick={() => setPreviewFile(null)} className="btn-secondary">Cerrar</button>
+                        </div>
+                    </div>
+                </Modal>
             )}
         </div>
     );
@@ -260,32 +279,14 @@ export default function DocumentosSection({
     const isImage = (doc) => doc.mime_type?.startsWith('image/');
 
     const handleOpenDocument = async (doc) => {
-        const opensInModal = isImage(doc);
-        const newTab = opensInModal ? null : window.open('', '_blank');
-
-        if (!opensInModal && !newTab) {
-            toast.error('El navegador bloqueó la nueva pestaña. Permita ventanas emergentes e inténtelo de nuevo.');
-            return;
-        }
-
-        if (newTab) newTab.opener = null;
-
         setOpeningId(doc.id);
         try {
             const response = await http.get(`${BASE}/documents/${doc.id}`, {
                 responseType: 'blob',
             });
             const objectUrl = URL.createObjectURL(response.data);
-
-            if (opensInModal) {
-                setPreviewDoc({ ...doc, previewUrl: objectUrl });
-                return;
-            }
-
-            newTab.location.replace(objectUrl);
-            window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+            setPreviewDoc({ ...doc, previewUrl: objectUrl });
         } catch (err) {
-            if (newTab && !newTab.closed) newTab.close();
             toast.error(errorMessage(err, 'No se pudo abrir el documento.'));
         } finally {
             setOpeningId(null);
@@ -439,21 +440,29 @@ export default function DocumentosSection({
                 </div>
             )}
 
-            {/* Modal de previsualización de imágenes */}
+            {/* Modal de previsualización de imágenes y PDF */}
             {previewDoc && (
                 <Modal
                     open
                     onClose={() => setPreviewDoc(null)}
                     title={DOCUMENT_TYPE_LABELS[previewDoc.document_type] || previewDoc.file_name}
-                    icon="fa-file-image"
-                    maxWidth="sm:max-w-3xl"
+                    icon={isImage(previewDoc) ? 'fa-file-image' : 'fa-file-pdf'}
+                    maxWidth="sm:max-w-5xl"
                 >
                     <div className="p-4 flex flex-col items-center justify-center bg-gray-900/5 rounded-b-2xl">
-                        <img
-                            src={previewDoc.previewUrl}
-                            alt={previewDoc.file_name}
-                            className="max-h-[75vh] w-auto max-w-full rounded-lg object-contain shadow-md"
-                        />
+                        {isImage(previewDoc) ? (
+                            <img
+                                src={previewDoc.previewUrl}
+                                alt={previewDoc.file_name}
+                                className="max-h-[75vh] w-auto max-w-full rounded-lg object-contain shadow-md"
+                            />
+                        ) : (
+                            <iframe
+                                src={`${previewDoc.previewUrl}#toolbar=1&navpanes=0`}
+                                title={previewDoc.file_name}
+                                className="h-[75vh] w-full rounded-xl border-2 border-wheat bg-white"
+                            />
+                        )}
                         <div className="mt-3 flex items-center justify-between w-full text-xs text-earth px-2">
                             <span>{previewDoc.file_name} ({formatBytes(previewDoc.file_size)})</span>
                             {canDownload && (

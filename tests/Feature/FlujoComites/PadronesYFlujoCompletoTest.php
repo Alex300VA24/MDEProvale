@@ -199,7 +199,7 @@ class PadronesYFlujoCompletoTest extends TestCase
 
     public function test_padron_beneficiarios_bloqueado_con_resolucion_pendiente_y_se_libera_al_regularizar(): void
     {
-        $res = $this->resolucion('PEN', 'EN TRAMITE');
+        $res = $this->resolucion('PEN', 'EN TRAMITE', $this->dias(0), $this->dias(300));
         $comite = $this->comite($res, 'P011');
         $this->socio($comite);
 
@@ -221,6 +221,50 @@ class PadronesYFlujoCompletoTest extends TestCase
         DB::table('associations')->where('id', $comite)->update(['state_id' => $this->ina, 'state_source' => 'MANUAL']);
 
         $this->padronBeneficiarios($comite, json: false)->assertOk();
+    }
+
+    public function test_resolucion_pendiente_del_mes_actual_no_bloquea_un_padron_anterior(): void
+    {
+        $res = $this->resolucion('PEN', 'PEND-MES-ACTUAL', $this->dias(0), $this->dias(300));
+        $comite = $this->comite($res, 'P013');
+        $this->socio($comite, null, null, ['date_begin' => now()->subMonths(2)->toDateString()]);
+
+        $previous = now()->subMonthNoOverflow();
+
+        $this->padronBeneficiarios($comite, $previous->month, $previous->year, false)->assertOk();
+    }
+
+    public function test_padron_beneficiarios_rechaza_un_mes_que_aun_no_tiene_cierre_mensual(): void
+    {
+        $comite = $this->comite($this->resolucion('VIG'), 'P014');
+        $this->socio($comite);
+
+        \App\Models\MonthlyRoster::create([
+            'period' => now()->subMonthNoOverflow()->startOfMonth()->toDateString(),
+            'version' => 1,
+            'status' => \App\Models\MonthlyRoster::CLOSED,
+            'closed_at' => now(),
+        ]);
+
+        $this->padronBeneficiarios($comite)
+            ->assertStatus(422)
+            ->assertJsonPath('message', fn ($message) => str_contains($message, 'todavía no ha sido cerrado'));
+    }
+
+    public function test_crear_cierre_mensual_solo_se_bloquea_en_el_mes_de_la_resolucion_pendiente(): void
+    {
+        $res = $this->resolucion('PEN', 'PEND-CIERRE', $this->dias(0), $this->dias(300));
+        $comite = $this->comite($res, 'P015');
+        $this->socio($comite, null, null, ['date_begin' => now()->subMonths(2)->toDateString()]);
+
+        $this->actingAs($this->admin())->postJson('/api/dashboard/socios-beneficiarios/monthly-rosters', [
+            'period' => now()->format('Y-m'),
+        ])->assertUnprocessable()->assertJsonValidationErrors('period');
+
+        $previous = now()->subMonthNoOverflow();
+        $this->actingAs($this->admin())->postJson('/api/dashboard/socios-beneficiarios/monthly-rosters', [
+            'period' => $previous->format('Y-m'),
+        ])->assertCreated();
     }
 
     // ============ PADRÓN GENERAL DEL CLUB ============
@@ -273,13 +317,13 @@ class PadronesYFlujoCompletoTest extends TestCase
 
     public function test_padron_club_bloqueado_si_algun_comite_activo_tiene_resolucion_pendiente(): void
     {
-        $this->comite($this->resolucion('PEN', 'TRAM3'), 'G006');
+        $this->comite($this->resolucion('PEN', 'TRAM3', $this->dias(0), $this->dias(300)), 'G006');
         $this->padronClub()->assertStatus(422);
     }
 
     public function test_padron_club_reintegra_tras_regularizar(): void
     {
-        $res = $this->resolucion('PEN', 'TRAM4');
+        $res = $this->resolucion('PEN', 'TRAM4', $this->dias(0), $this->dias(300));
         $this->comite($res, 'G007');
         $this->padronClub()->assertStatus(422);
 
@@ -356,7 +400,7 @@ class PadronesYFlujoCompletoTest extends TestCase
     public function test_flujo_completo_con_resolucion_pendiente_y_regularizacion(): void
     {
         $res = $this->actingAs($this->admin())->postJson(self::COMITES.'/reconocimientos', [
-            'document' => 'EN TRAMITE', 'date_start' => $this->dias(-5), 'date_end' => $this->dias(360),
+            'document' => '0999-'.now()->year, 'date_start' => $this->dias(-5), 'date_end' => $this->dias(360),
             'pending' => true, 'observation' => 'A la espera de publicación',
         ])->assertCreated()->assertJsonPath('data.state.abbreviation', 'PEN')->json('data.id');
 

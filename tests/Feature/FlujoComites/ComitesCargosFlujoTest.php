@@ -390,10 +390,11 @@ class ComitesCargosFlujoTest extends TestCase
 
     public function test_asignar_los_siete_cargos_de_golpe(): void
     {
-        [$a, [$s1]] = $this->comiteConSocias(1);
-        $items = array_map(fn ($c) => ['position' => $c, 'partner_id' => $s1], ['PRESIDENTA', 'VICE PRESIDENTA', 'SECRETARIA', 'TESORERA', 'COORDINADORA', 'ALMACENERA', 'VOCAL']);
+        [$a, $socias] = $this->comiteConSocias(7);
+        $cargos = ['PRESIDENTA', 'VICE PRESIDENTA', 'SECRETARIA', 'TESORERA', 'COORDINADORA', 'ALMACENERA', 'VOCAL'];
+        $items = array_map(fn ($c, $partner) => ['position' => $c, 'partner_id' => $partner], $cargos, $socias);
         $this->cargos($a, $items)->assertOk();
-        $this->assertSame(7, DB::table('directives')->where('partner_id', $s1)->where('state_id', $this->vig)->count());
+        $this->assertSame(7, DB::table('directives')->whereIn('partner_id', $socias)->where('state_id', $this->vig)->count());
     }
 
     public function test_varios_cargos_rechaza_repetidos_vacio_y_exceso(): void

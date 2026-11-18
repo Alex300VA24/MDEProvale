@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\AssociationIdentity;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -79,7 +80,14 @@ class TemporalBeneficiarieHistorySeeder extends Seeder
             $relationships = [];
             $beneficiaryRows = json_decode(file_get_contents($beneficiaryPath), true, 512, JSON_THROW_ON_ERROR);
             foreach ($beneficiaryRows as $row) {
-                $key = $this->key($row[0] ?? '', $row[1] ?? '', $row[2] ?? '');
+                $key = $this->key(
+                    $row[0] ?? '',
+                    $row[1] ?? '',
+                    AssociationIdentity::rosterCode(
+                        trim((string) ($row[2] ?? '')),
+                        $this->monthDates[$month]
+                    )
+                );
                 if ($key) {
                     $relationships[$key] = $this->normalizeRelationship($row[3] ?? '');
                 }
@@ -87,7 +95,14 @@ class TemporalBeneficiarieHistorySeeder extends Seeder
 
             $historyRows = json_decode(file_get_contents($historyPath), true, 512, JSON_THROW_ON_ERROR);
             foreach ($historyRows as $row) {
-                $key = $this->key($row[0] ?? '', $row[1] ?? '', $row[2] ?? '');
+                $key = $this->key(
+                    $row[0] ?? '',
+                    $row[1] ?? '',
+                    AssociationIdentity::rosterCode(
+                        trim((string) ($row[2] ?? '')),
+                        $this->monthDates[$month]
+                    )
+                );
                 if (!$key) {
                     continue;
                 }

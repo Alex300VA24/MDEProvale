@@ -19,7 +19,7 @@ class AsignarCargosRequest extends FormRequest
     {
         return [
             'assignments' => ['required', 'array', 'min:1', 'max:' . count(Position::COMMITTEE_TITLES)],
-            'assignments.*.partner_id' => ['required', 'integer', 'exists:partners,id'],
+            'assignments.*.partner_id' => ['required', 'integer', 'distinct', 'exists:partners,id'],
             'assignments.*.position' => [
                 'required',
                 'string',
@@ -35,6 +35,7 @@ class AsignarCargosRequest extends FormRequest
             'assignments.required' => 'Debe asignar por lo menos un cargo.',
             'assignments.*.partner_id.required' => 'Debe seleccionar una socia.',
             'assignments.*.partner_id.exists' => 'Una de las socias seleccionadas no existe.',
+            'assignments.*.partner_id.distinct' => 'Una socia no puede ocupar más de un cargo.',
             'assignments.*.position.distinct' => 'No puede repetir un cargo.',
             'assignments.*.position.in' => 'Uno de los cargos seleccionados no es válido.',
         ];

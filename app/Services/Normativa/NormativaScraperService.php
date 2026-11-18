@@ -6,6 +6,7 @@ use App\Models\NormativaDocument;
 use App\Repositories\Contracts\NormativaRepositoryInterface;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
 use App\Services\AssistantAiService;
+use App\Services\KnowledgeBase\KnowledgeChangeLogService;
 use App\Services\Rag\DocumentBinaryStorage;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
@@ -21,6 +22,7 @@ class NormativaScraperService
         private NormativaRagService $rag,
         private NormativaRepositoryInterface $documents,
         private NotificationRepositoryInterface $notifications,
+        private KnowledgeChangeLogService $changeLog,
     ) {
     }
 
@@ -621,6 +623,13 @@ class NormativaScraperService
 
     private function classifyAndNotify(NormativaDocument $document): bool
     {
+        // Sin IA la norma queda pendiente; no se marca como error.
+        if (! $this->ai->isConfigured()) {
+            Log::info('Clasificación de norma omitida: IA desactivada.', ['document_id' => $document->id]);
+
+            return false;
+        }
+
         try {
             $result = $this->ai->generateStructured(
                 [
@@ -826,11 +835,11 @@ class NormativaScraperService
             return;
         }
 
-        $this->notifications->create([
+        $notification = $this->notifications->create([
             'type' => 'normativa_pvl',
             'title' => trim($document->tipo_documento.' '.($document->numero ? 'N° '.$document->numero : '')),
             'description' => $document->relevancia_resumen ?: $document->asunto,
-            'status' => 'informativo',
+            'status' => \App\Models\Notification::STATUS_OPEN,
             'requested_at' => now(),
             'is_seen' => false,
             'metadata' => [
@@ -842,6 +851,23 @@ class NormativaScraperService
                 'motivo' => $document->relevancia_motivo,
             ],
         ]);
+
+        $this->changeLog->record(
+            source: 'portal',
+            eventType: 'norma_nueva',
+            title: $notification->title,
+            summary: $document->relevancia_resumen ?: $document->asunto,
+            details: array_filter([
+                'numero' => $document->numero,
+                'tipo_documento' => $document->tipo_documento,
+                'fecha_documento' => optional($document->fecha_documento)->format('Y-m-d'),
+                'motivo' => $document->relevancia_motivo,
+                'pdf_url' => $document->pdf_url,
+            ]),
+            notification: $notification,
+            subjectType: NormativaDocument::class,
+            subjectId: $document->id,
+        );
 
         $this->documents->update($document, ['notified_at' => now()]);
     }

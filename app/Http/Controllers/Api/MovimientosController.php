@@ -139,6 +139,7 @@ class MovimientosController extends Controller
             'assignments.*.association_id' => 'required|integer|exists:associations,id',
             'assignments.*.route_number' => 'required|integer|min:1|max:999',
             'assignments.*.beneficiary_adjustment' => 'required|integer|min:-100000|max:100000',
+            'assignments.*.included' => 'nullable|boolean',
             'assignments.*.observation' => 'nullable|string|max:250',
         ]);
 

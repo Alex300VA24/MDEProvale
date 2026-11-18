@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\State;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -54,8 +55,14 @@ class DetailProductSeeder extends Seeder
 
         $lastDate = collect($rows)->pluck('end_date')->filter()->max();
         if ($lastDate) {
+            $activeStateId = State::idFor(State::ACTIVE);
+            $inactiveStateId = State::idFor(State::INACTIVE);
+            if (! $activeStateId || ! $inactiveStateId) {
+                throw new \RuntimeException('No se encontraron los estados Activo e Inactivo para los productos.');
+            }
+
             $periodStart = substr($lastDate, 0, 7) . '-01';
-            DB::table('products')->update(['state_id' => 4, 'updated_at' => $now]);
+            DB::table('products')->update(['state_id' => $inactiveStateId, 'updated_at' => $now]);
             DB::table('products')
                 ->whereExists(function ($query) use ($periodStart, $lastDate) {
                     $query->select(DB::raw(1))
@@ -64,7 +71,7 @@ class DetailProductSeeder extends Seeder
                         ->where('detail_products.start_date', '<=', $lastDate)
                         ->where('detail_products.end_date', '>=', $periodStart);
                 })
-                ->update(['state_id' => 3, 'updated_at' => $now]);
+                ->update(['state_id' => $activeStateId, 'updated_at' => $now]);
         }
 
         $this->command->info('Lotes insertados: ' . count($rows));

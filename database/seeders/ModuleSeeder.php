@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\ModuleCatalog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -9,29 +10,38 @@ class ModuleSeeder extends Seeder
 {
     public function run()
     {
-        $modules = [
-            ['name' => 'Socios y Beneficiarios', 'slug' => 'socios-beneficiarios', 'description' => 'Gestión de socios y beneficiarios', 'icon' => 'fa-users', 'route' => 'socios-beneficiarios', 'order' => 1],
-            ['name' => 'Club de Madres', 'slug' => 'club-madres', 'description' => 'Gestión de club de madres', 'icon' => 'fa-female', 'route' => 'club-reconocimientos', 'order' => 2],
-            ['name' => 'Reconocimientos', 'slug' => 'reconocimientos', 'description' => 'Gestión de reconocimientos', 'icon' => 'fa-award', 'route' => 'club-reconocimientos', 'order' => 3],
-            ['name' => 'Evaluación Nutricional', 'slug' => 'evaluacion-nutricional', 'description' => 'Evaluación nutricional y clasificación poblacional', 'icon' => 'fa-heart-pulse', 'route' => 'evaluacion-nutricional', 'order' => 3],
-            ['name' => 'Productos', 'slug' => 'productos', 'description' => 'Gestión de productos', 'icon' => 'fa-box', 'route' => 'productos-pecosas', 'order' => 4],
-            ['name' => 'Pecosas', 'slug' => 'pecosas', 'description' => 'Gestión de pecosas', 'icon' => 'fa-file-alt', 'route' => 'productos-pecosas', 'order' => 5],
-            ['name' => 'Movimientos', 'slug' => 'movimientos', 'description' => 'Gestión de movimientos', 'icon' => 'fa-exchange-alt', 'route' => 'movimientos', 'order' => 6],
-            ['name' => 'Responsables y Raciones', 'slug' => 'responsables-raciones', 'description' => 'Gestión de responsables del programa y raciones por año', 'icon' => 'fa-sliders', 'route' => 'responsables-raciones', 'order' => 7],
-            ['name' => 'Reportes', 'slug' => 'reportes', 'description' => 'Reportes del sistema', 'icon' => 'fa-chart-bar', 'route' => null, 'order' => 8],
-            ['name' => 'Sistema', 'slug' => 'sistema', 'description' => 'Configuración del sistema', 'icon' => 'fa-cogs', 'route' => 'sistema', 'order' => 9],
-            ['name' => 'Base de Conocimiento IA', 'slug' => 'base-conocimiento', 'description' => 'Documentos indexados con IA para consultas tipo RAG', 'icon' => 'fa-database', 'route' => 'base-conocimiento', 'order' => 10],
-        ];
+        $modules = ModuleCatalog::modules();
 
-        foreach ($modules as $module) {
-            DB::table('modules')->updateOrInsert(
-                ['slug' => $module['slug']],
-                array_merge($module, [
+        // Primero los módulos de primer nivel (y grupos); luego los submódulos, que ya pueden apuntar al padre.
+        foreach ([false, true] as $submodulesPass) {
+            foreach ($modules as $module) {
+                if (($module['parent'] !== null) !== $submodulesPass) {
+                    continue;
+                }
+
+                $attributes = [
+                    'name' => $module['name'],
+                    'description' => $module['description'],
+                    'icon' => $module['icon'],
+                    'route' => $module['route'],
+                    'order' => $module['order'],
+                    'parent_id' => $module['parent']
+                        ? DB::table('modules')->where('slug', $module['parent'])->value('id')
+                        : null,
                     'is_active' => true,
-                    'created_at' => now(),
                     'updated_at' => now(),
-                ])
-            );
+                ];
+
+                $exists = DB::table('modules')->where('slug', $module['slug'])->exists();
+
+                DB::table('modules')->updateOrInsert(
+                    ['slug' => $module['slug']],
+                    $exists ? $attributes : $attributes + ['created_at' => now()]
+                );
+            }
         }
+
+        // El módulo plano "movimientos" fue reemplazado por Registro de Ingreso y Repartición.
+        DB::table('modules')->where('slug', ModuleCatalog::LEGACY_MOVIMIENTOS)->delete();
     }
 }

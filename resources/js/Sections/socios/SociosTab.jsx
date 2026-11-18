@@ -176,7 +176,7 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
 
     const associationOptions = (options.associations || []).map((a) => ({
         id: a.id,
-        label: associationLabel(a),
+        label: associationLabel(a, { includeCode: true, includeAddress: false }),
     }));
     const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: s.title }));
     const relationshipOptions = (options.relationships || []).map((relationship) => ({ id: relationship.id, label: relationship.title }));
@@ -532,11 +532,10 @@ function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
 }
 
 function SocioViewModal({ partner, onClose }) {
-    if (!partner) return null;
     const [photo, setPhoto] = useState(null);
     const [loadingPhoto, setLoadingPhoto] = useState(false);
     const latestHistory = (b) => (b.histories && b.histories.length ? b.histories[0] : null);
-    const stateCls = stateClass(partner.state);
+    const stateCls = stateClass(partner?.state);
 
     useEffect(() => {
         if (!partner?.person?.id) return;
@@ -546,6 +545,8 @@ function SocioViewModal({ partner, onClose }) {
             .catch(() => setPhoto(null))
             .finally(() => setLoadingPhoto(false));
     }, [partner?.id, partner?.person?.id]);
+
+    if (!partner) return null;
 
     return (
         <DetailModal open onClose={onClose} title="Detalle del Socio / Ficha" icon="fa-user" maxWidth="sm:max-w-4xl">
@@ -637,7 +638,7 @@ function SocioViewModal({ partner, onClose }) {
     );
 }
 
-const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }, ref) {
+const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved, monthlyRoster, onRosterChanged }, ref) {
     const toast = useToast();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -701,10 +702,13 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
     const confirmDelete = async () => {
         if (!deleting) return;
         try {
-            await http.delete(`${BASE}/partners/${deleting.id}`);
+            await http.delete(`${BASE}/partners/${deleting.id}`, {
+                data: { monthly_roster_id: monthlyRoster?.id ?? null },
+            });
             toast.success('Socio y beneficiarios eliminados exitosamente.');
             setDeleting(null);
-            load();
+            await load();
+            onRosterChanged?.();
         } catch (err) {
             toast.error(errorMessage(err, 'No se pudo eliminar el socio.'));
             setDeleting(null);
@@ -713,7 +717,7 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
 
     const associationOptions = (options.associations || []).map((a) => ({
         id: a.id,
-        label: associationLabel(a),
+        label: associationLabel(a, { includeCode: true, includeAddress: false }),
     }));
     const stateOptions = (options.states || []).map((s) => ({ id: s.id, label: partnerStateLabel(s) }));
 
@@ -886,11 +890,13 @@ const SociosTab = forwardRef(function SociosTab({ options, can, onPartnerSaved }
                     mode={formMode}
                     partner={editing}
                     options={options}
+                    monthlyRoster={monthlyRoster}
                     onClose={() => setFormOpen(false)}
                     onSaved={(savedPartner) => {
                         setFormOpen(false);
                         load();
                         onPartnerSaved?.(savedPartner);
+                        onRosterChanged?.();
                     }}
                 />
             )}

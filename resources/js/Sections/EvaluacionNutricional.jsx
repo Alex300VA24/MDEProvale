@@ -16,6 +16,7 @@ export default function EvaluacionNutricional() {
     const [associationId, setAssociationId] = useState('');
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [useInactive, setUseInactive] = useState(false);
 
     useEffect(() => {
         http
@@ -37,7 +38,12 @@ export default function EvaluacionNutricional() {
             .finally(() => setLoading(false));
     }, [associationId]);
 
-    const options = associations.map((a) => ({ id: a.id, label: `${a.code} - ${a.name}` }));
+    const options = associations.map((a) => ({
+        id: a.id,
+        label: `${a.code} - ${a.name}`,
+        badge: a.active === false ? 'Inactivo' : null,
+        disabled: a.active === false && !useInactive,
+    }));
 
     return (
         <section className="bg-white rounded-2xl border-2 border-mist shadow-sm overflow-hidden">
@@ -62,6 +68,10 @@ export default function EvaluacionNutricional() {
                         allowClear
                     />
                 </div>
+                <label className="flex cursor-pointer items-center gap-2 text-xs sm:text-sm font-semibold text-earth">
+                    <input type="checkbox" checked={useInactive} onChange={(e) => setUseInactive(e.target.checked)} className="h-4 w-4 accent-leaf" />
+                    Usar comités inactivos
+                </label>
                 <PdfLinkButton
                     href={`${window.APP_URL || ''}/socios-beneficiarios/evaluacion-nutricional/${associationId}/acta`}
                     loadingTitle="Generando Acta de Evaluación Nutricional"

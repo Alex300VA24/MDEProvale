@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Rol;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -9,6 +10,18 @@ use Tests\TestCase;
 class AssistantChatApiTest extends TestCase
 {
     private const ENDPOINT = '/api/asistente/chat';
+
+    /**
+     * Administrador activo sin tocar la base de datos: el rol se asigna en memoria
+     * y los permisos del administrador no consultan módulos.
+     */
+    private function adminUser(int $id): User
+    {
+        $user = User::factory()->make(['id' => $id, 'rol_id' => 1]);
+        $user->setRelation('rol', (new Rol())->forceFill(['id' => 1, 'title' => 'Administrador', 'is_active' => true]));
+
+        return $user;
+    }
 
     protected function setUp(): void
     {
@@ -41,7 +54,7 @@ class AssistantChatApiTest extends TestCase
             ]),
         ]);
 
-        $user = User::factory()->make(['id' => 99]);
+        $user = $this->adminUser(99);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -82,7 +95,7 @@ class AssistantChatApiTest extends TestCase
             ]),
         ]);
 
-        $user = User::factory()->make(['id' => 105]);
+        $user = $this->adminUser(105);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -110,7 +123,7 @@ class AssistantChatApiTest extends TestCase
 
     public function test_it_rejects_invalid_or_oversized_history(): void
     {
-        $user = User::factory()->make(['id' => 100]);
+        $user = $this->adminUser(100);
         $messages = array_fill(0, 21, ['role' => 'user', 'content' => 'Ayuda']);
 
         $this->actingAs($user)
@@ -122,7 +135,7 @@ class AssistantChatApiTest extends TestCase
     public function test_it_guides_common_tasks_without_an_api_key(): void
     {
         config(['services.groq.key' => null]);
-        $user = User::factory()->make(['id' => 101]);
+        $user = $this->adminUser(101);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -135,7 +148,7 @@ class AssistantChatApiTest extends TestCase
     public function test_it_explains_where_to_find_the_committee_with_most_beneficiaries(): void
     {
         config(['services.groq.key' => null]);
-        $user = User::factory()->make(['id' => 102]);
+        $user = $this->adminUser(102);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -148,7 +161,7 @@ class AssistantChatApiTest extends TestCase
     public function test_it_distinguishes_the_club_committee_register_from_the_beneficiary_register(): void
     {
         config(['services.groq.key' => null]);
-        $user = User::factory()->make(['id' => 104]);
+        $user = $this->adminUser(104);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -161,7 +174,7 @@ class AssistantChatApiTest extends TestCase
     public function test_it_asks_for_clarification_when_the_question_is_unknown_and_no_provider_exists(): void
     {
         config(['services.groq.key' => null]);
-        $user = User::factory()->make(['id' => 103]);
+        $user = $this->adminUser(103);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -177,20 +190,20 @@ class AssistantChatApiTest extends TestCase
 
     public function test_it_understands_a_typo_in_a_common_navigation_question(): void
     {
-        $user = User::factory()->make(['id' => 106]);
+        $user = $this->adminUser(106);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
                 'mensajes' => [['role' => 'user', 'content' => '¿Cómo registro una pecoza?']],
             ])
             ->assertOk()
-            ->assertJsonPath('respuesta', fn ($answer) => str_contains($answer, 'Nueva Pecosa'));
+            ->assertJsonPath('respuesta', fn ($answer) => str_contains($answer, 'Registrar Pecosa'));
     }
 
     public function test_it_reports_the_remaining_quota_and_blocks_after_five_questions(): void
     {
         config(['services.groq.key' => null]);
-        $user = User::factory()->make(['id' => 555]);
+        $user = $this->adminUser(555);
 
         $first = $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -220,7 +233,7 @@ class AssistantChatApiTest extends TestCase
     public function test_it_returns_a_view_action_when_a_report_is_explicitly_requested(): void
     {
         config(['services.groq.key' => null]);
-        $user = User::factory()->make(['id' => 557]);
+        $user = $this->adminUser(557);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -233,7 +246,7 @@ class AssistantChatApiTest extends TestCase
 
     public function test_a_vague_report_request_asks_the_user_to_choose_an_entity(): void
     {
-        $user = User::factory()->make(['id' => 559]);
+        $user = $this->adminUser(559);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [
@@ -247,7 +260,7 @@ class AssistantChatApiTest extends TestCase
     public function test_a_multi_entity_report_request_is_answered_with_guidance(): void
     {
         config(['services.groq.key' => null]);
-        $user = User::factory()->make(['id' => 558]);
+        $user = $this->adminUser(558);
 
         $this->actingAs($user)
             ->postJson(self::ENDPOINT, [

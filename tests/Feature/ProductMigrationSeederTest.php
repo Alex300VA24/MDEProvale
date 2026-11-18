@@ -54,6 +54,8 @@ class ProductMigrationSeederTest extends TestCase
         $this->assertDatabaseCount('detail_pecosas', 1384);
         $this->assertDatabaseCount('product_stocks', 1384);
         $this->assertDatabaseCount('transactions', 1402);
+        $activeProductStateId = DB::table('states')->where('abbreviation', 'ACT')->value('id');
+        $this->assertSame(2, DB::table('products')->where('state_id', $activeProductStateId)->count());
 
         $ingresoId = DB::table('type_transactions')->where('title', 'Ingreso')->value('id');
         $salidaId = DB::table('type_transactions')->where('title', 'Salida')->value('id');

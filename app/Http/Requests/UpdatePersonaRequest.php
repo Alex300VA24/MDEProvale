@@ -27,7 +27,7 @@ class UpdatePersonaRequest extends FormRequest
                 fn ($attribute, $value, $fail) => $value === $this->route('person')?->dni || preg_match('/^\d{8}$/', (string) $value) ? null : $fail('El DNI debe tener 8 dígitos.'),
                 Rule::unique('people', 'dni')->ignore($this->route('person')?->id),
             ],
-            'birthdate' => 'nullable|date',
+            'birthdate' => 'nullable|date|before_or_equal:today',
             'gender' => 'nullable|in:M,F',
             'address' => 'nullable|string|max:255',
         ];
@@ -37,6 +37,7 @@ class UpdatePersonaRequest extends FormRequest
     {
         return [
             'dni.unique' => 'El DNI ya está registrado.',
+            'birthdate.before_or_equal' => 'La fecha de nacimiento no puede ser posterior a hoy.',
         ];
     }
 }

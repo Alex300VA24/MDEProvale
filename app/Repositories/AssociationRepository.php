@@ -6,6 +6,7 @@ use App\Models\Association;
 use App\Models\AssociationRosterPeriod;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use App\Models\AssociationStatusChange;
+use App\Models\State;
 use App\Models\Beneficiarie;
 use App\Models\Partner;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,7 +43,7 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
     public function getAssociationsWithSectorAndBeneficiaries(?int $activeStateId = null, ?int $sectorId = null): Collection
     {
         return $this->model
-            ->with(['placeSector.sector', 'partners.beneficiaries.person:id,birthdate'])
+            ->with(['state', 'placeSector.sector', 'partners.beneficiaries.person:id,birthdate'])
             ->when($activeStateId, fn($q) => $q->where('state_id', $activeStateId))
             ->when($sectorId, fn($q) => $q->whereHas('placeSector', fn($q) => $q->where('sector_id', $sectorId)))
             ->get();
@@ -212,14 +213,16 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
 
     public function withResolutionForSelect(): Collection
     {
-        return Association::whereHas('resolution')
+        return Association::with('state:id,abbreviation')
+            ->whereHas('resolution')
             ->orderBy('code')
-            ->get(['id', 'code', 'name']);
+            ->get(['id', 'code', 'name', 'state_id'])
+            ->each(fn (Association $association) => $association->setAttribute('active', $association->isHabilitado()));
     }
 
     public function withResolutionAndLocation(): Collection
     {
-        return Association::with(['placeSector.place', 'placeSector.sector'])
+        return Association::with(['placeSector.place', 'placeSector.sector', 'state'])
             ->whereHas('resolution')
             ->orderBy('code')
             ->get();
@@ -278,6 +281,30 @@ class AssociationRepository extends BaseRepository implements AssociationReposit
     public function countBeneficiaries(Association $association): int
     {
         return Beneficiarie::whereIn('partner_id', $association->partners()->select('id'))->count();
+    }
+
+    public function countBeneficiariesActiveDuring(Association $association, string $startDate, string $endDate): int
+    {
+        return Beneficiarie::activeDuring($startDate, $endDate)
+            ->whereIn('partner_id', $association->partners()->select('id'))
+            ->count();
+    }
+
+    /** ¿El comité estaba vigente al cierre de la fecha dada? Reconstruye el estado con el historial de cambios. */
+    public function wasHabilitadoAt(Association $association, string $date): bool
+    {
+        $vigenteId = State::where('abbreviation', State::CURRENT)->value('id');
+        $changes = $association->statusChanges()->orderBy('effective_date')->orderBy('id')->get();
+
+        $stateId = $association->state_id;
+        $applied = $changes->filter(fn ($c) => $c->effective_date->toDateString() <= $date)->last();
+        if ($applied) {
+            $stateId = $applied->to_state_id;
+        } elseif ($changes->isNotEmpty()) {
+            $stateId = $changes->first()->from_state_id ?? $association->state_id;
+        }
+
+        return $stateId !== null && (int) $stateId === (int) $vigenteId;
     }
 
     public function beneficiariesWithHistory(Association $association): Collection

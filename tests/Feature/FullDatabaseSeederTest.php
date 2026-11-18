@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Pecosa;
 use App\Models\User;
+use App\Repositories\PartnerRepository;
 use Carbon\Carbon;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -43,6 +44,7 @@ class FullDatabaseSeederTest extends TestCase
             'beneficiaries',
             'beneficiary_histories',
             'association_roster_periods',
+            'association_code_histories',
             'directives',
             'responsibles',
             'raciones',
@@ -193,5 +195,47 @@ class FullDatabaseSeederTest extends TestCase
 
         $this->assertGreaterThan(0, $coveredPecosas, 'Ninguna PECOSA coincidió con el padrón mensual.');
         $this->assertSame([], $presidentMismatches, 'PECOSAs con presidenta distinta al padrón mensual.');
+
+        $historical019Id = DB::table('associations')->where('code', '019-H')->value('id');
+        $current019Id = DB::table('associations')->where('code', '019')->value('id');
+        $this->assertNotNull($historical019Id);
+        $this->assertNotNull($current019Id);
+        $this->assertSame('SOL Y ARENA DE LAS PALMERITAS', DB::table('associations')->where('id', $historical019Id)->value('name'));
+        $this->assertSame('ISABEL CRUZ DE MARCELO', DB::table('associations')->where('id', $current019Id)->value('name'));
+
+        $this->assertDatabaseHas('association_roster_periods', [
+            'association_id' => $current019Id,
+            'period' => '2026-09-01',
+            'partner_count' => 30,
+            'beneficiary_count' => 40,
+        ]);
+        $this->assertDatabaseMissing('association_roster_periods', [
+            'association_id' => $historical019Id,
+            'period' => '2026-09-01',
+        ]);
+
+        foreach (['260696', '260773', '260849'] as $pecosaNumber) {
+            $pecosa = DB::table('pecosas')->where('pecosa_number', $pecosaNumber)->first();
+            $this->assertSame((int) $current019Id, (int) $pecosa->association_id);
+            $this->assertSame('019', $pecosa->association_code);
+            $this->assertSame(40, (int) $pecosa->beneficiaries_count);
+            $this->assertNotEmpty($pecosa->president_name);
+        }
+
+        $this->assertSame(
+            40,
+            app(PartnerRepository::class)->countBeneficiariesForAssociationAtDate(
+                (int) $current019Id,
+                '2026-10-31'
+            )
+        );
+        $this->assertCount(
+            30,
+            app(PartnerRepository::class)->findActiveByAssociation(
+                (int) $current019Id,
+                '2026-10-01',
+                '2026-10-31'
+            )
+        );
     }
 }

@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\Route;
 
 // ==================== MÓDULO: SOCIOS Y BENEFICIARIOS ====================
 Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->middleware('module:socios-beneficiarios')->group(function () {
-    // Índice principal - muestra lista de socios con sus beneficiarios
-    Route::get('/', [PartnerController::class, 'index'])->name('index');
+    Route::middleware('module:registro-socios-beneficiarios')->group(function () {
+        // Índice principal - muestra lista de socios con sus beneficiarios
+        Route::get('/', [PartnerController::class, 'index'])->name('index');
 
     // Personas
     Route::get('personas', [PersonaController::class, 'index'])->name('personas.index');
@@ -28,8 +29,12 @@ Route::prefix('socios-beneficiarios')->name('socios-beneficiarios.')->middleware
     Route::post('beneficiarios', [BeneficiarieController::class, 'store'])->name('beneficiarios.store');
     Route::put('beneficiarios/{beneficiarie}', [BeneficiarieController::class, 'update'])->name('beneficiarios.update');
     Route::delete('beneficiarios/{beneficiarie}', [BeneficiarieController::class, 'destroy'])->name('beneficiarios.destroy');
-    Route::get('beneficiarios-imprimir', [BeneficiarieController::class, 'imprimirFicha'])->name('beneficiarios.imprimir');
-    Route::get('beneficiarios-padron', [PartnerController::class, 'reportePadronBeneficiarios'])->name('beneficiarios.padron');
+        Route::get('beneficiarios-imprimir', [BeneficiarieController::class, 'imprimirFicha'])->name('beneficiarios.imprimir');
+    });
+
+    Route::get('beneficiarios-padron', [PartnerController::class, 'reportePadronBeneficiarios'])
+        ->middleware('module:padrones')
+        ->name('beneficiarios.padron');
 });
 
 Route::get('socios-beneficiarios/evaluacion-nutricional/{association}/acta', [EvaluacionNutricionalController::class, 'acta'])

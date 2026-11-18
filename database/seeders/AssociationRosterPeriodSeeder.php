@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\AssociationIdentity;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,7 @@ class AssociationRosterPeriodSeeder extends Seeder
 
         foreach ($rows as $row) {
             [$code, $period, $partnerCount, $beneficiaryCount, $presidentName, $presidentDni] = array_pad($row, 6, null);
+            $code = AssociationIdentity::rosterCode((string) $code, (string) $period);
             $associationId = $associationIds->get((string) $code);
             if (!$associationId) {
                 throw new RuntimeException("El comité {$code} del padrón mensual no existe.");

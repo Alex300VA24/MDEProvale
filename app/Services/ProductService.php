@@ -71,7 +71,7 @@ class ProductService
     }
 
     /**
-     * Registra un producto vigente; la abreviatura se deriva del título si no viene.
+     * Registra un producto activo; la abreviatura se deriva del título si no viene.
      *
      * @throws \DomainException si no existe el estado Activo
      */

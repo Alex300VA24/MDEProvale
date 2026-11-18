@@ -8,6 +8,7 @@ use App\Models\Notification;
 use App\Models\NormativaDocument;
 use App\Exceptions\AiProviderException;
 use App\Services\AssistantAiService;
+use App\Services\KnowledgeBase\KnowledgeChangeLogService;
 use App\Services\Normativa\NormativaRagService;
 use App\Services\Normativa\NormativaScraperService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -42,7 +43,7 @@ class NormativaScanPvlTest extends TestCase
         $rag = Mockery::mock(NormativaRagService::class);
         $rag->shouldReceive('indexDocument')->once();
 
-        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->scanAndNotify();
+        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->scanAndNotify();
 
         $this->assertSame(2, $result['descubiertos']);
         $this->assertSame(1, $result['clasificados']);
@@ -62,7 +63,7 @@ class NormativaScanPvlTest extends TestCase
         $rag = Mockery::mock(NormativaRagService::class);
         $rag->shouldNotReceive('indexDocument');
 
-        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->scanAndNotify();
+        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->scanAndNotify();
 
         $this->assertSame(1, $result['descubiertos']);
         $this->assertSame(0, $result['clasificados']);
@@ -85,7 +86,7 @@ class NormativaScanPvlTest extends TestCase
         $rag = Mockery::mock(NormativaRagService::class);
         $rag->shouldReceive('indexDocument')->once();
 
-        $service = new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class));
+        $service = new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class));
         $service->scanAndNotify();
         $second = $service->scanAndNotify();
 
@@ -122,7 +123,7 @@ class NormativaScanPvlTest extends TestCase
                 return true;
             });
 
-        $service = new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class));
+        $service = new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class));
         $first = $service->importRelevantDocuments();
         $second = $service->importRelevantDocuments();
 
@@ -157,7 +158,7 @@ class NormativaScanPvlTest extends TestCase
                 return true;
             });
 
-        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->importDocument(
+        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->importDocument(
             'https://www.muniesperanza.gob.pe/website/mde2026/norma_descargar.php?id=35639'
         );
 
@@ -208,7 +209,7 @@ class NormativaScanPvlTest extends TestCase
                 return true;
             });
 
-        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->importRelevantDocuments();
+        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->importRelevantDocuments();
 
         $this->assertSame(1, $result['encontrados']);
         $this->assertSame(1, $result['importados']);
@@ -241,7 +242,7 @@ class NormativaScanPvlTest extends TestCase
                 return true;
             });
 
-        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->importRelevantDocuments();
+        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->importRelevantDocuments();
 
         $this->assertSame(1, $result['importados']);
         $this->assertStringContainsString(
@@ -279,7 +280,7 @@ class NormativaScanPvlTest extends TestCase
         $rag = Mockery::mock(NormativaRagService::class);
         $rag->shouldNotReceive('indexDocument');
 
-        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->importRelevantDocuments();
+        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->importRelevantDocuments();
 
         $this->assertSame(1, $result['ya_importados']);
         $document = NormativaDocument::where('external_id', 90001)->firstOrFail();
@@ -306,7 +307,7 @@ class NormativaScanPvlTest extends TestCase
                 return true;
             });
 
-        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->importDocument('0001-2026-MDE');
+        $result = (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->importDocument('0001-2026-MDE');
 
         $this->assertTrue($result['importado']);
         $this->assertSame('2026-08-17', NormativaDocument::findOrFail($result['document_id'])->fecha_documento->format('Y-m-d'));
@@ -321,7 +322,7 @@ class NormativaScanPvlTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('portal oficial');
 
-        (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class)))->importDocument(
+        (new NormativaScraperService($ai, $rag, app(NormativaRepositoryInterface::class), app(NotificationRepositoryInterface::class), app(KnowledgeChangeLogService::class)))->importDocument(
             'https://example.com/website/mde2026/norma_descargar.php?id=35639'
         );
     }

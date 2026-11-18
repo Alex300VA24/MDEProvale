@@ -16,15 +16,19 @@ const HEADERS = {
 
 export default function ProductosProgramacion({ initialAction }) {
     const { modules } = useRuntimeState();
-    const productModule = (modules ?? []).find((module) => module.slug === 'productos');
-    const movementModule = (modules ?? []).find((module) => module.slug === 'movimientos');
-    const canProducts = { view: !!productModule?.can_view, create: !!productModule?.can_create, edit: !!productModule?.can_edit, del: !!productModule?.can_delete };
-    const canMovements = { view: !!movementModule?.can_view, create: !!movementModule?.can_create, edit: !!movementModule?.can_edit, del: !!movementModule?.can_delete };
-    const initialTab = initialAction === 'ingresos' && canMovements.view
+    // Cada pestaña es un submódulo con su propio permiso.
+    const canOf = (slug) => {
+        const module = (modules ?? []).find((m) => m.slug === slug);
+        return { view: !!module?.can_view, create: !!module?.can_create, edit: !!module?.can_edit, del: !!module?.can_delete };
+    };
+    const canProducts = canOf('productos');
+    const canMovements = canOf('registro-ingreso');
+    const canProgramacion = canOf('programacion-entrega');
+    const initialTab = (initialAction === 'ingresos' || initialAction === 'new-ingreso') && canMovements.view
         ? 'ingresos'
-        : initialAction === 'programacion' && canProducts.view
+        : initialAction === 'programacion' && canProgramacion.view
             ? 'programacion'
-            : canProducts.view ? 'productos' : 'ingresos';
+            : canProducts.view ? 'productos' : canMovements.view ? 'ingresos' : 'programacion';
     const [tab, setTab] = useState(initialTab);
     const [productOptions, setProductOptions] = useState(null);
     const [movementOptions, setMovementOptions] = useState(null);
@@ -51,9 +55,16 @@ export default function ProductosProgramacion({ initialAction }) {
     }, [loadOptions]);
 
     useEffect(() => {
-        if (initialAction === 'ingresos' && canMovements.view) setTab('ingresos');
-        if (initialAction === 'programacion' && canProducts.view) setTab('programacion');
-    }, [initialAction, canMovements.view, canProducts.view]);
+        if ((initialAction === 'ingresos' || initialAction === 'new-ingreso') && canMovements.view) setTab('ingresos');
+        if (initialAction === 'programacion' && canProgramacion.view) setTab('programacion');
+    }, [initialAction, canMovements.view, canProgramacion.view]);
+
+    // Acción rápida "Nuevo ingreso": abre el modal de registro una vez cargadas las opciones.
+    useEffect(() => {
+        if (initialAction !== 'new-ingreso' || !canMovements.create || !movementOptions) return;
+        setTab('ingresos');
+        kardexRef.current?.openCreate();
+    }, [initialAction, canMovements.create, movementOptions]);
 
     const header = HEADERS[tab];
 
@@ -68,7 +79,7 @@ export default function ProductosProgramacion({ initialAction }) {
                 <div className="flex items-center gap-1 overflow-x-auto max-w-full">
                     {canProducts.view && <TabButton active={tab === 'productos'} icon="fa-box" onClick={() => setTab('productos')}>Productos</TabButton>}
                     {canMovements.view && <TabButton active={tab === 'ingresos'} icon="fa-arrow-right-to-bracket" onClick={() => setTab('ingresos')}>Registro de Ingreso</TabButton>}
-                    {canProducts.view && <TabButton active={tab === 'programacion'} icon="fa-calendar-check" onClick={() => setTab('programacion')}>Programación de Entrega</TabButton>}
+                    {canProgramacion.view && <TabButton active={tab === 'programacion'} icon="fa-calendar-check" onClick={() => setTab('programacion')}>Programación de Entrega</TabButton>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {tab === 'productos' && canProducts.create && <button type="button" onClick={() => productsRef.current?.openCreate()} className="btn-primary flex items-center gap-2 text-xs sm:text-sm"><i className="fas fa-plus" />Registrar Producto</button>}
@@ -81,7 +92,7 @@ export default function ProductosProgramacion({ initialAction }) {
                 {optionsError && <div className="mb-3 text-xs text-clay bg-clay-light rounded-lg px-3 py-2"><i className="fas fa-exclamation-triangle mr-1" />No se pudieron cargar algunas opciones.</div>}
                 {canProducts.view && <div className={tab === 'productos' ? '' : 'hidden'}><ProductosTab ref={productsRef} options={productOptions ?? {}} can={canProducts} onProductsChanged={loadOptions} /></div>}
                 {canMovements.view && <div className={tab === 'ingresos' ? '' : 'hidden'}><KardexTab ref={kardexRef} options={movementOptions ?? {}} can={canMovements} onlyIngresos /></div>}
-                {canProducts.view && tab === 'programacion' && <ProgramacionEntregaTab can={canProducts} onGoToIngresos={() => canMovements.view && setTab('ingresos')} />}
+                {canProgramacion.view && tab === 'programacion' && <ProgramacionEntregaTab can={canProgramacion} onGoToIngresos={() => canMovements.view && setTab('ingresos')} />}
             </div>
         </div>
     );

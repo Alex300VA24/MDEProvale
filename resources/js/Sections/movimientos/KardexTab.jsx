@@ -449,8 +449,8 @@ const KardexTab = forwardRef(function KardexTab({ options, can, onlyIngresos = f
                 open={!!deleting}
                 onCancel={() => setDeleting(null)}
                 onConfirm={confirmDelete}
-                title="Eliminar Movimiento"
-                message="Se eliminará este movimiento de forma permanente. Si es una salida, se revertirá el stock afectado."
+                title="Eliminar Ingreso"
+                message="Se eliminará este ingreso de forma permanente."
                 details={deleting ? [
                     { label: 'Producto', value: deleting.product_name },
                     { label: 'Tipo', value: deleting.type?.title },

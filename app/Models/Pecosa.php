@@ -14,6 +14,8 @@ class Pecosa extends Model
         'pecosa_number',
         'observation',
         'delivery_date',
+        'service_period',
+        'monthly_roster_id',
         'president_id',
         'chief_id',
         'storekeeper_id',
@@ -39,6 +41,8 @@ class Pecosa extends Model
 
     protected $casts = [
         'delivery_date' => 'date:Y-m-d',
+        'service_period' => 'date:Y-m-d',
+        'monthly_roster_id' => 'integer',
         'beneficiaries_count' => 'integer',
     ];
 
@@ -110,8 +114,15 @@ class Pecosa extends Model
     public function scopeForDeliveryPeriod($query, int $year, int $month)
     {
         [$start, $end] = self::deliveryPeriodRange($year, $month);
+        $period = Carbon::create($year, $month, 1)->toDateString();
 
-        return $query->whereBetween('delivery_date', [$start->toDateString(), $end->toDateString()]);
+        return $query->where(function ($periodQuery) use ($period, $start, $end) {
+            $periodQuery->whereDate('service_period', $period)
+                ->orWhere(function ($legacy) use ($start, $end) {
+                    $legacy->whereNull('service_period')
+                        ->whereBetween('delivery_date', [$start->toDateString(), $end->toDateString()]);
+                });
+        });
     }
 
     /**
@@ -260,6 +271,11 @@ class Pecosa extends Model
     public function association()
     {
         return $this->belongsTo(Association::class);
+    }
+
+    public function monthlyRoster()
+    {
+        return $this->belongsTo(MonthlyRoster::class);
     }
 
     public function president()

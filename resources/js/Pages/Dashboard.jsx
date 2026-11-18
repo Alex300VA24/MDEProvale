@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import LoadingScreen from '../Components/LoadingScreen';
+import Pagination from '../Components/Pagination';
 import http from '../http';
 import AsistentePROVALE from '../Components/AsistentePROVALE';
 import ProfileModal from '../Components/ProfileModal';
@@ -16,7 +17,6 @@ const SupervisionComites = lazy(() => import('../Sections/SupervisionComites'));
 const EvaluacionNutricional = lazy(() => import('../Sections/EvaluacionNutricional'));
 const ResponsablesRaciones = lazy(() => import('../Sections/ResponsablesRaciones'));
 const ReportesPvl = lazy(() => import('../Sections/ReportesPvl'));
-const BaseConocimiento = lazy(() => import('../Sections/BaseConocimiento'));
 const Sistema = lazy(() => import('../Sections/Sistema'));
 const Ayuda = lazy(() => import('../Sections/Ayuda'));
 
@@ -30,28 +30,34 @@ const SECTION_COMPONENTS = {
     'evaluacion-nutricional': EvaluacionNutricional,
     'responsables-raciones': ResponsablesRaciones,
     reportes: ReportesPvl,
-    'base-conocimiento': BaseConocimiento,
     sistema: Sistema,
     ayuda: Ayuda,
 };
 
 // Ítems del menú. `modules` = slugs permitidos que habilitan el ítem (vacío = siempre visible).
+// Los módulos con submódulos usan el slug del grupo: el servidor lo marca visible cuando el rol
+// puede ver al menos uno de sus submódulos (Comités/Resoluciones, Productos/Registro de Ingreso/
+// Programación de Entrega, Pecosas/Repartición). Cada pestaña interna valida su propio submódulo.
 const NAV_ITEMS = [
     { key: 'inicio', label: 'Inicio', icon: 'fa-home', modules: [] },
-    { key: 'comites', label: 'Comités y Resoluciones', icon: 'fa-users', modules: ['club-madres', 'reconocimientos'] },
+    { key: 'comites', label: 'Comités y Resoluciones', icon: 'fa-users', modules: ['comites-resoluciones'] },
     { key: 'socios', label: 'Socios y Beneficiarios', icon: 'fa-user-friends', modules: ['socios-beneficiarios'] },
-    { key: 'productos', label: 'Productos y Programación de Entrega', icon: 'fa-boxes-stacked', modules: ['productos', 'movimientos'] },
-    { key: 'pecosas', label: 'Pecosas y Repartición', icon: 'fa-file-signature', modules: ['pecosas', 'movimientos'] },
-    { key: 'supervision-comites', label: 'Supervisión de Comités', icon: 'fa-clipboard-check', modules: ['club-madres'] },
+    { key: 'productos', label: 'Productos y Programación de Entrega', icon: 'fa-boxes-stacked', modules: ['productos-programacion'] },
+    { key: 'pecosas', label: 'Pecosas y Repartición', icon: 'fa-file-signature', modules: ['pecosas-reparticion'] },
+    { key: 'supervision-comites', label: 'Supervisión de Comités', icon: 'fa-clipboard-check', modules: ['supervision-comites'] },
     { key: 'evaluacion-nutricional', label: 'Evaluación Nutricional', icon: 'fa-heart-pulse', modules: ['evaluacion-nutricional'] },
     { key: 'responsables-raciones', label: 'Responsables y Raciones', icon: 'fa-sliders', modules: ['responsables-raciones'] },
-    { key: 'reportes', label: 'Reportes PVL', icon: 'fa-file-shield', modules: ['reportes'] },
-    { key: 'base-conocimiento', label: 'Base de Conocimiento IA', icon: 'fa-database', modules: ['base-conocimiento'] },
+    { key: 'reportes', label: 'Reportes', icon: 'fa-file-shield', modules: ['reportes'] },
     { key: 'sistema', label: 'Sistema', icon: 'fa-gear', modules: ['sistema'] },
-    { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: [] },
+    { key: 'ayuda', label: 'Ayuda', icon: 'fa-circle-question', modules: ['ayuda'] },
 ];
 
+// Módulos que existen en BD (permisos) pero viven dentro de otra sección y no tienen ítem propio.
+// 'perfil' se abre desde el menú de usuario; 'base-conocimiento' es una pestaña de Sistema.
+const HIDDEN_NAV_MODULES = ['base-conocimiento', 'perfil'];
+
 const BUILT_IN_MODULES = new Set([
+    ...HIDDEN_NAV_MODULES,
     ...NAV_ITEMS.flatMap((item) => item.modules),
 ]);
 
@@ -67,8 +73,8 @@ const NOTIF_TYPE_LABELS = {
 const NOTIF_STATUS_BADGES = {
     approved: { label: 'Aprobado', cls: 'bg-teal-light text-teal' },
     rejected: { label: 'Rechazado', cls: 'bg-coral-light text-coral' },
-    por_solucionar: { label: 'Por regularizar', cls: 'bg-sun-light text-earth' },
-    solucionado: { label: 'Regularizado', cls: 'bg-teal-light text-teal' },
+    por_solucionar: { label: 'Por subsanar', cls: 'bg-sun-light text-earth' },
+    solucionado: { label: 'Subsanado', cls: 'bg-teal-light text-teal' },
 };
 
 // Etiquetas de urgencia (calculadas por el sistema) y prioridad (sugerida por IA, opcional).
@@ -178,6 +184,12 @@ function NotifDetailBody({ n }) {
                 </Section>
             )}
 
+            {meta.cambio?.texto && (
+                <Section title="Qué cambió">
+                    <p className="rounded-xl border-2 border-teal/30 bg-teal-light/40 p-3 text-sm text-navy">{meta.cambio.texto}</p>
+                </Section>
+            )}
+
             {n.type === 'alerta_resolucion' && (
                 <Section title="Resolución">
                     <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-4">
@@ -257,6 +269,174 @@ function NotifDetailBody({ n }) {
     );
 }
 
+const NOTIF_API = '/api/dashboard/sistema/notifications';
+const NOTIF_PER_PAGE = 8;
+
+const SOLVABLE_TYPES = ['normativa_pvl', 'alerta_beneficiarios', 'alerta_resolucion', 'regularizacion'];
+
+// Marca un aviso como subsanado: el servidor consulta el estado real antes de aceptarlo.
+function SolveButton({ n, onSolved }) {
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+
+    if (!SOLVABLE_TYPES.includes(n.type)) return null;
+    if (n.status === 'solucionado') {
+        return (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-teal">
+                <i className="fas fa-circle-check" aria-hidden="true" /> Subsanado
+            </span>
+        );
+    }
+
+    const solve = async () => {
+        setBusy(true);
+        setError('');
+        try {
+            const res = await http.post(`${NOTIF_API}/${n.id}/solve`);
+            onSolved?.(res.data?.data);
+            window.dispatchEvent(new CustomEvent('notifications:changed'));
+        } catch (e) {
+            setError(e.response?.data?.message || 'No se pudo verificar el aviso.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div className="flex flex-col items-end gap-1">
+            <button
+                type="button"
+                onClick={solve}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal text-white text-xs font-bold hover:opacity-90 disabled:opacity-60"
+            >
+                <i className={`fas ${busy ? 'fa-spinner fa-spin' : 'fa-check-double'}`} aria-hidden="true" />
+                {busy ? 'Verificando…' : 'Marcar como subsanado'}
+            </button>
+            {error && <p className="text-xs text-coral max-w-xs text-right" role="alert">{error}</p>}
+        </div>
+    );
+}
+
+// Un canal de avisos: campana (alertas operativas) o buzón (novedades y conocimiento IA).
+function useNotificationChannel(channel) {
+    const [open, setOpen] = useState(false);
+    const [count, setCount] = useState(0);
+    const [label, setLabel] = useState('');
+    const [animationKey, setAnimationKey] = useState(0);
+    const [items, setItems] = useState([]);
+    const [meta, setMeta] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const pageRef = useRef(1);
+    const loaded = useRef(false);
+    const previousCount = useRef(null);
+    const openRef = useRef(false);
+
+    const loadCount = useCallback(async () => {
+        if (document.hidden) return;
+        const res = await http.get(`${NOTIF_API}/unread-count`, { params: { channel }, silentSession: true });
+        const next = res.data?.count ?? 0;
+        if (previousCount.current !== null && next > previousCount.current) {
+            setAnimationKey((value) => value + 1);
+        }
+        previousCount.current = next;
+        setCount(next);
+        setLabel(res.data?.label ?? '');
+    }, [channel]);
+
+    // Carga una página de avisos (por defecto la que se está viendo).
+    const loadItems = useCallback(async (targetPage = pageRef.current) => {
+        setLoading(true);
+        try {
+            let current = targetPage;
+            let res = await http.get(NOTIF_API, { params: { channel, page: current, per_page: NOTIF_PER_PAGE } });
+            // Si la página quedó vacía (p. ej. se subsanó su último aviso), retrocede a la última existente.
+            const lastPage = res.data?.meta?.last_page ?? 1;
+            if ((res.data?.data ?? []).length === 0 && current > lastPage) {
+                current = lastPage;
+                res = await http.get(NOTIF_API, { params: { channel, page: current, per_page: NOTIF_PER_PAGE } });
+            }
+            pageRef.current = current;
+            setItems(res.data?.data ?? []);
+            setMeta(res.data?.meta ?? null);
+        } catch {
+            // se conserva la lista previa
+        } finally {
+            loaded.current = true;
+            setLoading(false);
+        }
+    }, [channel]);
+
+    const goToPage = useCallback((nextPage) => {
+        pageRef.current = nextPage;
+        loadItems(nextPage);
+    }, [loadItems]);
+
+    useEffect(() => {
+        const refreshCount = () => loadCount().catch(() => {});
+        refreshCount();
+        const id = setInterval(refreshCount, 30000);
+        const onVisible = () => { if (!document.hidden) refreshCount(); };
+        const onChanged = () => {
+            refreshCount();
+            loaded.current = false;
+            if (openRef.current) loadItems();
+        };
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('notifications:changed', onChanged);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('notifications:changed', onChanged);
+        };
+    }, [loadCount, loadItems]);
+
+    const openPanel = () => {
+        setOpen(true);
+        openRef.current = true;
+        document.body.style.overflow = 'hidden';
+        if (!loaded.current || pageRef.current !== 1) {
+            pageRef.current = 1;
+            loadItems(1);
+        }
+        http.post(`${NOTIF_API}/mark-seen`, {}, { params: { channel } })
+            .then(() => window.dispatchEvent(new CustomEvent('notifications:changed')))
+            .catch(() => {});
+    };
+
+    const closePanel = () => {
+        setOpen(false);
+        openRef.current = false;
+        document.body.style.overflow = '';
+    };
+
+    return { open, count, label, animationKey, items, meta, loading, openPanel, closePanel, goToPage };
+}
+
+// Identidad visual de cada centro de avisos: título, color y vacío propios para no confundirlos.
+const NOTIF_CENTERS = {
+    bell: {
+        title: 'Alertas operativas',
+        subtitle: 'Tareas pendientes y avisos del flujo diario que requieren acción.',
+        icon: 'fa-bell',
+        accent: 'text-sun',
+        headerBg: 'bg-sun-light',
+        border: 'border-sun/40',
+        emptyIcon: 'fa-circle-check',
+        empty: 'Sin alertas operativas pendientes.',
+    },
+    inbox: {
+        title: 'Buzón de novedades',
+        subtitle: 'Conocimiento nuevo del portal, vencimientos de beneficiarios y cambios de prioridad.',
+        icon: 'fa-envelope-open-text',
+        accent: 'text-teal',
+        headerBg: 'bg-teal-light',
+        border: 'border-teal/40',
+        emptyIcon: 'fa-envelope',
+        empty: 'No hay novedades por ahora.',
+    },
+};
+
 function getSectionFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('section');
@@ -303,13 +483,15 @@ export default function Dashboard() {
     const allowedSlugs = new Set(
         (modules ?? []).filter((m) => m.can_view).map((m) => m.slug)
     );
-    const adminOnlySections = new Set(['reportes', 'base-conocimiento']);
+    const adminOnlySections = new Set(['reportes']);
     const builtInItems = NAV_ITEMS.filter(
         (item) => (!adminOnlySections.has(item.key) || isAdmin)
             && (item.modules.length === 0 || item.modules.some((slug) => allowedSlugs.has(slug)))
     );
+    // Módulos creados desde Sistema: solo los de primer nivel tienen ítem propio; los submódulos
+    // (parent_slug) viven dentro de la sección de su grupo.
     const dynamicItems = (modules ?? [])
-        .filter((module) => module.can_view && !BUILT_IN_MODULES.has(module.slug))
+        .filter((module) => module.can_view && !module.parent_slug && !BUILT_IN_MODULES.has(module.slug))
         .map((module) => ({
             key: `module:${module.slug}`,
             label: module.name,
@@ -336,13 +518,12 @@ export default function Dashboard() {
         () => typeof window !== 'undefined' && localStorage.getItem('provale-sidebar-expanded') === 'true'
     );
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [notifOpen, setNotifOpen] = useState(false);
-    const [notifCount, setNotifCount] = useState(0);
-    const [notifLabel, setNotifLabel] = useState('');
-    const [notifs, setNotifs] = useState([]);
+    const bell = useNotificationChannel('bell');
+    const inbox = useNotificationChannel('inbox');
     const [detailNotif, setDetailNotif] = useState(null);
-    const [notifLoading, setNotifLoading] = useState(false);
-    const notifLoaded = useRef(false);
+    const activeCenterKey = bell.open ? 'bell' : inbox.open ? 'inbox' : null;
+    const activeCenter = activeCenterKey ? (activeCenterKey === 'bell' ? bell : inbox) : null;
+    const center = activeCenterKey ? NOTIF_CENTERS[activeCenterKey] : null;
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
     const userMenuRef = useRef(null);
@@ -408,55 +589,21 @@ export default function Dashboard() {
         }
     }, [activeSection, modules]);
 
-    const loadNotificationCount = useCallback(async () => {
-        if (document.hidden) return;
-        const res = await http.get('/api/dashboard/sistema/notifications/unread-count', { silentSession: true });
-        setNotifCount(res.data?.count ?? 0);
-        setNotifLabel(res.data?.label ?? '');
-    }, []);
-
-    // Poll de respaldo y actualización inmediata cuando otra vista procesa avisos.
+    // Tras el login: consulta al portal y recálculo de avisos en segundo plano.
+    // Petición aparte, sin await ni bloqueo de la UI; el servidor limita la frecuencia.
     useEffect(() => {
-        const loadCount = () => loadNotificationCount().catch(() => {});
-        loadCount();
-        const id = setInterval(loadCount, 30000);
-        const onVisible = () => { if (!document.hidden) loadCount(); };
-        const onNotificationsChanged = () => loadCount();
-        document.addEventListener('visibilitychange', onVisible);
-        window.addEventListener('notifications:changed', onNotificationsChanged);
-        return () => {
-            clearInterval(id);
-            document.removeEventListener('visibilitychange', onVisible);
-            window.removeEventListener('notifications:changed', onNotificationsChanged);
-        };
-    }, [loadNotificationCount]);
-
-    const loadNotifications = useCallback(async () => {
-        setNotifLoading(true);
-        try {
-            const res = await http.get('/api/dashboard/sistema/notifications');
-            setNotifs(res.data?.data ?? []);
-            notifLoaded.current = true;
-        } catch {
-            notifLoaded.current = true;
-        } finally {
-            setNotifLoading(false);
-        }
+        let cancelled = false;
+        const timer = setTimeout(() => {
+            http.post('/api/dashboard/sistema/knowledge-sync', {}, { silentSession: true, timeout: 600000 })
+                .then((res) => {
+                    if (!cancelled && res.data?.status === 'done') {
+                        window.dispatchEvent(new CustomEvent('notifications:changed'));
+                    }
+                })
+                .catch(() => {});
+        }, 2500);
+        return () => { cancelled = true; clearTimeout(timer); };
     }, []);
-
-    const openNotifications = () => {
-        setNotifOpen(true);
-        document.body.style.overflow = 'hidden';
-        if (!notifLoaded.current) loadNotifications();
-        http.post('/api/dashboard/sistema/notifications/mark-seen')
-            .then(() => window.dispatchEvent(new CustomEvent('notifications:changed')))
-            .catch(() => {});
-    };
-
-    const closeNotifications = () => {
-        setNotifOpen(false);
-        document.body.style.overflow = '';
-    };
 
     const handleLogout = (e) => {
         e.preventDefault();
@@ -582,17 +729,37 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                             <button
                                 type="button"
-                                onClick={openNotifications}
-                                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-sun-light flex items-center justify-center text-sun hover:bg-sun hover:text-white hover:shadow-lg hover:shadow-sun/30 hover:-translate-y-0.5 transition-all"
-                                title="Notificaciones"
+                                onClick={inbox.openPanel}
+                                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-teal-light flex items-center justify-center text-teal hover:bg-teal hover:text-white hover:shadow-lg hover:shadow-teal/30 hover:-translate-y-0.5 transition-all"
+                                title="Buzón de novedades"
+                                aria-label={`Buzón de novedades${inbox.count > 0 ? `, ${inbox.count} sin leer` : ''}`}
                             >
-                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 sm:w-[22px] sm:h-[22px]" aria-hidden="true">
-                                    <path d="M12 2.25c-.966 0-1.75.784-1.75 1.75v.61C7.36 5.24 5.25 7.9 5.25 11v3.19c0 .82-.32 1.6-.9 2.19l-.99 1a1.417 1.417 0 0 0 1 2.42h15.28a1.417 1.417 0 0 0 1-2.42l-.99-1a3.12 3.12 0 0 1-.9-2.19V11c0-3.1-2.11-5.76-5-6.39V4c0-.966-.784-1.75-1.75-1.75Z" />
-                                    <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0h-5Z" />
-                                </svg>
-                                {notifCount > 0 && (
-                                    <span className="notification-badge absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm">
-                                        {notifLabel}
+                                <span key={inbox.animationKey} className={inbox.animationKey > 0 ? 'notification-bell-arrived' : ''}>
+                                    <i className="fas fa-envelope text-base sm:text-lg" aria-hidden="true" />
+                                </span>
+                                {inbox.count > 0 && (
+                                    <span key={`inbox-badge-${inbox.animationKey}`} className={`notification-badge absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-teal text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm ${inbox.animationKey > 0 ? 'notification-badge-arrived' : ''}`}>
+                                        {inbox.label}
+                                    </span>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={bell.openPanel}
+                                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-sun-light flex items-center justify-center text-sun hover:bg-sun hover:text-white hover:shadow-lg hover:shadow-sun/30 hover:-translate-y-0.5 transition-all"
+                                title="Alertas operativas"
+                                aria-label={`Alertas operativas${bell.count > 0 ? `, ${bell.count} pendientes` : ''}`}
+                            >
+                                <span key={bell.animationKey} className={bell.animationKey > 0 ? 'notification-bell-arrived' : ''}>
+                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 sm:w-[22px] sm:h-[22px]" aria-hidden="true">
+                                        <path d="M12 2.25c-.966 0-1.75.784-1.75 1.75v.61C7.36 5.24 5.25 7.9 5.25 11v3.19c0 .82-.32 1.6-.9 2.19l-.99 1a1.417 1.417 0 0 0 1 2.42h15.28a1.417 1.417 0 0 0 1-2.42l-.99-1a3.12 3.12 0 0 1-.9-2.19V11c0-3.1-2.11-5.76-5-6.39V4c0-.966-.784-1.75-1.75-1.75Z" />
+                                        <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0h-5Z" />
+                                    </svg>
+                                </span>
+                                {bell.count > 0 && (
+                                    <span key={`badge-${bell.animationKey}`} className={`notification-badge absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-5 bg-coral text-white text-[9px] sm:text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white px-1 shadow-sm ${bell.animationKey > 0 ? 'notification-badge-arrived' : ''}`}>
+                                        {bell.label}
                                     </span>
                                 )}
                             </button>
@@ -627,17 +794,21 @@ export default function Dashboard() {
                                             <div className="text-navy font-bold text-sm truncate">{user?.name ?? 'Usuario'}</div>
                                             <div className="text-slate text-[11px] font-semibold">{user?.rol ?? ''}</div>
                                         </div>
-                                        <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); setProfileOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
-                                            <i className="fas fa-user w-4 text-center text-slate" aria-hidden="true" /> Perfil
-                                        </button>
+                                        {allowedSlugs.has('perfil') && (
+                                            <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); setProfileOpen(true); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
+                                                <i className="fas fa-user w-4 text-center text-slate" aria-hidden="true" /> Perfil
+                                            </button>
+                                        )}
                                         {allowedSectionKeys.has('sistema') && (
                                             <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate('sistema'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
                                                 <i className="fas fa-gear w-4 text-center text-slate" aria-hidden="true" /> Sistema
                                             </button>
                                         )}
-                                        <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate('ayuda'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
-                                            <i className="fas fa-circle-question w-4 text-center text-slate" aria-hidden="true" /> Ayuda
-                                        </button>
+                                        {allowedSectionKeys.has('ayuda') && (
+                                            <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); navigate('ayuda'); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-navy hover:bg-mist transition-colors">
+                                                <i className="fas fa-circle-question w-4 text-center text-slate" aria-hidden="true" /> Ayuda
+                                            </button>
+                                        )}
                                         <div className="my-1.5 border-t border-mist" />
                                         <button type="button" role="menuitem" onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold text-coral hover:bg-coral-light transition-colors">
                                             <i className="fas fa-power-off w-4 text-center" aria-hidden="true" /> Cerrar sesión
@@ -667,65 +838,71 @@ export default function Dashboard() {
 
             {panelLoading && <LoadingScreen subtitle="Cargando panel..." />}
 
-            <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
+            {allowedSlugs.has('perfil') && <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />}
 
-            <AsistentePROVALE open={assistantOpen} onOpenChange={setAssistantOpen} />
+            {allowedSlugs.has('ayuda') && <AsistentePROVALE open={assistantOpen} onOpenChange={setAssistantOpen} />}
 
-            {notifOpen && (
+            {activeCenter && center && (
                 <div
                     className="fixed inset-0 bg-black/40 backdrop-blur-sm overflow-y-auto h-full w-full z-50 animate-fade-in"
-                    onClick={closeNotifications}
+                    onClick={activeCenter.closePanel}
                 >
                     <div
                         className="relative mx-auto w-full max-w-5xl mt-8 sm:mt-16 mb-8 px-2 sm:px-4"
                         onClick={(e) => e.stopPropagation()}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={center.title}
                     >
-                        <div className="modal-enter bg-white rounded-2xl shadow-2xl border-2 border-mist overflow-hidden">
-                            <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b-2 border-mist">
-                                <h3 className="font-extrabold text-navy text-base sm:text-lg flex items-center gap-2">
-                                    <i className="fas fa-bell text-blue" /> <span className="hidden sm:inline">Bandeja de </span>Notificaciones
-                                    {notifs.length > 0 && (
-                                        <span className="ml-1 px-2.5 py-0.5 rounded-full bg-blue text-white text-xs font-bold">{notifs.length}</span>
-                                    )}
-                                </h3>
-                                <button
-                                    type="button"
-                                    onClick={closeNotifications}
-                                    className="modal-close-btn"
-                                >
+                        <div className={`modal-enter bg-white rounded-2xl shadow-2xl border-2 ${center.border} overflow-hidden`}>
+                            <div className={`flex items-start justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b-2 ${center.border} ${center.headerBg}`}>
+                                <div className="flex items-start gap-3 min-w-0">
+                                    <span className={`mt-0.5 w-10 h-10 rounded-xl bg-white flex items-center justify-center ${center.accent} flex-shrink-0`}>
+                                        <i className={`fas ${center.icon}`} aria-hidden="true" />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <h3 className="font-extrabold text-navy text-base sm:text-lg flex items-center gap-2">
+                                            {center.title}
+                                            {(activeCenter.meta?.total ?? activeCenter.items.length) > 0 && (
+                                                <span className="px-2.5 py-0.5 rounded-full bg-white text-navy text-xs font-bold">{activeCenter.meta?.total ?? activeCenter.items.length}</span>
+                                            )}
+                                        </h3>
+                                        <p className="text-xs sm:text-sm text-slate mt-0.5">{center.subtitle}</p>
+                                    </div>
+                                </div>
+                                <button type="button" onClick={activeCenter.closePanel} className="modal-close-btn" aria-label="Cerrar">
                                     <i className="fas fa-times" />
                                 </button>
                             </div>
                             <div className="p-4 sm:p-6 max-h-96 overflow-y-auto">
-                                {notifLoading ? (
+                                {activeCenter.loading ? (
                                     <div className="text-center py-8">
                                         <i className="fas fa-spinner fa-spin text-3xl mb-3" />
                                         <p>Cargando...</p>
                                     </div>
-                                ) : notifs.length === 0 ? (
+                                ) : activeCenter.items.length === 0 ? (
                                     <div className="text-center py-8 text-slate">
-                                        <i className="fas fa-inbox text-4xl mb-3" />
-                                        <p>No hay notificaciones</p>
+                                        <i className={`fas ${center.emptyIcon} text-4xl mb-3`} />
+                                        <p>{center.empty}</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-4">
-                                        {notifs.map((n) => (
-                                            <div key={n.id} className="p-4 rounded-xl border-2 border-mist bg-fog">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <NotifBadges n={n} />
-                                                        <p className="font-bold text-navy">{n.title}</p>
-                                                        <p className="text-sm text-slate mt-1 whitespace-pre-line line-clamp-2">{n.description}</p>
-                                                        <div className="flex items-center justify-between gap-3 mt-3">
-                                                            <span className="text-xs text-slate"><i className="far fa-clock mr-1" aria-hidden="true" />{formatNotifDateTime(n.requested_at)}</span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setDetailNotif(n)}
-                                                                className="inline-flex items-center gap-1.5 text-xs font-bold text-blue hover:underline"
-                                                            >
-                                                                Ver detalle <i className="fas fa-arrow-right" aria-hidden="true" />
-                                                            </button>
-                                                        </div>
+                                        {activeCenter.items.map((n) => (
+                                            <div key={n.id} className={`p-4 rounded-xl border-2 ${activeCenterKey === 'inbox' ? 'border-teal/30 bg-teal-light/20' : 'border-mist bg-fog'}`}>
+                                                <NotifBadges n={n} />
+                                                <p className="font-bold text-navy">{n.title}</p>
+                                                <p className="text-sm text-slate mt-1 whitespace-pre-line line-clamp-2">{n.description}</p>
+                                                <div className="flex items-center justify-between gap-3 mt-3">
+                                                    <span className="text-xs text-slate"><i className="far fa-clock mr-1" aria-hidden="true" />{formatNotifDateTime(n.requested_at)}</span>
+                                                    <div className="flex items-center gap-4">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDetailNotif(n)}
+                                                            className="inline-flex items-center gap-1.5 text-xs font-bold text-blue hover:underline"
+                                                        >
+                                                            Ver detalle <i className="fas fa-arrow-right" aria-hidden="true" />
+                                                        </button>
+                                                        <SolveButton n={n} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -733,6 +910,19 @@ export default function Dashboard() {
                                     </div>
                                 )}
                             </div>
+                            {(activeCenter.meta?.last_page ?? 1) > 1 && (
+                                <div className={`flex flex-col sm:flex-row items-center justify-between gap-1 px-4 sm:px-6 pb-4 pt-1 border-t-2 ${center.border}`}>
+                                    <span className="text-xs text-slate font-medium">
+                                        Mostrando {activeCenter.meta.from ?? 0} - {activeCenter.meta.to ?? 0} de {activeCenter.meta.total}
+                                    </span>
+                                    <Pagination
+                                        links={activeCenter.meta.links}
+                                        meta={activeCenter.meta}
+                                        onPage={activeCenter.goToPage}
+                                        loading={activeCenter.loading}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -758,6 +948,11 @@ export default function Dashboard() {
                             </div>
                             <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
                                 <NotifDetailBody n={detailNotif} />
+                                {SOLVABLE_TYPES.includes(detailNotif.type) && (
+                                    <div className="mt-5 pt-4 border-t border-mist flex justify-end">
+                                        <SolveButton n={detailNotif} onSolved={(next) => next && setDetailNotif(next)} />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -8,6 +8,7 @@ use App\Models\Resolution;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
 use App\Repositories\Contracts\VencimientoRepositoryInterface;
 use App\Services\AssistantAiService;
+use App\Services\KnowledgeBase\KnowledgeChangeLogService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -30,6 +31,7 @@ class VencimientoAlertService
         private AssistantAiService $ai,
         private VencimientoRepositoryInterface $alerts,
         private NotificationRepositoryInterface $notifications,
+        private KnowledgeChangeLogService $changeLog,
     ) {
     }
 
@@ -107,6 +109,58 @@ class VencimientoAlertService
         }
 
         return $solved;
+    }
+
+    /**
+     * Consulta el estado real del problema que originó el aviso.
+     *
+     * @return string|null motivo de solución, o null si el problema sigue vigente
+     */
+    public function solvedReason(Notification $notification, ?Carbon $today = null): ?string
+    {
+        $today = ($today ?? now())->copy()->startOfDay();
+        $meta = $notification->metadata ?? [];
+
+        if ($notification->type === self::TYPE_RESOLUCION) {
+            $horizon = $today->copy()->addDays((int) collect(config('alertas.resoluciones.umbrales_dias', [60, 30, 7]))->max());
+            $resolution = $this->alerts->resolutionWithCommittees((int) ($meta['resolution_id'] ?? 0));
+
+            return match (true) {
+                ! $resolution || $resolution->primaryAssociations->isEmpty() => 'la resolución o su comité ya no existe',
+                $resolution->date_end === null || $resolution->date_end->copy()->startOfDay()->gt($horizon) => 'la resolución fue renovada',
+                default => null,
+            };
+        }
+
+        if ($notification->type === Notification::TYPE_REGULARIZATION) {
+            $resolution = $this->alerts->resolutionWithCommittees((int) ($meta['resolution_id'] ?? 0));
+
+            return ! $resolution || ! $resolution->isPending() ? 'resolución regularizada' : null;
+        }
+
+        if ($notification->type !== self::TYPE_EDAD) {
+            return null;
+        }
+
+        if (str_starts_with((string) $notification->dedupe_key, 'benefit-end:')) {
+            $historyId = (int) ($meta['beneficiary_history_id'] ?? 0);
+            $still = $this->detectBenefitEndAlerts($today)
+                ->contains(fn ($a) => (int) ($a['metadata']['beneficiary_history_id'] ?? 0) === $historyId);
+
+            return $still ? null : 'el beneficio ya no está por finalizar';
+        }
+
+        $associationId = (int) ($meta['association_id'] ?? 0);
+        $ids = collect($meta['beneficiarios'] ?? [])->pluck('beneficiary_id')->map(fn ($i) => (int) $i)->all();
+        $current = $this->detectAgeAlerts($today)->first(fn ($a) => (int) $a['metadata']['association_id'] === $associationId);
+
+        if (! $current) {
+            return 'ya no hay beneficiarios por superar el límite de edad en el comité';
+        }
+
+        $pending = collect($current['metadata']['beneficiarios'])->pluck('beneficiary_id')->map(fn ($i) => (int) $i)->all();
+
+        return array_intersect($ids, $pending) === [] ? 'los beneficiarios del aviso ya fueron regularizados' : null;
     }
 
     /**
@@ -324,22 +378,90 @@ class VencimientoAlertService
     {
         $metadata = $alert['metadata'] + ['dedupe_key' => $alert['dedupe_key']];
 
+        // Compara con el aviso anterior del mismo sujeto para detallar qué cambió.
+        $cambio = $this->detectChange($type, $alert['dedupe_key'], $metadata);
+        if ($cambio) {
+            $metadata['cambio'] = $cambio;
+            $alert['ai_facts']['cambio_respecto_al_aviso_anterior'] = $cambio;
+        }
+
         $insight = $useAi ? $this->insight($alert['ai_facts']) : null;
         if ($insight) {
             $metadata['ia'] = $insight;
         }
 
-        return $this->notifications->create([
+        $notification = $this->notifications->create([
             'type' => $type,
             'dedupe_key' => $alert['dedupe_key'],
             'title' => $alert['title'],
-            'description' => $alert['description'],
+            'description' => $alert['description'] . ($cambio ? ' ' . $cambio['texto'] : ''),
             // La resolución por vencer exige acción: cuenta en la campanita hasta solucionarse.
-            'status' => $type === self::TYPE_RESOLUCION ? Notification::STATUS_OPEN : 'informativo',
+            // Todo aviso de vencimiento exige seguimiento hasta que se subsane.
+            'status' => Notification::STATUS_OPEN,
             'requested_at' => now(),
             'is_seen' => false,
             'metadata' => $metadata,
         ]);
+
+        $this->changeLog->record(
+            source: $type === self::TYPE_RESOLUCION ? 'resoluciones' : 'beneficiarios',
+            eventType: $type === self::TYPE_RESOLUCION ? 'resolucion_por_vencer' : 'vencimiento_beneficiario',
+            title: $alert['title'],
+            summary: $insight['resumen'] ?? $notification->description,
+            details: array_filter([
+                'urgencia' => $metadata['urgencia'] ?? null,
+                'cambio' => $cambio,
+                'accion_sugerida' => $insight['accion_sugerida'] ?? null,
+                'dias_restantes' => $metadata['dias_restantes'] ?? null,
+                'total' => $metadata['total'] ?? null,
+            ], fn ($v) => $v !== null),
+            notification: $notification,
+            priority: $insight['prioridad'] ?? null,
+            subjectType: $type,
+        );
+
+        return $notification;
+    }
+
+    /**
+     * @return array{texto:string, anterior:array, actual:array}|null
+     */
+    private function detectChange(string $type, string $dedupeKey, array $metadata): ?array
+    {
+        $parts = explode(':', $dedupeKey);
+        // edad:{comité}:{hash} -> prefijo por comité; el resto: todo menos el último tramo (etapa).
+        $prefix = str_starts_with($dedupeKey, 'edad:') && count($parts) >= 2
+            ? $parts[0] . ':' . $parts[1] . ':'
+            : (count($parts) > 1 ? implode(':', array_slice($parts, 0, -1)) . ':' : null);
+
+        if (! $prefix) {
+            return null;
+        }
+
+        $before = $this->notifications->latestWithDedupePrefix($type, $prefix)?->metadata;
+        if (! is_array($before)) {
+            return null;
+        }
+
+        $keys = ['urgencia', 'dias_restantes', 'total', 'ya_superaron'];
+        $anterior = array_intersect_key($before, array_flip($keys));
+        $actual = array_intersect_key($metadata, array_flip($keys));
+        $texto = [];
+
+        if (isset($anterior['urgencia'], $actual['urgencia']) && $anterior['urgencia'] !== $actual['urgencia']) {
+            $texto[] = sprintf('La prioridad pasó de "%s" a "%s".', $anterior['urgencia'], $actual['urgencia']);
+        }
+        if (isset($anterior['total'], $actual['total']) && $anterior['total'] !== $actual['total']) {
+            $texto[] = sprintf('Los beneficiarios alcanzados cambiaron de %d a %d.', $anterior['total'], $actual['total']);
+        }
+        if (isset($anterior['ya_superaron'], $actual['ya_superaron']) && $anterior['ya_superaron'] !== $actual['ya_superaron']) {
+            $texto[] = sprintf('Los que ya superaron el límite pasaron de %d a %d.', $anterior['ya_superaron'], $actual['ya_superaron']);
+        }
+        if (isset($anterior['dias_restantes'], $actual['dias_restantes']) && $anterior['dias_restantes'] !== $actual['dias_restantes']) {
+            $texto[] = sprintf('Los días restantes pasaron de %d a %d.', $anterior['dias_restantes'], $actual['dias_restantes']);
+        }
+
+        return $texto === [] ? null : ['texto' => implode(' ', $texto), 'anterior' => $anterior, 'actual' => $actual];
     }
 
     /** Urgencia determinista por días restantes: no depende de la IA. */
@@ -360,7 +482,7 @@ class VencimientoAlertService
      */
     private function insight(array $facts): ?array
     {
-        if ($this->ai->provider() === 'none') {
+        if (! $this->ai->isConfigured()) {
             return null;
         }
 
@@ -414,8 +536,9 @@ Tarea: redacta en español, para el personal administrativo, un resumen de una o
 Reglas:
 1. Usa solo los hechos recibidos. No inventes cifras, fechas, nombres ni normas.
 2. No cites artículos de ley ni procedimientos que no estén en los hechos.
-3. La acción debe ser operativa (por ejemplo: revisar el padrón del comité, gestionar la renovación de la resolución, reclasificar o dar de baja).
-4. Devuelve solo JSON válido según el esquema.
+3. Si los hechos incluyen "cambio_respecto_al_aviso_anterior", el resumen debe decir exactamente qué cambió (valor anterior y valor actual) en lenguaje claro y contextual, nombrando el comité cuando se conozca.
+4. La acción debe ser operativa (por ejemplo: revisar el padrón del comité, gestionar la renovación de la resolución, reclasificar o dar de baja).
+5. Devuelve solo JSON válido según el esquema.
 PROMPT;
     }
 }

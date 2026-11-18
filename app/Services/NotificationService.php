@@ -7,6 +7,7 @@ use App\Models\Notification;
 use App\Models\User;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 
@@ -17,26 +18,61 @@ class NotificationService
 {
     public function __construct(
         private NotificationRepositoryInterface $notifications,
-        private UserRepositoryInterface $users
+        private UserRepositoryInterface $users,
+        private \App\Services\Alertas\VencimientoAlertService $expiryAlerts,
     ) {
     }
 
-    public function list(User $user, ?string $type, int $limit): Collection
+    public function list(User $user, ?string $type, int $limit, ?string $channel = null): Collection
     {
-        return $this->notifications->visibleTo($user, $type, min(100, max(1, $limit)));
+        return $this->notifications->visibleTo($user, $type, min(100, max(1, $limit)), $channel);
+    }
+
+    public function paginate(User $user, ?string $type, int $perPage, ?string $channel = null): LengthAwarePaginator
+    {
+        return $this->notifications->paginateVisibleTo($user, $type, min(50, max(5, $perPage)), $channel);
     }
 
     /** @return array{count:int, label:string} */
-    public function unreadCount(User $user): array
+    public function unreadCount(User $user, ?string $channel = null): array
     {
-        $count = $this->notifications->unreadCountFor($user);
+        $count = $this->notifications->unreadCountFor($user, $channel);
 
         return ['count' => $count, 'label' => $count > 9 ? '9+' : (string) $count];
     }
 
-    public function markSeen(User $user): void
+    public function markSeen(User $user, ?string $channel = null): void
     {
-        $this->notifications->markSeenFor($user);
+        $this->notifications->markSeenFor($user, $channel);
+    }
+
+    /**
+     * Marca un aviso como subsanado solo si la consulta al estado real lo confirma.
+     *
+     * @throws SistemaException si el problema sigue vigente
+     */
+    public function solve(Notification $notification, User $user): Notification
+    {
+        if (! in_array($notification->type, Notification::ACTIONABLE_TYPES, true)) {
+            throw new SistemaException('Este aviso no admite marcarse como subsanado.');
+        }
+
+        if ($notification->status === Notification::STATUS_SOLVED) {
+            return $notification;
+        }
+
+        // Las normas del portal no tienen un estado verificable: basta con revisarlas.
+        $reason = $notification->type === 'normativa_pvl'
+            ? 'norma revisada por '.($user->names ?: $user->email)
+            : $this->expiryAlerts->solvedReason($notification);
+
+        if ($reason === null) {
+            throw new SistemaException('Aún no está subsanado: la verificación sigue detectando el problema. Corrígelo y vuelve a intentarlo.', 422);
+        }
+
+        $this->notifications->markSolved($notification, $reason, $user);
+
+        return $notification->fresh(['requestedByUser', 'processedByUser']);
     }
 
     /** Aprueba la solicitud y restablece la contraseña del solicitante a su DNI. */

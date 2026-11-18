@@ -15,7 +15,7 @@ const HEADERS = {
 export default function PecosasReparticion({ initialAction, onNavigate }) {
     const { modules } = useRuntimeState();
     const pecosaModule = (modules ?? []).find((module) => module.slug === 'pecosas');
-    const movementModule = (modules ?? []).find((module) => module.slug === 'movimientos');
+    const movementModule = (modules ?? []).find((module) => module.slug === 'reparticion');
     const canPecosas = { view: !!pecosaModule?.can_view, create: !!pecosaModule?.can_create, edit: !!pecosaModule?.can_edit, del: !!pecosaModule?.can_delete };
     const canReparticion = { view: !!movementModule?.can_view, create: !!movementModule?.can_create, edit: !!movementModule?.can_edit, del: !!movementModule?.can_delete };
     const [tab, setTab] = useState(initialAction === 'reparticion' && canReparticion.view ? 'reparticion' : canPecosas.view ? 'pecosas' : 'reparticion');

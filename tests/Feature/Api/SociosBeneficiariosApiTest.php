@@ -458,7 +458,7 @@ class SociosBeneficiariosApiTest extends TestCase
     public function test_ges_uses_child_birthdate_and_automatic_expiry_is_audited_once(): void
     {
         $associationId = $this->seedAssociation();
-        $partnerPersonId = $this->seedPerson(['dni' => '70110001', 'birthdate' => '1995-04-12']);
+        $partnerPersonId = $this->seedPerson(['dni' => '70110001', 'birthdate' => '1995-04-12', 'gender' => 'F']);
         $childPersonId = $this->seedPerson(['dni' => '70110002', 'birthdate' => '2026-01-15']);
         $relationshipId = \Illuminate\Support\Facades\DB::table('relationships')->where('title', 'Hijo')->value('id');
         $currentStateId = \Illuminate\Support\Facades\DB::table('states')->insertGetId([
@@ -485,6 +485,11 @@ class SociosBeneficiariosApiTest extends TestCase
                 'relationship_id' => $relationshipId,
             ]],
         ])->assertCreated();
+
+        $response->assertJsonPath('data.person.birthdate', '1995-04-12')
+            ->assertJsonPath('data.benefit_context.date_begin', '2026-01-01')
+            ->assertJsonPath('data.benefit_context.date_end', '2026-01-09')
+            ->assertJsonPath('data.benefit_context.fum', '2025-04-10');
 
         $historyId = \Illuminate\Support\Facades\DB::table('beneficiary_histories')
             ->where('type_benefit_id', $gesBenefitId)

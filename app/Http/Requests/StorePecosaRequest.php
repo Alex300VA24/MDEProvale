@@ -20,6 +20,8 @@ class StorePecosaRequest extends FormRequest
         return [
             'observation' => 'nullable|string',
             'delivery_date' => 'required|date',
+            'service_period' => 'nullable|date_format:Y-m',
+            'monthly_roster_id' => ['nullable', 'integer', Rule::exists('monthly_rosters', 'id')->where('status', 'CLOSED')],
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
             // La presidenta se resuelve por comité y mes del padrón.

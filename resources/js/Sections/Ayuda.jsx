@@ -15,7 +15,7 @@ const MODULE_DOCS = {
         ],
     },
     'club-madres': {
-        title: 'Club de Madres',
+        title: 'Comités (Club de Madres)',
         icon: 'fa-female',
         summary: 'Administra los clubes o comités de madres, sus integrantes y la designación de la presidenta.',
         steps: [
@@ -54,14 +54,44 @@ const MODULE_DOCS = {
             'Genera el comprobante de salida y la programación de entrega para imprimir o descargar.',
         ],
     },
-    movimientos: {
-        title: 'Movimientos',
-        icon: 'fa-exchange-alt',
-        summary: 'Controla el kardex de existencias y genera la repartición mensual de raciones por comité.',
+    'registro-ingreso': {
+        title: 'Registro de Ingreso',
+        icon: 'fa-dolly',
+        summary: 'Registra los ingresos de productos al almacén y controla el kardex de existencias.',
         steps: [
-            'Registra las transacciones de entrada y salida de productos en la pestaña Kardex.',
+            'Registra cada ingreso indicando el producto, la cantidad y la fecha.',
+            'Consulta el kardex para revisar el saldo de cada producto.',
+            'Genera la Ficha de Control Interno y la tarjeta de control cuando necesites respaldo impreso.',
+        ],
+    },
+    'programacion-entrega': {
+        title: 'Programación de Entrega',
+        icon: 'fa-calendar-check',
+        summary: 'Consulta y ajusta la programación mensual de entrega de productos por comité.',
+        steps: [
+            'Selecciona el año y el mes que quieres revisar.',
+            'Revisa las cantidades programadas por comité y producto.',
+            'Si tu rol puede editar, ajusta la programación y guarda los cambios.',
+        ],
+    },
+    reparticion: {
+        title: 'Repartición',
+        icon: 'fa-truck-ramp-box',
+        summary: 'Calcula, guarda y exporta la repartición mensual de raciones por comité.',
+        steps: [
             'Selecciona año y mes para consultar la repartición calculada con la ración vigente.',
-            'Descarga el reporte de repartición en PDF para distribución o archivo.',
+            'Guarda la repartición cuando esté conforme con los resultados.',
+            'Descarga el reporte de repartición en PDF o Excel para distribución o archivo.',
+        ],
+    },
+    'supervision-comites': {
+        title: 'Supervisión de Comités',
+        icon: 'fa-clipboard-check',
+        summary: 'Programa y registra las visitas de supervisión a los comités y adjunta sus documentos.',
+        steps: [
+            'Elige el mes y programa la visita de cada comité.',
+            'Marca los días sin supervisión cuando corresponda.',
+            'Adjunta el acta o los documentos de la visita y descarga el Acta de Supervisión.',
         ],
     },
     'responsables-raciones': {
@@ -75,16 +105,35 @@ const MODULE_DOCS = {
         ],
     },
     reportes: {
-        title: 'Reportes PVL',
+        title: 'Reportes',
         icon: 'fa-file-shield',
-        summary: 'Prepara los anexos oficiales y un informe sustentatorio con datos del sistema, fuentes documentales, el proveedor de IA configurado, RAG y validación previa.',
+        summary: 'Informe trimestral para Contraloría con gráficos, análisis de IA y formato de informe, construido con lo que registra el sistema. Se descarga en Word o PDF.',
         steps: [
-            'En Fuentes documentales, selecciona el periodo y clasifica cada factura, certificado, ficha técnica, constancia de envío o respaldo antes de indexarlo.',
-            'En Preparar informe, elige Formato PVL, Ración A o Ambos anexos + informe sustentatorio, completa los datos administrativos y pulsa Analizar información.',
-            'Revisa hallazgos, fuentes y valores validados. Los errores críticos bloquean el PDF para evitar emitir datos incorrectos.',
-            'Cuando el estado sea Listo para generar, genera los documentos. La remisión solo figura acreditada si existe constancia indexada y código de envío confirmado.',
-            'Si el proveedor de IA informa límite de uso (HTTP 429), espera la renovación de la cuota o revisa el plan de la clave configurada y vuelve a analizar.',
-            'Los reportes genéricos de una entidad siguen disponibles desde el Asistente PROVALE.',
+            'Elige el trimestre y el año. El sistema consolida ingresos, entregas por PECOSA, comités y beneficiarios de los tres meses.',
+            'Revisa los indicadores y los cinco gráficos del periodo.',
+            'Pulsa Analizar con IA: compara los meses y el trimestre anterior y redacta análisis, hallazgos, conclusiones y recomendaciones. Puedes corregir el texto antes de exportar.',
+            'Completa los datos de cabecera (n.° de informe, destinatario, remitente, fecha). Se recuerdan para el siguiente informe.',
+            'Revisa la vista previa y descarga el informe en Word o PDF.',
+            'Lo que el sistema aún no registra (financiamiento, gastos operativos, certificados, código de envío) se indica aparte y no se inventa.',
+        ],
+    },
+    perfil: {
+        title: 'Perfil',
+        icon: 'fa-user',
+        summary: 'Consulta y actualiza tus datos personales y tu contraseña.',
+        steps: [
+            'Abre "Perfil" desde el menú de tu usuario, arriba a la derecha.',
+            'Actualiza tus nombres, correo o DNI y, si lo necesitas, cambia tu contraseña.',
+            'Guarda los cambios; se aplican de inmediato.',
+        ],
+    },
+    ayuda: {
+        title: 'Ayuda',
+        icon: 'fa-circle-question',
+        summary: 'Guías de uso de cada módulo y el Asistente PROVALE para resolver dudas.',
+        steps: [
+            'Abre una guía para ver los pasos de cada módulo al que tienes acceso.',
+            'Usa el botón del Asistente PROVALE para consultar cómo realizar una tarea.',
         ],
     },
     sistema: {
@@ -93,8 +142,8 @@ const MODULE_DOCS = {
         summary: 'Configuración avanzada: usuarios, roles, módulos y notificaciones del sistema.',
         steps: [
             'En "Usuarios", crea o edita cuentas y asigna el rol correspondiente.',
-            'En "Roles", define qué módulos ve cada rol y con qué permisos (Ver, Crear, Editar, Eliminar).',
-            'En "Módulos", revisa o ajusta el estado y orden de los módulos del sistema.',
+            'En "Roles", define qué módulos y submódulos ve cada rol y con qué permisos (Ver, Crear, Editar, Eliminar).',
+            'En "Módulos", revisa o ajusta el estado y orden de los módulos y submódulos del sistema.',
             'En "Notificaciones", aprueba o rechaza las solicitudes pendientes.',
             'En "Asistente IA", define el número de consultas y el rango de horas del límite del asistente.',
         ],
@@ -114,9 +163,10 @@ export default function Ayuda() {
     const [selectedGuide, setSelectedGuide] = useState(null);
     const closeGuide = useCallback(() => setSelectedGuide(null), []);
 
+    // Una guía por módulo o submódulo con permisos propios; los grupos solo agrupan.
     const accessible = (modules ?? [])
-        .filter((m) => m.can_view)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        .filter((m) => m.can_view && !m.is_group)
+        .sort((a, b) => (a.sort_order ?? a.order ?? 0) - (b.sort_order ?? b.order ?? 0));
 
     const guides = [
         {

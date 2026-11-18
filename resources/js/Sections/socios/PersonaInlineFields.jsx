@@ -4,6 +4,8 @@ import { useToast } from '../../Components/Toast';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/socios-beneficiarios';
+const currentDate = new Date();
+const TODAY = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
 const inputCls =
     'w-full px-3.5 py-2 border-2 border-wheat rounded-xl text-xs sm:text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 const labelCls = 'block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1';
@@ -43,6 +45,7 @@ export default function PersonaInlineFields({
     onChange,
     options = {},
     title = 'Datos de la Persona',
+    hideAddress = false,
 }) {
     const toast = useToast();
     const isNew = value?.isNew ?? false;
@@ -72,7 +75,9 @@ export default function PersonaInlineFields({
         });
     };
 
-    const handleDniChange = (val) => {
+    const onlyLetters = (val) => val.replace(/[^\p{L}\s'’-]/gu, '');
+
+    const handleDniChange =(val) => {
         const clean = val.replace(/\D/g, '').slice(0, 8);
         setReniecStatus(null);
         const updated = { ...personData, dni: clean };
@@ -191,7 +196,7 @@ export default function PersonaInlineFields({
                             <input
                                 type="text"
                                 value={personData.names}
-                                onChange={(e) => updateField('names', e.target.value)}
+                                onChange={(e) => updateField('names', onlyLetters(e.target.value))}
                                 className={inputCls}
                                 required
                             />
@@ -203,7 +208,7 @@ export default function PersonaInlineFields({
                             <input
                                 type="text"
                                 value={personData.father_lastname}
-                                onChange={(e) => updateField('father_lastname', e.target.value)}
+                                onChange={(e) => updateField('father_lastname', onlyLetters(e.target.value))}
                                 className={inputCls}
                                 required
                             />
@@ -215,7 +220,7 @@ export default function PersonaInlineFields({
                             <input
                                 type="text"
                                 value={personData.mother_lastname}
-                                onChange={(e) => updateField('mother_lastname', e.target.value)}
+                                onChange={(e) => updateField('mother_lastname', onlyLetters(e.target.value))}
                                 className={inputCls}
                                 required
                             />
@@ -228,6 +233,7 @@ export default function PersonaInlineFields({
                             <input
                                 type="date"
                                 value={personData.birthdate}
+                                max={TODAY}
                                 onChange={(e) => updateField('birthdate', e.target.value)}
                                 className={inputCls}
                             />
@@ -246,7 +252,7 @@ export default function PersonaInlineFields({
                         </div>
                     </div>
 
-                    <div>
+                    {!hideAddress && <div>
                         <label className={labelCls}>Dirección <Optional /></label>
                         <input
                             type="text"
@@ -255,7 +261,7 @@ export default function PersonaInlineFields({
                             placeholder="Av. / Calle / Jr. / Mz. y Lote"
                             className={inputCls}
                         />
-                    </div>
+                    </div>}
             </div>
         </div>
     );

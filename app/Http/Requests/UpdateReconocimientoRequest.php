@@ -16,7 +16,7 @@ class UpdateReconocimientoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'document' => 'sometimes|required|string|max:100',
+            'document' => ['sometimes', 'required', 'string', 'max:100'],
             'date_start' => 'sometimes|required|date',
             'date_end' => 'sometimes|required|date|after_or_equal:date_start',
         ];

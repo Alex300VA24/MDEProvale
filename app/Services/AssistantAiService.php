@@ -17,7 +17,7 @@ class AssistantAiService
     {
         $provider = $this->provider();
 
-        if ($provider === 'none') {
+        if (! $this->isConfigured()) {
             return null;
         }
 
@@ -27,8 +27,8 @@ class AssistantAiService
                 'groq' => $this->generateWithGroq($messages, $systemPrompt),
                 default => $this->unsupportedProvider($provider),
             };
-        } catch (ConnectionException $exception) {
-            Log::warning('No se pudo conectar con el proveedor del asistente.', [
+        } catch (\Throwable $exception) {
+            Log::warning('No se pudo obtener respuesta del proveedor del asistente.', [
                 'provider' => $provider,
                 'exception' => $exception::class,
             ]);
@@ -41,6 +41,10 @@ class AssistantAiService
     {
         $provider = $this->provider();
         $maxAttempts = max(1, (int) config('services.ai.structured_retries', 3));
+
+        if (! $this->isConfigured()) {
+            throw new AiProviderException(self::DISABLED_MESSAGE, 503, 'CONFIGURATION');
+        }
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
@@ -155,6 +159,10 @@ class AssistantAiService
             return null;
         }
 
+        if (! $this->isConfigured()) {
+            throw new AiProviderException(self::DISABLED_MESSAGE, 503, 'CONFIGURATION');
+        }
+
         $provider = $this->provider();
 
         try {
@@ -175,6 +183,20 @@ class AssistantAiService
                 'CONNECTION',
             );
         }
+    }
+
+    public const DISABLED_MESSAGE = 'Actualmente el uso de la IA está desactivado y no se puede usar.';
+
+    /** True solo si hay proveedor compatible con su clave registrada. */
+    public function isConfigured(): bool
+    {
+        $key = match ($this->provider()) {
+            'google' => config('services.google_ai.key'),
+            'groq' => config('services.groq.key'),
+            default => null,
+        };
+
+        return trim((string) $key) !== '';
     }
 
     public function provider(): string

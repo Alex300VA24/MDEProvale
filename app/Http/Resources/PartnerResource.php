@@ -41,7 +41,9 @@ class PartnerResource extends JsonResource
                     'father_lastname' => $this->people->father_lastname,
                     'mother_lastname' => $this->people->mother_lastname,
                     'dni' => $this->people->dni,
-                    'birthdate' => $this->people->birthdate,
+                    'birthdate' => $this->people->birthdate
+                        ? substr((string) $this->people->birthdate, 0, 10)
+                        : null,
                     'gender' => $this->people->gender,
                     'address' => $this->people->address,
                 ];
@@ -64,9 +66,9 @@ class PartnerResource extends JsonResource
             'benefit_context' => $selfBenefit ? [
                 'history_id' => $selfBenefit->id,
                 'abbreviation' => $selfBenefit->typeBenefit?->abbreviation,
-                'date_begin' => $selfBenefit->date_begin,
-                'date_end' => $selfBenefit->date_end,
-                'fum' => $obstetric?->date_last_menstrual_period,
+                'date_begin' => $selfBenefit->date_begin?->format('Y-m-d'),
+                'date_end' => $selfBenefit->date_end?->format('Y-m-d'),
+                'fum' => $obstetric?->date_last_menstrual_period?->format('Y-m-d'),
                 'child_beneficiary_id' => $obstetric?->child_beneficiary_id,
                 'child_person_id' => $obstetric?->childBeneficiary?->person_id,
             ] : null,

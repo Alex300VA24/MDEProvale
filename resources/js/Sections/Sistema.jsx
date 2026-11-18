@@ -7,6 +7,7 @@ import NotificacionesTab from './sistema/NotificacionesTab';
 import AsistenteConfigTab from './sistema/AsistenteConfigTab';
 import ParametrosTab from './sistema/ParametrosTab';
 import AuditoriaTab from './sistema/AuditoriaTab';
+import ConocimientoTab from './sistema/ConocimientoTab';
 
 const HEADERS = {
     usuarios: { icon: 'fa-users', title: 'Gestión de Usuarios', newLabel: 'Registrar Usuario', description: 'Administra los usuarios del sistema.' },
@@ -16,10 +17,12 @@ const HEADERS = {
     asistente: { icon: 'fa-robot', title: 'Asistente IA', description: 'Configura el límite de consultas del asistente IA por usuario.' },
     parametros: { icon: 'fa-sliders', title: 'Parámetros', description: 'Configura límites globales del sistema.' },
     auditoria: { icon: 'fa-shield-halved', title: 'Auditoría', description: 'Consulta eventos automáticos y cambios sensibles.' },
+    conocimiento: { icon: 'fa-database', title: 'Base de Conocimiento IA', adminOnly: true, description: 'Documentos indexados, consultas con IA e historial de cambios detectados.' },
 };
 
 export default function Sistema() {
-    const { modules } = useRuntimeState();
+    const { modules, currentUser } = useRuntimeState();
+    const isAdmin = Boolean(currentUser?.is_admin);
     const mod = (modules ?? []).find((m) => m.slug === 'sistema');
     const can = {
         view: !!mod?.can_view,
@@ -49,16 +52,29 @@ export default function Sistema() {
 
     return (
         <div className="bg-white rounded-2xl border-2 border-wheat shadow-sm overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 sm:py-5">
-                <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
-                    <i className={`fas ${header.icon} text-leaf`} /> {header.title}
-                </h3>
-                <p className="text-earth text-xs sm:text-sm mt-1">{header.description}</p>
+            <div className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="min-w-0">
+                    <h3 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
+                        <i className={`fas ${header.icon} text-leaf`} /> {header.title}
+                    </h3>
+                    <p className="text-earth text-xs sm:text-sm mt-1">{header.description}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {header.newLabel && can.create && activeCreateRef && (
+                        <button
+                            type="button"
+                            onClick={() => activeCreateRef.current?.openCreate()}
+                            className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
+                        >
+                            <i className="fas fa-plus" /> {header.newLabel}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-wheat gap-3">
-                <div className="flex items-center gap-1 overflow-x-auto">
-                    {Object.entries(HEADERS).map(([key, h]) => (
+            <div className="flex items-center px-4 sm:px-6 py-3 border-b-2 border-wheat">
+                <div className="flex items-center gap-1 overflow-x-auto w-full">
+                    {Object.entries(HEADERS).filter(([, h]) => !h.adminOnly || isAdmin).map(([key, h]) => (
                         <button
                             key={key}
                             type="button"
@@ -70,18 +86,6 @@ export default function Sistema() {
                             <i className={`fas ${h.icon}`} /> {h.title.replace('Gestión de ', '')}
                         </button>
                     ))}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {header.newLabel && can.create && activeCreateRef && (
-                        <button
-                            type="button"
-                            onClick={() => activeCreateRef.current?.openCreate()}
-                            className="btn-primary flex items-center gap-2 text-xs sm:text-sm"
-                        >
-                            <i className="fas fa-plus" /> {header.newLabel}
-                        </button>
-                    )}
                 </div>
             </div>
 
@@ -107,6 +111,11 @@ export default function Sistema() {
                 <div className={tab === 'auditoria' ? '' : 'hidden'}>
                     <AuditoriaTab />
                 </div>
+                {isAdmin && (
+                    <div className={tab === 'conocimiento' ? '' : 'hidden'}>
+                        {tab === 'conocimiento' && <ConocimientoTab />}
+                    </div>
+                )}
             </div>
         </div>
     );

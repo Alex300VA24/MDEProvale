@@ -20,7 +20,7 @@ class StoreClubRequest extends FormRequest
             'name' => 'required|string|max:100',
             'company_name' => 'required|string|max:150',
             'address' => 'required|string|max:150',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'regex:/^\d{9}$/'],
             'observation' => 'nullable|string',
             'resolution_id' => 'required|exists:resolutions,id',
             'place_sector_id' => 'required|exists:place_sectors,id',
@@ -34,6 +34,7 @@ class StoreClubRequest extends FormRequest
             'code.required' => 'El código del comité es obligatorio.',
             'code.unique' => 'El código del comité ya está registrado.',
             'company_name.required' => 'La razón social es obligatoria.',
+            'phone.regex' => 'El teléfono debe tener exactamente 9 dígitos.',
         ];
     }
 

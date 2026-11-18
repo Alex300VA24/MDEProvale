@@ -24,7 +24,7 @@ class InicioApiTest extends TestCase
     {
         $now = now();
 
-        DB::table('states')->insert(['id' => 2, 'title' => 'Inhabilitado', 'abbreviation' => 'I']);
+        DB::table('states')->insert(['id' => 2, 'title' => 'Inactivo', 'abbreviation' => \App\Models\State::INACTIVE]);
 
         DB::table('places')->insert(['id' => 1, 'code' => 'Z001', 'title' => 'Zona Central', 'created_at' => $now, 'updated_at' => $now]);
         DB::table('sectors')->insert(['id' => 1, 'title' => 'Sector 1', 'created_at' => $now, 'updated_at' => $now]);
@@ -84,7 +84,7 @@ class InicioApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('stats.total_socios', 2)
             ->assertJsonPath('stats.total_beneficiarios', 1)
-            ->assertJsonPath('stats.total_comites', 2)
+            ->assertJsonPath('stats.total_comites', 1)
             ->assertJsonPath('stats.stock_total', 105)
             ->assertJsonPath('pecosas_por_mes.anio', now()->year)
             ->assertJsonPath('pecosas_por_mes.total_anio', 1)
@@ -174,7 +174,7 @@ public function test_historical_cards_show_source_relations_audit_and_dual_roles
             ->assertOk()
             ->assertJsonPath('stats.total_socios', 3)
             ->assertJsonPath('stats.total_beneficiarios', 2)
-            ->assertJsonPath('stats.total_comites', 2)
+            ->assertJsonPath('stats.total_comites', 1)
             ->assertJsonPath('stats.dual_role.LAC', 1)
             ->assertJsonPath('stats.dual_role.total', 1)
             ->assertJsonPath('stats.roster_audit.source', 'BASE DE DATOS PROVALE - SETIEMBRE.xlsx')

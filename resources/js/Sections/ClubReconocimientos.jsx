@@ -161,7 +161,13 @@ export default function ClubReconocimientos({ initialAction }) {
                     )}
                     {can.comites.view && (
                         <div className={tab === 'comites' ? '' : 'hidden'}>
-                            <ComitesTab ref={comitesRef} options={options ?? {}} can={can.comites} reloadOptions={reloadOptions} />
+                            <ComitesTab
+                                ref={comitesRef}
+                                options={options ?? {}}
+                                can={can.comites}
+                                reloadOptions={reloadOptions}
+                                onCommitteesChanged={() => reconocimientosRef.current?.reload?.()}
+                            />
                         </div>
                     )}
                     {can.reconocimientos.view && (

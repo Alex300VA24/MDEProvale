@@ -14,10 +14,11 @@ const labelCls = 'block text-xs font-bold text-slate-600 uppercase tracking-wide
 const inputCls =
     'w-full px-4 py-2.5 border-2 border-wheat rounded-xl text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf transition-all';
 
-function ModuloFormModal({ mode, modulo, iconOptions, iconsLoading, onClose, onSaved }) {
+function ModuloFormModal({ mode, modulo, parentOptions, iconOptions, iconsLoading, onClose, onSaved }) {
     const toast = useToast();
     const [name, setName] = useState(modulo?.name || '');
     const [slug, setSlug] = useState(modulo?.slug || '');
+    const [parentId, setParentId] = useState(modulo?.parent_id ?? '');
     const [description, setDescription] = useState(modulo?.description || '');
     const [icon, setIcon] = useState(modulo?.icon || '');
     const [route, setRoute] = useState(modulo?.route || '');
@@ -33,7 +34,7 @@ function ModuloFormModal({ mode, modulo, iconOptions, iconsLoading, onClose, onS
         }
         setSubmitting(true);
         try {
-            const payload = { name, slug, description: description || null, icon: icon || null, route: route || null, order: Number(order), is_active: isActive };
+            const payload = { name, slug, parent_id: parentId ? Number(parentId) : null, description: description || null, icon: icon || null, route: route || null, order: Number(order), is_active: isActive };
             if (mode === 'edit') {
                 await http.put(`${BASE}/modulos/${modulo.id}`, payload);
                 toast.success('Módulo actualizado correctamente.');
@@ -59,6 +60,27 @@ function ModuloFormModal({ mode, modulo, iconOptions, iconsLoading, onClose, onS
                 <div>
                     <label className={labelCls}>Slug *</label>
                     <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} className={inputCls} required disabled={modulo?.is_protected} />
+                </div>
+                <div>
+                    <label className={labelCls}>Módulo padre</label>
+                    <select
+                        value={parentId}
+                        onChange={(e) => setParentId(e.target.value)}
+                        className={inputCls}
+                        disabled={modulo?.is_protected || modulo?.is_group}
+                    >
+                        <option value="">Ninguno (módulo de primer nivel)</option>
+                        {parentOptions.filter((p) => p.id !== modulo?.id).map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                    <p className="mt-1.5 text-[11px] font-medium text-earth">
+                        {modulo?.is_protected
+                            ? 'Los módulos del sistema mantienen su ubicación en el menú.'
+                            : modulo?.is_group
+                                ? 'Este módulo tiene submódulos, por lo que no puede depender de otro.'
+                                : 'Un submódulo tiene permisos propios por rol; el módulo padre solo los agrupa.'}
+                    </p>
                 </div>
                 <div>
                     <label className={labelCls}>Descripción</label>
@@ -113,12 +135,18 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
     const [deleting, setDeleting] = useState(null);
     const [iconOptions, setIconOptions] = useState([]);
     const [iconsLoading, setIconsLoading] = useState(true);
+    const [parentOptions, setParentOptions] = useState([]);
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await http.get(`${BASE}/modulos`, { params: { per_page: 10, page } });
+            const [res, options] = await Promise.all([
+                http.get(`${BASE}/modulos`, { params: { per_page: 10, page } }),
+                http.get(`${BASE}/modulos-options`),
+            ]);
             setData(res.data);
+            // Solo hay un nivel de submódulos: los candidatos a padre son los módulos de primer nivel.
+            setParentOptions((options.data.data || []).filter((m) => !m.parent_id));
         } catch {
             toast.error('No se pudo cargar la lista de módulos.');
         } finally {
@@ -184,10 +212,11 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
     return (
         <>
             <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <table className="data-table w-full text-xs sm:text-sm min-w-[700px]">
+                <table className="data-table w-full text-xs sm:text-sm min-w-[820px]">
                     <thead>
                         <tr>
                             <th className="px-3 sm:px-4 py-3 text-left">Módulo</th>
+                            <th className="px-3 sm:px-4 py-3 text-left">Módulo padre</th>
                             <th className="px-3 sm:px-4 py-3 text-left">Slug</th>
                             <th className="px-3 sm:px-4 py-3 text-right">Orden</th>
                             <th className="px-3 sm:px-4 py-3 text-center">Estado</th>
@@ -197,11 +226,14 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                     <tbody>
                         {data.data.map((m) => (
                             <tr key={m.id} className="row-enter">
-                                <td className="px-3 sm:px-4 py-3 font-semibold">
+                                <td className={`px-3 sm:px-4 py-3 font-semibold ${m.parent_id ? 'pl-8 sm:pl-10' : ''}`}>
+                                    {m.parent_id && <i className="fas fa-angle-right text-earth/60 mr-2 text-[10px]" aria-hidden="true" />}
                                     <i className={`fas ${m.icon || 'fa-square'} text-leaf mr-2`} />
                                     {m.name}
+                                    {m.is_group && <span className="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-leaf-light text-leaf">Grupo</span>}
                                     {m.is_protected && <span className="ml-2 px-2 py-0.5 text-[10px] font-bold rounded-full bg-sky-light text-[#0284C7]">Protegido</span>}
                                 </td>
+                                <td className="px-3 sm:px-4 py-3 text-earth">{m.parent_name || '-'}</td>
                                 <td className="px-3 sm:px-4 py-3 text-earth font-mono">{m.slug}</td>
                                 <td className="px-3 sm:px-4 py-3 text-right">{m.order}</td>
                                 <td className="px-3 sm:px-4 py-3 text-center">
@@ -255,6 +287,7 @@ const ModulosTab = forwardRef(function ModulosTab({ can }, ref) {
                     key={editing ? editing.id : 'create'}
                     mode={formMode}
                     modulo={editing}
+                    parentOptions={parentOptions}
                     iconOptions={iconOptions}
                     iconsLoading={iconsLoading}
                     onClose={() => setFormOpen(false)}

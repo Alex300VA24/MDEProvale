@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\State;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -19,13 +20,18 @@ class ProductSeeder extends Seeder
             throw new \RuntimeException("El archivo {$path} no contiene JSON valido.");
         }
 
+        $activeStateId = State::idFor(State::ACTIVE);
+        if (! $activeStateId) {
+            throw new \RuntimeException('No se encontro el estado Activo para sembrar los productos.');
+        }
+
         $now = now();
         foreach ($rows as $row) {
             DB::table('products')->updateOrInsert(
                 ['title' => $row['title']],
                 [
                     'abbreviation' => $row['abbreviation'],
-                    'state_id' => $row['state_id'],
+                    'state_id' => $activeStateId,
                     'uom_id' => $row['uom_id'],
                     'created_at' => $now,
                     'updated_at' => $now,

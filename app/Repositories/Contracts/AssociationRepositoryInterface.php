@@ -91,6 +91,10 @@ interface AssociationRepositoryInterface
 
     public function countBeneficiaries(Association $association): int;
 
+    public function countBeneficiariesActiveDuring(Association $association, string $startDate, string $endDate): int;
+
+    public function wasHabilitadoAt(Association $association, string $date): bool;
+
     /** Beneficiarios del comité con persona, parentesco e historiales, para evaluación nutricional. */
     public function beneficiariesWithHistory(Association $association): Collection;
 

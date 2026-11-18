@@ -228,13 +228,14 @@ export default function Combobox({
                             <button
                                 type="button"
                                 key={o.id}
-                                onClick={() => handleSelect(o)}
+                                onClick={() => !o.disabled && handleSelect(o)}
                                 onMouseEnter={() => setHighlight(i)}
-                                className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm text-charcoal ${i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
+                                aria-disabled={o.disabled || undefined}
+                                className={`flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm text-charcoal ${o.disabled ? 'cursor-not-allowed opacity-50' : i === highlight ? 'bg-sky-light' : 'hover:bg-sky-light'}`}
                             >
                                 <span className="min-w-0 flex-1 whitespace-normal break-words">{o.label}</span>
                                 {o.badge && (
-                                    <span className="badge badge-expired shrink-0">{o.badge}</span>
+                                    <span className={`badge shrink-0 ${o.badgeClass || 'badge-expired'}`}>{o.badge}</span>
                                 )}
                             </button>
                         ))

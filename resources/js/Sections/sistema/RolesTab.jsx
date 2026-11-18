@@ -20,6 +20,21 @@ const PERMS = [
     ['can_delete', 'Eliminar'],
 ];
 
+const EMPTY_PERMS = { can_view: false, can_create: false, can_edit: false, can_delete: false };
+
+// Aplica un cambio a una bandera respetando la regla: crear/editar/eliminar exigen "Ver",
+// y quitar "Ver" limpia las demás.
+function withFlag(current, key, value) {
+    const next = { ...(current || EMPTY_PERMS), [key]: value };
+    if (key !== 'can_view' && value) next.can_view = true;
+    if (key === 'can_view' && !value) {
+        next.can_create = false;
+        next.can_edit = false;
+        next.can_delete = false;
+    }
+    return next;
+}
+
 function permissionsFromRol(rol, modulos) {
     const byModuleId = {};
     (rol?.modules || []).forEach((m) => {
@@ -40,17 +55,27 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
     const [permissions, setPermissions] = useState(() => permissionsFromRol(rol, modulos));
     const [submitting, setSubmitting] = useState(false);
 
+    // Los módulos con submódulos solo agrupan: los permisos se guardan en cada submódulo.
+    const groupIds = new Set(modulos.filter((m) => m.is_group).map((m) => m.id));
+    const childrenOf = (groupId) => modulos.filter((m) => m.parent_id === groupId);
+
     const togglePerm = (moduleId, key) => {
+        setPermissions((prev) => ({
+            ...prev,
+            [moduleId]: withFlag(prev[moduleId], key, !prev[moduleId]?.[key]),
+        }));
+    };
+
+    // La fila del grupo marca o desmarca la misma acción en todos sus submódulos.
+    const toggleGroup = (groupId, key) => {
+        const children = childrenOf(groupId);
         setPermissions((prev) => {
-            const current = prev[moduleId] || { can_view: false, can_create: false, can_edit: false, can_delete: false };
-            const next = { ...current, [key]: !current[key] };
-            if (key !== 'can_view' && next[key]) next.can_view = true;
-            if (key === 'can_view' && !next.can_view) {
-                next.can_create = false;
-                next.can_edit = false;
-                next.can_delete = false;
-            }
-            return { ...prev, [moduleId]: next };
+            const allOn = children.length > 0 && children.every((child) => prev[child.id]?.[key]);
+            const next = { ...prev };
+            children.forEach((child) => {
+                next[child.id] = withFlag(prev[child.id], key, !allOn);
+            });
+            return next;
         });
     };
 
@@ -64,6 +89,7 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
         try {
             const modulesPayload = {};
             Object.entries(permissions).forEach(([moduleId, perms]) => {
+                if (groupIds.has(Number(moduleId))) return;
                 if (perms.can_view || perms.can_create || perms.can_edit || perms.can_delete) {
                     modulesPayload[moduleId] = perms;
                 }
@@ -109,34 +135,67 @@ function RolFormModal({ mode, rol, modulos, onClose, onSaved }) {
                 </div>
 
                 <h4 className="font-extrabold text-charcoal text-sm mb-3 flex items-center gap-2">
-                    <i className="fas fa-shield-halved text-leaf" /> Permisos por Módulo
+                    <i className="fas fa-shield-halved text-leaf" /> Permisos por Módulo y Submódulo
                 </h4>
                 <div className="overflow-x-auto -mx-4 sm:mx-0 mb-6">
                     <table className="data-table w-full text-xs min-w-[500px]">
                         <thead>
                             <tr>
-                                <th className="px-3 py-2 text-left">Módulo</th>
+                                <th className="px-3 py-2 text-left">Módulo / Submódulo</th>
                                 {PERMS.map(([key, label]) => (
                                     <th key={key} className="px-3 py-2 text-center">{label}</th>
                                 ))}
                             </tr>
                         </thead>
                         <tbody>
-                            {modulos.map((m) => (
-                                <tr key={m.id}>
-                                    <td className="px-3 py-2 font-semibold">{m.name}</td>
-                                    {PERMS.map(([key]) => (
-                                        <td key={key} className="px-3 py-2 text-center">
-                                            <input
-                                                type="checkbox"
-                                                checked={!!permissions[m.id]?.[key]}
-                                                onChange={() => togglePerm(m.id, key)}
-                                                disabled={key !== 'can_view' && !permissions[m.id]?.can_view}
-                                            />
+                            {modulos.map((m) => {
+                                if (groupIds.has(m.id)) {
+                                    const children = childrenOf(m.id);
+                                    return (
+                                        <tr key={m.id} className="bg-cream">
+                                            <td className="px-3 py-2 font-extrabold text-charcoal">
+                                                <i className={`fas ${m.icon || 'fa-folder'} text-leaf mr-2`} />
+                                                {m.name}
+                                                <span className="ml-2 text-[10px] font-semibold text-earth">Marca todos sus submódulos</span>
+                                            </td>
+                                            {PERMS.map(([key, label]) => {
+                                                const on = children.filter((child) => permissions[child.id]?.[key]).length;
+                                                return (
+                                                    <td key={key} className="px-3 py-2 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            aria-label={`${label} en todo ${m.name}`}
+                                                            checked={children.length > 0 && on === children.length}
+                                                            ref={(el) => { if (el) el.indeterminate = on > 0 && on < children.length; }}
+                                                            onChange={() => toggleGroup(m.id, key)}
+                                                        />
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                }
+
+                                return (
+                                    <tr key={m.id}>
+                                        <td className={`px-3 py-2 font-semibold ${m.parent_id ? 'pl-9' : ''}`}>
+                                            {m.parent_id && <i className="fas fa-angle-right text-earth/60 mr-2 text-[10px]" aria-hidden="true" />}
+                                            {m.name}
+                                            {!m.is_active && <span className="ml-2 text-[10px] font-semibold text-clay">Inactivo</span>}
                                         </td>
-                                    ))}
-                                </tr>
-                            ))}
+                                        {PERMS.map(([key]) => (
+                                            <td key={key} className="px-3 py-2 text-center">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!permissions[m.id]?.[key]}
+                                                    onChange={() => togglePerm(m.id, key)}
+                                                    disabled={key !== 'can_view' && !permissions[m.id]?.can_view}
+                                                />
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

@@ -36,6 +36,11 @@ class DistributionRepository extends BaseRepository implements DistributionRepos
         return $this->model->firstOrCreate(['year' => $year, 'month' => $month], $defaults);
     }
 
+    public function setPeriodRoster(DistributionPeriod $period, ?int $monthlyRosterId): void
+    {
+        $period->update(['monthly_roster_id' => $monthlyRosterId]);
+    }
+
     public function upsertAssignment(int $periodId, int $associationId, array $values): void
     {
         DistributionAssignment::updateOrCreate(
@@ -69,6 +74,7 @@ class DistributionRepository extends BaseRepository implements DistributionRepos
     {
         return Association::with([
             'placeSector.sector',
+            'state',
             'partners' => function ($query) use ($endDate) {
                 $query->select(['id', 'association_id', 'date_begin', 'date_end'])
                     ->where(fn ($q) => $q->whereNull('date_begin')->orWhere('date_begin', '<=', $endDate))

@@ -6,6 +6,7 @@ use App\Exceptions\SistemaException;
 use App\Models\Module;
 use App\Models\User;
 use App\Repositories\Contracts\ModuleRepositoryInterface;
+use App\Support\ModuleCatalog;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -45,8 +46,16 @@ class ModuleService
 
     public function delete(Module $module): void
     {
-        if ($module->slug === 'sistema') {
+        if ($module->slug === ModuleCatalog::SISTEMA) {
             throw new SistemaException('No se puede eliminar el módulo Sistema: es requerido para administrar usuarios, roles y módulos.');
+        }
+
+        if (ModuleCatalog::isBuiltIn($module->slug)) {
+            throw new SistemaException('No se puede eliminar un módulo del sistema: sus rutas y permisos dependen de él. Desactívalo si no debe mostrarse.');
+        }
+
+        if ($this->modules->childrenCount($module) > 0) {
+            throw new SistemaException('No se puede eliminar el módulo porque tiene submódulos. Elimina o reasigna primero sus submódulos.');
         }
 
         if ($this->modules->rolesCount($module) > 0) {

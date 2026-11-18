@@ -227,7 +227,7 @@ class ProductosPecosasApiTest extends TestCase
             ->assertJsonPath('data.title', 'Aceite')
             ->assertJsonPath('data.code', 'P002');
 
-        $this->assertDatabaseHas('products', ['code' => 'P002']);
+        $this->assertDatabaseHas('products', ['code' => 'P002', 'state_id' => 1]);
     }
 
     public function test_store_product_rejects_duplicate_code(): void
@@ -467,7 +467,7 @@ class ProductosPecosasApiTest extends TestCase
         $this->actingAs($this->userWithAccess())
             ->getJson(self::BASE . '/pecosas/options')
             ->assertOk()
-            ->assertJsonCount(1, 'associations')
+            ->assertJsonCount(2, 'associations')
             ->assertJsonCount(2, 'filter_associations')
             ->assertJsonPath('associations.0.id', 1)
             ->assertJsonPath('associations.0.is_current', true)

@@ -2,30 +2,40 @@
 
 namespace App\Services;
 
+use App\Support\AssistantAccess;
+use App\Support\ModuleCatalog;
 use Illuminate\Support\Str;
 
 class AssistantGuidanceService
 {
     private const DOMAIN_TERMS = [
-        'beneficiario', 'beneficiarios', 'comite', 'consultar', 'kardex',
+        'beneficiario', 'beneficiarios', 'comite', 'consultar', 'ingreso', 'kardex',
         'movimiento', 'notificacion', 'padron', 'pecosa', 'pecosas',
         'presidenta', 'producto', 'productos', 'racion', 'reconocimiento',
         'reparticion', 'reporte', 'reportes', 'responsable', 'socia', 'socias',
         'socio', 'socios', 'stock', 'usuario',
     ];
 
-    public function answer(string $question): ?string
+    /**
+     * Guía local de navegación. Cada flujo exige el módulo correspondiente: sin
+     * acceso, devuelve el aviso del rol en lugar de los pasos.
+     */
+    public function answer(string $question, ?AssistantAccess $access = null): ?string
     {
+        $access ??= AssistantAccess::unrestricted();
         $question = $this->normalizeQuestion($question);
 
         // El tema de reportes se resuelve antes que cualquier flujo por entidad:
         // "creame un reporte de pecosas" NO es la guía para registrar una pecosa.
         if ($this->hasAny($question, ['reporte', 'informe', 'descargar pdf', 'en pdf', 'exportar', 'imprimir'])) {
+            if ($denied = $access->denial(ModuleCatalog::REPORTES)) {
+                return $denied;
+            }
+
             return "Sobre los reportes en PDF:\n"
-                . "- Para los anexos oficiales, abre Reportes PVL, elige Formato PVL, Ración A o ambos, selecciona mes y año y pulsa Analizar información.\n"
-                . "- Al elegir ambos, el sistema genera también un informe sustentatorio con métricas, matriz de acreditación, fuentes, conclusiones y anexos.\n"
-                . "- El envío a Contraloría solo se acredita cuando existe una constancia indexada y un código de envío confirmado.\n"
-                . "- Revisa datos faltantes, conflictos, advertencias y fuentes; Generar PDF se habilita cuando no quedan errores críticos.\n"
+                . "- Para el informe trimestral de Contraloría, abre Reportes, elige trimestre y año y revisa los gráficos.\n"
+                . "- Pulsa Analizar con IA para obtener análisis, conclusiones y recomendaciones, y descarga el informe en Word o PDF.\n"
+                . "- El informe solo incluye lo que el sistema registra; financiamiento, gastos operativos, certificados y código de envío no están disponibles.\n"
                 . "- Para un reporte genérico, pídemelo con una sola entidad y un periodo simple, por ejemplo: crea un reporte de pecosas de este mes.\n"
                 . "- Te dejaré el botón Ver reporte para abrirlo en una pestaña nueva.";
         }
@@ -39,8 +49,9 @@ class AssistantGuidanceService
         }
 
         if (str_contains($question, 'padron') && $this->hasAny($question, ['club de madre', 'comite'])) {
-            return "Para generar el padrón de Clubes de Madres por comité:\n"
-                . "1. Abre Comités y Reconocimientos > Comités.\n"
+            return $access->denial(ModuleCatalog::COMITES)
+                ?? "Para generar el padrón de Clubes de Madres por comité:\n"
+                . "1. Abre Comités y Resoluciones > Comités.\n"
                 . "2. Abre el menú Más acciones y pulsa Padrón.\n"
                 . "3. Selecciona el mes y el año que deseas consultar.\n"
                 . "4. Pulsa Generar Padrón para abrir el PDF.\n"
@@ -48,7 +59,8 @@ class AssistantGuidanceService
         }
 
         if (str_contains($question, 'padron') && $this->hasAny($question, ['socio', 'benefici'])) {
-            return "Para ver el padrón de beneficiarios:\n"
+            return $access->denial(ModuleCatalog::SOCIOS_BENEFICIARIOS)
+                ?? "Para ver el padrón de beneficiarios:\n"
                 . "1. Abre Socios y Beneficiarios.\n"
                 . "2. En la parte superior, pulsa Generar Padrón.\n"
                 . "3. Selecciona los filtros solicitados.\n"
@@ -57,7 +69,8 @@ class AssistantGuidanceService
         }
 
         if ($this->hasAny($question, ['registrar socio', 'crear socio', 'registrar benefici', 'crear benefici', 'registrar persona'])) {
-            return "Para registrar una familia correctamente:\n"
+            return $access->denial(ModuleCatalog::SOCIOS_BENEFICIARIOS)
+                ?? "Para registrar una familia correctamente:\n"
                 . "1. Abre Socios y Beneficiarios > Personas y registra los datos personales.\n"
                 . "2. Abre la pestaña Socios y crea al representante usando esa persona.\n"
                 . "3. Abre Beneficiarios, registra cada beneficiario y vincúlalo con el socio.\n"
@@ -65,56 +78,105 @@ class AssistantGuidanceService
         }
 
         if ($this->hasAny($question, ['pecosa', 'entrega de producto', 'comprobante de salida'])) {
-            return "Para registrar una pecosa:\n"
-                . "1. Abre Productos y Pecosas > Pecosas.\n"
-                . "2. Pulsa Nueva Pecosa.\n"
+            return $access->denial(ModuleCatalog::PECOSAS)
+                ?? "Para registrar una pecosa:\n"
+                . "1. Abre Pecosas y Repartición > Pecosas.\n"
+                . "2. Pulsa Registrar Pecosa.\n"
                 . "3. Selecciona comité, responsables, fecha y productos.\n"
                 . "4. Revisa cantidades y stock antes de guardar.\n"
-                . "5. Genera el comprobante o la programación de entrega.";
+                . "5. Genera el comprobante de la pecosa.";
+        }
+
+        if ($this->hasAny($question, ['programacion de entrega', 'programacion'])) {
+            return $access->denial(ModuleCatalog::PROGRAMACION_ENTREGA)
+                ?? "Para consultar la programación de entrega:\n"
+                . "1. Abre Productos y Programación de Entrega > Programación de Entrega.\n"
+                . "2. Selecciona el año y el mes.\n"
+                . "3. Revisa las cantidades programadas por comité y producto.";
+        }
+
+        // Los movimientos ya no existen como módulo: el kardex vive en Registro de Ingreso.
+        if ($this->hasAny($question, ['kardex', 'movimiento', 'ingreso', 'ficha de control'])) {
+            return $access->denial(ModuleCatalog::REGISTRO_INGRESO)
+                ?? "Para registrar o revisar ingresos de productos:\n"
+                . "1. Abre Productos y Programación de Entrega > Registro de Ingreso.\n"
+                . "2. Pulsa Registrar Ingreso e indica producto, cantidad y fecha.\n"
+                . "3. Consulta el kardex para revisar el saldo de cada producto.\n"
+                . "4. Usa Ficha de Control Interno si necesitas el respaldo impreso.";
+        }
+
+        if ($this->hasAny($question, ['reparticion', 'distribucion'])) {
+            return $access->denial(ModuleCatalog::REPARTICION)
+                ?? "Para revisar la repartición:\n"
+                . "1. Abre Pecosas y Repartición > Repartición.\n"
+                . "2. Selecciona año y mes.\n"
+                . "3. Revisa el cálculo basado en la ración vigente y descarga el PDF.";
         }
 
         if ($this->hasAny($question, ['stock', 'producto', 'leche', 'hojuela'])) {
-            return "Para consultar productos y stock:\n"
-                . "1. Abre Productos y Pecosas > Productos.\n"
+            return $access->denial(ModuleCatalog::PRODUCTOS)
+                ?? "Para consultar productos y stock:\n"
+                . "1. Abre Productos y Programación de Entrega > Productos.\n"
                 . "2. Busca el producto por nombre.\n"
-                . "3. Revisa su stock y sus entradas o salidas.\n"
-                . "Para crear uno, pulsa Nuevo Producto y completa nombre, unidad de medida y presentación.";
-        }
-
-        if ($this->hasAny($question, ['kardex', 'movimiento', 'reparticion', 'distribucion'])) {
-            return "Para revisar movimientos o repartición:\n"
-                . "1. Abre Movimientos y Repartición.\n"
-                . "2. Usa Kardex para consultar o registrar entradas y salidas.\n"
-                . "3. En Repartición, selecciona año y mes.\n"
-                . "4. Revisa el cálculo basado en la ración vigente y descarga el PDF.";
+                . "3. Revisa su stock.\n"
+                . "Para crear uno, pulsa Registrar Producto y completa nombre, unidad de medida y presentación.";
         }
 
         if ($this->hasAny($question, ['racion', 'responsable', 'subgerente', 'encargado'])) {
-            return "Para configurar responsables o raciones:\n"
+            return $access->denial(ModuleCatalog::RESPONSABLES_RACIONES)
+                ?? "Para configurar responsables o raciones:\n"
                 . "1. Abre Responsables y Raciones.\n"
                 . "2. En Responsables, registra o actualiza al encargado correspondiente.\n"
                 . "3. En Raciones, crea la ración del año.\n"
                 . "4. Indica gramos de hojuelas y mililitros de leche por beneficiario.";
         }
 
+        if ($this->hasAny($question, ['supervision', 'supervisar'])) {
+            return $access->denial(ModuleCatalog::SUPERVISION_COMITES)
+                ?? "Para registrar una supervisión:\n"
+                . "1. Abre Supervisión de Comités.\n"
+                . "2. Elige el mes y programa la visita del comité.\n"
+                . "3. Adjunta el acta o los documentos de la visita.\n"
+                . "4. Usa Acta de Supervisión si necesitas el formato impreso.";
+        }
+
+        if ($this->hasAny($question, ['evaluacion nutricional', 'nutricional'])) {
+            return $access->denial(ModuleCatalog::EVALUACION_NUTRICIONAL)
+                ?? "Para la evaluación nutricional:\n"
+                . "1. Abre Evaluación Nutricional.\n"
+                . "2. Elige el comité.\n"
+                . "3. Revisa la clasificación de sus beneficiarios y descarga el acta.";
+        }
+
         if ($this->hasAny($question, ['reconocimiento', 'resolucion'])) {
-            return "Para gestionar un reconocimiento:\n"
-                . "1. Abre Comités y Reconocimientos > Reconocimientos.\n"
+            return $access->denial(ModuleCatalog::RESOLUCIONES)
+                ?? "Para gestionar una resolución de reconocimiento:\n"
+                . "1. Abre Comités y Resoluciones > Resoluciones.\n"
                 . "2. Registra la resolución y el comité reconocido.\n"
                 . "3. Valida los datos mediante la búsqueda externa.\n"
                 . "4. Descarga el documento o abre la vista previa.";
         }
 
         if ($this->hasAny($question, ['comite', 'club de madre', 'presidenta'])) {
-            return "Para gestionar un comité:\n"
-                . "1. Abre Comités y Reconocimientos > Comités.\n"
+            return $access->denial(ModuleCatalog::COMITES)
+                ?? "Para gestionar un comité:\n"
+                . "1. Abre Comités y Resoluciones > Comités.\n"
                 . "2. Registra nombre, zona y demás datos solicitados.\n"
                 . "3. Usa Asignar Cargo y selecciona PRESIDENTA para designar a la responsable.\n"
                 . "4. Pulsa Generar Padrón para consultar sus beneficiarios.";
         }
 
+        if ($this->hasAny($question, ['perfil', 'contrasena', 'mi cuenta'])) {
+            return $access->denial(ModuleCatalog::PERFIL)
+                ?? "Para actualizar tu perfil:\n"
+                . "1. Abre el menú de tu usuario, arriba a la derecha.\n"
+                . "2. Pulsa Perfil.\n"
+                . "3. Actualiza tus datos o tu contraseña y guarda los cambios.";
+        }
+
         if ($this->hasAny($question, ['usuario', 'rol', 'permiso', 'modulo', 'notificacion'])) {
-            return "Estas opciones están en Sistema y requieren permisos administrativos. Abre Sistema y elige Usuarios, Roles, Módulos o Notificaciones. Si la opción no aparece, solicita acceso al administrador.";
+            return $access->denial(ModuleCatalog::SISTEMA)
+                ?? 'Estas opciones están en Sistema. Abre Sistema y elige Usuarios, Roles, Módulos o Notificaciones. Si la opción no aparece, solicita acceso al administrador.';
         }
 
         return null;
@@ -157,16 +219,28 @@ class AssistantGuidanceService
         ];
     }
 
-    public function overview(): string
+    /** Resumen de lo que el usuario puede hacer según los módulos de su rol. */
+    public function overview(?AssistantAccess $access = null): string
     {
+        $access ??= AssistantAccess::unrestricted();
+
+        $tasks = array_values(array_filter([
+            $access->allows(ModuleCatalog::SOCIOS_BENEFICIARIOS) ? 'registrar socios o beneficiarios y generar padrones' : null,
+            $access->allowsAny([ModuleCatalog::COMITES, ModuleCatalog::RESOLUCIONES]) ? 'consultar comités y resoluciones' : null,
+            $access->allows(ModuleCatalog::PRODUCTOS) ? 'consultar productos y stock' : null,
+            $access->allows(ModuleCatalog::REGISTRO_INGRESO) ? 'registrar ingresos de productos' : null,
+            $access->allows(ModuleCatalog::PECOSAS) ? 'registrar pecosas' : null,
+            $access->allows(ModuleCatalog::REPARTICION) ? 'revisar la repartición mensual' : null,
+            $access->allows(ModuleCatalog::RESPONSABLES_RACIONES) ? 'configurar raciones' : null,
+        ]));
+
+        if ($tasks === []) {
+            return "Aún no tienes módulos habilitados.\nSolicita acceso al administrador para poder recibir guías.";
+        }
+
         return "Puedo guiarte paso a paso en estas tareas:\n"
-            . "- registrar socios o beneficiarios;\n"
-            . "- generar padrones;\n"
-            . "- consultar comités y stock;\n"
-            . "- registrar pecosas;\n"
-            . "- revisar movimientos y reparticiones;\n"
-            . "- configurar raciones;\n"
-            . "- consultar datos y generar reportes desde el Asistente PROVALE.\n"
+            . implode('', array_map(fn (string $task) => "- {$task};\n", $tasks))
+            . "- consultar datos y generar reportes desde el Asistente PROVALE (según tus permisos).\n"
             . "Escribe qué deseas hacer, por ejemplo: \"¿Cuántos comités activos hay este mes?\"";
     }
 

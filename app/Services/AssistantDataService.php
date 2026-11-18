@@ -9,6 +9,8 @@ use App\Models\Partner;
 use App\Models\People;
 use App\Models\Pecosa;
 use App\Models\State;
+use App\Support\AssistantAccess;
+use App\Support\ModuleCatalog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -33,11 +35,32 @@ class AssistantDataService
         7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
     ];
 
+    /** Módulos que el usuario puede consultar; null = sin restricción (pruebas unitarias). */
+    private ?AssistantAccess $access = null;
+
     public function __construct(private AssistantDataRepositoryInterface $data)
     {
     }
 
-    public function resolve(string $question): ?string
+    /** Aviso de acceso denegado si el rol no puede ver el módulo de la consulta. */
+    private function denied(string $slug): ?string
+    {
+        return $this->access?->denial($slug);
+    }
+
+    public function resolve(string $question, ?AssistantAccess $access = null): ?string
+    {
+        $previous = $this->access;
+        $this->access = $access ?? $previous;
+
+        try {
+            return $this->resolveQuestion($question);
+        } finally {
+            $this->access = $previous;
+        }
+    }
+
+    private function resolveQuestion(string $question): ?string
     {
         $q = Str::lower(Str::ascii(trim($question)));
 
@@ -61,7 +84,22 @@ class AssistantDataService
      *
      * @param  array<int, array{role:string, content:string}>  $messages
      */
-    public function resolveConversation(array $messages): ?string
+    public function resolveConversation(array $messages, ?AssistantAccess $access = null): ?string
+    {
+        $previous = $this->access;
+        $this->access = $access ?? $previous;
+
+        try {
+            return $this->resolveMessages($messages);
+        } finally {
+            $this->access = $previous;
+        }
+    }
+
+    /**
+     * @param  array<int, array{role:string, content:string}>  $messages
+     */
+    private function resolveMessages(array $messages): ?string
     {
         $userMessages = collect($messages)
             ->filter(fn (array $message) => ($message['role'] ?? null) === 'user')
@@ -98,7 +136,12 @@ class AssistantDataService
         }
 
         if ($intent === null) {
-            return $this->resolve($current);
+            return $this->resolveQuestion($current);
+        }
+
+        // Presidenta y beneficiarios de un comité son datos del submódulo Comités.
+        if ($denied = $this->denied(ModuleCatalog::COMITES)) {
+            return $denied;
         }
 
         [$matches, $searchedTerm] = $this->committeeFromConversation($userMessages);
@@ -155,6 +198,10 @@ class AssistantDataService
             return null;
         }
 
+        if ($denied = $this->denied(ModuleCatalog::COMITES)) {
+            return $denied;
+        }
+
         $termino = $this->extraerNombreComite($q);
         if (Str::length($termino) < 3) {
             return null;
@@ -183,6 +230,10 @@ class AssistantDataService
         // atiende la guía de navegación, no este servicio.
         if (preg_match('/\b(mas|mayor|menos|menor|top|ranking)\b/', $q)) {
             return null;
+        }
+
+        if ($denied = $this->denied(ModuleCatalog::COMITES)) {
+            return $denied;
         }
 
         $termino = $this->extraerNombreComite($q);
@@ -216,6 +267,10 @@ class AssistantDataService
             return null;
         }
 
+        if ($denied = $this->denied(ModuleCatalog::COMITES)) {
+            return $denied;
+        }
+
         $total = $this->data->committeeCount();
         $vigenteId = State::idFor(State::CURRENT);
         $activos = $vigenteId ? $this->data->committeeCountWithState($vigenteId) : $total;
@@ -240,6 +295,10 @@ class AssistantDataService
             return null;
         }
 
+        if ($denied = $this->denied(ModuleCatalog::PECOSAS)) {
+            return $denied;
+        }
+
         [$anio, $mes, $etiqueta] = $this->resolverPeriodo($q);
         [$inicio, $fin] = Pecosa::deliveryPeriodRange($anio, $mes);
 
@@ -257,12 +316,20 @@ class AssistantDataService
         }
 
         if (str_contains($q, 'beneficiari') && ! $this->mencionaComite($q)) {
+            if ($denied = $this->denied(ModuleCatalog::SOCIOS_BENEFICIARIOS)) {
+                return $denied;
+            }
+
             $total = $this->data->beneficiaryCount();
 
             return "Beneficiarios registrados:\n\n- Total de beneficiarios en el sistema: {$total}";
         }
 
         if (str_contains($q, 'socio') || str_contains($q, 'socia')) {
+            if ($denied = $this->denied(ModuleCatalog::SOCIOS_BENEFICIARIOS)) {
+                return $denied;
+            }
+
             $total = $this->data->partnerCount();
 
             return "Socios registrados:\n\n- Total de socios en el sistema: {$total}";
@@ -457,6 +524,10 @@ class AssistantDataService
         $identity = $this->extractPartnerIdentity($question);
         if (Str::length($identity) < 3) {
             return null;
+        }
+
+        if ($denied = $this->denied(ModuleCatalog::SOCIOS_BENEFICIARIOS)) {
+            return $denied;
         }
 
         $partners = $this->matchingPartners($identity);

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Rol;
 use App\Models\Module;
+use App\Support\ModuleCatalog;
 use Illuminate\Database\Seeder;
 
 class RolSeeder extends Seeder
@@ -17,26 +18,36 @@ class RolSeeder extends Seeder
     {
         $operationalRoles = [
             'Rol 1' => [
-                'description' => 'Acceso a Inicio, Socios y Beneficiarios, Comités y Resoluciones, Ayuda y chatbot',
-                'modules' => ['socios-beneficiarios', 'evaluacion-nutricional', 'club-madres', 'reconocimientos', 'reportes'],
+                'description' => 'Acceso a Inicio, Socios y Beneficiarios, Comités y Resoluciones, Supervisión, Evaluación Nutricional, Ayuda y chatbot',
+                'modules' => [
+                    ModuleCatalog::REGISTRO_SOCIOS_BENEFICIARIOS,
+                    ModuleCatalog::PADRONES,
+                    ModuleCatalog::EVALUACION_NUTRICIONAL,
+                    ModuleCatalog::COMITES,
+                    ModuleCatalog::RESOLUCIONES,
+                    ModuleCatalog::SUPERVISION_COMITES,
+                    ModuleCatalog::REPORTES,
+                    ModuleCatalog::PERFIL,
+                    ModuleCatalog::AYUDA,
+                ],
             ],
             'Rol 2' => [
-                'description' => 'Acceso a Inicio, Productos y Pecosas, Transacciones y Repartición, Responsables y Raciones, Ayuda y chatbot',
-                'modules' => ['productos', 'pecosas', 'movimientos', 'responsables-raciones', 'reportes'],
+                'description' => 'Acceso a Inicio, Productos y Programación de Entrega, Pecosas y Repartición, Responsables y Raciones, Ayuda y chatbot',
+                'modules' => [
+                    ModuleCatalog::PRODUCTOS,
+                    ModuleCatalog::REGISTRO_INGRESO,
+                    ModuleCatalog::PROGRAMACION_ENTREGA,
+                    ModuleCatalog::PECOSAS,
+                    ModuleCatalog::REPARTICION,
+                    ModuleCatalog::RESPONSABLES_RACIONES,
+                    ModuleCatalog::REPORTES,
+                    ModuleCatalog::PERFIL,
+                    ModuleCatalog::AYUDA,
+                ],
             ],
             'Rol 3' => [
                 'description' => 'Acceso a todos los módulos operativos excepto Sistema, además de Inicio, Ayuda y chatbot',
-                'modules' => [
-                    'socios-beneficiarios',
-                    'evaluacion-nutricional',
-                    'club-madres',
-                    'reconocimientos',
-                    'productos',
-                    'pecosas',
-                    'movimientos',
-                    'responsables-raciones',
-                    'reportes',
-                ],
+                'modules' => ModuleCatalog::operationalLeaves(),
             ],
         ];
 

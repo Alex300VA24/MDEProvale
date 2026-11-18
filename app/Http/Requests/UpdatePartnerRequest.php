@@ -27,6 +27,7 @@ class UpdatePartnerRequest extends FormRequest
             'association_id' => 'sometimes|required|exists:associations,id',
             'state_id' => ['sometimes', 'required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'date_begin' => 'sometimes|required|date',
+            'monthly_roster_id' => ['nullable', 'integer', Rule::exists('monthly_rosters', 'id')->where('status', 'DRAFT')],
             'date_end' => 'nullable|date|after_or_equal:date_begin',
             'observations' => 'nullable|string',
             'marital_status' => 'nullable|string|max:50',
@@ -59,6 +60,12 @@ class UpdatePartnerRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            $personId = $this->input('person_id', $this->route('partner')?->person_id);
+            if (in_array($this->input('socioeconomic_condition'), ['GESTANTE', 'LACTANTE'], true)
+                && People::find($personId)?->gender !== 'F') {
+                $validator->errors()->add('socioeconomic_condition', 'Gestante y Lactante solo están disponibles para género femenino.');
+            }
+
             if ($this->filled('benefit_child_person_id')) {
                 $childPersonId = (int) $this->input('benefit_child_person_id');
                 $belongs = $this->route('partner')?->beneficiaries()->where('person_id', $childPersonId)->exists();
@@ -77,7 +84,6 @@ class UpdatePartnerRequest extends FormRequest
                 return;
             }
 
-            $personId = $this->input('person_id', $this->route('partner')?->person_id);
             $birthdate = People::find($personId)?->birthdate;
             if (! $birthdate || Carbon::parse($birthdate)->age <= 65) {
                 $validator->errors()->add('socioeconomic_condition', 'Adulto Mayor requiere ser mayor de 65 años.');

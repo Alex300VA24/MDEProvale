@@ -15,8 +15,10 @@ class RegularizeReconocimientoRequest extends FormRequest
 
     public function rules(): array
     {
+        $year = now()->year;
+
         return [
-            'document' => ['required', 'string', 'max:100', 'regex:/^\d+-\d{4}$/'],
+            'document' => ['required', 'string', 'max:9', 'regex:/^\d{4}-'.$year.'$/'],
             'date_start' => ['sometimes', 'nullable', 'date'],
             'date_end' => ['sometimes', 'nullable', 'date', 'after_or_equal:date_start'],
         ];
@@ -26,7 +28,7 @@ class RegularizeReconocimientoRequest extends FormRequest
     {
         return [
             'document.required' => 'Ingrese el número de resolución.',
-            'document.regex' => 'El número de resolución debe tener el formato NNN-AAAA (ej. 123-2026).',
+            'document.regex' => 'El número de resolución debe tener el formato 1234-'.now()->year.'.',
         ];
     }
 }

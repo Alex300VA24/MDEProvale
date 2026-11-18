@@ -4,26 +4,27 @@ namespace App\Policies;
 
 use App\Models\Resolution;
 use App\Models\User;
+use App\Support\ModuleCatalog;
 
 class ResolutionPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasModuleAccess('club-madres');
+        return $user->hasModuleAccess(ModuleCatalog::RESOLUCIONES);
     }
 
     public function create(User $user): bool
     {
-        return $user->canCreateModule('club-madres');
+        return $user->canCreateModule(ModuleCatalog::RESOLUCIONES);
     }
 
     public function update(User $user, Resolution $resolution): bool
     {
-        return $user->canEditModule('club-madres');
+        return $user->canEditModule(ModuleCatalog::RESOLUCIONES);
     }
 
     public function delete(User $user, Resolution $resolution): bool
     {
-        return $user->canDeleteModule('club-madres');
+        return $user->canDeleteModule(ModuleCatalog::RESOLUCIONES);
     }
 }

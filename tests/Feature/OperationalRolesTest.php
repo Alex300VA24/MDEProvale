@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Support\ModuleCatalog;
 use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RolSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,19 +24,16 @@ class OperationalRolesTest extends TestCase
     public function test_operational_roles_have_the_expected_module_access(): void
     {
         $expected = [
-            'Rol 1' => ['club-madres', 'evaluacion-nutricional', 'reconocimientos', 'reportes', 'socios-beneficiarios'],
-            'Rol 2' => ['movimientos', 'pecosas', 'productos', 'reportes', 'responsables-raciones'],
-            'Rol 3' => [
-                'club-madres',
-                'evaluacion-nutricional',
-                'movimientos',
-                'pecosas',
-                'productos',
-                'reconocimientos',
-                'reportes',
-                'responsables-raciones',
-                'socios-beneficiarios',
+            'Rol 1' => [
+                'ayuda', 'club-madres', 'evaluacion-nutricional', 'padrones', 'perfil', 'reconocimientos',
+                'registro-socios-beneficiarios', 'reportes', 'supervision-comites',
             ],
+            'Rol 2' => [
+                'ayuda', 'pecosas', 'perfil', 'productos', 'programacion-entrega', 'registro-ingreso',
+                'reparticion', 'reportes', 'responsables-raciones',
+            ],
+            // Todas las hojas operativas: nunca Sistema, Base de Conocimiento ni los módulos grupo.
+            'Rol 3' => collect(ModuleCatalog::operationalLeaves())->sort()->values()->all(),
         ];
 
         foreach ($expected as $title => $expectedSlugs) {

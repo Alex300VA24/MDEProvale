@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import http from '../../http';
 import Modal from '../../Components/Modal';
 import Combobox from '../../Components/Combobox';
@@ -16,6 +16,28 @@ const inputCls = 'w-full px-4 py-2 border-2 border-wheat rounded-xl text-xs sm:t
 const labelCls = 'block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1';
 const Optional = () => <span className="text-earth font-normal normal-case tracking-normal">(opcional)</span>;
 
+function dateOnly(value) {
+    if (!value) return '';
+
+    const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return '';
+
+    const [, yearText, monthText, dayText] = match;
+    const year = Number(yearText);
+    const month = Number(monthText);
+    const day = Number(dayText);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+        !Number.isFinite(date.getTime())
+        || date.getUTCFullYear() !== year
+        || date.getUTCMonth() !== month - 1
+        || date.getUTCDate() !== day
+    ) return '';
+
+    return `${yearText}-${monthText}-${dayText}`;
+}
+
 const emptyPerson = (person = null, isNew = true) => ({
     isNew,
     personId: person?.id ?? null,
@@ -25,7 +47,7 @@ const emptyPerson = (person = null, isNew = true) => ({
         names: person?.names || '',
         father_lastname: person?.father_lastname || '',
         mother_lastname: person?.mother_lastname || '',
-        birthdate: person?.birthdate || '',
+        birthdate: dateOnly(person?.birthdate),
         gender: person?.gender || '',
         address: person?.address || '',
     },
@@ -33,16 +55,18 @@ const emptyPerson = (person = null, isNew = true) => ({
 });
 
 function benefitEndDate(birthdate, abbreviation) {
-    if (!birthdate || !['NI0', 'NI7'].includes(abbreviation)) return '';
-    const [year, month, day] = birthdate.split('-').map(Number);
+    const normalizedBirthdate = dateOnly(birthdate);
+    if (!normalizedBirthdate || !['NI0', 'NI7'].includes(abbreviation)) return '';
+    const [year, month, day] = normalizedBirthdate.split('-').map(Number);
     const date = new Date(Date.UTC(year + (abbreviation === 'NI0' ? 7 : 14), month - 1, day));
     date.setUTCDate(date.getUTCDate() - 1);
     return date.toISOString().split('T')[0];
 }
 
 function ageFrom(birthdate) {
-    if (!birthdate) return null;
-    const birth = new Date(`${birthdate}T00:00:00`);
+    const normalizedBirthdate = dateOnly(birthdate);
+    if (!normalizedBirthdate) return null;
+    const birth = new Date(`${normalizedBirthdate}T00:00:00`);
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age -= 1;
@@ -83,7 +107,8 @@ function createBeneficiary(options) {
 }
 
 function beneficiaryFromRecord(record) {
-    const history = [...(record.histories || [])].sort((a, b) => String(b.date_begin).localeCompare(String(a.date_begin)))[0];
+    const histories = Array.isArray(record?.histories) ? record.histories : [];
+    const history = [...histories].sort((a, b) => String(b?.date_begin || '').localeCompare(String(a?.date_begin || '')))[0];
     return {
         id: record.id,
         key: `existing-${record.id}`,
@@ -91,20 +116,22 @@ function beneficiaryFromRecord(record) {
         personState: emptyPerson(record.person, false),
         relationshipId: record.relationship_id ?? '',
         typeBenefitId: history?.type_benefit_id ?? '',
-        dateBegin: String(history?.date_begin || TODAY).slice(0, 10),
+        dateBegin: dateOnly(history?.date_begin) || TODAY,
         documents: record.documents || [],
         pendingDocument: { documentType: 'expediente_unico', file: null },
     };
 }
 
 function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemove, onPrevious, onNext, canRemove }) {
-    const relationships = (options.relationships || [])
-        .filter((value) => ['apoderado', 'hijo', 'hijos', 'nieto', 'nietos'].includes(value.title.toLowerCase()))
-        .map((value) => ({ id: value.id, label: value.title.replace(/^Hijos$/i, 'Hijo').replace(/^Nietos$/i, 'Nieto') }));
-    const benefits = (options.type_benefits || [])
-        .filter((value) => ['NI0', 'NI7', 'TBC', 'DIS'].includes(value.abbreviation))
-        .map((value) => ({ id: value.id, label: value.title }));
-    const selectedBenefit = (options.type_benefits || []).find((value) => String(value.id) === String(item.typeBenefitId));
+    const relationshipRows = Array.isArray(options?.relationships) ? options.relationships : [];
+    const benefitRows = Array.isArray(options?.type_benefits) ? options.type_benefits : [];
+    const relationships = relationshipRows
+        .filter((value) => ['apoderado', 'hijo', 'hijos', 'nieto', 'nietos'].includes(String(value?.title || '').toLowerCase()))
+        .map((value) => ({ id: value.id, label: String(value.title).replace(/^Hijos$/i, 'Hijo').replace(/^Nietos$/i, 'Nieto') }));
+    const benefits = benefitRows
+        .filter((value) => ['NI0', 'NI7', 'TBC', 'DIS'].includes(value?.abbreviation))
+        .map((value) => ({ id: value.id, label: value.title || value.abbreviation }));
+    const selectedBenefit = benefitRows.find((value) => String(value.id) === String(item.typeBenefitId));
     const dateEnd = benefitEndDate(item.personState.personData.birthdate, selectedBenefit?.abbreviation);
     const isExisting = Boolean(item.id);
     const set = (field, value) => onChange({ ...item, [field]: value });
@@ -112,7 +139,7 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
     const autoPriority = ageFrom(item.personState.personData.birthdate) !== null;
 
     return (
-        <section className="rounded-2xl border-2 border-blue/20 bg-blue-light/30 p-3 sm:p-4 space-y-4">
+        <section className="rounded-lg border-2 border-blue/20 bg-blue-light/30 p-3 sm:p-4 space-y-4">
             <div className="flex flex-col gap-3 border-b border-blue/15 pb-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h4 className="font-extrabold text-navy"><i className="fas fa-hand-holding-heart text-blue mr-2" />Beneficiario {index + 1} de {total}</h4>
@@ -121,11 +148,11 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
                 <button type="button" onClick={onAdd} className="btn-secondary text-xs font-bold"><i className="fas fa-plus mr-1.5" />Agregar beneficiario</button>
             </div>
 
-            <fieldset className="rounded-xl border border-blue/20 bg-white p-3">
+            <fieldset className="rounded-lg border border-blue/20 bg-white p-3">
                 <legend className="px-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">Prioridad *{autoPriority && <span className="ml-1 font-normal normal-case tracking-normal text-earth">(según la edad)</span>}</legend>
                 <div className="grid grid-cols-2 gap-2">
                     {[1, 2].map((priority) => (
-                        <label key={priority} className={`${autoPriority ? 'cursor-not-allowed' : 'cursor-pointer'} rounded-xl border-2 px-3 py-2 text-center text-xs font-bold transition ${item.priority === priority ? 'border-leaf bg-leaf-light text-leaf' : 'border-wheat text-earth'}`}>
+                        <label key={priority} className={`${autoPriority ? 'cursor-not-allowed' : 'cursor-pointer'} rounded-md border-2 px-3 py-2 text-center text-xs font-bold transition ${item.priority === priority ? 'border-sky-400 bg-sky-100 text-sky-800' : 'border-wheat text-earth'}`}>
                             <input type="radio" name={`priority-${item.key}`} value={priority} checked={item.priority === priority} onChange={() => set('priority', priority)} disabled={autoPriority} className="sr-only" />
                             {priority === 1 ? 'Primera prioridad' : 'Segunda prioridad'}
                         </label>
@@ -133,7 +160,7 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
                 </div>
             </fieldset>
 
-            <PersonaInlineFields value={item.personState} onChange={setPerson} title="Datos del Beneficiario" />
+            <PersonaInlineFields value={item.personState} onChange={setPerson} title="Datos del Beneficiario" hideAddress />
 
             <div className="grid grid-cols-1 gap-3 rounded-xl border border-wheat bg-white p-3 sm:grid-cols-2">
                 <div>
@@ -154,7 +181,7 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
                 </div>
             </div>
 
-            <PendingDocumentSection attachableType="beneficiarie" value={item.pendingDocument} onChange={(value) => set('pendingDocument', value)} inputId={`beneficiary-file-${item.key}`} allowedTypes={['expediente_unico']} showTypeSelect={false} title={isExisting ? 'Reemplazar expediente único del beneficiario' : 'Expediente único del beneficiario'} pdfOnly required={!isExisting} />
+            <PendingDocumentSection key={item.key} attachableType="beneficiarie" value={item.pendingDocument} onChange={(value) => set('pendingDocument', value)} inputId={`beneficiary-file-${item.key}`} allowedTypes={['expediente_unico']} showTypeSelect={false} title={isExisting ? 'Reemplazar expediente único del beneficiario' : 'Expediente único del beneficiario'} pdfOnly required={!isExisting} />
             {isExisting && <DocumentosSection attachableType="beneficiarie" attachableId={item.id} initialDocuments={item.documents || []} allowedTypes={['expediente_unico']} title="Expediente del beneficiario" canUpload={false} />}
 
             <div className="flex items-center justify-between gap-2 border-t border-blue/15 pt-3">
@@ -171,7 +198,7 @@ function BeneficiaryPanel({ item, index, total, options, onChange, onAdd, onRemo
     );
 }
 
-export default function SocioFormModal({ mode, partner, options, onClose, onSaved }) {
+export default function SocioFormModal({ mode, partner, options, monthlyRoster, onClose, onSaved }) {
     const toast = useToast();
     const [personState, setPersonState] = useState(() => emptyPerson(partner?.person, mode === 'create'));
     const [associationId, setAssociationId] = useState(partner?.association_id ?? '');
@@ -181,39 +208,43 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
     const [occupation, setOccupation] = useState(partner?.occupation || '');
     const [childrenCount, setChildrenCount] = useState(partner?.children_count ?? '');
     const [condition, setCondition] = useState(partner?.socioeconomic_condition || (partner?.is_pregnant ? 'GESTANTE' : partner?.is_lactating ? 'LACTANTE' : ''));
-    const [fum, setFum] = useState(partner?.benefit_context?.fum || '');
+    const [fum, setFum] = useState(() => dateOnly(partner?.benefit_context?.fum));
     const [familyIncome, setFamilyIncome] = useState(partner?.family_income || '');
     const [observations, setObservations] = useState(partner?.observations || '');
     const [familyDocument, setFamilyDocument] = useState({ documentType: 'expediente_unico', file: null });
     const [conadisDocument, setConadisDocument] = useState({ documentType: 'conadis', file: null });
     const [beneficiaries, setBeneficiaries] = useState(() => {
+        const partnerBeneficiaries = Array.isArray(partner?.beneficiaries) ? partner.beneficiaries : [];
         const existing = mode === 'edit'
-            ? (partner?.beneficiaries || []).filter((record) => Number(record.person_id) !== Number(partner.person_id)).map(beneficiaryFromRecord)
+            ? partnerBeneficiaries
+                .filter((record) => record?.person && Number(record.person_id) !== Number(partner?.person_id))
+                .map(beneficiaryFromRecord)
             : [];
-        return existing.length ? existing.map((item) => applyAgeRules(item, options)) : [createBeneficiary(options)];
+        if (existing.length) return existing.map((item) => applyAgeRules(item, options ?? {}));
+        return mode === 'create' ? [createBeneficiary(options ?? {})] : [];
     });
     const [activeBeneficiary, setActiveBeneficiary] = useState(0);
     const [submitting, setSubmitting] = useState(false);
 
-    const associationOptions = (options.associations || []).map((value) => ({
+    const associationOptions = (Array.isArray(options?.associations) ? options.associations : []).map((value) => ({
         id: value.id,
-        label: associationLabel(value),
+        label: associationLabel(value, { includeCode: true, includeAddress: false }),
     }));
     // Lactante (obligatorio) o sin condición: se registra beneficiario. Gestante y demás condiciones: solo la socia.
     const requiresBeneficiary = condition === 'LACTANTE';
-    // Al editar, sin condición solo se muestra el beneficiario si la socia ya tiene uno registrado.
-    const hasRegisteredBeneficiaries = mode === 'edit' && beneficiaries.some((item) => item.id);
-    const showBeneficiaries = requiresBeneficiary || (condition === '' && (mode === 'create' || hasRegisteredBeneficiaries));
+    // Sin condición: la socia no es beneficiaria, por lo que siempre debe registrar al menos un beneficiario.
+    const showBeneficiaries = requiresBeneficiary || condition === '';
     const currentBeneficiary = showBeneficiaries ? beneficiaries[activeBeneficiary] : null;
     const hasConadis = partner?.documents?.some((document) => document.document_type === 'conadis');
     const conditionOptions = [
         ['GESTANTE', 'Gestante'], ['LACTANTE', 'Lactante'], ['ADULTO_MAYOR', 'Adulto Mayor'],
         ['DISCAPACITADO', 'Discapacitado'], ['OTROS', 'Otros'],
-    ];
+    ].filter(([value]) => personState.personData.gender === 'F' || !['GESTANTE', 'LACTANTE'].includes(value));
     const partnerAge = useMemo(() => ageFrom(personState.personData.birthdate), [personState.personData.birthdate]);
-    const calculatedEnd = condition === 'GESTANTE' && fum
+    const normalizedFum = dateOnly(fum);
+    const calculatedEnd = condition === 'GESTANTE' && normalizedFum
         ? (() => {
-            const [year, month, day] = fum.split('-').map(Number);
+            const [year, month, day] = normalizedFum.split('-').map(Number);
             const targetMonth = month - 1 + 9;
             const targetYear = year + Math.floor(targetMonth / 12);
             const normalizedMonth = targetMonth % 12;
@@ -224,10 +255,26 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         })()
         : '';
 
+    useEffect(() => {
+        if (personState.personData.gender !== 'F' && ['GESTANTE', 'LACTANTE'].includes(condition)) {
+            setCondition('');
+            setFum('');
+        }
+    }, [personState.personData.gender, condition]);
+
+    useEffect(() => {
+        if (showBeneficiaries && beneficiaries.length === 0) {
+            setBeneficiaries([createBeneficiary(options ?? {})]);
+            setActiveBeneficiary(0);
+        } else if (beneficiaries.length > 0 && activeBeneficiary >= beneficiaries.length) {
+            setActiveBeneficiary(beneficiaries.length - 1);
+        }
+    }, [activeBeneficiary, beneficiaries.length, options, showBeneficiaries]);
+
     const updateBeneficiary = (value) => setBeneficiaries((current) => current.map((item, index) => index === activeBeneficiary ? value : item));
     const addBeneficiary = () => {
-        setBeneficiaries((current) => [...current, createBeneficiary(options)]);
         setActiveBeneficiary(beneficiaries.length);
+        setBeneficiaries((current) => [...current, createBeneficiary(options ?? {})]);
     };
     const removeBeneficiary = () => {
         setBeneficiaries((current) => current.filter((_, index) => index !== activeBeneficiary));
@@ -236,6 +283,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
 
     const resolvePerson = async (state) => {
         if (state.isNew) return submitInlinePersona(state);
+        if (!state.personId) throw new Error('No se pudo identificar a la persona que se está editando.');
         await http.put(`${BASE}/personas/${state.personId}`, {
             names: state.personData.names,
             father_lastname: state.personData.father_lastname,
@@ -252,6 +300,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
         event.preventDefault();
         if (!associationId) return toast.error('Seleccione el club o comité.');
         if (condition === 'ADULTO_MAYOR' && (partnerAge === null || partnerAge <= 65)) return toast.error('Adulto Mayor requiere ser mayor de 65 años.');
+        if (['GESTANTE', 'LACTANTE'].includes(condition) && personState.personData.gender !== 'F') return toast.error('Gestante y Lactante solo están disponibles para género femenino.');
         if (condition === 'GESTANTE' && !fum) return toast.error('Registre la fecha de última menstruación (FUM).');
         if (condition === 'OTROS' && !observations.trim()) return toast.error('Indique en observaciones si corresponde a TBC, desnutrición u otra condición.');
         if (condition === 'DISCAPACITADO' && !hasConadis && !conadisDocument.file) return toast.error('Adjunte el documento CONADIS en PDF.');
@@ -271,7 +320,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
                 person_id: personId,
                 association_id: associationId,
                 state_id: stateId,
-                date_begin: String(partner?.date_begin || TODAY).slice(0, 10),
+                date_begin: dateOnly(partner?.date_begin) || TODAY,
                 date_end: null,
                 observations: condition === 'OTROS' ? observations.trim() : null,
                 marital_status: maritalStatus || null,
@@ -283,6 +332,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
                 is_lactating: condition === 'LACTANTE',
                 family_income: familyIncome === '' ? null : familyIncome,
                 fum: condition === 'GESTANTE' ? fum : null,
+                monthly_roster_id: monthlyRoster?.id ?? null,
             };
 
             const formData = new FormData();
@@ -315,7 +365,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
             );
             const savedPartner = response.data?.data;
             toast.success('Ficha familiar guardada correctamente.');
-            onSaved(savedPartner);
+            onSaved?.(savedPartner);
         } catch (error) {
             toast.error(errorMessage(error, 'No se pudo guardar la ficha familiar.'));
         } finally {
@@ -344,7 +394,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
                                 <div><label className={labelCls}>Ocupación de la socia <Optional /></label><input value={occupation} onChange={(event) => setOccupation(event.target.value)} className={inputCls} /></div>
                                 <div><label className={labelCls}>N.º de hijos <Optional /></label><input type="number" min="0" value={childrenCount} onChange={(event) => setChildrenCount(event.target.value)} className={inputCls} /></div>
                                 <div><label className={labelCls}>Ingreso familiar (S/) <Optional /></label><input type="number" min="0" step="0.01" value={familyIncome} onChange={(event) => setFamilyIncome(event.target.value)} className={inputCls} /></div>
-                                <div><label className={labelCls}>Condición <Optional /></label><select value={condition} onChange={(event) => setCondition(event.target.value)} className={inputCls}><option value="">Ninguna</option>{conditionOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>{condition === 'ADULTO_MAYOR' && <p className={`mt-1 text-xs font-semibold ${partnerAge !== null && partnerAge > 65 ? 'text-leaf' : 'text-clay'}`}>{partnerAge === null ? 'Ingrese fecha de nacimiento.' : `Edad calculada: ${partnerAge} años.`}</p>}</div>
+                                <div><label className={labelCls}>Condición <Optional /></label><select value={condition} onChange={(event) => setCondition(event.target.value)} className={inputCls}><option value="">Ninguna</option>{conditionOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>{personState.personData.gender !== 'F' && <p className="mt-1 text-xs text-earth">Gestante y Lactante requieren género femenino.</p>}{condition === 'ADULTO_MAYOR' && <p className={`mt-1 text-xs font-semibold ${partnerAge !== null && partnerAge > 65 ? 'text-leaf' : 'text-clay'}`}>{partnerAge === null ? 'Ingrese fecha de nacimiento.' : `Edad calculada: ${partnerAge} años.`}</p>}</div>
                             </div>
                             {condition === 'GESTANTE' && (
                                 <div className="grid grid-cols-1 gap-3 rounded-xl border border-blue/20 bg-blue-light/30 p-3 sm:grid-cols-2">
@@ -360,7 +410,7 @@ export default function SocioFormModal({ mode, partner, options, onClose, onSave
                         {mode === 'edit' && partner && <DocumentosSection attachableType="partner" attachableId={partner.id} initialDocuments={partner.documents || []} allowedTypes={['expediente_unico', 'conadis']} title="Expediente de la socia" canUpload={false} />}
                     </div>
 
-                    {currentBeneficiary && <BeneficiaryPanel canRemove={beneficiaries.length > 1} item={currentBeneficiary} index={activeBeneficiary} total={beneficiaries.length} options={options} onChange={updateBeneficiary} onAdd={addBeneficiary} onRemove={removeBeneficiary} onPrevious={() => setActiveBeneficiary((value) => Math.max(0, value - 1))} onNext={() => setActiveBeneficiary((value) => Math.min(beneficiaries.length - 1, value + 1))} />}
+                    {currentBeneficiary && <BeneficiaryPanel key={currentBeneficiary.key} canRemove={beneficiaries.length > 1} item={currentBeneficiary} index={activeBeneficiary} total={beneficiaries.length} options={options} onChange={updateBeneficiary} onAdd={addBeneficiary} onRemove={removeBeneficiary} onPrevious={() => setActiveBeneficiary((value) => Math.max(0, value - 1))} onNext={() => setActiveBeneficiary((value) => Math.min(beneficiaries.length - 1, value + 1))} />}
                 </div>
 
                 <div className="mt-5 flex gap-3 border-t border-wheat pt-5">

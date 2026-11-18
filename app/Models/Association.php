@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class Association extends Model
 {
@@ -60,6 +61,28 @@ class Association extends Model
     public function rosterPeriods()
     {
         return $this->hasMany(AssociationRosterPeriod::class);
+    }
+
+    public function codeHistory()
+    {
+        return $this->hasMany(AssociationCodeHistory::class);
+    }
+
+    public function officialCodeAt($date): string
+    {
+        $date = Carbon::parse($date)->toDateString();
+
+        $history = $this->relationLoaded('codeHistory')
+            ? $this->codeHistory
+                ->first(fn ($item) => $item->valid_from->toDateString() <= $date
+                    && (!$item->valid_to || $item->valid_to->toDateString() >= $date))
+            : $this->codeHistory()
+                ->whereDate('valid_from', '<=', $date)
+                ->where(fn ($query) => $query->whereNull('valid_to')->orWhereDate('valid_to', '>=', $date))
+                ->orderByDesc('valid_from')
+                ->first();
+
+        return $history?->code ?: $this->code;
     }
 
     public function statusChanges()

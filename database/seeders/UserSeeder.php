@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Support\ModuleCatalog;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -71,16 +72,18 @@ class UserSeeder extends Seeder
         $baseRoleIds = collect($requiredRoles)->map(fn ($role) => $roleIds->get($role))->all();
         DB::table('module_rol')->whereIn('rol_id', $baseRoleIds)->delete();
 
-        $modules = DB::table('modules')->get(['id', 'slug']);
+        // Los permisos viven en las hojas; los módulos grupo se derivan de sus submódulos.
+        $groups = ModuleCatalog::groups();
+        $modules = DB::table('modules')->whereNotIn('slug', $groups)->get(['id', 'slug']);
         $permissions = [];
         foreach ($modules as $module) {
             $permissions[] = $this->permissionRow($module->id, $roleIds->get('Administrador'), true, $now);
 
-            if (! in_array($module->slug, ['responsables-raciones', 'reportes', 'sistema'], true)) {
+            if (! in_array($module->slug, [ModuleCatalog::RESPONSABLES_RACIONES, ModuleCatalog::REPORTES, ModuleCatalog::SISTEMA], true)) {
                 $permissions[] = $this->permissionRow($module->id, $roleIds->get('Usuario Principal'), true, $now);
             }
 
-            if (in_array($module->slug, ['socios-beneficiarios', 'evaluacion-nutricional'], true)) {
+            if (in_array($module->slug, [ModuleCatalog::SOCIOS_BENEFICIARIOS, ModuleCatalog::EVALUACION_NUTRICIONAL, ModuleCatalog::PERFIL, ModuleCatalog::AYUDA], true)) {
                 $permissions[] = $this->permissionRow($module->id, $roleIds->get('Usuario Básico'), false, $now);
             }
         }

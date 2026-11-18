@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import http from '../../http';
 import { useRuntimeState } from '../../RuntimeState';
 import { useToast } from '../../Components/Toast';
+import Pagination from '../../Components/Pagination';
 import errorMessage from '../../errorMessage';
 
 const BASE = '/api/dashboard/sistema';
+const PER_PAGE = 10;
 
 const STATUS_LABEL = {
     pending: { label: 'Pendiente', cls: 'badge-pending' },
@@ -28,27 +30,39 @@ export default function NotificacionesTab() {
     const isAdmin = currentUser?.rol_id === 1;
 
     const [notifications, setNotifications] = useState(null);
+    const [meta, setMeta] = useState(null);
+    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(null);
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await http.get(`${BASE}/notifications`);
+            const res = await http.get(`${BASE}/notifications`, { params: { page, per_page: PER_PAGE } });
+            // Si la página actual quedó vacía (p. ej. se procesó su último aviso), retrocede una.
+            if (res.data.data.length === 0 && (res.data.meta?.last_page ?? 1) < page) {
+                setPage(res.data.meta.last_page);
+                return;
+            }
             setNotifications(res.data.data);
+            setMeta(res.data.meta ?? null);
         } catch {
             toast.error('No se pudo cargar las notificaciones.');
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, [page, toast]);
 
     useEffect(() => {
         load();
+    }, [load]);
+
+    // Al abrir la bandeja se marcan como vistas; cambiar de página no repite la llamada.
+    useEffect(() => {
         http.post(`${BASE}/notifications/mark-seen`)
             .then(() => window.dispatchEvent(new CustomEvent('notifications:changed')))
             .catch(() => {});
-    }, [load]);
+    }, []);
 
     const handleApprove = async (n) => {
         setProcessing(n.id);
@@ -90,7 +104,7 @@ export default function NotificacionesTab() {
 
     return (
         <div className="space-y-3">
-            {notifications.length === 0 ? (
+            {notifications.length === 0 && (meta?.total ?? 0) === 0 ? (
                 <div className="empty-state">
                     <i className="fas fa-bell" />
                     <p>No hay notificaciones{isAdmin ? '' : ' para tu usuario'}.</p>
@@ -134,6 +148,15 @@ export default function NotificacionesTab() {
                         </div>
                     );
                 })
+            )}
+
+            {(meta?.total ?? 0) > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-1 sm:px-2 py-3 border-t-2 border-wheat mt-2">
+                    <span className="text-xs sm:text-sm text-earth font-medium">
+                        Mostrando {meta.from ?? 0} - {meta.to ?? 0} de {meta.total} notificaciones
+                    </span>
+                    <Pagination links={meta.links} meta={meta} onPage={setPage} loading={loading} />
+                </div>
             )}
         </div>
     );

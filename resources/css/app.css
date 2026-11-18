@@ -261,6 +261,27 @@
         animation: pulse-dot 2s ease-in-out infinite;
     }
 
+    @keyframes notification-bell-arrived {
+        0%, 100% { transform: rotate(0deg); }
+        20% { transform: rotate(18deg); }
+        40% { transform: rotate(-16deg); }
+        60% { transform: rotate(10deg); }
+        80% { transform: rotate(-6deg); }
+    }
+    @keyframes notification-badge-arrived {
+        0% { opacity: 0; transform: scale(0.45); }
+        65% { opacity: 1; transform: scale(1.2); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    .notification-bell-arrived {
+        display: inline-flex;
+        transform-origin: 50% 10%;
+        animation: notification-bell-arrived 0.7s ease-in-out;
+    }
+    .notification-badge-arrived {
+        animation: notification-badge-arrived 0.45s ease-out both;
+    }
+
     @media (max-width: 640px) {
         .btn-action { width: 2.25rem; height: 2.25rem; }
     }
@@ -992,6 +1013,8 @@
     .section-enter,
     .stagger-enter,
     .modal-enter,
+    .notification-bell-arrived,
+    .notification-badge-arrived,
     .skeleton::after {
         animation: none !important;
     }
@@ -1185,3 +1208,42 @@ textarea,
     }
 }
 
+
+/* ===== Reportes: informe trimestral (vista previa fiel al Word/PDF: Times New Roman, todo en negro) ===== */
+.informe-paper {
+    max-width: 210mm;
+    padding: 15mm 20mm 20mm 25mm;
+    border: 1px solid #d9e2ec;
+    color: #000;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.35;
+}
+.informe-paper p { margin: 0 0 .7rem; text-align: justify; }
+.informe-paper li { margin-bottom: .3rem; text-align: justify; }
+.informe-lh { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.informe-lh img { width: 22mm; flex: none; }
+.informe-lh > div { flex: 1; text-align: center; }
+.informe-lh .muni { font-size: 15pt; font-weight: 700; white-space: nowrap; }
+.informe-lh .small { font-size: 8pt; }
+.informe-lh .area { font-size: 12pt; margin-top: .8rem; }
+.informe-lh .prog { font-size: 9pt; font-weight: 700; }
+.informe-title { margin: 1.2rem 0; font-weight: 700; text-decoration: underline; }
+.informe-meta > div { display: grid; grid-template-columns: 8rem 1fr; padding: .2rem 0; }
+.informe-meta dt { font-weight: 400; }
+.informe-meta dd { margin: 0; }
+.informe-rule { border: 0; border-top: 1px dashed #000; margin: .5rem 0 1.2rem; }
+.informe-h { margin: 1.3rem 0 .5rem; font-weight: 700; font-size: 12pt; }
+.informe-cap { margin: .8rem 0 .3rem; font-size: 10pt; font-weight: 700; }
+.informe-table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 9pt; }
+.informe-table th, .informe-table td { border: 1px solid #000; padding: .2rem .4rem; text-align: left; }
+.informe-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.informe-table th { font-weight: 700; }
+.informe-table tr.total td { font-weight: 700; }
+.informe-fig { margin: .5rem 0 1rem; text-align: center; }
+.informe-fig img { max-width: 135mm; width: 100%; margin: 0 auto; }
+.informe-fig figcaption { font-size: 9pt; font-style: italic; }
+.informe-sign { width: 16rem; margin: 3.5rem auto 0; text-align: center; }
+.informe-sign .line { border-top: 1px solid #000; margin-bottom: .3rem; }
+.informe-sign strong, .informe-sign span { display: block; }
+.informe-note { margin-top: 1.2rem; font-size: 10pt; }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Pecosa;
 use App\Models\State;
+use App\Models\MonthlyRoster;
 use App\Repositories\Contracts\AssociationRepositoryInterface;
 use App\Repositories\Contracts\CatalogRepositoryInterface;
 use App\Repositories\Contracts\DistributionRepositoryInterface;
@@ -23,7 +24,11 @@ class SchedulingService
     ) {
     }
 
-    public function generateProgramacionEntrega(int $month, int $year, ?string $sector = null): array
+    /**
+     * @param  bool  $includeAll  true devuelve también los comités no seleccionados (con `incluido` = false);
+     *                            false (PDF y reportes) solo los que se usan en el período.
+     */
+    public function generateProgramacionEntrega(int $month, int $year, ?string $sector = null, bool $includeAll = false, ?int $monthlyRosterId = null): array
     {
         $startDate = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
         $endDate = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
@@ -40,7 +45,8 @@ class SchedulingService
             ? $racion->racion_hojuelas_gramos . 'g / ' . $racion->racion_leche_militros . 'ml'
             : '';
 
-        $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries($activeStateId);
+        // Se consideran todos los comités; los inactivos solo se usan si el usuario los selecciona.
+        $associations = $this->associationRepo->getAssociationsWithSectorAndBeneficiaries();
         if ($sector !== null && trim($sector) !== '') {
             $associations = $associations
                 ->filter(fn ($association) => optional(optional($association->placeSector)->sector)->title === $sector)
@@ -48,6 +54,10 @@ class SchedulingService
         }
 
         $associationIds = $associations->pluck('id');
+        $roster = $monthlyRosterId
+            ? MonthlyRoster::with('associations.entries')->where('status', MonthlyRoster::CLOSED)->find($monthlyRosterId)
+            : null;
+        $rosterAssociations = $roster?->associations->keyBy('association_id') ?? collect();
 
         $presidentPositionId = $this->catalogs->positionIdByTitle('PRESIDENTA', true);
         $directivesByResolution = ($presidentPositionId && $activeStateId)
@@ -60,9 +70,17 @@ class SchedulingService
             $pecosaTo->toDateString()
         );
 
-        return $associations->map(function ($association) use ($directivesByResolution, $pecosasByAssociation, $startDate, $endDate, $racionLabel, $configuration) {
-            $presidenta = $this->resolvePresidentName($association, $directivesByResolution);
-            [$baseBeneficiaries, $primeraPrioridad, $segundaPrioridad] = $this->calculatePriorities($association, $startDate, $endDate);
+        return $associations->map(function ($association) use ($directivesByResolution, $pecosasByAssociation, $startDate, $endDate, $racionLabel, $configuration, $roster, $rosterAssociations) {
+            $rosterAssociation = $rosterAssociations->get($association->id);
+            $associationSnapshot = $rosterAssociation?->association_snapshot ?? [];
+            $presidenta = $rosterAssociation?->president_name
+                ?: $this->resolvePresidentName($association, $directivesByResolution);
+            [$baseBeneficiaries, $primeraPrioridad, $segundaPrioridad] = $this->calculatePriorities(
+                $association,
+                $startDate,
+                $endDate,
+                $rosterAssociation
+            );
             $assignment = $configuration ? $configuration['assignments']->get($association->id) : null;
             $beneficiaryAdjustment = (int) ($assignment?->beneficiary_adjustment ?? 0);
             $totalBenef = max(0, $baseBeneficiaries + $beneficiaryAdjustment);
@@ -83,13 +101,18 @@ class SchedulingService
 
             $directive = $this->findDirective($association, $directivesByResolution);
 
+            $active = $association->isHabilitado();
+            $isInRoster = ! $roster || (bool) $rosterAssociation;
+
             return [
                 'association_id' => $association->id,
-                'codigo' => $association->code ?? $association->id,
-                'nombre' => mb_strtoupper($association->name, 'UTF-8'),
+                'activo' => $active,
+                'incluido' => (bool) ($assignment?->included ?? ($active && $isInRoster)),
+                'codigo' => $associationSnapshot['code'] ?? $association->officialCodeAt($endDate),
+                'nombre' => mb_strtoupper($associationSnapshot['name'] ?? $association->name, 'UTF-8'),
                 'presidenta' => $presidenta,
-                'direccion' => $association->address ?? '',
-                'sector' => optional(optional($association->placeSector)->sector)->title ?? '',
+                'direccion' => $associationSnapshot['address'] ?? $association->address ?? '',
+                'sector' => $associationSnapshot['sector_name'] ?? optional(optional($association->placeSector)->sector)->title ?? '',
                 'primera_prioridad' => $primeraPrioridad,
                 'segunda_prioridad' => $segundaPrioridad,
                 'beneficiarios_base' => $baseBeneficiaries,
@@ -106,7 +129,7 @@ class SchedulingService
                 'recibe' => $presidenta,
                 'dni' => $directive ? ($directive->partner ? ($directive->partner->people ? $directive->partner->people->dni : '') : '') : '',
             ];
-        })->values()->toArray();
+        })->when(! $includeAll, fn ($rows) => $rows->where('incluido', true))->values()->toArray();
     }
 
     private function resolvePresidentName($association, $directivesByResolution)
@@ -118,8 +141,18 @@ class SchedulingService
         return $association->president_name ?? 'SIN ASIGNAR';
     }
 
-    private function calculatePriorities($association, $startDate, $endDate): array
+    private function calculatePriorities($association, $startDate, $endDate, $rosterAssociation = null): array
     {
+        if ($rosterAssociation) {
+            $entries = $rosterAssociation->entries;
+
+            return [
+                $entries->count(),
+                $entries->filter(fn ($entry) => (int) ($entry->beneficiary_snapshot['priority'] ?? 2) === 1)->count(),
+                $entries->filter(fn ($entry) => (int) ($entry->beneficiary_snapshot['priority'] ?? 2) !== 1)->count(),
+            ];
+        }
+
         $partners = $this->distributions->partnersWithBeneficiariesAt($association, $endDate);
 
         $primeraPrioridad = 0;

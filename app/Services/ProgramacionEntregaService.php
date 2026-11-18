@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\ProgramacionEntregaException;
+use App\Models\MonthlyRoster;
 use App\Repositories\Contracts\DistributionRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -11,7 +12,8 @@ class ProgramacionEntregaService
     public function __construct(
         private SchedulingService $schedulingService,
         private ReparticionService $reparticionService,
-        private DistributionRepositoryInterface $distributions
+        private DistributionRepositoryInterface $distributions,
+        private MonthlyRosterService $monthlyRosters
     ) {
     }
 
@@ -20,7 +22,7 @@ class ProgramacionEntregaService
      *
      * @throws ProgramacionEntregaException si el período no tiene registro o no tiene ingreso
      */
-    public function build(int $year, int $month, string $sector = ''): array
+    public function build(int $year, int $month, string $sector = '', ?int $requestedRosterId = null): array
     {
         $this->assertPeriodHasRecord($year, $month);
 
@@ -28,7 +30,14 @@ class ProgramacionEntregaService
             throw $this->ingresoRequired($year, $month);
         }
 
-        $allRows = collect($this->schedulingService->generateProgramacionEntrega($month, $year));
+        $savedPeriod = $this->distributions->periodWithAssignments($year, $month);
+        $selectedRosterId = $requestedRosterId
+            ?? $savedPeriod?->monthly_roster_id
+            ?? $this->monthlyRosters->latestClosedForServicePeriod(sprintf('%04d-%02d-01', $year, $month))?->id;
+        if ($selectedRosterId && ! $this->isUsableRoster($selectedRosterId, $year, $month)) {
+            throw new ProgramacionEntregaException('Seleccione un padrón cerrado del mismo mes o de un mes anterior.');
+        }
+        $allRows = collect($this->schedulingService->generateProgramacionEntrega($month, $year, null, true, $selectedRosterId));
         $racion = $this->reparticionService->getActiveRacion($year, $month);
         $calculation = null;
         if ($racion) {
@@ -41,19 +50,27 @@ class ProgramacionEntregaService
             ? $allRows
             : $allRows->where('sector', $sector)->values();
 
+        $used = $rows->where('incluido', true);
+
         return [
             'data' => $rows->values(),
             'sectors' => $sectors,
             'summary' => [
-                'committees' => $rows->count(),
-                'beneficiaries' => $rows->sum('total_beneficiarios'),
-                'milk' => $rows->sum('leche'),
-                'milk_rounded' => $rows->sum('leche_redondeo'),
-                'oat' => $rows->sum('hojuela'),
-                'oat_rounded' => $rows->sum('hojuela_redondeo'),
+                'committees' => $used->count(),
+                'beneficiaries' => $used->sum('total_beneficiarios'),
+                'milk' => $used->sum('leche'),
+                'milk_rounded' => $used->sum('leche_redondeo'),
+                'oat' => $used->sum('hojuela'),
+                'oat_rounded' => $used->sum('hojuela_redondeo'),
             ],
             'period' => ['year' => $year, 'month' => $month],
             'calculation' => $calculation,
+            'roster_selection' => [
+                'selected_id' => $selectedRosterId,
+                'confirmed' => (bool) $savedPeriod?->monthly_roster_id
+                    && (int) $savedPeriod->monthly_roster_id === (int) $selectedRosterId,
+                'options' => $this->monthlyRosters->closedOptions(),
+            ],
         ];
     }
 
@@ -63,7 +80,7 @@ class ProgramacionEntregaService
      * @param  array<int, array<string, mixed>>  $rows
      * @throws ProgramacionEntregaException
      */
-    public function save(int $year, int $month, array $rows): void
+    public function save(int $year, int $month, array $rows, ?int $monthlyRosterId = null): void
     {
         $this->assertPeriodHasRecord($year, $month);
 
@@ -76,7 +93,15 @@ class ProgramacionEntregaService
             throw $this->ingresoRequired($year, $month);
         }
 
-        $baseRows = collect($this->schedulingService->generateProgramacionEntrega($month, $year))
+        $monthlyRosterId ??= $this->monthlyRosters->latestClosedForServicePeriod(sprintf('%04d-%02d-01', $year, $month))?->id;
+        if (! $monthlyRosterId && MonthlyRoster::exists()) {
+            throw new ProgramacionEntregaException('Debe existir y seleccionarse un padrón cerrado para guardar la programación.');
+        }
+        if ($monthlyRosterId && ! $this->isUsableRoster($monthlyRosterId, $year, $month)) {
+            throw new ProgramacionEntregaException('Seleccione un padrón cerrado del mismo mes o de un mes anterior.');
+        }
+
+        $baseRows = collect($this->schedulingService->generateProgramacionEntrega($month, $year, null, true, $monthlyRosterId))
             ->keyBy('association_id');
         $unknownAssociation = collect($rows)
             ->contains(fn ($row) => ! $baseRows->has($row['association_id']));
@@ -86,7 +111,7 @@ class ProgramacionEntregaService
 
         $configuration = $this->reparticionService->getConfiguration($racion, $year, $month);
 
-        DB::transaction(function () use ($rows, $year, $month, $configuration, $baseRows) {
+        DB::transaction(function () use ($rows, $year, $month, $configuration, $baseRows, $monthlyRosterId) {
             $period = $this->distributions->firstOrCreatePeriod($year, $month, [
                 'service_days' => $configuration['service_days'],
                 'milk_grams_per_beneficiary' => $configuration['milk_grams_per_beneficiary'],
@@ -95,12 +120,15 @@ class ProgramacionEntregaService
                 'oat_bag_grams' => $configuration['oat_bag_grams'],
                 'milk_cans_per_box' => $configuration['milk_cans_per_box'],
                 'oat_kg_per_sack' => $configuration['oat_kg_per_sack'],
+                'monthly_roster_id' => $monthlyRosterId,
             ]);
+            $this->distributions->setPeriodRoster($period, $monthlyRosterId);
 
             foreach ($rows as $row) {
                 $baseBeneficiaries = (int) $baseRows->get($row['association_id'])['beneficiarios_base'];
                 $this->distributions->upsertAssignment($period->id, $row['association_id'], [
                     'beneficiary_adjustment' => (int) $row['total_beneficiarios'] - $baseBeneficiaries,
+                    'included' => $row['incluido'] ?? null,
                     'scheduled_milk' => round((float) $row['leche'], 2),
                     'scheduled_milk_rounded' => (int) $row['leche_redondeo'],
                     'scheduled_oat' => round((float) $row['hojuela'], 2),
@@ -119,6 +147,15 @@ class ProgramacionEntregaService
                 'PERIOD_NOT_FOUND'
             );
         }
+    }
+
+    private function isUsableRoster(int $rosterId, int $year, int $month): bool
+    {
+        return MonthlyRoster::query()
+            ->whereKey($rosterId)
+            ->where('status', MonthlyRoster::CLOSED)
+            ->whereDate('period', '<=', sprintf('%04d-%02d-01', $year, $month))
+            ->exists();
     }
 
     private function ingresoRequired(int $year, int $month): ProgramacionEntregaException

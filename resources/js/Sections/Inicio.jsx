@@ -9,8 +9,21 @@ const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'O
 const MESES_LARGOS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 // Año mínimo seleccionable en las gráficas (coincide con InicioController::MIN_YEAR).
-const ANIO_MIN = 2019;
+const ANIO_MIN = 2026;
+// Primer periodo del resumen (Marzo 2026); no se permite nada anterior.
+const PERIODO_MIN = { anio: 2026, mes: 3 };
 const ANIO_ACTUAL = new Date().getFullYear();
+const MES_ACTUAL = new Date().getMonth() + 1;
+// Periodos (mes + año) desde el actual hasta Marzo 2026, del más reciente al más antiguo.
+const PERIODOS = (() => {
+    const list = [];
+    for (let y = ANIO_ACTUAL; y >= PERIODO_MIN.anio; y--) {
+        const first = y === PERIODO_MIN.anio ? PERIODO_MIN.mes : 1;
+        const last = y === ANIO_ACTUAL ? MES_ACTUAL : 12;
+        for (let m = last; m >= first; m--) list.push({ anio: y, mes: m });
+    }
+    return list;
+})();
 // Años disponibles, del actual hacia atrás hasta ANIO_MIN.
 const ANIOS = Array.from({ length: Math.max(1, ANIO_ACTUAL - ANIO_MIN + 1) }, (_, i) => ANIO_ACTUAL - i);
 
@@ -817,18 +830,43 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
 
             <AvisosNormativa />
 
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
-                <div>
-                    <h2 className="font-extrabold text-charcoal text-base sm:text-lg">Resumen del período</h2>
-                    <p className="text-xs sm:text-sm text-slate" aria-live="polite">Datos vigentes y entregas de {cardsPeriodLabel}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <FiltroSelect value={periodoMes || ''} onChange={setPeriodoMes} label="Mes del resumen">
-                        {MESES_LARGOS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}
-                    </FiltroSelect>
-                    <FiltroSelect value={periodoAnio || ''} onChange={setPeriodoAnio} label="Año del resumen">
-                        {ANIOS.map((year) => <option key={year} value={year}>{year}</option>)}
-                    </FiltroSelect>
+            <div className="mb-4 sm:mb-5">
+                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                    <div className="min-w-0">
+                        <h2 className="font-extrabold text-charcoal text-xl sm:text-2xl flex items-center gap-3">
+                            <i className="fas fa-chart-line text-amber" aria-hidden="true" />
+                            Resumen del período
+                        </h2>
+                        <p className="text-xs sm:text-sm text-slate mt-1" aria-live="polite">
+                            Datos vigentes y entregas de {cardsPeriodLabel}
+                        </p>
+                    </div>
+                    <label className="flex items-center gap-3 sm:shrink-0 rounded-xl bg-blue-light/50 border border-blue/15 pl-3 pr-1.5 py-1.5">
+                        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate whitespace-nowrap">
+                            <i className="fas fa-calendar-days text-blue" aria-hidden="true" />
+                            Periodo
+                        </span>
+                        <span className="relative inline-flex items-center flex-1">
+                            <select
+                                aria-label="Periodo del resumen"
+                                value={`${periodoAnio}-${periodoMes}`}
+                                onChange={(e) => {
+                                    const [y, m] = e.target.value.split('-').map(Number);
+                                    setPeriodoAnio(y);
+                                    setPeriodoMes(m);
+                                }}
+                                className="appearance-none w-full text-sm font-bold text-blue bg-white rounded-lg pl-3 pr-9 py-2 min-h-[44px] border border-blue/30 shadow-sm cursor-pointer transition-colors hover:border-blue focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue"
+                            >
+                                {PERIODOS.map(({ anio, mes }) => (
+                                    <option key={`${anio}-${mes}`} value={`${anio}-${mes}`}>{MESES_LARGOS[mes - 1]} {anio}</option>
+                                ))}
+                                {!PERIODOS.some((p) => p.anio === periodoAnio && p.mes === periodoMes) && (
+                                    <option value={`${periodoAnio}-${periodoMes}`}>{MESES_LARGOS[periodoMes - 1]} {periodoAnio}</option>
+                                )}
+                            </select>
+                            <i className="fas fa-chevron-down pointer-events-none absolute right-3 text-xs text-blue/70" aria-hidden="true" />
+                        </span>
+                    </label>
                 </div>
             </div>
 
@@ -981,9 +1019,9 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                                 textClass="text-amber"
                             />
                         )}
-                        {allowedSections.has('movimientos') && (
+                        {allowedSections.has('pecosas') && (
                             <QuickButton
-                                onClick={() => onNavigate?.('movimientos', 'reparticion')}
+                                onClick={() => onNavigate?.('pecosas', 'reparticion')}
                                 icon="fa-file-pdf"
                                 label="Repartición"
                                 bgClass="bg-teal-light hover:bg-teal/10"
@@ -991,14 +1029,34 @@ const { stats, pecosas_por_mes: pecosasPorMes, socios_vs_beneficiarios: sociosVs
                                 textClass="text-teal"
                             />
                         )}
+                        {allowedSections.has('pecosas') && (
+                            <QuickButton
+                                onClick={() => onNavigate?.('pecosas', 'new-pecosa')}
+                                icon="fa-file-signature"
+                                label="Nueva PECOSA"
+                                bgClass="bg-blue-light hover:bg-blue/10"
+                                tileClass="bg-blue"
+                                textClass="text-blue"
+                            />
+                        )}
                         {allowedSections.has('productos') && (
                             <QuickButton
-                                onClick={() => onNavigate?.('productos', 'productos')}
-                                icon="fa-box"
-                                label="Productos"
-                                bgClass="bg-sky-light hover:bg-sky/10"
-                                tileClass="bg-sky"
-                                textClass="text-sky"
+                                onClick={() => onNavigate?.('productos', 'new-ingreso')}
+                                icon="fa-plus"
+                                label="Nuevo ingreso"
+                                bgClass="bg-amber-light hover:bg-amber/10"
+                                tileClass="bg-amber"
+                                textClass="text-amber"
+                            />
+                        )}
+                        {allowedSections.has('productos') && (
+                            <QuickButton
+                                onClick={() => onNavigate?.('productos', 'programacion')}
+                                icon="fa-calendar-check"
+                                label="Programación"
+                                bgClass="bg-teal-light hover:bg-teal/10"
+                                tileClass="bg-teal"
+                                textClass="text-teal"
                             />
                         )}
                     </div>

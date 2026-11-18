@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\AssociationIdentity;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -36,6 +37,7 @@ class DirectiveSeeder extends Seeder
         $periodsByCommittee = [];
         foreach ($periodRows as $row) {
             [$code, $period, , , , $presidentDni] = array_pad($row, 6, null);
+            $code = AssociationIdentity::rosterCode((string) $code, (string) $period);
             if (!$presidentDni) {
                 continue;
             }

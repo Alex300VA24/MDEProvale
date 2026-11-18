@@ -27,6 +27,7 @@ class StorePartnerRequest extends FormRequest
             'association_id' => 'required|exists:associations,id',
             'state_id' => ['required', Rule::exists('states', 'id')->where(fn ($q) => $q->whereIn('abbreviation', [State::CURRENT, State::EXPIRED]))],
             'date_begin' => 'required|date',
+            'monthly_roster_id' => ['nullable', 'integer', Rule::exists('monthly_rosters', 'id')->where('status', 'DRAFT')],
             'date_end' => 'nullable|date|after_or_equal:date_begin',
             'observations' => 'nullable|string',
             'marital_status' => 'nullable|string|max:50',
@@ -59,6 +60,11 @@ class StorePartnerRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            if (in_array($this->input('socioeconomic_condition'), ['GESTANTE', 'LACTANTE'], true)
+                && People::find($this->input('person_id'))?->gender !== 'F') {
+                $validator->errors()->add('socioeconomic_condition', 'Gestante y Lactante solo están disponibles para género femenino.');
+            }
+
             if ($this->filled('benefit_child_person_id')) {
                 $childPersonId = (int) $this->input('benefit_child_person_id');
                 $beneficiaryPeople = collect($this->input('beneficiaries', []))->pluck('person_id')->map(fn ($id) => (int) $id);

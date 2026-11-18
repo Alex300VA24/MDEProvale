@@ -34,6 +34,7 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
     const [year, setYear] = useState(now.getFullYear());
     const [month, setMonth] = useState(now.getMonth() + 1);
     const [sector, setSector] = useState('');
+    const [monthlyRosterId, setMonthlyRosterId] = useState('');
     const [payload, setPayload] = useState(null);
     const [loading, setLoading] = useState(false);
     const [notice, setNotice] = useState('');
@@ -50,9 +51,10 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
         setNoticeCode('');
         try {
             const response = await http.get(BASE, {
-                params: { year: debouncedYear, month, ...(sector ? { sector } : {}) },
+                params: { year: debouncedYear, month, ...(sector ? { sector } : {}), ...(monthlyRosterId ? { monthly_roster_id: monthlyRosterId } : {}) },
             });
             setPayload(response.data);
+            setMonthlyRosterId(response.data?.roster_selection?.selected_id ?? '');
             setDraftRows(response.data?.data ?? []);
             setDirty(false);
         } catch (error) {
@@ -62,7 +64,7 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
         } finally {
             setLoading(false);
         }
-    }, [debouncedYear, month, sector]);
+    }, [debouncedYear, month, sector, monthlyRosterId]);
 
     useEffect(() => { load(); }, [load]);
 
@@ -72,7 +74,7 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
     const periodYear = payload?.period?.year ?? year;
     const lastDay = new Date(periodYear, periodMonth, 0).getDate();
     const rosterTitle = `PROGRAMACION DE ENTREGA DE LOS PRODUCTOS DEL PROGRAMA VASO DE LECHE (PERIODO DEL 01 AL ${String(lastDay).padStart(2, '0')} DE ${MONTHS[periodMonth - 1].toUpperCase()}) LECHE EVAPORADA ENTERA Y HOJUELAS DE QUINUA AVENA CON AZUCAR FORTIFICADO CON VITAMINAS Y MINERALES`;
-    const totals = useMemo(() => rows.reduce((result, row) => ({
+    const totals = useMemo(() => rows.filter((row) => row.incluido !== false).reduce((result, row) => ({
         beneficiaries: result.beneficiaries + Number(row.total_beneficiarios ?? 0),
         milk: result.milk + Number(row.leche ?? 0),
         milkRounded: result.milkRounded + Number(row.leche_redondeo ?? 0),
@@ -108,8 +110,10 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
                 year: Number(periodYear),
                 month: Number(periodMonth),
                 ...(sector ? { sector } : {}),
+                monthly_roster_id: monthlyRosterId || null,
                 rows: rows.map((row) => ({
                     association_id: row.association_id,
+                    incluido: row.incluido ?? null,
                     total_beneficiarios: Number(row.total_beneficiarios),
                     leche: Number(row.leche),
                     leche_redondeo: Number(row.leche_redondeo),
@@ -130,7 +134,7 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
 
     return (
         <div aria-busy={loading || saving}>
-            <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[128px_190px_minmax(220px,1fr)_auto] gap-3 items-end">
+            <div className="mb-5 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[128px_170px_minmax(200px,1fr)_minmax(250px,1fr)_auto] gap-3 items-end">
                 <div>
                     <label htmlFor="schedule-year" className={labelCls}>Año</label>
                     <input id="schedule-year" type="number" min="2019" max="2100" value={year} onChange={(event) => setYear(Number(event.target.value))} className={inputCls} />
@@ -146,6 +150,15 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
                     <select id="schedule-sector" value={sector} onChange={(event) => setSector(event.target.value)} className={inputCls}>
                         <option value="">Todos los sectores</option>
                         {sectors.map((name) => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="schedule-roster" className={labelCls}>Padrón utilizado</label>
+                    <select id="schedule-roster" value={monthlyRosterId} onChange={(event) => { setMonthlyRosterId(event.target.value); setDirty(true); }} className={inputCls}>
+                        <option value="">Seleccione un padrón cerrado</option>
+                        {(payload?.roster_selection?.options ?? [])
+                            .filter((option) => String(option.period).slice(0, 7) <= `${year}-${String(month).padStart(2, '0')}`)
+                            .map((option) => <option key={option.id} value={option.id}>{option.label} · {formatAmount(option.beneficiary_count)} beneficiarios</option>)}
                     </select>
                 </div>
                 <div className="flex min-h-11 items-center justify-end gap-2">
@@ -182,9 +195,13 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
 
             {payload && (
                 <>
+                    <div className={`mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 ${payload.roster_selection?.confirmed ? 'border-leaf/30 bg-leaf-light/60 text-leaf' : 'border-sun/40 bg-sun-light/60 text-[#7A4600]'}`} role="status">
+                        <i className={`fas ${payload.roster_selection?.confirmed ? 'fa-circle-check' : 'fa-triangle-exclamation'} mt-0.5`} aria-hidden="true" />
+                        <div className="text-sm"><strong className="font-extrabold">{payload.roster_selection?.confirmed ? 'Padrón confirmado para esta programación.' : 'Confirme el padrón antes de guardar.'}</strong><p className="mt-0.5 opacity-90">El vínculo no cambiará automáticamente cuando se cierre un padrón posterior.</p></div>
+                    </div>
                     <div className="mb-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
                         {[
-                            ['Comités programados', rows.length],
+                            ['Comités programados', rows.filter((row) => row.incluido !== false).length],
                             ['Beneficiarios', formatAmount(totals.beneficiaries)],
                             ['Leche al redondeo', formatAmount(totals.milkRounded)],
                             ['Hojuela al redondeo', `${formatAmount(totals.oatRounded)} kg`],
@@ -210,6 +227,7 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
                             <thead>
                                 <tr>
                                     <th scope="col" className="px-3 py-3 text-center">N°</th>
+                                    <th scope="col" className="px-3 py-3 text-center">Usar</th>
                                     <th scope="col" className="px-3 py-3 text-left">COD</th>
                                     <th scope="col" className="px-3 py-3 text-left">Club de madres</th>
                                     <th scope="col" className="px-3 py-3 text-left">Presidenta</th>
@@ -224,10 +242,18 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
                             </thead>
                             <tbody>
                                 {rows.length === 0 ? (
-                                    <tr><td colSpan={11}><div className="empty-state"><i className="fas fa-calendar-day" /><p>No hay comités para este filtro.</p></div></td></tr>
+                                    <tr><td colSpan={12}><div className="empty-state"><i className="fas fa-calendar-day" /><p>No hay comités para este filtro.</p></div></td></tr>
                                 ) : rows.map((row, index) => (
-                                    <tr key={row.association_id ?? row.codigo}>
+                                    <tr key={row.association_id ?? row.codigo} className={row.incluido === false ? 'opacity-60' : ''}>
                                         <td className="px-3 py-3 text-center tabular-nums">{index + 1}</td>
+                                        <td className="px-3 py-3 text-center">
+                                            <label className="inline-flex cursor-pointer flex-col items-center gap-1">
+                                                {row.activo === false
+                                                    ? <span className="inline-block rounded-full bg-clay-light px-2 py-0.5 text-xs font-bold text-clay">Inactivo</span>
+                                                    : <span className="inline-block rounded-full bg-leaf-light px-2 py-0.5 text-xs font-bold text-leaf">Activo</span>}
+                                                <input type="checkbox" checked={row.incluido !== false} disabled={!can.edit} onChange={(event) => changeRow(row.association_id, 'incluido', event.target.checked)} aria-label={`Usar ${row.nombre} en la programación`} className="h-4 w-4 accent-leaf" />
+                                            </label>
+                                        </td>
                                         <td className="px-3 py-3 font-mono text-xs text-earth">{row.codigo}</td>
                                         <td className="px-3 py-3 font-bold text-charcoal">{row.nombre}</td>
                                         <td className="px-3 py-3">{row.presidenta || 'Sin asignar'}</td>
@@ -244,7 +270,7 @@ export default function ProgramacionEntregaTab({ can = {}, onGoToIngresos }) {
                             {rows.length > 0 && (
                                 <tfoot>
                                     <tr className="bg-surface font-extrabold text-charcoal">
-                                        <th scope="row" colSpan={6} className="px-3 py-3 text-right">TOTAL</th>
+                                        <th scope="row" colSpan={7} className="px-3 py-3 text-right">TOTAL</th>
                                         <td className="px-3 py-3 text-center tabular-nums">{formatAmount(totals.beneficiaries)}</td>
                                         <td className="px-3 py-3 text-right tabular-nums">{formatAmount(totals.milk)}</td>
                                         <td className="px-3 py-3 text-right tabular-nums">{formatAmount(totals.milkRounded)}</td>

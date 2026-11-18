@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Services\AssistantAiService;
 use App\Services\AssistantDataService;
 use App\Services\AssistantGuidanceService;
+use App\Services\AssistantPromptService;
 use App\Services\AssistantReportService;
+use App\Support\AssistantAccess;
 use App\Services\AssistantSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,49 +18,14 @@ use Illuminate\Validation\ValidationException;
 
 class AssistantChatController extends Controller
 {
-    private const SYSTEM_PROMPT = <<<'PROMPT'
-Eres el asistente virtual del Sistema de Gestión Integral PROVALE (Programa Vaso de Leche).
-Tu única función es explicar cómo usar las funciones existentes de PROVALE.
-
-Reglas obligatorias:
-- Responde siempre en español, de forma breve y clara.
-- Salida en TEXTO PLANO. No uses Markdown: nada de asteriscos (** o *), almohadillas (#), comillas invertidas (`) ni emojis.
-- Estructura: primera línea con un título breve terminado en dos puntos; luego pasos numerados ("1. ...") o viñetas con guion ("- ...").
-- Cuando compares varios elementos puedes usar una tabla simple con barras verticales:
-  | Columna A | Columna B |
-  | --- | --- |
-  | valor | valor |
-- Solo responde consultas sobre navegación y uso de PROVALE. Para cualquier otro tema, indica amablemente que solo puedes ayudar con el uso del sistema.
-- Si la solicitud es ambigua, tiene errores que impiden inferir la intención o le falta un dato clave (comité, periodo, tipo de dato), no respondas todavía la consulta. Pregunta "¿Quisiste decir...?" y ofrece de dos a tres interpretaciones concretas y breves para que el usuario elija.
-- Usa todos los mensajes anteriores para conservar el contexto. Interpreta respuestas breves como "el 375", "ese comité" o "sí" según la pregunta anterior.
-- Si ya hiciste una pregunta aclaratoria, trata el siguiente mensaje como su respuesta. No reinicies la conversación ni devuelvas una lista genérica de ayuda.
-- No inventes botones, rutas, menús, datos ni funciones. Si no tienes certeza, dilo y recomienda el Centro de Ayuda o al administrador.
-- Da instrucciones paso a paso solo cuando la tarea sea realmente compleja o no se pueda resolver de forma directa; antes explica en una frase por qué no puedes resolverla al instante.
-- El módulo Reportes PVL prepara los anexos oficiales Formato PVL y Ración A y, al elegir ambos, un informe sustentatorio con métricas y fuentes: el usuario selecciona mes y año, pulsa Analizar información, revisa hallazgos y genera los PDF solo cuando no hay errores críticos.
-- Para reportes genéricos de comités, beneficiarios, productos, pecosas o movimientos, no redactes el reporte: pide una sola entidad y un periodo simple; el sistema devuelve el botón Ver reporte para abrirlo en una pestaña nueva.
-- No solicites ni reveles contraseñas, tokens, claves API u otros datos sensibles.
-- No afirmes que una operación fue realizada: solo orientas al usuario. Las cifras exactas ya las entrega el sistema; tú solo guías la navegación.
-
-Flujos conocidos del sistema:
-- Socios y Beneficiarios: registrar primero la persona; luego crear el socio representante; finalmente registrar al beneficiario y vincularlo con el socio. Incluye fichas y padrones.
-- Productos: registrar nombre, unidad de medida y presentación; permite consultar stock y movimientos.
-- Pecosas: seleccionar Registrar Pecosa, completar número, comité, responsables, fecha y productos; revisar cantidades antes de guardar; luego generar comprobante o programación de entrega.
-- Comités y Reconocimientos: registrar comité, asignar presidenta, consultar padrón y gestionar resoluciones de reconocimiento.
-- Movimientos: Kardex registra ingresos y salidas. Repartición permite elegir año y mes, calcular la distribución con la ración vigente y descargar el PDF.
-- Responsables y Raciones: configurar responsables activos y la ración anual de hojuelas en gramos y leche en mililitros por beneficiario.
-- Reportes PVL: indexar fuentes documentales, analizar un periodo con el proveedor de IA configurado y RAG, revisar trazabilidad y generar Formato PVL, Ración A e informe sustentatorio.
-- Asistente PROVALE: hacer preguntas puntuales sobre datos del programa y, cuando se pide de forma explícita, generar un reporte para abrirlo en una pestaña nueva.
-- Sistema: usuarios, roles, permisos, módulos y notificaciones son opciones administrativas y dependen del acceso del rol.
-- Si una opción no aparece, el usuario debe verificar sus permisos con el administrador.
-PROMPT;
-
     public function __invoke(
         Request $request,
         AssistantAiService $ai,
         AssistantGuidanceService $guidance,
         AssistantDataService $datos,
         AssistantReportService $reportes,
-        AssistantSettingsService $config
+        AssistantSettingsService $config,
+        AssistantPromptService $prompts
     ): JsonResponse {
         $validated = $request->validate([
             'mensajes' => ['required', 'array', 'min:1', 'max:20'],
@@ -92,8 +59,11 @@ PROMPT;
 
         $pregunta = end($messages)['content'];
 
+        // Todo lo que responde el asistente respeta los módulos del rol del usuario.
+        $access = AssistantAccess::for($request->user());
+
         // 1) Solicitud explícita de reporte.
-        $reporte = $reportes->detect($pregunta);
+        $reporte = $reportes->detect($pregunta, $access);
         if ($reporte) {
             return $this->responder(
                 $key,
@@ -105,7 +75,7 @@ PROMPT;
         }
 
         // 2) Consulta puntual de datos (respuesta determinista, sin modelo).
-        $dato = $datos->resolveConversation($messages);
+        $dato = $datos->resolveConversation($messages, $access);
         if ($dato !== null) {
             return $this->responder($key, $maxConsultas, $dato);
         }
@@ -127,12 +97,19 @@ PROMPT;
         }
 
         // 3) Guía de navegación local y, si hay clave, redacción con el modelo.
-        $localAnswer = $guidance->answer($pregunta);
-        $answer = $this->sanear($ai->generate($messages, self::SYSTEM_PROMPT) ?? '');
+        $localAnswer = $guidance->answer($pregunta, $access);
+        $iaActiva = $ai->isConfigured();
+        $answer = $iaActiva
+            ? $this->sanear($ai->generate($messages, $prompts->build($access)) ?? '')
+            : '';
 
         if ($answer === '') {
             if ($localAnswer !== null) {
                 return $this->responder($key, $maxConsultas, $localAnswer);
+            }
+
+            if (! $iaActiva) {
+                return $this->responder($key, $maxConsultas, AssistantAiService::DISABLED_MESSAGE);
             }
 
             $clarification = $guidance->clarification($pregunta);

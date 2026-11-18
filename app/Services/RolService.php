@@ -67,7 +67,8 @@ class RolService
 
     /**
      * Separa y normaliza los permisos por módulo del payload. Editar, crear y
-     * eliminar solo aplican si el rol puede ver el módulo.
+     * eliminar solo aplican si el rol puede ver el módulo. Los módulos grupo
+     * (con submódulos) no guardan permisos: se derivan de sus submódulos.
      *
      * @return array<int, array<string,bool>>
      */
@@ -81,8 +82,14 @@ class RolService
             throw ValidationException::withMessages(['modules' => 'Uno o más módulos seleccionados no existen.']);
         }
 
+        $groupIds = $this->modules->groupIds($requestedIds);
+
         $permissions = [];
         foreach ($modules as $moduleId => $flags) {
+            if (in_array((int) $moduleId, $groupIds, true)) {
+                continue;
+            }
+
             $canView = (bool) ($flags['can_view'] ?? false);
             $permissions[$moduleId] = [
                 'can_view' => $canView,

@@ -183,6 +183,10 @@ class KnowledgeBaseRagService extends BaseRagService
             .'No incluyas una sección de fuentes separada porque la interfaz ya muestra las fuentes utilizadas.'
             ."\n\nCONTEXTO:\n".$context;
 
+        if (! $this->ai->isConfigured()) {
+            throw new \App\Exceptions\AiProviderException(AssistantAiService::DISABLED_MESSAGE, 503, 'CONFIGURATION');
+        }
+
         $answer = $this->ai->generate([['role' => 'user', 'content' => $question]], $systemPrompt);
 
         if ($answer === null) {

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\AssociationIdentity;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +45,10 @@ class TemporalPartnerSeeder extends Seeder
             $data = json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
             foreach ($data as $row) {
                 $dni = $this->normalizeDni($row[0] ?? '');
-                $code = trim((string) ($row[1] ?? ''));
+                $code = AssociationIdentity::rosterCode(
+                    trim((string) ($row[1] ?? '')),
+                    $this->monthDates[$month]
+                );
                 if (!$dni || !$code) {
                     continue;
                 }

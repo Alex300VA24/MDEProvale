@@ -22,6 +22,8 @@ class UpdatePecosaRequest extends FormRequest
             'pecosa_number' => 'sometimes|required|string|max:50|unique:pecosas,pecosa_number,' . $pecosaId,
             'observation' => 'nullable|string',
             'delivery_date' => 'sometimes|required|date',
+            'service_period' => 'nullable|date_format:Y-m',
+            'monthly_roster_id' => ['nullable', 'integer', Rule::exists('monthly_rosters', 'id')->where('status', 'CLOSED')],
             'chief_id' => 'nullable|exists:responsibles,id',
             'storekeeper_id' => 'nullable|exists:responsibles,id',
             // La presidenta se resuelve por comité y mes del padrón.

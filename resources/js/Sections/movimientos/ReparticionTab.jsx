@@ -13,6 +13,21 @@ const inputCls = 'w-full min-h-11 px-3 py-2 border-2 border-wheat rounded-xl tex
 const compactInputCls = 'w-full min-h-10 px-2 py-1.5 border border-mist rounded-lg text-sm font-semibold text-charcoal bg-white focus:outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/20';
 const labelCls = 'block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1';
 
+function UseToggle({ club, onChange, disabled, inline = false }) {
+    const badge = club.activo
+        ? <span className="inline-block rounded-full bg-leaf-light px-2 py-0.5 text-xs font-bold text-leaf">Activo</span>
+        : <span className="inline-block rounded-full bg-clay-light px-2 py-0.5 text-xs font-bold text-clay">Inactivo</span>;
+    return (
+        <label className={`inline-flex cursor-pointer items-center gap-2 ${inline ? '' : 'flex-col'}`}>
+            {badge}
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-earth">
+                <input type="checkbox" checked={!!club.incluido} disabled={disabled} onChange={(event) => onChange(event.target.checked)} aria-label={`Usar ${club.nombre} en la repartición`} className="h-4 w-4 accent-leaf" />
+                {inline && 'Usar'}
+            </span>
+        </label>
+    );
+}
+
 function calculate(club, assignment, config) {
     const beneficiaries = Math.max(0, Number(club.beneficiarios_base) + Number(assignment.beneficiary_adjustment || 0));
     const days = Math.max(1, Number(config.service_days) || 1);
@@ -22,6 +37,7 @@ function calculate(club, assignment, config) {
     const oat = Math.round((beneficiaries * (Number(config.oat_grams_per_beneficiary) || 0) * days) / Math.max(1, Number(config.oat_bag_grams) || 1));
     return {
         ...club,
+        incluido: assignment.included ?? club.incluido,
         beneficiarios: beneficiaries,
         ajuste_beneficiarios: Number(assignment.beneficiary_adjustment || 0),
         vuelta: Math.max(1, Number(assignment.route_number || 1)),
@@ -70,8 +86,9 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
     const receiveReport = useCallback((data) => {
         setReport(data);
         setConfig(data.configuration);
-        setAssignments(Object.fromEntries(data.associations.map((club) => [club.id, {
+        setAssignments(Object.fromEntries([...data.associations, ...(data.excluidos ?? [])].map((club) => [club.id, {
             association_id: club.id,
+            included: club.incluido,
             route_number: club.vuelta,
             beneficiary_adjustment: club.ajuste_beneficiarios,
             observation: club.observacion || '',
@@ -102,14 +119,15 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
 
     const calculated = useMemo(() => {
         if (!report || !config) return [];
-        return report.associations.map((club) => calculate(club, assignments[club.id] || {}, config))
+        return [...report.associations, ...(report.excluidos ?? [])].map((club) => calculate(club, assignments[club.id] || {}, config))
             .sort((a, b) => a.vuelta - b.vuelta || String(a.codigo).localeCompare(String(b.codigo)));
     }, [report, config, assignments]);
 
     const totals = useMemo(() => {
-        const beneficiaries = calculated.reduce((sum, club) => sum + club.beneficiarios, 0);
-        const milk = calculated.reduce((sum, club) => sum + club.leche_total, 0);
-        const oat = calculated.reduce((sum, club) => sum + club.hojuelas_kg, 0);
+        const used = calculated.filter((club) => club.incluido);
+        const beneficiaries = used.reduce((sum, club) => sum + club.beneficiarios, 0);
+        const milk = used.reduce((sum, club) => sum + club.leche_total, 0);
+        const oat = used.reduce((sum, club) => sum + club.hojuelas_kg, 0);
         return {
             beneficiaries,
             milk,
@@ -152,6 +170,7 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
                 oat_kg_per_sack: Number(config.oat_kg_per_sack),
                 assignments: Object.values(assignments).map((item) => ({
                     ...item,
+                    included: item.included ?? null,
                     route_number: Number(item.route_number || 1),
                     beneficiary_adjustment: Number(item.beneficiary_adjustment || 0),
                 })),
@@ -232,11 +251,12 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
                 </div>
 
                 <section className="mb-5" aria-labelledby="routes-title">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-3"><div><h4 id="routes-title" className="font-extrabold text-charcoal">Vueltas y diversificación</h4><p className="text-sm text-earth">Ajuste suma o resta cupos solo en este período.</p></div><span className="text-xs font-bold text-earth">{calculated.length} comités · {new Set(calculated.map((club) => club.vuelta)).size} vueltas</span></div>
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-3"><div><h4 id="routes-title" className="font-extrabold text-charcoal">Vueltas y diversificación</h4><p className="text-sm text-earth">Ajuste suma o resta cupos solo en este período.</p></div><span className="text-xs font-bold text-earth">{calculated.filter((club) => club.incluido).length} de {calculated.length} comités · {new Set(calculated.filter((club) => club.incluido).map((club) => club.vuelta)).size} vueltas</span></div>
 
                     <div className="space-y-3 md:hidden">
-                        {pageRows.map((club) => <article key={club.id} className="rounded-2xl border border-mist bg-white p-4 shadow-sm">
-                            <div className="flex justify-between gap-3"><div className="min-w-0"><div className="font-mono text-xs text-earth">{club.codigo}</div><h5 className="font-extrabold text-charcoal break-words">{club.nombre}</h5><p className="text-sm text-earth break-words">{club.sector}</p></div><span className="h-fit rounded-full bg-blue-light text-blue px-3 py-1 text-xs font-bold whitespace-nowrap">{club.beneficiarios} benef.</span></div>
+                        {pageRows.map((club, index) => <article key={club.id} className="rounded-2xl border border-mist bg-white p-4 shadow-sm">
+                            <div className="flex justify-between gap-3"><div className="flex min-w-0 gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-xs font-bold text-white">{(page - 1) * PAGE_SIZE + index + 1}</span><div className="min-w-0"><div className="font-mono text-xs text-earth">{club.codigo}</div><h5 className="font-extrabold text-charcoal break-words">{club.nombre}</h5><p className="text-sm text-earth break-words">{club.sector}</p></div></div><span className="h-fit rounded-full bg-blue-light text-blue px-3 py-1 text-xs font-bold whitespace-nowrap">{club.beneficiarios} benef.</span></div>
+                            <div className="mt-3"><UseToggle club={club} disabled={!can.edit} onChange={(value) => changeAssignment(club.id, 'included', value)} inline /></div>
                             <div className="grid grid-cols-2 gap-3 mt-4"><div><label className={labelCls} htmlFor={`route-mobile-${club.id}`}>Vuelta N°</label><input id={`route-mobile-${club.id}`} type="number" min="1" value={assignments[club.id]?.route_number ?? 1} onChange={(event) => changeAssignment(club.id, 'route_number', event.target.value)} disabled={!can.edit} className={compactInputCls} /></div><div><label className={labelCls} htmlFor={`adjust-mobile-${club.id}`}>Ajuste cupos</label><input id={`adjust-mobile-${club.id}`} type="number" value={assignments[club.id]?.beneficiary_adjustment ?? 0} onChange={(event) => changeAssignment(club.id, 'beneficiary_adjustment', event.target.value)} disabled={!can.edit} className={compactInputCls} /></div></div>
                             <div className="mt-3 grid grid-cols-2 gap-2 text-sm"><div className="rounded-lg bg-teal-light p-2"><strong>{club.leche_total}</strong> tarros<br /><span>{club.leche_cajas} cajas + {club.leche_tarros} sueltos</span></div><div className="rounded-lg bg-sun-light p-2"><strong>{club.hojuelas_kg}</strong> kg<br /><span>{club.hojuelas_sacos} sacos + {club.hojuelas_kilos} kg</span></div></div>
                         </article>)}
@@ -244,9 +264,9 @@ export default function ReparticionTab({ can = {}, onGoToMovimientos }) {
 
                     <div className="hidden md:block overflow-auto max-h-[calc(100vh-20rem)] border-2 border-charcoal/30">
                         <table className="data-table w-full min-w-[1050px] border-collapse text-sm [&_th]:border [&_th]:border-white/20 [&_td]:border [&_td]:border-charcoal/20">
-                            <thead className="sticky top-0 z-10"><tr><th className="px-3 py-3 text-left">Código / comité</th><th className="px-3 py-3 text-left">Sector</th><th className="px-3 py-3 text-center">Base</th><th className="px-3 py-3 text-center">Ajuste</th><th className="px-3 py-3 text-center">Total</th><th className="px-3 py-3 text-center">Vuelta</th><th className="px-3 py-3 text-right">Leche</th><th className="px-3 py-3 text-right">Hojuela</th><th className="px-3 py-3 text-left">Observación</th></tr></thead>
-                            <tbody>{calculated.map((club) => <tr key={club.id}>
-                                <td className="px-3 py-3"><span className="font-mono text-xs text-earth">{club.codigo}</span><div className="font-bold text-charcoal max-w-52 break-words">{club.nombre}</div></td><td className="px-3 py-3 max-w-36 break-words">{club.sector || '—'}</td><td className="px-3 py-3 text-center tabular-nums">{club.beneficiarios_base}</td>
+                            <thead className="sticky top-0 z-10"><tr><th scope="col" className="px-3 py-3 text-center">N°</th><th scope="col" className="px-3 py-3 text-center">Usar</th><th scope="col" className="px-3 py-3 text-left">Código / comité</th><th scope="col" className="px-3 py-3 text-left">Sector</th><th scope="col" className="px-3 py-3 text-center">Benef.</th><th scope="col" className="px-3 py-3 text-center">Ajuste</th><th scope="col" className="px-3 py-3 text-center">Total</th><th scope="col" className="px-3 py-3 text-center">Vuelta</th><th scope="col" className="px-3 py-3 text-right">Leche</th><th scope="col" className="px-3 py-3 text-right">Hojuela</th><th scope="col" className="px-3 py-3 text-left">Observación</th></tr></thead>
+                            <tbody>{calculated.map((club, index) => <tr key={club.id} className={club.incluido ? '' : 'opacity-60'}>
+                                <td className="px-3 py-3 text-center tabular-nums">{index + 1}</td><td className="px-3 py-3 text-center"><UseToggle club={club} disabled={!can.edit} onChange={(value) => changeAssignment(club.id, 'included', value)} /></td><td className="px-3 py-3"><span className="font-mono text-xs text-earth">{club.codigo}</span><div className="font-bold text-charcoal max-w-52 break-words">{club.nombre}</div></td><td className="px-3 py-3 max-w-36 break-words">{club.sector || '—'}</td><td className="px-3 py-3 text-center tabular-nums">{club.beneficiarios_base}</td>
                                 <td className="px-2 py-2 w-24"><label className="sr-only" htmlFor={`adjust-${club.id}`}>Ajuste de cupos para {club.nombre}</label><input id={`adjust-${club.id}`} type="number" value={assignments[club.id]?.beneficiary_adjustment ?? 0} onChange={(event) => changeAssignment(club.id, 'beneficiary_adjustment', event.target.value)} disabled={!can.edit} className={compactInputCls} /></td>
                                 <td className="px-3 py-3 text-center font-extrabold tabular-nums">{club.beneficiarios}</td><td className="px-2 py-2 w-20"><label className="sr-only" htmlFor={`route-${club.id}`}>Vuelta para {club.nombre}</label><input id={`route-${club.id}`} type="number" min="1" value={assignments[club.id]?.route_number ?? 1} onChange={(event) => changeAssignment(club.id, 'route_number', event.target.value)} disabled={!can.edit} className={compactInputCls} /></td>
                                 <td className="px-3 py-3 text-right whitespace-nowrap tabular-nums"><strong>{club.leche_total}</strong><br /><span className="text-xs text-earth">{club.leche_cajas} cajas + {club.leche_tarros}</span></td><td className="px-3 py-3 text-right whitespace-nowrap tabular-nums"><strong>{club.hojuelas_kg} kg</strong><br /><span className="text-xs text-earth">{club.hojuelas_sacos} sacos + {club.hojuelas_kilos} kg</span></td>

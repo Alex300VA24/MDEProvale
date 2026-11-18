@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Límite (5 consultas / 3 h por usuario) aplicado dentro del controlador
         // para poder informar el cupo restante en cada respuesta.
-        Route::post('/asistente/chat', AssistantChatController::class);
+        // El asistente forma parte del módulo Ayuda: sin acceso al módulo no se atiende.
+        Route::post('/asistente/chat', AssistantChatController::class)->middleware('module:ayuda,view');
     });
 });

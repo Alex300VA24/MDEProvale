@@ -29,6 +29,12 @@ interface ModuleRepositoryInterface
 
     public function rolesCount(Module $module): int;
 
+    /** @param  int[]  $ids @return int[] ids que son grupos (tienen submódulos) */
+    public function groupIds(array $ids): array;
+
+    /** Cantidad de submódulos directos del módulo. */
+    public function childrenCount(Module $module): int;
+
     /** Módulos activos con permisos efectivos del usuario (administrador: todos). */
     public function permissionsFor(User $user): Collection;
 }

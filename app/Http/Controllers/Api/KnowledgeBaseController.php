@@ -10,6 +10,7 @@ use App\Models\KnowledgeBaseDocument;
 use App\Models\NormativaDocument;
 use App\Services\KnowledgeBase\KnowledgeBaseRagService;
 use App\Services\KnowledgeBase\KnowledgeBaseService;
+use App\Services\KnowledgeBase\KnowledgeChangeLogService;
 use App\Services\UploadSettingsService;
 use Illuminate\Http\Request;
 
@@ -159,6 +160,30 @@ class KnowledgeBaseController extends Controller
         }
 
         return response()->json($result);
+    }
+
+    /** Historial de trazabilidad (solo administrador). */
+    public function history(Request $request, KnowledgeChangeLogService $log)
+    {
+        $page = $log->paginate(
+            in_array($request->query('source'), ['portal', 'beneficiarios', 'resoluciones', 'sistema'], true) ? $request->query('source') : null,
+            trim((string) $request->query('q', '')) ?: null,
+            (int) $request->query('per_page', 15),
+        );
+
+        return response()->json([
+            'data' => collect($page->items())->map(fn ($row) => [
+                'id' => $row->id,
+                'source' => $row->source,
+                'event_type' => $row->event_type,
+                'title' => $row->title,
+                'summary' => $row->summary,
+                'priority' => $row->priority,
+                'details' => $row->details,
+                'occurred_at' => $row->occurred_at?->toIso8601String(),
+            ]),
+            'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'total' => $page->total()],
+        ]);
     }
 
     private function fail(KnowledgeBaseException $exception)

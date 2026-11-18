@@ -9,6 +9,7 @@ class DistributionPeriod extends Model
     protected $fillable = [
         'year',
         'month',
+        'monthly_roster_id',
         'service_days',
         'milk_grams_per_beneficiary',
         'oat_grams_per_beneficiary',
@@ -21,6 +22,7 @@ class DistributionPeriod extends Model
     protected $casts = [
         'year' => 'integer',
         'month' => 'integer',
+        'monthly_roster_id' => 'integer',
         'service_days' => 'integer',
         'milk_grams_per_beneficiary' => 'decimal:3',
         'oat_grams_per_beneficiary' => 'decimal:3',
@@ -33,5 +35,10 @@ class DistributionPeriod extends Model
     public function assignments()
     {
         return $this->hasMany(DistributionAssignment::class);
+    }
+
+    public function monthlyRoster()
+    {
+        return $this->belongsTo(MonthlyRoster::class);
     }
 }

@@ -229,7 +229,7 @@ class ComitesApiTest extends TestCase
         ];
     }
 
-    private function reconocimientoPayload(string $document = 'RES-003'): array
+    private function reconocimientoPayload(string $document = '0003-2026'): array
     {
         return [
             'document' => $document,
@@ -647,9 +647,9 @@ class ComitesApiTest extends TestCase
         $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE . '/reconocimientos', $this->reconocimientoPayload())
             ->assertStatus(201)
-            ->assertJsonPath('data.document', 'RES-003');
+            ->assertJsonPath('data.document', '0003-2026');
 
-        $this->assertDatabaseHas('resolutions', ['document' => 'RES-003']);
+        $this->assertDatabaseHas('resolutions', ['document' => '0003-2026']);
     }
 
     public function test_update_reconocimiento_updates(): void
@@ -665,7 +665,7 @@ class ComitesApiTest extends TestCase
     public function test_destroy_reconocimiento_without_references_deletes(): void
     {
         $response = $this->actingAs($this->userWithAccess())
-            ->postJson(self::BASE . '/reconocimientos', $this->reconocimientoPayload('RES-003'))
+            ->postJson(self::BASE . '/reconocimientos', $this->reconocimientoPayload('0003-2026'))
             ->assertStatus(201);
         $resolutionId = $response->json('data.id');
 
@@ -758,7 +758,7 @@ class ComitesApiTest extends TestCase
             ->assertJsonValidationErrors('position');
     }
 
-    public function test_asignar_varios_cargos_in_one_operation(): void
+    public function test_asignar_varios_cargos_rechaza_la_misma_socia_repetida(): void
     {
         $secretariaId = DB::table('positions')->where('title', 'SECRETARIA')->value('id');
         $tesoreraId = DB::table('positions')->where('title', 'TESORERA')->value('id');
@@ -770,17 +770,15 @@ class ComitesApiTest extends TestCase
                     ['position' => 'TESORERA', 'partner_id' => 1],
                 ],
             ])
-            ->assertOk()
-            ->assertJsonPath('data.current_positions.PRESIDENTA', 1)
-            ->assertJsonPath('data.current_positions.SECRETARIA', 1)
-            ->assertJsonPath('data.current_positions.TESORERA', 1);
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('assignments.1.partner_id');
 
-        $this->assertDatabaseHas('directives', [
+        $this->assertDatabaseMissing('directives', [
             'partner_id' => 1,
             'position_id' => $secretariaId,
             'state_id' => 2,
         ]);
-        $this->assertDatabaseHas('directives', [
+        $this->assertDatabaseMissing('directives', [
             'partner_id' => 1,
             'position_id' => $tesoreraId,
             'state_id' => 2,
@@ -791,7 +789,7 @@ class ComitesApiTest extends TestCase
     {
         $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE.'/reconocimientos', [
-                'document' => '999-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31', 'pending' => true,
+                'document' => '0999-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31', 'pending' => true,
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('observation');
@@ -801,7 +799,7 @@ class ComitesApiTest extends TestCase
     {
         $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE.'/reconocimientos', [
-                'document' => '999-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31',
+                'document' => '0999-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31',
                 'pending' => true, 'observation' => 'Falta publicar en el portal',
             ])
             ->assertCreated()
@@ -815,7 +813,7 @@ class ComitesApiTest extends TestCase
     {
         $id = $this->actingAs($this->userWithAccess())
             ->postJson(self::BASE.'/reconocimientos', [
-                'document' => '998-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31',
+                'document' => '0998-2026', 'date_start' => '2026-01-01', 'date_end' => '2026-12-31',
                 'pending' => true, 'observation' => 'Falta publicar',
             ])
             ->assertCreated()
@@ -836,7 +834,7 @@ class ComitesApiTest extends TestCase
         DB::table('resolutions')->where('id', 2)->update(['state_id' => 3]);
 
         $this->actingAs($this->userWithAccess())
-            ->postJson(self::BASE.'/reconocimientos/2/regularizar', ['document' => '777-2026'])
+            ->postJson(self::BASE.'/reconocimientos/2/regularizar', ['document' => '0777-2026'])
             ->assertStatus(422);
 
         $this->assertDatabaseHas('resolutions', ['id' => 2, 'state_id' => 3]);
@@ -844,18 +842,18 @@ class ComitesApiTest extends TestCase
 
     public function test_regularize_moves_pending_to_current_when_portal_has_it(): void
     {
-        $html = '<table><tr class="od"><td>1</td><td>x</td><td>RESOLUCION DE ALCALDIA 777-2026</td><td>01/01/2026</td>'
+        $html = '<table><tr class="od"><td>1</td><td>x</td><td>RESOLUCION DE ALCALDIA 0777-2026</td><td>01/01/2026</td>'
             ."<td><a onclick=\"window.open('../files/777.pdf')\">pdf</a></td></tr></table>";
         \Illuminate\Support\Facades\Http::fake(['*' => \Illuminate\Support\Facades\Http::response($html, 200)]);
         DB::table('resolutions')->where('id', 2)->update(['state_id' => 3, 'observation' => 'x']);
         \Illuminate\Support\Facades\Cache::flush();
 
         $this->actingAs($this->userWithAccess())
-            ->postJson(self::BASE.'/reconocimientos/2/regularizar', ['document' => '777-2026'])
+            ->postJson(self::BASE.'/reconocimientos/2/regularizar', ['document' => '0777-2026'])
             ->assertOk()
             ->assertJsonPath('data.state.abbreviation', 'VIG');
 
-        $this->assertDatabaseHas('resolutions', ['id' => 2, 'document' => '777-2026', 'state_id' => 2, 'observation' => null]);
+        $this->assertDatabaseHas('resolutions', ['id' => 2, 'document' => '0777-2026', 'state_id' => 2, 'observation' => null]);
     }
 
     public function test_padron_is_blocked_for_active_committee_with_pending_latest_resolution(): void

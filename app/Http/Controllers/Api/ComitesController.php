@@ -155,21 +155,23 @@ class ComitesController extends Controller
     public function storeReconocimiento(StoreReconocimientoRequest $request, MunicipalResolutionService $municipal)
     {
         $data = $request->validated();
+        $document = trim($data['document']);
+        $year = now()->year;
+
+        if (! preg_match('/^\d{4}-'.preg_quote((string) $year, '/').'$/', $document)) {
+            return response()->json([
+                'success' => false,
+                'reason' => 'invalid_format',
+                'message' => 'El documento "'.$document.'" debe tener el formato 1234-'.$year.'.',
+                'hint' => 'Ingrese 4 dígitos, un guion y el año actual.',
+                'retryable' => false,
+            ], 422);
+        }
+
+        $data['document'] = $document;
 
         // Sin Pendiente: el número debe existir en el portal municipal para guardar.
         if (! ($data['pending'] ?? false)) {
-            $document = trim($data['document']);
-
-            if (! preg_match('/^\d+-\d{4}$/', $document)) {
-                return response()->json([
-                    'success' => false,
-                    'reason' => 'invalid_format',
-                    'message' => 'El documento "'.$document.'" no tiene el formato NNNN-AAAA (ej: 0123-2026).',
-                    'hint' => 'Corrige el número o marca la resolución como Pendiente para guardarla sin validación.',
-                    'retryable' => false,
-                ], 422);
-            }
-
             try {
                 $match = $municipal->resolveByDocument($document);
             } catch (MunicipalPortalException $e) {
@@ -243,11 +245,12 @@ class ComitesController extends Controller
 
         $document = trim($request->input('document'));
 
-        if (! preg_match('/^\d+-\d{4}$/', $document)) {
+        $year = now()->year;
+        if (! preg_match('/^\d{4}-'.preg_quote((string) $year, '/').'$/', $document)) {
             return response()->json([
                 'success' => false,
                 'reason' => 'invalid_format',
-                'message' => 'El documento "'.$document.'" no tiene el formato NNNN-AAAA (ej: 0123-2026).',
+                'message' => 'El documento "'.$document.'" debe tener el formato 1234-'.$year.'.',
                 'hint' => 'Corrige el número o marca la resolución como Pendiente.',
                 'retryable' => false,
             ], 422);

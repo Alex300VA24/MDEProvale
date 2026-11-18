@@ -15,23 +15,26 @@ use App\Models\Beneficiarie;
 use App\Models\DocumentAttachment;
 use App\Models\Partner;
 use App\Models\People;
+use App\Models\MonthlyRoster;
 use App\Services\BeneficiaryService;
 use App\Services\DocumentAttachmentService;
 use App\Services\PartnerService;
 use App\Services\PersonService;
 use App\Services\UploadSettingsService;
+use App\Services\MonthlyRosterService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class SociosBeneficiariosController extends Controller
 {
-    private const PARTNER_FIELDS_OUT_OF_MODEL = ['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id'];
+    private const PARTNER_FIELDS_OUT_OF_MODEL = ['family_document', 'conadis_document', 'beneficiary_documents', 'beneficiaries', 'fum', 'benefit_child_person_id', 'monthly_roster_id'];
 
     public function __construct(
         private PartnerService $partnerService,
         private PersonService $personService,
-        private BeneficiaryService $beneficiaryService
+        private BeneficiaryService $beneficiaryService,
+        private MonthlyRosterService $monthlyRosters
     ) {
     }
 
@@ -60,6 +63,9 @@ class SociosBeneficiariosController extends Controller
             $request->only(['fum', 'benefit_child_person_id']),
             $this->registrationDocuments($request)
         );
+        if ($request->filled('monthly_roster_id')) {
+            $this->monthlyRosters->sync(MonthlyRoster::findOrFail($request->integer('monthly_roster_id')));
+        }
 
         return (new PartnerResource($this->partnerService->detail($partner)))
             ->response()
@@ -75,13 +81,24 @@ class SociosBeneficiariosController extends Controller
             $request->only(['fum', 'benefit_child_person_id']),
             $this->registrationDocuments($request)
         );
+        if ($request->filled('monthly_roster_id')) {
+            $this->monthlyRosters->sync(MonthlyRoster::findOrFail($request->integer('monthly_roster_id')));
+        }
 
         return new PartnerResource($this->partnerService->detail($partner));
     }
 
-    public function destroyPartner(Partner $partner)
+    public function destroyPartner(Request $request, Partner $partner)
     {
+        $validated = $request->validate([
+            'monthly_roster_id' => ['nullable', 'integer', Rule::exists('monthly_rosters', 'id')->where('status', MonthlyRoster::DRAFT)],
+        ]);
+
         $this->partnerService->deleteWithRelations($partner);
+
+        if (! empty($validated['monthly_roster_id'])) {
+            $this->monthlyRosters->sync(MonthlyRoster::findOrFail($validated['monthly_roster_id']));
+        }
 
         return response()->json(null, 204);
     }

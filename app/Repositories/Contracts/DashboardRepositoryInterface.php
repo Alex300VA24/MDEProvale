@@ -18,7 +18,7 @@ interface DashboardRepositoryInterface
     /** @return array{relations:int, people:int} beneficiarios vigentes (relaciones y personas distintas). */
     public function beneficiaryCounts(string $start, string $end): array;
 
-    /** Comités del padrón mensual del periodo, o todos si no hay padrón. */
+    /** Comités activos del padrón mensual del periodo, o activos actuales si no hay padrón. */
     public function committeeCount(string $periodStart): int;
 
     /** @return array{byType: array<string,int>, total:int} personas socias y beneficiarias a la vez. */

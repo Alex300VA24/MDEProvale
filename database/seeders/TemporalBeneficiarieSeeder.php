@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\AssociationIdentity;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -43,7 +44,10 @@ class TemporalBeneficiarieSeeder extends Seeder
             foreach ($data as $row) {
                 $personDni = $this->normalizeDni($row[0] ?? '');
                 $partnerDni = $this->normalizeDni($row[1] ?? '');
-                $associationCode = trim((string) ($row[2] ?? ''));
+                $associationCode = AssociationIdentity::rosterCode(
+                    trim((string) ($row[2] ?? '')),
+                    $this->monthDates[$month]
+                );
 
                 if (!$personDni || !$partnerDni || !$associationCode) {
                     continue;
