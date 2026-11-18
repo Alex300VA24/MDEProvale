@@ -18,11 +18,13 @@ class TemporalBeneficiarieHistorySeeder extends Seeder
         'julio' => 3872,
         'agosto' => 3822,
         'septiembre' => 3870,
+        'octubre' => 3872,
+        'noviembre' => 3872,
     ];
 
     protected array $months = [
         'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre',
     ];
 
     protected array $monthDates = [
@@ -33,6 +35,8 @@ class TemporalBeneficiarieHistorySeeder extends Seeder
         'julio'      => '2026-07-01',
         'agosto'     => '2026-08-01',
         'septiembre' => '2026-09-01',
+        'octubre'    => '2026-10-01',
+        'noviembre'  => '2026-11-01',
     ];
 
     /**
@@ -57,6 +61,8 @@ class TemporalBeneficiarieHistorySeeder extends Seeder
         'julio' => [],
         'agosto' => [],
         'septiembre' => [],
+        'octubre' => [],
+        'noviembre' => [],
     ];
 
     public function run(): void

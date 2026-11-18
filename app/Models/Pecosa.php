@@ -2,13 +2,26 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Pecosa extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
+
+    protected string $auditModule = 'pecosas';
+    protected string $auditName = 'Pecosa';
+    protected array $auditLabels = [
+        'pecosa_number' => 'N° de pecosa', 'observation' => 'Observación', 'delivery_date' => 'Fecha de entrega',
+        'service_period' => 'Periodo de servicio', 'state_id' => 'Estado', 'association_id' => 'Comité',
+    ];
+
+    public function auditLabel(): string
+    {
+        return 'Pecosa: '.($this->pecosa_number ?: '#'.$this->getKey());
+    }
 
     protected $fillable = [
         'pecosa_number',

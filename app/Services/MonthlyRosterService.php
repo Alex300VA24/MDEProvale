@@ -83,7 +83,10 @@ class MonthlyRosterService
             ]);
     }
 
-    public function bootstrapHistoricalPeriods(): int
+    /**
+     * @param  array<int, string>  $draftPeriods  periodos (Y-m-d) que se dejan en borrador sin cerrar
+     */
+    public function bootstrapHistoricalPeriods(array $draftPeriods = []): int
     {
         $periods = DB::table('association_roster_periods')
             ->select('period')
@@ -104,7 +107,9 @@ class MonthlyRosterService
                 'status' => MonthlyRoster::DRAFT,
             ]);
             $this->materialize($roster);
-            $this->close($roster, null);
+            if (! in_array($periodStart, $draftPeriods, true)) {
+                $this->close($roster, null);
+            }
             $created++;
         }
 

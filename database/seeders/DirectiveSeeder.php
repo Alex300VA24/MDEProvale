@@ -45,7 +45,7 @@ class DirectiveSeeder extends Seeder
             $periodsByCommittee[$code][$period] = $this->normalizeDni($presidentDni);
         }
 
-        $lastSourcePeriod = '2026-09-01';
+        $lastSourcePeriod = '2026-11-01';
         $now = now();
         $directives = [];
 

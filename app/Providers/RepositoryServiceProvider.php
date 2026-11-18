@@ -19,6 +19,8 @@ use App\Repositories\Contracts\DashboardRepositoryInterface;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
 use App\Repositories\DashboardRepository;
 use App\Repositories\AuditRepository;
+use App\Repositories\AuditTrailRepository;
+use App\Repositories\Contracts\AuditTrailRepositoryInterface;
 use App\Repositories\Contracts\AuditRepositoryInterface;
 use App\Repositories\Contracts\DirectiveRepositoryInterface;
 use App\Repositories\Contracts\RacionRepositoryInterface;
@@ -77,6 +79,7 @@ class RepositoryServiceProvider extends ServiceProvider
     public array $bindings = [
         AssociationRepositoryInterface::class => AssociationRepository::class,
         AuditRepositoryInterface::class => AuditRepository::class,
+        AuditTrailRepositoryInterface::class => AuditTrailRepository::class,
         BeneficiaryRepositoryInterface::class => BeneficiaryRepository::class,
         CatalogRepositoryInterface::class => CatalogRepository::class,
         DirectiveRepositoryInterface::class => DirectiveRepository::class,

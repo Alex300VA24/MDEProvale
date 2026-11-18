@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -10,7 +11,19 @@ use Carbon\Carbon;
 
 class Association extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
+
+    protected string $auditModule = 'comites';
+    protected string $auditName = 'Comité';
+    protected array $auditLabels = [
+        'code' => 'Código', 'name' => 'Nombre', 'address' => 'Dirección', 'phone' => 'Teléfono',
+        'observation' => 'Observación', 'state_id' => 'Estado',
+    ];
+
+    public function auditLabel(): string
+    {
+        return 'Comité: '.trim(($this->code ? $this->code.' - ' : '').$this->name);
+    }
 
     protected $fillable = [
         'code',

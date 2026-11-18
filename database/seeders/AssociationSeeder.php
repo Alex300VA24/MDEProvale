@@ -1005,11 +1005,11 @@ class AssociationSeeder extends Seeder
                 'type_premises_id' => 1,
             ],
             [
-                'code'             => '395',
+                'code'             => '020',
                 'name'             => 'LOS ANGELITOS',
                 'company_name'     => 'CDM',
-                'address'          => 'Mz.E Lt.04 Las Palmeras IV',
-                'observation'      => 'Comité de SQL Server (COM_id 179). Falta código oficial, resolución y sector reales; datos provisionales.',
+                'address'          => "Mz.E' Lt.4 AA.HH. Las Palmeras - IV Sector",
+                'observation'      => 'Comité de SQL Server (COM_id 179), identificado provisionalmente como 395 en las PECOSAs. Código oficial 020 desde el padrón de noviembre de 2026; resolución pendiente de regularización.',
                 'phone'            => null,
                 'resolution_id'    => $pendingResolutionIds['PENDIENTE-COMITE-395'],
                 'state_id'         => DB::table('states')->where('abbreviation', 'VEN')->value('id'),
@@ -1031,6 +1031,12 @@ class AssociationSeeder extends Seeder
 
             if (!$a['resolution_id']) {
                 throw new \RuntimeException("No se pudo resolver la resolución del comité {$a['code']}.");
+            }
+
+            // El comité 395 provisional pasó a ser el 020 oficial: se
+            // renombra la fila existente para conservar sus PECOSAs.
+            if ($a['code'] === '020') {
+                DB::table('associations')->where('code', '395')->update(['code' => '020']);
             }
 
             DB::table('associations')->updateOrInsert(

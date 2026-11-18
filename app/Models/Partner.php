@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,22 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Partner extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
+
+    protected string $auditModule = 'socios';
+    protected string $auditName = 'Socio';
+    protected array $auditLabels = [
+        'person_id' => 'Persona', 'association_id' => 'Comité', 'state_id' => 'Estado',
+        'position_id' => 'Cargo', 'date_begin' => 'Fecha de inicio', 'date_end' => 'Fecha de fin',
+        'observations' => 'Observaciones',
+    ];
+
+    public function auditLabel(): string
+    {
+        $person = $this->person_id ? People::find($this->person_id) : null;
+
+        return 'Socio: '.($person ? $person->auditLabel() : '#'.$this->getKey());
+    }
 
     protected $fillable = [
         'date_begin',

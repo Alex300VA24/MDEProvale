@@ -2,12 +2,25 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Resolution extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
+
+    protected string $auditModule = 'resoluciones';
+    protected string $auditName = 'Resolución';
+    protected array $auditLabels = [
+        'document' => 'Documento', 'date_document' => 'Fecha del documento', 'date_start' => 'Fecha de inicio',
+        'date_end' => 'Fecha de fin', 'observation' => 'Observación', 'state_id' => 'Estado', 'file' => 'Archivo',
+    ];
+
+    public function auditLabel(): string
+    {
+        return 'Resolución: '.($this->document ?: '#'.$this->getKey());
+    }
 
     protected $fillable = [
         'document',

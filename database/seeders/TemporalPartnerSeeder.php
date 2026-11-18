@@ -12,7 +12,7 @@ class TemporalPartnerSeeder extends Seeder
 {
     protected array $months = [
         'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre',
     ];
 
     protected array $monthDates = [
@@ -23,6 +23,8 @@ class TemporalPartnerSeeder extends Seeder
         'julio'      => '2026-07-01',
         'agosto'     => '2026-08-01',
         'septiembre' => '2026-09-01',
+        'octubre'    => '2026-10-01',
+        'noviembre'  => '2026-11-01',
     ];
 
     public function run(): void

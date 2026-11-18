@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,7 +13,20 @@ use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, Auditable;
+
+    protected string $auditModule = 'usuarios';
+    protected string $auditName = 'Usuario';
+    protected array $auditExclude = ['must_change_password'];
+    protected array $auditLabels = [
+        'names' => 'Nombres', 'father_surname' => 'Apellido paterno', 'mother_surname' => 'Apellido materno',
+        'username' => 'Usuario', 'email' => 'Correo', 'dni' => 'DNI', 'rol_id' => 'Rol', 'state_id' => 'Estado',
+    ];
+
+    public function auditLabel(): string
+    {
+        return 'Usuario: '.$this->username;
+    }
 
     /**
      * The attributes that are mass assignable.

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +12,20 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Beneficiarie extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
+
+    protected string $auditModule = 'beneficiarios';
+    protected string $auditName = 'Beneficiario';
+    protected array $auditLabels = [
+        'person_id' => 'Persona', 'partner_id' => 'Socio', 'relationship_id' => 'Parentesco', 'priority' => 'Prioridad',
+    ];
+
+    public function auditLabel(): string
+    {
+        $person = $this->person_id ? People::find($this->person_id) : null;
+
+        return 'Beneficiario: '.($person ? $person->auditLabel() : '#'.$this->getKey());
+    }
 
     protected $fillable = [
         'person_id',

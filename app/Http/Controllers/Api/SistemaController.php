@@ -14,11 +14,13 @@ use App\Http\Resources\ModuleResource;
 use App\Http\Resources\NotificationResource;
 use App\Http\Resources\RolResource;
 use App\Http\Resources\UserResource;
+use App\Models\AuditLog;
 use App\Models\Module;
 use App\Models\Notification;
 use App\Models\Rol;
 use App\Models\User;
 use App\Services\AssistantSettingsService;
+use App\Services\AuditTrailService;
 use App\Services\ModuleService;
 use App\Services\NotificationService;
 use App\Services\RolService;
@@ -34,7 +36,8 @@ class SistemaController extends Controller
         private RolService $roles,
         private ModuleService $modules,
         private NotificationService $notifications,
-        private SystemAuditService $audit
+        private SystemAuditService $audit,
+        private AuditTrailService $trail
     ) {
     }
 
@@ -331,5 +334,32 @@ class SistemaController extends Controller
             $data['search'] ?? null,
             (int) ($data['per_page'] ?? 20)
         ));
+    }
+
+    // ==================== HISTORIAL DE CAMBIOS ====================
+
+    public function changeHistory(Request $request)
+    {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'module' => ['nullable', 'string', 'max:60'],
+            'action' => ['nullable', 'string', 'max:30'],
+            'user_id' => ['nullable', 'integer'],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        return response()->json($this->trail->list($filters, (int) ($filters['per_page'] ?? 20)));
+    }
+
+    public function changeHistoryShow(AuditLog $auditLog)
+    {
+        return response()->json(['data' => $this->trail->detail($auditLog)]);
+    }
+
+    public function changeHistoryOptions()
+    {
+        return response()->json(['data' => $this->trail->filterOptions()]);
     }
 }

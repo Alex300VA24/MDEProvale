@@ -271,5 +271,10 @@ Route::prefix('dashboard/sistema')->name('api.sistema.')->group(function () {
             ->middleware('module:sistema,edit')
             ->name('upload-config.update');
         Route::get('audit-events', [SistemaController::class, 'auditEvents'])->name('audit-events');
+
+        // Historial de Cambios (trazabilidad por usuario).
+        Route::get('change-history', [SistemaController::class, 'changeHistory'])->name('change-history');
+        Route::get('change-history/options', [SistemaController::class, 'changeHistoryOptions'])->name('change-history.options');
+        Route::get('change-history/{auditLog}', [SistemaController::class, 'changeHistoryShow'])->whereNumber('auditLog')->name('change-history.show');
     });
 });

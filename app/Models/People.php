@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,20 @@ use Carbon\Carbon;
 
 class People extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
+
+    protected string $auditModule = 'personas';
+    protected string $auditName = 'Persona';
+    protected array $auditLabels = [
+        'names' => 'Nombres', 'father_lastname' => 'Apellido paterno', 'mother_lastname' => 'Apellido materno',
+        'dni' => 'DNI', 'gender' => 'Sexo', 'telephone_number' => 'Teléfono', 'phone_number' => 'Celular',
+        'birthdate' => 'Fecha de nacimiento', 'address' => 'Dirección',
+    ];
+
+    public function auditLabel(): string
+    {
+        return trim("{$this->names} {$this->father_lastname} {$this->mother_lastname}").($this->dni ? " (DNI {$this->dni})" : '');
+    }
 
     protected $fillable = [
         'names',

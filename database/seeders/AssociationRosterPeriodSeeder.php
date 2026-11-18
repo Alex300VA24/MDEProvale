@@ -96,6 +96,8 @@ class AssociationRosterPeriodSeeder extends Seeder
             '2026-07' => 3872,
             '2026-08' => 3822,
             '2026-09' => 3870,
+            '2026-10' => 3872,
+            '2026-11' => 3872,
         ];
         $totals = DB::table('association_roster_periods')
             ->selectRaw('period, SUM(beneficiary_count) AS total')

@@ -11,6 +11,8 @@ final class AssociationIdentity
     public const ISABEL_CRUZ_CODE = '019';
     public const ISABEL_LEGACY_PLACEHOLDER = '390';
     public const ISABEL_START = '2026-09-01';
+    public const ANGELITOS_LEGACY_PLACEHOLDER = '395';
+    public const ANGELITOS_CODE = '020';
 
     /**
      * El padrón reutilizó el código 019 para otra organización en setiembre.
@@ -49,6 +51,10 @@ final class AssociationIdentity
         if ($sourceCode === self::ISABEL_LEGACY_PLACEHOLDER
             || str_contains($name, 'ISABEL CRUZ DE MARCELO')) {
             return self::ISABEL_CRUZ_CODE;
+        }
+
+        if ($sourceCode === self::ANGELITOS_LEGACY_PLACEHOLDER) {
+            return self::ANGELITOS_CODE;
         }
 
         if ($sourceCode === self::ISABEL_CRUZ_CODE

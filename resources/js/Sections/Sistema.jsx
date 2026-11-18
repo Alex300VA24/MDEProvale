@@ -7,6 +7,7 @@ import NotificacionesTab from './sistema/NotificacionesTab';
 import AsistenteConfigTab from './sistema/AsistenteConfigTab';
 import ParametrosTab from './sistema/ParametrosTab';
 import AuditoriaTab from './sistema/AuditoriaTab';
+import HistorialCambiosTab from './sistema/HistorialCambiosTab';
 import ConocimientoTab from './sistema/ConocimientoTab';
 
 const HEADERS = {
@@ -17,6 +18,7 @@ const HEADERS = {
     asistente: { icon: 'fa-robot', title: 'Asistente IA', description: 'Configura el límite de consultas del asistente IA por usuario.' },
     parametros: { icon: 'fa-sliders', title: 'Parámetros', description: 'Configura límites globales del sistema.' },
     auditoria: { icon: 'fa-shield-halved', title: 'Auditoría', description: 'Consulta eventos automáticos y cambios sensibles.' },
+    historial: { icon: 'fa-clock-rotate-left', title: 'Historial de Cambios', description: 'Trazabilidad: quién modificó qué, cuándo y desde dónde.' },
     conocimiento: { icon: 'fa-database', title: 'Base de Conocimiento IA', adminOnly: true, description: 'Documentos indexados, consultas con IA e historial de cambios detectados.' },
 };
 
@@ -110,6 +112,9 @@ export default function Sistema() {
                 </div>
                 <div className={tab === 'auditoria' ? '' : 'hidden'}>
                     <AuditoriaTab />
+                </div>
+                <div className={tab === 'historial' ? '' : 'hidden'}>
+                    {tab === 'historial' && <HistorialCambiosTab />}
                 </div>
                 {isAdmin && (
                     <div className={tab === 'conocimiento' ? '' : 'hidden'}>
