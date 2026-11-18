@@ -32,7 +32,7 @@ class AssociationSeeder extends Seeder
         // agosto a octubre 2026. Faltan código oficial, resolución y sector
         // reales: se usan marcadores explícitos hasta contar con esos datos.
         $pendingResolutionIds = [];
-        foreach (['PENDIENTE-COMITE-019-ISABEL', 'PENDIENTE-COMITE-395'] as $document) {
+        foreach (['PENDIENTE-COMITE-395'] as $document) {
             DB::table('resolutions')->updateOrInsert(
                 ['document' => $document],
                 [
@@ -997,10 +997,10 @@ class AssociationSeeder extends Seeder
                 'name'             => 'ISABEL CRUZ DE MARCELO',
                 'company_name'     => 'CDM',
                 'address'          => 'Mz.G Lt.22 Las Palmeras',
-                'observation'      => 'Comité de SQL Server (COM_id 110). Usa el código 019 desde setiembre de 2026; resolución y sector pendientes de regularización.',
+                'observation'      => 'Comité de SQL Server (COM_id 110). Usa el código 019 desde setiembre de 2026; sector pendiente de regularización.',
                 'phone'            => null,
-                'resolution_id'    => $pendingResolutionIds['PENDIENTE-COMITE-019-ISABEL'],
-                'state_id'         => DB::table('states')->where('abbreviation', 'VEN')->value('id'),
+                'resolution_id'    => DB::table('resolutions')->where('document', '0786-2026')->whereDate('date_start', '2026-08-27')->whereDate('date_end', '2028-08-27')->value('id'),
+                'state_id'         => 1,
                 'place_sector_id'  => 2,
                 'type_premises_id' => 1,
             ],

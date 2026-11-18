@@ -101,6 +101,8 @@ class ResolutionAssociationSeeder extends Seeder
             ['code' => '111', 'document' => '1062-2022', 'date_start' => '2022-09-14', 'date_end' => '2024-09-14'],
             // Comité 111 - MADRE JOSEFINA POTEL | Resolución 3
             ['code' => '111', 'document' => '1081-2024', 'date_start' => '2024-11-06', 'date_end' => '2026-11-06'],
+            // Comité 118 - UNIDAS EN UN SOLO CORAZÓN | Resolución 2
+            ['code' => '118', 'document' => '0915-2026', 'date_start' => '2026-10-07', 'date_end' => '2028-10-07'],
             // Comité 120 - GLORIA VALDERRAMA GARCIA | Resolución 2
             ['code' => '120', 'document' => '1332-2022', 'date_start' => '2022-11-23', 'date_end' => '2024-11-23'],
             // Comité 120 - GLORIA VALDERRAMA GARCIA | Resolución 3

@@ -221,6 +221,10 @@ class ResolutionSeeder extends Seeder
             ['document' => '1245-2022', 'date_start' => '2022-10-20', 'date_end' => '2024-10-20'],
             ['document' => '1243-2024', 'date_start' => '2024-12-02', 'date_end' => '2026-12-02'],
             ['document' => '1235-2025', 'date_start' => '2025-11-20', 'date_end' => '2027-11-20'],
+            // 019 - ISABEL CRUZ DE MARCELO | Resolución 1
+            ['document' => '0786-2026', 'date_start' => '2026-08-27', 'date_end' => '2028-08-27'],
+            // 118 - UNIDAS EN UN SOLO CORAZÓN | Resolución 2
+            ['document' => '0915-2026', 'date_start' => '2026-10-07', 'date_end' => '2028-10-07'],
         ];
         $today = now()->toDateString();
         $timestamp = now();

@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
         $activeStateId = DB::table('states')->where('abbreviation', 'ACT')->value('id');
         $requiredRoles = ['Administrador', 'Usuario Principal', 'Usuario Básico'];
 
-        if (! $activeStateId || collect($requiredRoles)->contains(fn ($role) => ! $roleIds->has($role))) {
+        if (! $activeStateId || collect([...$requiredRoles, 'Rol 3'])->contains(fn ($role) => ! $roleIds->has($role))) {
             throw new RuntimeException('Faltan el estado ACT o los roles base para crear usuarios.');
         }
 
@@ -51,16 +51,28 @@ class UserSeeder extends Seeder
                 'email' => 'usuario1@example.com',
                 'role' => 'Usuario Básico',
             ],
+            [
+                'names' => 'Ruth Susy Elizabeth',
+                'father_surname' => 'Seminario',
+                'mother_surname' => 'López',
+                'username' => 'SUSY',
+                'dni' => '40593949',
+                'cui' => '1',
+                'email' => 'susyseminario80@gmail.com',
+                'role' => 'Rol 3',
+                'password' => 'Susy123++',
+            ],
         ];
 
         foreach ($users as $user) {
             $role = $user['role'];
-            unset($user['role']);
+            $password = $user['password'] ?? 'admin';
+            unset($user['role'], $user['password']);
 
             DB::table('users')->updateOrInsert(
                 ['username' => $user['username']],
                 array_merge($user, [
-                    'password' => bcrypt('admin'),
+                    'password' => bcrypt($password),
                     'rol_id' => $roleIds->get($role),
                     'state_id' => $activeStateId,
                     'created_at' => $now,

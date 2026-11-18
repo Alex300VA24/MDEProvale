@@ -103,8 +103,18 @@ class CommitteeService
 
     public function update(Association $association, array $data): Association
     {
-        $this->associations->updateAssociation($association, $data);
-        $this->states->sync($this->associations->fresh($association, 'resolution'));
+        $previousResolutionId = $association->resolution_id;
+
+        DB::transaction(function () use ($association, $data, $previousResolutionId) {
+            $this->associations->updateAssociation($association, $data);
+
+            // Al cambiar de resolución, la anterior pasa al historial del comité en vez de perderse.
+            if ($previousResolutionId && $association->resolution_id !== $previousResolutionId) {
+                $association->resolutionsHistory()->syncWithoutDetaching([$previousResolutionId]);
+            }
+        });
+
+        $this->states->sync($this->associations->fresh($association, ['resolution', 'resolutionsHistory']));
         Association::clearPresidentaCache($association->id);
 
         return $this->present($association);
