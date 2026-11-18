@@ -330,13 +330,20 @@ class MonthlyRosterService
             ->whereDate('period', $start)
             ->pluck('association_id');
 
+        $activeAssociationIds = DB::table('partners')
+            ->where(fn ($query) => $query->whereNull('date_begin')->orWhereDate('date_begin', '<=', $end))
+            ->where(fn ($query) => $query->whereNull('date_end')->orWhereDate('date_end', '>=', $start))
+            ->distinct()
+            ->pluck('association_id');
+
+        // Con padrón importado: incluir además comités nuevos nunca importados.
         $associationIds = $importedAssociationIds->isNotEmpty()
-            ? $importedAssociationIds
-            : DB::table('partners')
-                ->where(fn ($query) => $query->whereNull('date_begin')->orWhereDate('date_begin', '<=', $end))
-                ->where(fn ($query) => $query->whereNull('date_end')->orWhereDate('date_end', '>=', $start))
-                ->distinct()
-                ->pluck('association_id');
+            ? $importedAssociationIds->merge(
+                $activeAssociationIds->diff(
+                    DB::table('association_roster_periods')->distinct()->pluck('association_id')
+                )
+            )->unique()->values()
+            : $activeAssociationIds;
 
         $associations = Association::with(['placeSector.place', 'placeSector.sector', 'typePremises'])
             ->whereIn('id', $associationIds)
@@ -397,12 +404,22 @@ class MonthlyRosterService
             ->whereDate('beneficiary_histories.date_begin', '<=', $end)
             ->where(fn ($dates) => $dates->whereNull('beneficiary_histories.date_end')->orWhereDate('beneficiary_histories.date_end', '>=', $start));
 
+        $activeInPeriod = fn ($q) => $q
+            ->where(fn ($dates) => $dates->whereNull('partners.date_begin')->orWhereDate('partners.date_begin', '<=', $end))
+            ->where(fn ($dates) => $dates->whereNull('partners.date_end')->orWhereDate('partners.date_end', '>=', $start));
+
         if ($useImportedRoster) {
-            $query->join('partner_roster_periods', 'partner_roster_periods.partner_id', '=', 'partners.id')
-                ->whereDate('partner_roster_periods.period', $start);
+            // Socios importados para el período, o socios nuevos que nunca fueron importados.
+            $query->where(fn ($q) => $q
+                ->whereExists(fn ($sub) => $sub->selectRaw('1')->from('partner_roster_periods')
+                    ->whereColumn('partner_roster_periods.partner_id', 'partners.id')
+                    ->whereDate('partner_roster_periods.period', $start))
+                ->orWhere(fn ($new) => $new
+                    ->whereNotExists(fn ($sub) => $sub->selectRaw('1')->from('partner_roster_periods')
+                        ->whereColumn('partner_roster_periods.partner_id', 'partners.id'))
+                    ->where($activeInPeriod)));
         } else {
-            $query->where(fn ($dates) => $dates->whereNull('partners.date_begin')->orWhereDate('partners.date_begin', '<=', $end))
-                ->where(fn ($dates) => $dates->whereNull('partners.date_end')->orWhereDate('partners.date_end', '>=', $start));
+            $query->where($activeInPeriod);
         }
 
         return $query->get([

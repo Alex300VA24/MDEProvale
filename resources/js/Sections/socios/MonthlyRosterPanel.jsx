@@ -168,7 +168,7 @@ export default function MonthlyRosterPanel({ can, onActiveChange, onRosterDataCh
                     {can.edit && (
                         <div className="flex flex-wrap gap-2">
                             <button type="button" onClick={() => setConfirmAction({ type: 'sync', roster: activeDraft })} disabled={busy} className="btn-secondary min-h-11">
-                                <i className="fas fa-rotate mr-2" aria-hidden="true" />Actualizar fotografía
+                                <i className="fas fa-rotate mr-2" aria-hidden="true" />Actualizar padrón
                             </button>
                             <button type="button" onClick={() => setConfirmAction({ type: 'close', roster: activeDraft })} disabled={busy} className="btn-primary min-h-11">
                                 <i className="fas fa-lock mr-2" aria-hidden="true" />Cerrar padrón
@@ -269,7 +269,7 @@ export default function MonthlyRosterPanel({ can, onActiveChange, onRosterDataCh
                 onConfirm={executeConfirmed}
                 loading={busy}
                 danger={confirmAction?.type === 'close'}
-                title={confirmAction?.type === 'close' ? 'Cerrar padrón mensual' : 'Actualizar fotografía del borrador'}
+                title={confirmAction?.type === 'close' ? 'Cerrar padrón mensual' : 'Actualizar padrón del borrador'}
                 message={confirmAction?.type === 'close' ? 'El cierre protegerá esta versión contra cambios. Para corregirla después deberá crear una revisión auditada.' : 'Se reemplazará el contenido del borrador con los socios y beneficiarios vigentes para ese período.'}
                 confirmLabel={confirmAction?.type === 'close' ? 'Sí, cerrar padrón' : 'Actualizar borrador'}
                 details={confirmAction ? [{ label: 'Período', value: confirmAction.roster.label }, { label: 'Beneficiarios', value: confirmAction.roster.beneficiary_count.toLocaleString('es-PE') }] : []}
