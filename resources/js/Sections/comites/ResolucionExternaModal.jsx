@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '../../Components/Toast';
 import Modal from '../../Components/Modal';
+import PdfViewerModal from '../../Components/PdfViewerModal';
 
 const BASE = '/api/dashboard/club-madres';
 const PORTAL_URL = 'https://www.muniesperanza.gob.pe';
@@ -61,7 +62,18 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
     const [error, setError] = useState(null);
     const [slow, setSlow] = useState(false);
     const [pdfLoading, setPdfLoading] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const activeRef = useRef(true);
+
+    const closePreview = () => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+    };
+
+    // Al cerrar el modal principal o cambiar de resolución, libera el PDF en memoria.
+    useEffect(() => {
+        if (!open) closePreview();
+    }, [open]);
 
     const buscar = async () => {
         if (!resolution) return;
@@ -139,7 +151,8 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             if (mode === 'preview') {
-                window.open(url, '_blank');
+                // Se renderiza en modal; la URL se revoca al cerrarlo.
+                setPreviewUrl(url);
             } else {
                 // Descarga directa: ancla temporal con atributo download, sin abrir pestaña.
                 const link = document.createElement('a');
@@ -148,8 +161,8 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
             }
-            setTimeout(() => URL.revokeObjectURL(url), 60000);
         } catch (e) {
             const a = e?.alert || networkError(e);
             toast.error(a.hint ? `${a.message} ${a.hint}` : a.message);
@@ -161,7 +174,7 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
     return (
         <Modal
             open={open}
-            onClose={onClose}
+            onClose={() => (previewUrl ? closePreview() : onClose())}
             title="Resolución en el Portal Municipal"
             icon="fa-external-link-alt"
             iconClass="text-[#1E5799]"
@@ -240,6 +253,12 @@ export default function ResolucionExternaModal({ open, resolution, onClose }) {
                     </div>
                 )}
             </div>
+            <PdfViewerModal
+                open={!!previewUrl}
+                onClose={closePreview}
+                url={previewUrl}
+                title={`Resolución ${resolution?.document || ''}`.trim()}
+            />
         </Modal>
     );
 }
